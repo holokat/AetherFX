@@ -13,7 +13,7 @@ Verified 2026-09-17 against GitHub / Homebrew.
 | Catch2 | unit tests | v3.16.0 | BSL-1.0 | test-only | in use (FetchContent) |
 | stb (stb_image, stb_image_write) | PNG/JPG read, PNG write | pinned commit in `cmake/Dependencies.cmake` | MIT / Unlicense (dual) | keep license text | in use (FetchContent) |
 | tinyexr | EXR write/read (linear HDR frames) | pinned commit in `cmake/Dependencies.cmake` | BSD-3-Clause (bundles miniz, MIT) | keep license texts | in use (FetchContent) |
-| wgpu-native | cross-platform GPU (Vulkan/Metal/DX12) | v29.0.1.1 (prebuilt release) | Apache-2.0 OR MIT | dynamic lib shipped with app; keep NOTICE | optional (`AETHER_WITH_GPU`) |
+| wgpu-native | cross-platform GPU (Vulkan/Metal/DX12) | v29.0.1.1 (prebuilt release, SHA256 pinned in cmake/WgpuNative.cmake) | Apache-2.0 OR MIT | static lib linked; keep NOTICE | optional (`AETHER_WITH_GPU`); verified headless Metal compute on macOS arm64 2026-09-17; `wgpuInstanceWaitAny` unimplemented in this version (use ProcessEvents polling) |
 | Slang | shader authoring / cross compilation | v2026.18 | Apache-2.0 WITH LLVM-exception | keep NOTICE | planned (GPU phase) |
 | Jolt Physics | rigid debris (Tier 2) | v5.6.0 | MIT | keep license | planned |
 | OpenVDB / NanoVDB | sparse volumes (Tier 3) | 13.1.0 (Homebrew) | Apache-2.0 (v12+; MPL-2.0 before) | keep license | planned |
