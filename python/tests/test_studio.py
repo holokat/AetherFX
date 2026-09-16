@@ -164,12 +164,36 @@ def test_node_property_toggles_enabled(client: TestClient, loaded: dict) -> None
 
 
 def test_save_writes_into_the_output_directory(client: TestClient, output_dir: Path, loaded: dict) -> None:
+    # The working copy of a built-in is saved under a new name; the built-in file is never touched.
+    builtin = Path(loaded["path"])
+    before = builtin.stat().st_mtime
     result = client.post("/api/effects/save", json={}).json()
     saved = Path(result["path"])
     assert saved.is_file()
     assert saved.parent == (output_dir / "effects").resolve()
-    assert saved.name == slugify("Fireball") + ".json"
-    assert {item["name"] for item in client.get("/api/effects").json()["saved"]} == {"fireball"}
+    assert result["name"] == "Fireball copy"
+    assert saved.name == slugify("Fireball copy") + ".json"
+    assert builtin.stat().st_mtime == before
+    listing = client.get("/api/effects").json()
+    assert {item["name"] for item in listing["saved"]} == {"fireball_copy"}
+    names = {(item["name"], item["builtin"]) for item in listing["library"]}
+    assert ("Fireball", True) in names and ("Fireball copy", False) in names
+
+
+def test_builtin_library_entries_are_protected(client: TestClient, loaded: dict) -> None:
+    builtin = loaded["path"]
+    assert client.post("/api/effects/load", json={"path": builtin}).status_code == 200  # fresh working copy
+    # explicit path into the built-in library via the agent tool passthrough
+    response = client.post("/api/tool", json={"name": "save_effect", "args": {"path": builtin}})
+    assert response.status_code == 403, response.text
+    assert "protected" in response.json()["error"]["message"]
+    # the studio's own save-as refuses it too
+    response = client.post("/api/effects/save", json={"path": builtin})
+    assert response.status_code == 403
+    # loading a built-in opens a working copy, not the file: the document has no path of its own
+    working = client.get("/api/effects").json()["working"]
+    assert working["source"]["builtin"] is True
+    assert client.get("/api/effect").json()["working_source"]["path"] == builtin
 
 
 # =====================================================================

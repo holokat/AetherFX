@@ -255,23 +255,27 @@ function setEffectName(active) {
 function refreshEffects() {
   return api('/api/effects').then(function (lists) {
     S.lists = lists;
-    renderFileList($('list-examples'), lists.examples, 'no examples found', function (item) {
-      return { label: item.name, meta: '', onclick: function () { loadEffect(item.path); } };
-    });
-    renderFileList($('list-saved'), lists.saved, 'nothing saved yet', function (item) {
-      return { label: item.name, meta: ago(item.modified), onclick: function () { loadEffect(item.path); } };
-    });
-    renderFileList($('list-open'), lists.open, 'nothing open', function (item) {
+    var source = (lists.working && lists.working.source) || null;
+    var items = lists.library || [];
+    renderFileList($('list-library'), items, 'the library is empty', function (item) {
+      var isCurrent = !!(source && source.path === item.path);
       return {
-        label: item.name || item.effect_id,
-        meta: (item.dirty ? 'modified' : ''),
-        active: item.active,
-        onclick: function () { activateEffect(item.effect_id); }
+        label: item.name,
+        meta: item.builtin ? 'built-in' : ago(item.modified),
+        active: isCurrent,
+        onclick: function () { openLibraryItem(item); }
       };
     });
-    fillTemplateSelect(lists.examples);
+    fillTemplateSelect(items.filter(function (i) { return i.builtin; }));
     return lists;
   });
+}
+
+function currentIsDirty() { return !!(S.status && S.status.active_effect && S.status.active_effect.dirty); }
+function openLibraryItem(item) {
+  var name = (S.status && S.status.active_effect && S.status.active_effect.name) || 'the current effect';
+  if (currentIsDirty() && !window.confirm('Discard unsaved changes to "' + name + '" and load "' + item.name + '"?')) return;
+  loadEffect(item.path);
 }
 
 function renderFileList(list, items, emptyText, make) {
@@ -292,7 +296,7 @@ function fillTemplateSelect(examples) {
   clear(select);
   select.appendChild(el('option', { value: 'empty', text: 'empty' }));
   (examples || []).forEach(function (item) {
-    select.appendChild(el('option', { value: item.name, text: item.name }));
+    select.appendChild(el('option', { value: item.path || item.name, text: item.name }));
   });
   select.value = current || 'empty';
   if (!select.value) select.value = 'empty';
@@ -333,10 +337,18 @@ function createEffect() {
 }
 
 function saveEffect() {
-  return guard(api('/api/effects/save', { body: {} }).then(function (result) {
-    toast('saved to ' + result.path, 'ok');
-    return refreshEffects();
-  }), 'save');
+  if (!S.data) { toast('nothing to save', 'warn'); return; }
+  var current = (S.status && S.status.active_effect && S.status.active_effect.name) || 'effect';
+  var src = (S.lists && S.lists.working && S.lists.working.source) || null;
+  var suggestion = (src && src.builtin) ? current + ' copy' : current;
+  var name = window.prompt('Save into your library as:', suggestion);
+  if (name === null) return;
+  name = name.trim();
+  if (!name) return;
+  api('/api/effects/save', { body: { name: name } }).then(function (r) {
+    toast('saved "' + (r.name || name) + '"', 'ok');
+    return afterEffectChange();
+  }).catch(function (err) { toast(err && err.message ? err.message : 'save failed', 'error'); });
 }
 
 function runHistory(which) {
@@ -359,7 +371,7 @@ function afterEffectChange() {
 function refreshEffect() {
   return apiRaw('/api/effect').then(function (res) { return res.json(); }).then(function (data) {
     S.data = data;
-    if (!S.camera || S.cameraEffectId !== S.activeId) resetCamera();
+    if (!S.camera || S.cameraEffectId !== S.activeId) { resetCamera(); applyStage(data.stage_defaults); }
     renderPhases(data.timeline);
     renderGraph(data.graph);
     renderStatistics(data.statistics);
@@ -997,6 +1009,67 @@ function schedulePreviewRefresh() {
 }
 
 /* ====================================================================== *
+ * stage: render settings for the preview (ground, background, bloom, exposure)
+ * ====================================================================== */
+
+var STAGE_DEFAULTS = { ground_albedo: 0.18, background: [0.02, 0.02, 0.025, 1], bloom_intensity: 0.35, bloom_radius: 0.04, exposure: 1.0, grid: true };
+function hexToLinear(hex) {
+  var n = parseInt(hex.slice(1), 16); var c = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  return c.map(function (v) { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }).concat([1]);
+}
+function linearToHex(rgb) {
+  var out = '#';
+  for (var i = 0; i < 3; i++) {
+    var v = Math.max(0, Math.min(1, rgb[i] || 0));
+    v = v <= 0.0031308 ? v * 12.92 : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
+    out += ('0' + Math.round(v * 255).toString(16)).slice(-2);
+  }
+  return out;
+}
+function stageFromControls() {
+  return {
+    ground_albedo: parseFloat($('stage-ground').value),
+    background: hexToLinear($('stage-bg').value),
+    bloom_intensity: parseFloat($('stage-bloom').value),
+    bloom_radius: parseFloat($('stage-bloom-radius').value),
+    exposure: parseFloat($('stage-exposure').value),
+    grid: $('stage-grid').checked
+  };
+}
+function applyStage(stage) {
+  var s = Object.assign({}, STAGE_DEFAULTS, stage || {});
+  $('stage-ground').value = s.ground_albedo;
+  $('stage-bg').value = linearToHex(s.background || STAGE_DEFAULTS.background);
+  $('stage-bloom').value = s.bloom_intensity;
+  $('stage-bloom-radius').value = s.bloom_radius;
+  $('stage-exposure').value = s.exposure;
+  $('stage-grid').checked = s.grid !== false;
+  S.stage = stageFromControls();
+}
+function stageParam() { if (!S.stage) S.stage = stageFromControls(); return S.stage; }
+function stageQuery() { return '&settings=' + encodeURIComponent(JSON.stringify(stageParam())); }
+function stageChanged() {
+  S.stage = stageFromControls();
+  if (usingPreview()) { S.previewStale = true; updatePreviewHint(); }
+  requestFrame(timeAt(S.index), false);
+  if (S.preview) schedulePreviewRefresh();
+}
+function wireStage() {
+  ['stage-ground', 'stage-bg', 'stage-bloom', 'stage-bloom-radius', 'stage-exposure', 'stage-grid'].forEach(function (id) {
+    $(id).addEventListener('input', stageChanged);
+    $(id).addEventListener('change', stageChanged);
+  });
+  $('btn-stage-save').addEventListener('click', function () {
+    if (!S.data) return;
+    var meta = (S.data.effect && S.data.effect.metadata) || {};
+    meta = Object.assign({}, meta, { render_settings: stageFromControls() });
+    api('/api/tool', { body: { name: 'set_effect_property', args: { metadata: meta } } })
+      .then(function () { toast('stage saved into the effect', 'ok'); return afterEffectChange(); })
+      .catch(function (err) { toast(err && err.message ? err.message : 'could not save stage', 'error'); });
+  });
+}
+
+/* ====================================================================== *
  * camera: wheel zoom, drag orbit, shift/middle-drag pan (studio-only view)
  * ====================================================================== */
 
@@ -1160,7 +1233,7 @@ function requestFrame(time, immediate) {
     S.frameAbort = controller;
     var size = renderSize();
     var url = '/api/frame?time=' + encodeURIComponent(time.toFixed(3)) +
-      '&width=' + size.w + '&height=' + size.h + cameraQuery();
+      '&width=' + size.w + '&height=' + size.h + cameraQuery() + stageQuery();
     setBusy(true, 'rendering frame');
     apiRaw(url, controller ? { signal: controller.signal } : {}).then(function (res) {
       var stats = res.headers.get('X-Aether-Render');
@@ -1226,7 +1299,7 @@ function renderPreview(autoplay) {
   $('btn-preview').disabled = true;
 
   var size = renderSize();
-  var body = { fps: S.fps, width: size.w, height: size.h, start: 0, end: duration(), camera: cameraParam() };
+  var body = { fps: S.fps, width: size.w, height: size.h, start: 0, end: duration(), camera: cameraParam(), settings: stageParam() };
   S.previewDirty = false;
   return api('/api/preview', { body: body }).then(function (result) {
     result.w = size.w; result.h = size.h;
@@ -1438,6 +1511,7 @@ function wire() {
   $('btn-preview').addEventListener('click', function () { renderPreview(true); });
   $('btn-random').addEventListener('click', randomizeEffect);
   wireCamera();
+  wireStage();
   $('chk-loop').addEventListener('change', function () { S.loop = $('chk-loop').checked; });
 
   var slider = $('frame-slider');

@@ -452,3 +452,10 @@ label.inline select { margin-left: 2px; }
 .panel-tools select, .panel-tools button { font-size: 11px; padding: 2px 6px; }
 #viewport { cursor: grab; }
 #viewport.dragging { cursor: grabbing; }
+
+/* stage controls */
+.stage-controls { display: inline-flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin-left: 8px; font-size: 11px; color: var(--text-dim); }
+.stage-controls label { display: inline-flex; align-items: center; gap: 4px; }
+.stage-controls input[type=range] { width: 64px; }
+.stage-controls input[type=color] { width: 26px; height: 18px; padding: 0; border: 1px solid #333; background: none; }
+#transport { flex-wrap: wrap; row-gap: 4px; }

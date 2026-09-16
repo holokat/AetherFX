@@ -232,6 +232,89 @@ class Studio:
         return tool.startswith(("create_", "set_", "delete_", "duplicate_", "connect_", "disconnect_", "remove_",
                                 "load_", "undo", "redo", "clear_", "reset_parameter"))
 
+    #: The studio's working document (a copy of a library entry or a new effect) and where it came from.
+    working_id: str | None = None
+    working_source: JsonDict | None = None
+
+    def is_builtin_path(self, path: Path | str | None) -> bool:
+        if not path:
+            return False
+        try:
+            return Path(path).expanduser().resolve().is_relative_to(self.examples_dir.resolve())
+        except (OSError, ValueError):
+            return False
+
+    async def library(self) -> list[JsonDict]:
+        """Built-in effects (protected) followed by the user's own effects."""
+        def listing(directory: Path, builtin: bool) -> list[JsonDict]:
+            items: list[JsonDict] = []
+            if not directory.is_dir():
+                return items
+            for path in sorted(directory.glob("*.json")):
+                entry: JsonDict = {"name": path.stem, "path": str(path), "builtin": builtin}
+                try:
+                    raw = json.loads(path.read_text(encoding="utf-8"))
+                    if isinstance(raw, dict) and raw.get("name"):
+                        entry["name"] = str(raw["name"])
+                    entry["duration"] = raw.get("duration") if isinstance(raw, dict) else None
+                except (OSError, ValueError):
+                    pass
+                try:
+                    entry["modified"] = path.stat().st_mtime
+                except OSError:
+                    entry["modified"] = None
+                items.append(entry)
+            return items
+
+        builtin = await run_in_threadpool(listing, self.examples_dir, True)
+        mine = await run_in_threadpool(listing, self.effects_dir, False)
+        return builtin + mine
+
+    async def open_working_copy(self, path: Path) -> JsonDict:
+        """Open a library entry as a fresh working document (never the file itself)."""
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+            name = str(raw.get("name") or path.stem) if isinstance(raw, dict) else path.stem
+        except (OSError, ValueError):
+            name = path.stem
+        result = await self.acall("create_effect", name=name, template=str(path))
+        await self._replace_working(result.get("effect_id"), {"path": str(path), "builtin": self.is_builtin_path(path), "name": name})
+        return result
+
+    async def _replace_working(self, new_id: str | None, source: JsonDict | None) -> None:
+        previous = self.working_id
+        self.working_id = new_id
+        self.working_source = source
+        if previous and previous != new_id:
+            try:
+                await self.acall("delete_effect", effect_id=previous)
+            except Exception:  # noqa: BLE001 - already gone
+                pass
+
+    def guard_tool(self, name: str, args: JsonDict | None) -> None:
+        """Refuse tool calls that would overwrite a built-in library file."""
+        if name not in ("save_effect", "export_effect"):
+            return
+        args = args or {}
+        if name == "export_effect" and args.get("format") not in (None, "json"):
+            return
+        target = args.get("path")
+        if not target and name == "save_effect":
+            src = self.working_source or {}
+            target = src.get("path") if src.get("builtin") else None
+        if target and self.is_builtin_path(target):
+            raise StudioError(403, "protected", "built-in library effects are protected; save under a new name in your own library")
+
+    async def stage_defaults(self) -> JsonDict:
+        """Per-effect render defaults stored in effect.metadata.render_settings (may be empty)."""
+        try:
+            doc = await self.acall("get_effect_json")
+        except Exception:  # noqa: BLE001
+            return {}
+        meta = doc.get("metadata") if isinstance(doc, dict) else None
+        rs = meta.get("render_settings") if isinstance(meta, dict) else None
+        return _parse_settings(rs) if isinstance(rs, dict) else {}
+
     def note_call(self, tool: str) -> None:
         if self._is_mutating(tool):
             self.revision += 1
@@ -510,6 +593,24 @@ def randomize_parameters(node_json: JsonDict, spec: JsonDict, effective: JsonDic
     return changes
 
 
+_STAGE_KEYS = {"background", "ground_plane", "grid", "ground_albedo", "bloom", "bloom_threshold", "bloom_intensity",
+               "bloom_radius", "exposure", "soft_particles", "supersample"}
+
+
+def _parse_settings(value: Any) -> JsonDict:
+    """Render settings override from a JSON string (query) or object (body); unknown keys are dropped."""
+    if not value:
+        return {}
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except json.JSONDecodeError as exc:
+            raise StudioError(400, "bad_request", f"settings is not valid JSON: {exc}") from exc
+    if not isinstance(value, dict):
+        raise StudioError(400, "bad_request", "settings must be an object")
+    return {k: v for k, v in value.items() if k in _STAGE_KEYS}
+
+
 def _parse_camera(value: Any) -> JsonDict | None:
     """Camera override from a JSON string (query) or object (body): position/target/up/fov."""
     if not value:
@@ -518,9 +619,9 @@ def _parse_camera(value: Any) -> JsonDict | None:
         try:
             value = json.loads(value)
         except json.JSONDecodeError as exc:
-            raise StudioError(f"camera is not valid JSON: {exc}", 400) from exc
+            raise StudioError(400, "bad_request", f"camera is not valid JSON: {exc}") from exc
     if not isinstance(value, dict):
-        raise StudioError("camera must be an object", 400)
+        raise StudioError(400, "bad_request", "camera must be an object")
     out: JsonDict = {}
     for key in ("position", "target", "up"):
         vec = value.get(key)
@@ -590,7 +691,12 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
             }
             for entry in (listed.get("effects") or [])
         ]
-        return {"examples": examples, "saved": saved, "open": open_effects}
+        active = await studio.active_effect()
+        working = dict(active) if active else None
+        if working is not None:
+            working["source"] = studio.working_source
+        return {"examples": examples, "saved": saved, "open": open_effects,
+                "library": await studio.library(), "working": working}
 
     @endpoint
     async def api_effect_load(request: Request) -> JsonDict:
@@ -605,10 +711,11 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
                     break
         if not path.is_file():
             raise StudioError(404, "not_found", f"no effect file at {path}")
-        result = await studio.acall("load_effect", path=str(path))
-        LOGGER.info("loaded effect %s from %s", result.get("effect_id"), path)
+        result = await studio.open_working_copy(path)
+        LOGGER.info("opened working copy %s of %s", result.get("effect_id"), path)
         summary = effect_summary(result.get("effect"), result.get("effect_id"), result.get("diagnostics"))
         summary["path"] = str(path)
+        summary["builtin"] = studio.is_builtin_path(path)
         return summary
 
     @endpoint
@@ -621,6 +728,7 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
         if template and template != "empty":
             args["template"] = template
         result = await studio.acall("create_effect", **args)
+        await studio._replace_working(result.get("effect_id"), None)  # noqa: SLF001
         LOGGER.info("created effect %s (%s)", result.get("effect_id"), name)
         return effect_summary(result.get("effect"), result.get("effect_id"), result.get("diagnostics"))
 
@@ -636,18 +744,28 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
     async def api_effect_save(request: Request) -> JsonDict:
         data = await read_json(request)
         active = await studio.require_active_effect()
+        name = _string(data, "name", active.get("name") or "effect").strip() or "effect"
         raw = data.get("path")
         if raw:
             path = Path(str(raw)).expanduser()
             if not path.is_absolute():
                 path = studio.effects_dir / path
         else:
-            path = studio.effects_dir / f"{slugify(active.get('name') or 'effect')}.json"
+            path = studio.effects_dir / f"{slugify(name)}.json"
+        if studio.is_builtin_path(path):
+            raise StudioError(403, "protected", "built-in library effects are protected; save under a new name")
+        # never shadow a built-in name: "Fireball" saved from the library becomes "Fireball copy"
+        while (studio.examples_dir / path.name).exists():
+            name = name + " copy"
+            path = studio.effects_dir / f"{slugify(name)}.json"
         await run_in_threadpool(lambda: path.parent.mkdir(parents=True, exist_ok=True))
+        if name != active.get("name"):
+            await studio.acall("set_effect_property", name=name)
         result = await studio.acall("save_effect", path=str(path))
         saved = result.get("path") or str(path)
-        LOGGER.info("saved effect %s to %s", active.get("effect_id"), saved)
-        return {"path": saved, "effect_id": active.get("effect_id")}
+        studio.working_source = {"path": saved, "builtin": False, "name": name}
+        LOGGER.info("saved effect %s as %s (%s)", active.get("effect_id"), name, saved)
+        return {"path": saved, "effect_id": active.get("effect_id"), "name": name}
 
     @endpoint
     async def api_effect(_request: Request) -> JsonDict:
@@ -657,6 +775,8 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
         )
         return {
             "active_effect": active,
+            "working_source": studio.working_source,
+            "stage_defaults": await studio.stage_defaults(),
             "effect": effect,
             "graph": graph,
             "timeline": timeline,
@@ -738,13 +858,15 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
         width = max(16, min(width, 2048))
         height = max(16, min(height, 2048))
         camera = _parse_camera(params.get("camera"))
-        cam_tag = f"_{abs(hash(json.dumps(camera, sort_keys=True))) % 10**8:08d}" if camera else ""
+        settings = {**(await studio.stage_defaults()), **_parse_settings(params.get("settings"))}
+        tag_src = json.dumps({"c": camera, "s": settings}, sort_keys=True)
+        cam_tag = f"_{abs(hash(tag_src)) % 10**8:08d}" if (camera or settings) else ""
         time_s = max(0.0, time_s)
         path = studio.frames_dir / f"frame_{width}x{height}_{time_s:.3f}{cam_tag}.png"
         await run_in_threadpool(lambda: path.parent.mkdir(parents=True, exist_ok=True))
         result = await studio.acall(
             "render_frame", time=time_s, width=width, height=height, path=str(path), format="png",
-            **({"camera": camera} if camera else {})
+            **({"camera": camera} if camera else {}), **({"settings": settings} if settings else {})
         )
         rendered = Path(result.get("path") or path)
         data = await run_in_threadpool(rendered.read_bytes)
@@ -760,6 +882,7 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
         active = await studio.require_active_effect()
         data = await read_json(request)
         fps = _number(data, "fps", 24.0, minimum=1.0, maximum=120.0)
+        preview_settings = {**(await studio.stage_defaults()), **_parse_settings(data.get("settings"))}
         width = _int(data, "width", 384, minimum=16, maximum=2048)
         height = _int(data, "height", 384, minimum=16, maximum=2048)
         start = _number(data, "start", 0.0, minimum=0.0)
@@ -773,6 +896,7 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
             "height": height,
             "out_dir": str(out_dir),
             **({"camera": _parse_camera(data.get("camera"))} if data.get("camera") else {}),
+            **({"settings": preview_settings} if preview_settings else {}),
             "contact_sheet": True,
         }
         if end is not None:
@@ -822,6 +946,7 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
         data = await read_json(request)
         name = _string(data, "name", required=True)
         args = data.get("args") or {}
+        studio.guard_tool(name, args)
         if not isinstance(args, dict):
             raise StudioError(400, "bad_request", "args must be a JSON object")
         LOGGER.info("tool %s(%s)", name, ", ".join(sorted(args)))
@@ -842,7 +967,7 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
         if target:
             nodes = [n for n in nodes if n.get("id") == target]
             if not nodes:
-                raise StudioError(f"no node {target!r}", 404)
+                raise StudioError(404, "not_found", f"no node {target!r}")
         changed_nodes = 0
         changed_params = 0
         diagnostics: list[JsonDict] = []
@@ -973,12 +1098,21 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
             class _StudioClient(LockedClient):
                 """Locked client that also bumps the studio revision (MCP-driven edits)."""
 
+                @staticmethod
+                def _guard(tool_name: str, args: dict[str, Any] | None) -> None:
+                    try:
+                        studio.guard_tool(tool_name, args)
+                    except StudioError as exc:
+                        raise AetherError(-32602, str(exc), aether_code="E403") from exc
+
                 def call(self, tool_name: str, /, **args: Any) -> Any:
+                    self._guard(tool_name, args)
                     result = super().call(tool_name, **args)
                     studio.note_call(tool_name)
                     return result
 
                 def call_with(self, name: str, args: dict[str, Any] | None = None) -> Any:
+                    self._guard(name, dict(args or {}))
                     result = super().call_with(name, args)
                     studio.note_call(name)
                     return result
