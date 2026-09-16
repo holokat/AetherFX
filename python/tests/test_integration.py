@@ -101,7 +101,10 @@ def test_create_node_set_parameter_inspect_graph(engine: Client) -> None:
     assert graph["duration"] == pytest.approx(2.0)
     assert "fire_wall" in {node["id"] for node in graph["nodes"]}
     assert "primary" in {layer["id"] for layer in graph["layers"]}
-    assert graph["diagnostics"]["errors"] == []
+    # "errors" is a count. The only expected error is E010: this emitter has no particle input.
+    error_codes = [d["code"] for d in graph["diagnostics"]["items"] if d["severity"] == "error"]
+    assert error_codes == ["E010"]
+    assert graph["diagnostics"]["errors"] == 1
 
 
 def test_unknown_parameter_reports_an_aether_code(engine: Client) -> None:

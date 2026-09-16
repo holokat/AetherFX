@@ -27,6 +27,13 @@ struct Document {
     std::shared_ptr<sim::IRuntime> runtime;
     uint64_t compiled_hash = 0;
     bool dirty = false;
+    // Which compile the live runtime belongs to, and the timestep it was built
+    // with (a different fixed_dt is a different compile).
+    uint64_t runtime_hash = 0;
+    double compiled_fixed_dt = 1.0 / 60.0;
+    // Last results, for inspect_statistics ("last known").
+    nlohmann::json last_simulation_statistics;  // null until something simulated
+    nlohmann::json last_render_statistics;      // null until something rendered
 };
 
 class Session {
@@ -38,6 +45,9 @@ public:
     Document& open(const std::filesystem::path& path);   // becomes active
     Document& get(const std::string& id);                // throws Error("no_such_effect")
     Document& active();                                  // throws Error("no_active_effect")
+    // args["effect_id"] when present, else active(). The tool argument every
+    // tool accepts (docs/AGENT_API.md).
+    Document& document_for(const nlohmann::json& args);
     Document* find(const std::string& id);
     void set_active(const std::string& id);
     bool close(const std::string& id);
@@ -65,6 +75,7 @@ public:
 private:
     std::filesystem::path output_dir_;
     std::map<std::string, Document> documents_;
+    std::vector<std::string> order_;  // creation order, for list_effects
     std::string active_id_;
     int next_id_ = 1;
     std::unique_ptr<render::IRenderer> renderer_;

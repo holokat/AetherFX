@@ -408,4 +408,5 @@ outside duration), E017 unknown port, E018 keyframe time invalid,
 E019 curve/gradient keys not sorted or out of [0,1], E020 schema version
 unsupported. W001 unknown phase reference, W002 unused node (no consumer and
 not renderable), W003 max_particles budget high, W004 node disabled but
-referenced, W005 deprecated parameter.
+referenced, W005 deprecated parameter, W006 keyframe set on a parameter not
+marked animatable (stored, but runtimes may ignore the track).
