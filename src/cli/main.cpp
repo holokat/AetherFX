@@ -4,6 +4,7 @@
 //
 // Usage lines live in `usage()`; exit codes are 0 success, 1 failure, 2 usage.
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include <map>
 #include <set>
@@ -286,7 +287,7 @@ int command_run(const Options& options) {
     if (options.has("end")) preview["end"] = options.number("end", 0.0);
     if (options.has("width")) preview["width"] = options.integer("width", 512);
     if (options.has("height")) preview["height"] = options.integer("height", 512);
-    if (options.has("out")) preview["out_dir"] = options.value("out");
+    if (options.has("out")) preview["out_dir"] = std::filesystem::absolute(options.value("out")).string();
 
     const json simulated = registry.call(session, "simulate", json::object());
     const json rendered = registry.call(session, "render_preview", preview);
@@ -316,7 +317,7 @@ int command_render(const Options& options) {
     registry.call(session, "load_effect", json{{"path", options.positional.front()}});
 
     json args{{"time", options.number("time", 0.0)}};
-    if (options.has("out")) args["path"] = options.value("out");
+    if (options.has("out")) args["path"] = std::filesystem::absolute(options.value("out")).string();
     if (options.has("width")) args["width"] = options.integer("width", 512);
     if (options.has("height")) args["height"] = options.integer("height", 512);
     const json result = registry.call(session, "render_frame", args);
@@ -349,7 +350,8 @@ int command_export(const Options& options) {
 
     const json result = registry.call(
         session, "export_effect",
-        json{{"format", options.value("format")}, {"path", options.value("out")}, {"options", export_options}});
+        json{{"format", options.value("format")}, {"path", std::filesystem::absolute(options.value("out")).string()},
+             {"options", export_options}});
     std::cout << result["path"].get<std::string>() << "\n";
     for (const auto& file : result["files"]) std::cout << "file: " << file.get<std::string>() << "\n";
     if (!result["manifest"].is_null()) std::cout << "manifest: " << result["manifest"].dump(2) << "\n";

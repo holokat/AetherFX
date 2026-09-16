@@ -17,6 +17,18 @@ reference / prompt -> analysis (EAD) -> VFX graph -> validate -> compile
 * `docs/DEPENDENCIES.md` - every dependency, version and license
 * `docs/ROADMAP.md`
 
+## Status (M0 foundation, 2026-09-17)
+
+Working end to end on CPU: typed vocabulary (18 node types, 246 parameters),
+JSON graph with validation (E001-E020, W001-W006), compiler with tier
+selection and resource baking, deterministic particle runtime (forces,
+collisions, events, analytic beams/trails/decals/lights), software HDR
+renderer (soft particles, bloom, post), procedural textures, 65-tool agent
+API over JSON-RPC, CLI, Python client, MCP server, metric-based reference
+comparison, flipbook/frames/video export. GPU (wgpu-native) is bootstrapped
+but not yet used for simulation or rendering. Volumes (Tier 3) and rigid
+physics (Tier 2) are stubs with compile warnings. See docs/ROADMAP.md.
+
 ## Build
 
 ```bash
@@ -27,15 +39,23 @@ cmake --preset default && cmake --build --preset default && ctest --preset defau
 
 ```bash
 ./build/bin/aetherfx validate examples/effects/fireball.json
-./build/bin/aetherfx run examples/effects/fireball.json --out out/fireball --fps 24
-./build/bin/aetherfx serve            # JSON-RPC 2.0 over stdio
+./build/bin/aetherfx run examples/effects/fire_aoe.json --out out/fire_aoe --fps 24 --video
+./build/bin/aetherfx render examples/effects/lightning_strike.json --time 0.05 --out out/bolt.png
+./build/bin/aetherfx export examples/effects/fireball.json --format flipbook --out out/fireball_flipbook.png
+./build/bin/aetherfx tools            # list the 65 agent tools
+./build/bin/aetherfx serve            # JSON-RPC 2.0 over stdio (used by the Python client and MCP server)
 ```
 
 Python / MCP:
 
 ```bash
-cd python && python3.13 -m pip install -e '.[dev]'
-aetherfx-mcp --binary ../build/bin/aetherfx
+cd python && python3.13 -m venv .venv && .venv/bin/pip install -e '.[dev,claude]'
+AETHERFX_BINARY=../build/bin/aetherfx .venv/bin/pytest -q
+.venv/bin/aetherfx-mcp --binary ../build/bin/aetherfx --output-dir ../out   # MCP server (stdio)
 ```
+
+MCP configuration for Claude Code / Claude Desktop is in `python/README.md`.
+The `AETHERFX_ANALYZER` environment variable selects the reference-analysis
+adapter (`mock` by default, `claude` with `ANTHROPIC_API_KEY`).
 
 License: Apache-2.0 (see LICENSE). Third-party licenses in docs/DEPENDENCIES.md.

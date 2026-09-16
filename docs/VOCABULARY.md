@@ -233,7 +233,7 @@ outputs: `beam`.
 transform, window, plus:
 ```
 light_type: enum = point [point, spot, area]
-intensity: float = 10 [0..] (A)         radiometric-ish, linear
+intensity: float = 10 [0..] (A)         linear; ground irradiance ~ intensity/(d^2+1); with albedo 0.18, intensity 10 lights a 1 m pool to ~0.9 (use 2-6 for hand-held glows, 20-40 for room-scale fire, keep flashes under ~30)
 radius: float = 5 [0..] (A)             influence radius (m)
 color: color = 1,1,1,1 (A)
 temperature: float = 0 [0..]            Kelvin; 0 = use color as-is

@@ -73,15 +73,21 @@ const TrailState* trail_of(const FrameState& s, const std::string& id) {
 
 TEST_CASE("the fireball glow light flickers within its amplitude", "[sim][analytic]") {
     std::unique_ptr<sim::IRuntime> rt = runtime_for(load_example("fireball.json"));
+    const Node* glow_node = rt->compiled().effect.find_node("glow");
+    REQUIRE(glow_node != nullptr);
+    const float base_intensity = param_float(*glow_node, "intensity");
+    const float base_radius = param_float(*glow_node, "radius");
+    const float amplitude = param_float(*glow_node, "flicker_amplitude");
+    REQUIRE(amplitude > 0.0f);
     bool varied = false;
     float previous = -1.0f;
     for (int i = 0; i < 90; ++i) {
         rt->step();
         const LightState* glow = light_of(rt->state(), "glow");
         REQUIRE(glow != nullptr);
-        CHECK(glow->intensity >= 12.0f * (1.0f - 0.15f) - 1e-3f);
-        CHECK(glow->intensity <= 12.0f * (1.0f + 0.15f) + 1e-3f);
-        CHECK(glow->radius == Approx(4.0f));
+        CHECK(glow->intensity >= base_intensity * (1.0f - amplitude) - 1e-3f);
+        CHECK(glow->intensity <= base_intensity * (1.0f + amplitude) + 1e-3f);
+        CHECK(glow->radius == Approx(base_radius));
         CHECK(glow->type == LightType::Point);
         if (previous >= 0.0f && std::fabs(glow->intensity - previous) > 1e-4f) varied = true;
         previous = glow->intensity;
@@ -89,8 +95,9 @@ TEST_CASE("the fireball glow light flickers within its amplitude", "[sim][analyt
     CHECK(varied);
     // the light is parented to the core, so it travels with it
     const LightState* glow = light_of(rt->state(), "glow");
-    CHECK(glow->position.z > -3.0f);
-    CHECK(glow->position.y == Approx(1.0f));
+    const Vec3 start = value_as_vec3(rt->compiled().effect.find_node("core")->find_param("position")->track.front().value);
+    CHECK(glow->position.z > start.z);
+    CHECK(glow->position.y == Approx(start.y));
 }
 
 TEST_CASE("a light with zero flicker amplitude is steady, and temperature tints it", "[sim][analytic]") {

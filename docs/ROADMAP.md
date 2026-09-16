@@ -3,7 +3,7 @@
 Milestones are vertical slices; each one keeps the agent loop working end to
 end before adding depth.
 
-## M0 Foundation (this milestone)
+## M0 Foundation (done 2026-09-17, CPU only)
 
 * Vocabulary, typed graph, JSON IO with versioning, validator, spec registry
   exporting `schema/*.json`.

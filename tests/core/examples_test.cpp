@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 #include "aether/core/serialization.hpp"
@@ -15,6 +16,7 @@
 #include "aether/core/validation.hpp"
 
 using namespace aether;
+using Catch::Approx;
 
 namespace {
 
@@ -165,15 +167,23 @@ TEST_CASE("world_transform follows a keyframed parent in fireball", "[core][exam
     REQUIRE(flames != nullptr);
     REQUIRE(flames->parent.has_value());
 
-    // "core" moves from z=-3 at t=0 to z=+2 at t=2.5; "flames" sits at the origin
-    // of its parent, so it must follow.
-    Vec3 at_zero = effect.world_transform(*flames, 0.0).translation_part();
-    Vec3 at_end = effect.world_transform(*flames, 2.5).translation_part();
-    CHECK(at_zero.z < -2.9f);
-    CHECK(at_end.z > 1.9f);
-    CHECK(at_zero.y > 0.9f);
+    // "core" carries a keyframed position track; "flames" sits at the origin of
+    // its parent, so it must follow the track's first and last keys.
+    const Node* core = effect.find_node("core");
+    REQUIRE(core != nullptr);
+    const Parameter* track = core->find_param("position");
+    REQUIRE(track != nullptr);
+    REQUIRE(track->animated());
+    const Vec3 first = value_as_vec3(track->track.front().value);
+    const Vec3 last = value_as_vec3(track->track.back().value);
+    REQUIRE(first.z != last.z);
+    Vec3 at_zero = effect.world_transform(*flames, track->track.front().time).translation_part();
+    Vec3 at_end = effect.world_transform(*flames, track->track.back().time).translation_part();
+    CHECK(at_zero.z == Approx(first.z).margin(1e-4f));
+    CHECK(at_end.z == Approx(last.z).margin(1e-4f));
+    CHECK(at_zero.y == Approx(first.y).margin(1e-4f));
 
-    Vec3 midway = effect.world_transform(*flames, 1.25).translation_part();
-    CHECK(midway.z > at_zero.z);
-    CHECK(midway.z < at_end.z);
+    const double mid_time = 0.5 * (track->track.front().time + track->track.back().time);
+    Vec3 midway = effect.world_transform(*flames, mid_time).translation_part();
+    CHECK(midway.z == Approx(0.5f * (first.z + last.z)).margin(1e-3f));
 }
