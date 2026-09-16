@@ -1,0 +1,3647 @@
+{
+  "$defs": {
+    "color": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 4,
+          "minItems": 3,
+          "type": "array"
+        },
+        {
+          "pattern": "^#?[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$",
+          "type": "string"
+        }
+      ]
+    },
+    "curve": {
+      "anyOf": [
+        {
+          "items": {
+            "maxItems": 3,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "$ref": "#/$defs/interp"
+              }
+            ],
+            "type": "array"
+          },
+          "type": "array"
+        },
+        {
+          "properties": {
+            "keys": {
+              "items": {
+                "properties": {
+                  "interp": {
+                    "$ref": "#/$defs/interp"
+                  },
+                  "t": {
+                    "type": "number"
+                  },
+                  "v": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "t",
+                  "v"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "keys"
+          ],
+          "type": "object"
+        }
+      ],
+      "description": "over-lifetime curve, t in [0,1]"
+    },
+    "float_list": {
+      "items": {
+        "type": "number"
+      },
+      "type": "array"
+    },
+    "gradient": {
+      "anyOf": [
+        {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "$ref": "#/$defs/color"
+              }
+            ],
+            "type": "array"
+          },
+          "type": "array"
+        },
+        {
+          "properties": {
+            "keys": {
+              "items": {
+                "properties": {
+                  "color": {
+                    "$ref": "#/$defs/color"
+                  },
+                  "t": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "t",
+                  "color"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "keys"
+          ],
+          "type": "object"
+        }
+      ],
+      "description": "over-lifetime color gradient, t in [0,1]"
+    },
+    "input_value": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/node_ref"
+        },
+        {
+          "items": {
+            "$ref": "#/$defs/node_ref"
+          },
+          "type": "array"
+        }
+      ]
+    },
+    "interp": {
+      "enum": [
+        "linear",
+        "step",
+        "smooth"
+      ],
+      "type": "string"
+    },
+    "keyframe_track": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "interp": {
+            "$ref": "#/$defs/interp"
+          },
+          "time": {
+            "type": "number"
+          },
+          "value": {}
+        },
+        "required": [
+          "time",
+          "value"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "layer": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "name": {
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "telegraph",
+            "ignition",
+            "primary",
+            "secondary",
+            "interaction",
+            "aftermath",
+            "custom"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "node": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/node_emitter"
+        },
+        {
+          "$ref": "#/$defs/node_particle_system"
+        },
+        {
+          "$ref": "#/$defs/node_force"
+        },
+        {
+          "$ref": "#/$defs/node_field"
+        },
+        {
+          "$ref": "#/$defs/node_volume"
+        },
+        {
+          "$ref": "#/$defs/node_mesh"
+        },
+        {
+          "$ref": "#/$defs/node_curve"
+        },
+        {
+          "$ref": "#/$defs/node_trail"
+        },
+        {
+          "$ref": "#/$defs/node_beam"
+        },
+        {
+          "$ref": "#/$defs/node_light"
+        },
+        {
+          "$ref": "#/$defs/node_decal"
+        },
+        {
+          "$ref": "#/$defs/node_material"
+        },
+        {
+          "$ref": "#/$defs/node_noise"
+        },
+        {
+          "$ref": "#/$defs/node_collider"
+        },
+        {
+          "$ref": "#/$defs/node_event"
+        },
+        {
+          "$ref": "#/$defs/node_camera"
+        },
+        {
+          "$ref": "#/$defs/node_post_effect"
+        },
+        {
+          "$ref": "#/$defs/node_texture"
+        }
+      ]
+    },
+    "node_beam": {
+      "additionalProperties": false,
+      "description": "Analytic lightning / laser between two points.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "$ref": "#/$defs/node_id"
+        },
+        "inputs": {
+          "additionalProperties": false,
+          "properties": {
+            "material": {
+              "$ref": "#/$defs/input_value"
+            },
+            "origin_node": {
+              "$ref": "#/$defs/input_value"
+            },
+            "target_node": {
+              "$ref": "#/$defs/input_value"
+            }
+          },
+          "type": "object"
+        },
+        "layer": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "outputs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "parameters": {
+          "additionalProperties": false,
+          "properties": {
+            "blend": {
+              "$ref": "#/$defs/param_enum_additive_alpha_premultiplied"
+            },
+            "branch_length": {
+              "$ref": "#/$defs/param_float_min0_max1"
+            },
+            "branch_probability": {
+              "$ref": "#/$defs/param_float_min0_max1"
+            },
+            "branching": {
+              "$ref": "#/$defs/param_int_min0_max16"
+            },
+            "color": {
+              "$ref": "#/$defs/param_color"
+            },
+            "duration": {
+              "$ref": "#/$defs/param_float"
+            },
+            "emissive": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "jitter_rate": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "noise_amplitude": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "noise_frequency": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "origin": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "phase": {
+              "$ref": "#/$defs/param_string"
+            },
+            "pulse_frequency": {
+              "$ref": "#/$defs/param_float"
+            },
+            "pulse_speed": {
+              "$ref": "#/$defs/param_float"
+            },
+            "segments": {
+              "$ref": "#/$defs/param_int_min1_max256"
+            },
+            "start_time": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "target": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "width": {
+              "$ref": "#/$defs/param_float_min0"
+            }
+          },
+          "type": "object"
+        },
+        "parent": {
+          "$ref": "#/$defs/node_ref"
+        },
+        "seed": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "type": {
+          "const": "beam"
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "title": "beam",
+      "type": "object"
+    },
+    "node_camera": {
+      "additionalProperties": false,
+      "description": "Preview camera; tools use it by default.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "$ref": "#/$defs/node_id"
+        },
+        "inputs": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        },
+        "layer": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "outputs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "parameters": {
+          "additionalProperties": false,
+          "properties": {
+            "exposure": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "far": {
+              "$ref": "#/$defs/param_float_min0p001"
+            },
+            "fov": {
+              "$ref": "#/$defs/param_float_min1_max170"
+            },
+            "near": {
+              "$ref": "#/$defs/param_float_min0p0001"
+            },
+            "position": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "target": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "up": {
+              "$ref": "#/$defs/param_vec3"
+            }
+          },
+          "type": "object"
+        },
+        "parent": {
+          "$ref": "#/$defs/node_ref"
+        },
+        "seed": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "type": {
+          "const": "camera"
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "title": "camera",
+      "type": "object"
+    },
+    "node_collider": {
+      "additionalProperties": false,
+      "description": "A collision shape particles and volumes test against.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "$ref": "#/$defs/node_id"
+        },
+        "inputs": {
+          "additionalProperties": false,
+          "properties": {
+            "mesh": {
+              "$ref": "#/$defs/input_value"
+            }
+          },
+          "type": "object"
+        },
+        "layer": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "outputs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "parameters": {
+          "additionalProperties": false,
+          "properties": {
+            "bounce": {
+              "$ref": "#/$defs/param_float_min0_max1"
+            },
+            "collider_type": {
+              "$ref": "#/$defs/param_enum_plane_sphere_box_capsule_mesh_sdf"
+            },
+            "friction": {
+              "$ref": "#/$defs/param_float_min0_max1"
+            },
+            "height": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "kill_on_collision": {
+              "$ref": "#/$defs/param_bool"
+            },
+            "normal": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "position": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "radius": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "rotation": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "scale": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "size": {
+              "$ref": "#/$defs/param_vec3"
+            }
+          },
+          "type": "object"
+        },
+        "parent": {
+          "$ref": "#/$defs/node_ref"
+        },
+        "seed": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "type": {
+          "const": "collider"
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "title": "collider",
+      "type": "object"
+    },
+    "node_curve": {
+      "additionalProperties": false,
+      "description": "A path used by emitters, trails, beams and motion.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "$ref": "#/$defs/node_id"
+        },
+        "inputs": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        },
+        "layer": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "outputs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "parameters": {
+          "additionalProperties": false,
+          "properties": {
+            "closed": {
+              "$ref": "#/$defs/param_bool"
+            },
+            "curve_type": {
+              "$ref": "#/$defs/param_enum_linear_catmull_rom_bezier"
+            },
+            "noise_amplitude": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "noise_frequency": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "points": {
+              "$ref": "#/$defs/param_vec3_list"
+            },
+            "position": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "rotation": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "scale": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "segments": {
+              "$ref": "#/$defs/param_int_min1_max1024"
+            }
+          },
+          "type": "object"
+        },
+        "parent": {
+          "$ref": "#/$defs/node_ref"
+        },
+        "seed": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "type": {
+          "const": "curve"
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "title": "curve",
+      "type": "object"
+    },
+    "node_decal": {
+      "additionalProperties": false,
+      "description": "A projected sprite on the ground or a surface.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "$ref": "#/$defs/node_id"
+        },
+        "inputs": {
+          "additionalProperties": false,
+          "properties": {
+            "material": {
+              "$ref": "#/$defs/input_value"
+            },
+            "texture": {
+              "$ref": "#/$defs/input_value"
+            }
+          },
+          "type": "object"
+        },
+        "layer": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "outputs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "parameters": {
+          "additionalProperties": false,
+          "properties": {
+            "blend": {
+              "$ref": "#/$defs/param_enum_additive_alpha_premultiplied"
+            },
+            "color": {
+              "$ref": "#/$defs/param_color"
+            },
+            "duration": {
+              "$ref": "#/$defs/param_float"
+            },
+            "emissive": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "fade_in": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "fade_out": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "opacity": {
+              "$ref": "#/$defs/param_float_min0_max1"
+            },
+            "phase": {
+              "$ref": "#/$defs/param_string"
+            },
+            "position": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "projection_normal": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "rotation": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "scale": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "shape": {
+              "$ref": "#/$defs/param_enum_circle_rect"
+            },
+            "size": {
+              "$ref": "#/$defs/param_vec2"
+            },
+            "start_time": {
+              "$ref": "#/$defs/param_float_min0"
+            }
+          },
+          "type": "object"
+        },
+        "parent": {
+          "$ref": "#/$defs/node_ref"
+        },
+        "seed": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "type": {
+          "const": "decal"
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "title": "decal",
+      "type": "object"
+    },
+    "node_emitter": {
+      "additionalProperties": false,
+      "description": "Produces particles for one particle_system, or acts as a source for a volume.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "$ref": "#/$defs/node_id"
+        },
+        "inputs": {
+          "additionalProperties": false,
+          "properties": {
+            "particle": {
+              "$ref": "#/$defs/input_value"
+            },
+            "shape_curve": {
+              "$ref": "#/$defs/input_value"
+            },
+            "shape_mesh": {
+              "$ref": "#/$defs/input_value"
+            },
+            "shape_volume": {
+              "$ref": "#/$defs/input_value"
+            }
+          },
+          "type": "object"
+        },
+        "layer": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "outputs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "parameters": {
+          "additionalProperties": false,
+          "properties": {
+            "angle": {
+              "$ref": "#/$defs/param_float_min0_max180"
+            },
+            "burst_count": {
+              "$ref": "#/$defs/param_int_min0"
+            },
+            "burst_times": {
+              "$ref": "#/$defs/param_float_list"
+            },
+            "direction": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "duration": {
+              "$ref": "#/$defs/param_float"
+            },
+            "inherit_velocity": {
+              "$ref": "#/$defs/param_float_min0_max1"
+            },
+            "inner_radius": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "length": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "max_particles": {
+              "$ref": "#/$defs/param_int_min0"
+            },
+            "phase": {
+              "$ref": "#/$defs/param_string"
+            },
+            "position": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "radial_velocity": {
+              "$ref": "#/$defs/param_float"
+            },
+            "radius": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "rate": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "rotation": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "scale": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "shape": {
+              "$ref": "#/$defs/param_enum_point_sphere_hemisphere_box_disc_ring_cone_line_curve_mesh_volume"
+            },
+            "size": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "spread": {
+              "$ref": "#/$defs/param_float_min0_max180"
+            },
+            "start_time": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "surface_only": {
+              "$ref": "#/$defs/param_bool"
+            },
+            "velocity": {
+              "$ref": "#/$defs/param_float"
+            },
+            "velocity_variance": {
+              "$ref": "#/$defs/param_float_min0"
+            }
+          },
+          "type": "object"
+        },
+        "parent": {
+          "$ref": "#/$defs/node_ref"
+        },
+        "seed": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "type": {
+          "const": "emitter"
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "title": "emitter",
+      "type": "object"
+    },
+    "node_event": {
+      "additionalProperties": false,
+      "description": "Triggers bursts on target emitters when something happens.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "$ref": "#/$defs/node_id"
+        },
+        "inputs": {
+          "additionalProperties": false,
+          "properties": {
+            "source": {
+              "$ref": "#/$defs/input_value"
+            },
+            "targets": {
+              "$ref": "#/$defs/input_value"
+            }
+          },
+          "type": "object"
+        },
+        "layer": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "outputs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "parameters": {
+          "additionalProperties": false,
+          "properties": {
+            "burst_count": {
+              "$ref": "#/$defs/param_int_min0"
+            },
+            "distance": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "inherit_position": {
+              "$ref": "#/$defs/param_bool"
+            },
+            "inherit_velocity": {
+              "$ref": "#/$defs/param_float_min0_max1"
+            },
+            "max_triggers": {
+              "$ref": "#/$defs/param_int_min0"
+            },
+            "probability": {
+              "$ref": "#/$defs/param_float_min0_max1"
+            },
+            "time": {
+              "$ref": "#/$defs/param_float"
+            },
+            "trigger": {
+              "$ref": "#/$defs/param_enum_on_spawn_on_death_on_collision_on_distance_on_time_on_peak_on_impact"
+            }
+          },
+          "type": "object"
+        },
+        "parent": {
+          "$ref": "#/$defs/node_ref"
+        },
+        "seed": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "type": {
+          "const": "event"
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "title": "event",
+      "type": "object"
+    },
+    "node_field": {
+      "additionalProperties": false,
+      "description": "Sampled data grid (V1 evaluates only noise fields).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "$ref": "#/$defs/node_id"
+        },
+        "inputs": {
+          "additionalProperties": false,
+          "properties": {
+            "source": {
+              "$ref": "#/$defs/input_value"
+            }
+          },
+          "type": "object"
+        },
+        "layer": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "outputs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "parameters": {
+          "additionalProperties": false,
+          "properties": {
+            "bounds_max": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "bounds_min": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "field_type": {
+              "$ref": "#/$defs/param_enum_scalar_vector_density_temperature_fuel_velocity_sdf_noise"
+            },
+            "resolution": {
+              "$ref": "#/$defs/param_int_min4_max512"
+            }
+          },
+          "type": "object"
+        },
+        "parent": {
+          "$ref": "#/$defs/node_ref"
+        },
+        "seed": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "type": {
+          "const": "field"
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "title": "field",
+      "type": "object"
+    },
+    "node_force": {
+      "additionalProperties": false,
+      "description": "A force field applied to particles and volumes.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "$ref": "#/$defs/node_id"
+        },
+        "inputs": {
+          "additionalProperties": false,
+          "properties": {
+            "noise": {
+              "$ref": "#/$defs/input_value"
+            }
+          },
+          "type": "object"
+        },
+        "layer": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "outputs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "parameters": {
+          "additionalProperties": false,
+          "properties": {
+            "direction": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "duration": {
+              "$ref": "#/$defs/param_float"
+            },
+            "falloff": {
+              "$ref": "#/$defs/param_enum_none_linear_inverse_square_smooth"
+            },
+            "force_type": {
+              "$ref": "#/$defs/param_enum_gravity_directional_radial_vortex_turbulence_curl_noise_drag_attractor_repulsor_wind_buoyancy"
+            },
+            "frequency": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "octaves": {
+              "$ref": "#/$defs/param_int_min1_max8"
+            },
+            "phase": {
+              "$ref": "#/$defs/param_string"
+            },
+            "position": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "radius": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "speed": {
+              "$ref": "#/$defs/param_float"
+            },
+            "start_time": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "strength": {
+              "$ref": "#/$defs/param_float"
+            },
+            "temperature": {
+              "$ref": "#/$defs/param_float_min0"
+            }
+          },
+          "type": "object"
+        },
+        "parent": {
+          "$ref": "#/$defs/node_ref"
+        },
+        "seed": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "type": {
+          "const": "force"
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "title": "force",
+      "type": "object"
+    },
+    "node_id": {
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "type": "string"
+    },
+    "node_light": {
+      "additionalProperties": false,
+      "description": "A dynamic light the effect casts onto the scene.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "$ref": "#/$defs/node_id"
+        },
+        "inputs": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        },
+        "layer": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "outputs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "parameters": {
+          "additionalProperties": false,
+          "properties": {
+            "area_size": {
+              "$ref": "#/$defs/param_vec2"
+            },
+            "cast_shadows": {
+              "$ref": "#/$defs/param_bool"
+            },
+            "color": {
+              "$ref": "#/$defs/param_color"
+            },
+            "cone_angle": {
+              "$ref": "#/$defs/param_float_min0_max90"
+            },
+            "direction": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "duration": {
+              "$ref": "#/$defs/param_float"
+            },
+            "flicker_amplitude": {
+              "$ref": "#/$defs/param_float_min0_max1"
+            },
+            "flicker_frequency": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "intensity": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "light_type": {
+              "$ref": "#/$defs/param_enum_point_spot_area"
+            },
+            "phase": {
+              "$ref": "#/$defs/param_string"
+            },
+            "position": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "radius": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "rotation": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "scale": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "start_time": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "temperature": {
+              "$ref": "#/$defs/param_float_min0"
+            }
+          },
+          "type": "object"
+        },
+        "parent": {
+          "$ref": "#/$defs/node_ref"
+        },
+        "seed": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "type": {
+          "const": "light"
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "title": "light",
+      "type": "object"
+    },
+    "node_material": {
+      "additionalProperties": false,
+      "description": "Surface description shared by particles, meshes, trails, beams and decals.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "$ref": "#/$defs/node_id"
+        },
+        "inputs": {
+          "additionalProperties": false,
+          "properties": {
+            "base_texture": {
+              "$ref": "#/$defs/input_value"
+            },
+            "gradient_texture": {
+              "$ref": "#/$defs/input_value"
+            },
+            "noise_texture": {
+              "$ref": "#/$defs/input_value"
+            }
+          },
+          "type": "object"
+        },
+        "layer": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "outputs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "parameters": {
+          "additionalProperties": false,
+          "properties": {
+            "base_color": {
+              "$ref": "#/$defs/param_color"
+            },
+            "blend": {
+              "$ref": "#/$defs/param_enum_additive_alpha_premultiplied"
+            },
+            "depth_fade": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "dissolve": {
+              "$ref": "#/$defs/param_float_min0_max1"
+            },
+            "distortion": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "double_sided": {
+              "$ref": "#/$defs/param_bool"
+            },
+            "emissive_color": {
+              "$ref": "#/$defs/param_color"
+            },
+            "emissive_intensity": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "erosion": {
+              "$ref": "#/$defs/param_float_min0_max1"
+            },
+            "fresnel_power": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "opacity": {
+              "$ref": "#/$defs/param_float_min0_max1"
+            },
+            "shading": {
+              "$ref": "#/$defs/param_enum_unlit_lit"
+            },
+            "soft_particle": {
+              "$ref": "#/$defs/param_bool"
+            },
+            "temperature_gradient": {
+              "$ref": "#/$defs/param_gradient"
+            },
+            "uv_rotate": {
+              "$ref": "#/$defs/param_float"
+            },
+            "uv_scroll": {
+              "$ref": "#/$defs/param_vec2"
+            }
+          },
+          "type": "object"
+        },
+        "parent": {
+          "$ref": "#/$defs/node_ref"
+        },
+        "seed": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "type": {
+          "const": "material"
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "title": "material",
+      "type": "object"
+    },
+    "node_mesh": {
+      "additionalProperties": false,
+      "description": "A renderable mesh, an emitter shape or a particle instance source.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "$ref": "#/$defs/node_id"
+        },
+        "inputs": {
+          "additionalProperties": false,
+          "properties": {
+            "material": {
+              "$ref": "#/$defs/input_value"
+            }
+          },
+          "type": "object"
+        },
+        "layer": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "outputs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "parameters": {
+          "additionalProperties": false,
+          "properties": {
+            "color": {
+              "$ref": "#/$defs/param_color"
+            },
+            "duration": {
+              "$ref": "#/$defs/param_float"
+            },
+            "emissive": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "height": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "inner_radius": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "path": {
+              "$ref": "#/$defs/param_string"
+            },
+            "phase": {
+              "$ref": "#/$defs/param_string"
+            },
+            "position": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "primitive": {
+              "$ref": "#/$defs/param_enum_sphere_cube_plane_disc_ring_cone_cylinder_capsule_ribbon_tube"
+            },
+            "radius": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "rotation": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "scale": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "segments": {
+              "$ref": "#/$defs/param_int_min3_max256"
+            },
+            "size": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "source": {
+              "$ref": "#/$defs/param_enum_primitive_imported_procedural_generated_particle_instanced"
+            },
+            "start_time": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "visible": {
+              "$ref": "#/$defs/param_bool"
+            }
+          },
+          "type": "object"
+        },
+        "parent": {
+          "$ref": "#/$defs/node_ref"
+        },
+        "seed": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "type": {
+          "const": "mesh"
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "title": "mesh",
+      "type": "object"
+    },
+    "node_noise": {
+      "additionalProperties": false,
+      "description": "Parameter provider for forces and textures.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "$ref": "#/$defs/node_id"
+        },
+        "inputs": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        },
+        "layer": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "outputs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "parameters": {
+          "additionalProperties": false,
+          "properties": {
+            "amplitude": {
+              "$ref": "#/$defs/param_float"
+            },
+            "frequency": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "gain": {
+              "$ref": "#/$defs/param_float_min0_max1"
+            },
+            "lacunarity": {
+              "$ref": "#/$defs/param_float_min1"
+            },
+            "noise_type": {
+              "$ref": "#/$defs/param_enum_perlin_simplex_worley_fbm_curl_blue_noise_cellular"
+            },
+            "octaves": {
+              "$ref": "#/$defs/param_int_min1_max8"
+            },
+            "offset": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "speed": {
+              "$ref": "#/$defs/param_float"
+            }
+          },
+          "type": "object"
+        },
+        "parent": {
+          "$ref": "#/$defs/node_ref"
+        },
+        "seed": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "type": {
+          "const": "noise"
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "title": "noise",
+      "type": "object"
+    },
+    "node_particle_system": {
+      "additionalProperties": false,
+      "description": "Defines what a particle is: initial state, evolution over life, rendering.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "$ref": "#/$defs/node_id"
+        },
+        "inputs": {
+          "additionalProperties": false,
+          "properties": {
+            "colliders": {
+              "$ref": "#/$defs/input_value"
+            },
+            "forces": {
+              "$ref": "#/$defs/input_value"
+            },
+            "material": {
+              "$ref": "#/$defs/input_value"
+            },
+            "mesh": {
+              "$ref": "#/$defs/input_value"
+            },
+            "sprite": {
+              "$ref": "#/$defs/input_value"
+            },
+            "trail": {
+              "$ref": "#/$defs/input_value"
+            }
+          },
+          "type": "object"
+        },
+        "layer": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "outputs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "parameters": {
+          "additionalProperties": false,
+          "properties": {
+            "align_to_velocity": {
+              "$ref": "#/$defs/param_bool"
+            },
+            "angular_velocity": {
+              "$ref": "#/$defs/param_float"
+            },
+            "angular_velocity_variance": {
+              "$ref": "#/$defs/param_float"
+            },
+            "blend": {
+              "$ref": "#/$defs/param_enum_additive_alpha_premultiplied"
+            },
+            "bounce": {
+              "$ref": "#/$defs/param_float_min0_max1"
+            },
+            "collision_radius": {
+              "$ref": "#/$defs/param_float"
+            },
+            "color": {
+              "$ref": "#/$defs/param_color"
+            },
+            "color_over_life": {
+              "$ref": "#/$defs/param_gradient"
+            },
+            "drag": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "emissive": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "emissive_over_life": {
+              "$ref": "#/$defs/param_curve"
+            },
+            "friction": {
+              "$ref": "#/$defs/param_float_min0_max1"
+            },
+            "kill_on_collision": {
+              "$ref": "#/$defs/param_bool"
+            },
+            "lifetime": {
+              "$ref": "#/$defs/param_float_min0p001"
+            },
+            "lifetime_variance": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "mass": {
+              "$ref": "#/$defs/param_float_min0p0001"
+            },
+            "max_particles": {
+              "$ref": "#/$defs/param_int_min1_max2e_06"
+            },
+            "opacity": {
+              "$ref": "#/$defs/param_float_min0_max1"
+            },
+            "opacity_over_life": {
+              "$ref": "#/$defs/param_curve"
+            },
+            "physics": {
+              "$ref": "#/$defs/param_enum_none_rigid"
+            },
+            "render_mode": {
+              "$ref": "#/$defs/param_enum_billboard_stretched_billboard_mesh_ribbon_none"
+            },
+            "rotation": {
+              "$ref": "#/$defs/param_float"
+            },
+            "rotation_variance": {
+              "$ref": "#/$defs/param_float"
+            },
+            "size": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "size_over_life": {
+              "$ref": "#/$defs/param_curve"
+            },
+            "size_variance": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "soft_particle_distance": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "sort": {
+              "$ref": "#/$defs/param_bool"
+            },
+            "sprite_columns": {
+              "$ref": "#/$defs/param_int_min1_max64"
+            },
+            "sprite_fps": {
+              "$ref": "#/$defs/param_float"
+            },
+            "sprite_rows": {
+              "$ref": "#/$defs/param_int_min1_max64"
+            },
+            "velocity_stretch": {
+              "$ref": "#/$defs/param_float_min0"
+            }
+          },
+          "type": "object"
+        },
+        "parent": {
+          "$ref": "#/$defs/node_ref"
+        },
+        "seed": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "type": {
+          "const": "particle_system"
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "title": "particle_system",
+      "type": "object"
+    },
+    "node_post_effect": {
+      "additionalProperties": false,
+      "description": "Full-screen post process; use sparingly.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "$ref": "#/$defs/node_id"
+        },
+        "inputs": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        },
+        "layer": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "outputs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "parameters": {
+          "additionalProperties": false,
+          "properties": {
+            "duration": {
+              "$ref": "#/$defs/param_float"
+            },
+            "frequency": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "intensity": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "phase": {
+              "$ref": "#/$defs/param_string"
+            },
+            "post_type": {
+              "$ref": "#/$defs/param_enum_bloom_distortion_heat_haze_chromatic_aberration_exposure_pulse"
+            },
+            "radius": {
+              "$ref": "#/$defs/param_float_min0_max1"
+            },
+            "start_time": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "threshold": {
+              "$ref": "#/$defs/param_float_min0"
+            }
+          },
+          "type": "object"
+        },
+        "parent": {
+          "$ref": "#/$defs/node_ref"
+        },
+        "seed": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "type": {
+          "const": "post_effect"
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "title": "post_effect",
+      "type": "object"
+    },
+    "node_ref": {
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)?$",
+      "type": "string"
+    },
+    "node_texture": {
+      "additionalProperties": false,
+      "description": "Procedural texture graph or file, baked by the compiler.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "$ref": "#/$defs/node_id"
+        },
+        "inputs": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        },
+        "layer": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "outputs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "parameters": {
+          "additionalProperties": false,
+          "properties": {
+            "frames": {
+              "$ref": "#/$defs/param_int_min1_max256"
+            },
+            "graph": {
+              "$ref": "#/$defs/param_json"
+            },
+            "height": {
+              "$ref": "#/$defs/param_int_min1_max4096"
+            },
+            "path": {
+              "$ref": "#/$defs/param_string"
+            },
+            "source": {
+              "$ref": "#/$defs/param_enum_procedural_file"
+            },
+            "width": {
+              "$ref": "#/$defs/param_int_min1_max4096"
+            }
+          },
+          "type": "object"
+        },
+        "parent": {
+          "$ref": "#/$defs/node_ref"
+        },
+        "seed": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "type": {
+          "const": "texture"
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "title": "texture",
+      "type": "object"
+    },
+    "node_trail": {
+      "additionalProperties": false,
+      "description": "A ribbon following a source node or a particle.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "$ref": "#/$defs/node_id"
+        },
+        "inputs": {
+          "additionalProperties": false,
+          "properties": {
+            "material": {
+              "$ref": "#/$defs/input_value"
+            },
+            "source": {
+              "$ref": "#/$defs/input_value"
+            }
+          },
+          "type": "object"
+        },
+        "layer": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "outputs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "parameters": {
+          "additionalProperties": false,
+          "properties": {
+            "blend": {
+              "$ref": "#/$defs/param_enum_additive_alpha_premultiplied"
+            },
+            "color": {
+              "$ref": "#/$defs/param_color"
+            },
+            "duration": {
+              "$ref": "#/$defs/param_float"
+            },
+            "emissive": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "lifetime": {
+              "$ref": "#/$defs/param_float_min0p001"
+            },
+            "max_segments": {
+              "$ref": "#/$defs/param_int_min2_max1024"
+            },
+            "min_vertex_distance": {
+              "$ref": "#/$defs/param_float_min0p0001"
+            },
+            "noise_amplitude": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "noise_frequency": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "opacity_over_life": {
+              "$ref": "#/$defs/param_curve"
+            },
+            "phase": {
+              "$ref": "#/$defs/param_string"
+            },
+            "start_time": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "taper": {
+              "$ref": "#/$defs/param_curve"
+            },
+            "twist": {
+              "$ref": "#/$defs/param_float"
+            },
+            "uv_scroll": {
+              "$ref": "#/$defs/param_float"
+            },
+            "width": {
+              "$ref": "#/$defs/param_float_min0"
+            }
+          },
+          "type": "object"
+        },
+        "parent": {
+          "$ref": "#/$defs/node_ref"
+        },
+        "seed": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "type": {
+          "const": "trail"
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "title": "trail",
+      "type": "object"
+    },
+    "node_volume": {
+      "additionalProperties": false,
+      "description": "Volumetric simulation (Tier 3; the V1 backend is a stub that reports statistics).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "$ref": "#/$defs/node_id"
+        },
+        "inputs": {
+          "additionalProperties": false,
+          "properties": {
+            "colliders": {
+              "$ref": "#/$defs/input_value"
+            },
+            "forces": {
+              "$ref": "#/$defs/input_value"
+            },
+            "material": {
+              "$ref": "#/$defs/input_value"
+            },
+            "sources": {
+              "$ref": "#/$defs/input_value"
+            }
+          },
+          "type": "object"
+        },
+        "layer": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "outputs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "parameters": {
+          "additionalProperties": false,
+          "properties": {
+            "bounds": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "buoyancy": {
+              "$ref": "#/$defs/param_float"
+            },
+            "combustion_rate": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "cooling": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "density": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "dissipation": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "duration": {
+              "$ref": "#/$defs/param_float"
+            },
+            "expansion": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "fuel": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "phase": {
+              "$ref": "#/$defs/param_string"
+            },
+            "position": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "rotation": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "scale": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "start_time": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "temperature": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "volume_type": {
+              "$ref": "#/$defs/param_enum_smoke_fire_fog_dust_magic_generic_density"
+            },
+            "vorticity": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "voxel_size": {
+              "$ref": "#/$defs/param_float_min0p005_max1"
+            }
+          },
+          "type": "object"
+        },
+        "parent": {
+          "$ref": "#/$defs/node_ref"
+        },
+        "seed": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "type": {
+          "const": "volume"
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "title": "volume",
+      "type": "object"
+    },
+    "param_bool": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_color": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/color"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "$ref": "#/$defs/color"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_curve": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/curve"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "$ref": "#/$defs/curve"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_enum_additive_alpha_premultiplied": {
+      "anyOf": [
+        {
+          "enum": [
+            "additive",
+            "alpha",
+            "premultiplied"
+          ],
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "enum": [
+                "additive",
+                "alpha",
+                "premultiplied"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_enum_billboard_stretched_billboard_mesh_ribbon_none": {
+      "anyOf": [
+        {
+          "enum": [
+            "billboard",
+            "stretched_billboard",
+            "mesh",
+            "ribbon",
+            "none"
+          ],
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "enum": [
+                "billboard",
+                "stretched_billboard",
+                "mesh",
+                "ribbon",
+                "none"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_enum_bloom_distortion_heat_haze_chromatic_aberration_exposure_pulse": {
+      "anyOf": [
+        {
+          "enum": [
+            "bloom",
+            "distortion",
+            "heat_haze",
+            "chromatic_aberration",
+            "exposure_pulse"
+          ],
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "enum": [
+                "bloom",
+                "distortion",
+                "heat_haze",
+                "chromatic_aberration",
+                "exposure_pulse"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_enum_circle_rect": {
+      "anyOf": [
+        {
+          "enum": [
+            "circle",
+            "rect"
+          ],
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "enum": [
+                "circle",
+                "rect"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_enum_gravity_directional_radial_vortex_turbulence_curl_noise_drag_attractor_repulsor_wind_buoyancy": {
+      "anyOf": [
+        {
+          "enum": [
+            "gravity",
+            "directional",
+            "radial",
+            "vortex",
+            "turbulence",
+            "curl_noise",
+            "drag",
+            "attractor",
+            "repulsor",
+            "wind",
+            "buoyancy"
+          ],
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "enum": [
+                "gravity",
+                "directional",
+                "radial",
+                "vortex",
+                "turbulence",
+                "curl_noise",
+                "drag",
+                "attractor",
+                "repulsor",
+                "wind",
+                "buoyancy"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_enum_linear_catmull_rom_bezier": {
+      "anyOf": [
+        {
+          "enum": [
+            "linear",
+            "catmull_rom",
+            "bezier"
+          ],
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "enum": [
+                "linear",
+                "catmull_rom",
+                "bezier"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_enum_none_linear_inverse_square_smooth": {
+      "anyOf": [
+        {
+          "enum": [
+            "none",
+            "linear",
+            "inverse_square",
+            "smooth"
+          ],
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "enum": [
+                "none",
+                "linear",
+                "inverse_square",
+                "smooth"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_enum_none_rigid": {
+      "anyOf": [
+        {
+          "enum": [
+            "none",
+            "rigid"
+          ],
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "enum": [
+                "none",
+                "rigid"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_enum_on_spawn_on_death_on_collision_on_distance_on_time_on_peak_on_impact": {
+      "anyOf": [
+        {
+          "enum": [
+            "on_spawn",
+            "on_death",
+            "on_collision",
+            "on_distance",
+            "on_time",
+            "on_peak",
+            "on_impact"
+          ],
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "enum": [
+                "on_spawn",
+                "on_death",
+                "on_collision",
+                "on_distance",
+                "on_time",
+                "on_peak",
+                "on_impact"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_enum_perlin_simplex_worley_fbm_curl_blue_noise_cellular": {
+      "anyOf": [
+        {
+          "enum": [
+            "perlin",
+            "simplex",
+            "worley",
+            "fbm",
+            "curl",
+            "blue_noise",
+            "cellular"
+          ],
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "enum": [
+                "perlin",
+                "simplex",
+                "worley",
+                "fbm",
+                "curl",
+                "blue_noise",
+                "cellular"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_enum_plane_sphere_box_capsule_mesh_sdf": {
+      "anyOf": [
+        {
+          "enum": [
+            "plane",
+            "sphere",
+            "box",
+            "capsule",
+            "mesh",
+            "sdf"
+          ],
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "enum": [
+                "plane",
+                "sphere",
+                "box",
+                "capsule",
+                "mesh",
+                "sdf"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_enum_point_sphere_hemisphere_box_disc_ring_cone_line_curve_mesh_volume": {
+      "anyOf": [
+        {
+          "enum": [
+            "point",
+            "sphere",
+            "hemisphere",
+            "box",
+            "disc",
+            "ring",
+            "cone",
+            "line",
+            "curve",
+            "mesh",
+            "volume"
+          ],
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "enum": [
+                "point",
+                "sphere",
+                "hemisphere",
+                "box",
+                "disc",
+                "ring",
+                "cone",
+                "line",
+                "curve",
+                "mesh",
+                "volume"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_enum_point_spot_area": {
+      "anyOf": [
+        {
+          "enum": [
+            "point",
+            "spot",
+            "area"
+          ],
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "enum": [
+                "point",
+                "spot",
+                "area"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_enum_primitive_imported_procedural_generated_particle_instanced": {
+      "anyOf": [
+        {
+          "enum": [
+            "primitive",
+            "imported",
+            "procedural",
+            "generated",
+            "particle_instanced"
+          ],
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "enum": [
+                "primitive",
+                "imported",
+                "procedural",
+                "generated",
+                "particle_instanced"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_enum_procedural_file": {
+      "anyOf": [
+        {
+          "enum": [
+            "procedural",
+            "file"
+          ],
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "enum": [
+                "procedural",
+                "file"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_enum_scalar_vector_density_temperature_fuel_velocity_sdf_noise": {
+      "anyOf": [
+        {
+          "enum": [
+            "scalar",
+            "vector",
+            "density",
+            "temperature",
+            "fuel",
+            "velocity",
+            "sdf",
+            "noise"
+          ],
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "enum": [
+                "scalar",
+                "vector",
+                "density",
+                "temperature",
+                "fuel",
+                "velocity",
+                "sdf",
+                "noise"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_enum_smoke_fire_fog_dust_magic_generic_density": {
+      "anyOf": [
+        {
+          "enum": [
+            "smoke",
+            "fire",
+            "fog",
+            "dust",
+            "magic",
+            "generic_density"
+          ],
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "enum": [
+                "smoke",
+                "fire",
+                "fog",
+                "dust",
+                "magic",
+                "generic_density"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_enum_sphere_cube_plane_disc_ring_cone_cylinder_capsule_ribbon_tube": {
+      "anyOf": [
+        {
+          "enum": [
+            "sphere",
+            "cube",
+            "plane",
+            "disc",
+            "ring",
+            "cone",
+            "cylinder",
+            "capsule",
+            "ribbon",
+            "tube"
+          ],
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "enum": [
+                "sphere",
+                "cube",
+                "plane",
+                "disc",
+                "ring",
+                "cone",
+                "cylinder",
+                "capsule",
+                "ribbon",
+                "tube"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_enum_unlit_lit": {
+      "anyOf": [
+        {
+          "enum": [
+            "unlit",
+            "lit"
+          ],
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "enum": [
+                "unlit",
+                "lit"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_float": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_float_list": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/float_list"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "$ref": "#/$defs/float_list"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_float_min0": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "minimum": 0,
+              "type": "number"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_float_min0_max1": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_float_min0_max180": {
+      "anyOf": [
+        {
+          "maximum": 180,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "maximum": 180,
+              "minimum": 0,
+              "type": "number"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_float_min0_max90": {
+      "anyOf": [
+        {
+          "maximum": 90,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "maximum": 90,
+              "minimum": 0,
+              "type": "number"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_float_min0p0001": {
+      "anyOf": [
+        {
+          "minimum": 0.0001,
+          "type": "number"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "minimum": 0.0001,
+              "type": "number"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_float_min0p001": {
+      "anyOf": [
+        {
+          "minimum": 0.001,
+          "type": "number"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "minimum": 0.001,
+              "type": "number"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_float_min0p005_max1": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0.005,
+          "type": "number"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "maximum": 1,
+              "minimum": 0.005,
+              "type": "number"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_float_min1": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "number"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_float_min1_max170": {
+      "anyOf": [
+        {
+          "maximum": 170,
+          "minimum": 1,
+          "type": "number"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "maximum": 170,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_gradient": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/gradient"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "$ref": "#/$defs/gradient"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_int_min0": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_int_min0_max16": {
+      "anyOf": [
+        {
+          "maximum": 16,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "maximum": 16,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_int_min1_max1024": {
+      "anyOf": [
+        {
+          "maximum": 1024,
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "maximum": 1024,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_int_min1_max256": {
+      "anyOf": [
+        {
+          "maximum": 256,
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "maximum": 256,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_int_min1_max2e_06": {
+      "anyOf": [
+        {
+          "maximum": 2000000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "maximum": 2000000,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_int_min1_max4096": {
+      "anyOf": [
+        {
+          "maximum": 4096,
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "maximum": 4096,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_int_min1_max64": {
+      "anyOf": [
+        {
+          "maximum": 64,
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "maximum": 64,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_int_min1_max8": {
+      "anyOf": [
+        {
+          "maximum": 8,
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "maximum": 8,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_int_min2_max1024": {
+      "anyOf": [
+        {
+          "maximum": 1024,
+          "minimum": 2,
+          "type": "integer"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "maximum": 1024,
+              "minimum": 2,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_int_min3_max256": {
+      "anyOf": [
+        {
+          "maximum": 256,
+          "minimum": 3,
+          "type": "integer"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "maximum": 256,
+              "minimum": 3,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_int_min4_max512": {
+      "anyOf": [
+        {
+          "maximum": 512,
+          "minimum": 4,
+          "type": "integer"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "maximum": 512,
+              "minimum": 4,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_json": {
+      "anyOf": [
+        {},
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {}
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_string": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_vec2": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/vec2"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "$ref": "#/$defs/vec2"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_vec3": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/vec3"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "$ref": "#/$defs/vec3"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_vec3_list": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/vec3_list"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "$ref": "#/$defs/vec3_list"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "timeline": {
+      "additionalProperties": false,
+      "properties": {
+        "phases": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "end": {
+                "type": "number"
+              },
+              "name": {
+                "type": "string"
+              },
+              "start": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "name",
+              "start",
+              "end"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "vec2": {
+      "items": {
+        "type": "number"
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "type": "array"
+    },
+    "vec3": {
+      "items": {
+        "type": "number"
+      },
+      "maxItems": 3,
+      "minItems": 3,
+      "type": "array"
+    },
+    "vec3_list": {
+      "items": {
+        "$ref": "#/$defs/vec3"
+      },
+      "type": "array"
+    },
+    "vec4": {
+      "items": {
+        "type": "number"
+      },
+      "maxItems": 4,
+      "minItems": 4,
+      "type": "array"
+    }
+  },
+  "$id": "https://aetherfx.dev/schema/effect.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "An AetherFX effect document (schema 0.1.0). Generated from aether::SpecRegistry.",
+  "properties": {
+    "duration": {
+      "minimum": 0.01,
+      "type": "number"
+    },
+    "layers": {
+      "items": {
+        "$ref": "#/$defs/layer"
+      },
+      "type": "array"
+    },
+    "metadata": {
+      "type": "object"
+    },
+    "name": {
+      "type": "string"
+    },
+    "nodes": {
+      "items": {
+        "$ref": "#/$defs/node"
+      },
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "type": "string"
+    },
+    "seed": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "timeline": {
+      "$ref": "#/$defs/timeline"
+    }
+  },
+  "required": [
+    "name",
+    "duration",
+    "nodes"
+  ],
+  "title": "AetherFX Effect",
+  "type": "object"
+}

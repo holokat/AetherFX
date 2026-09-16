@@ -1,0 +1,817 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aetherfx.dev/schema/ead.schema.json",
+  "title": "Effect Analysis Document",
+  "description": "Output of AetherFX reference analysis (Mode A) and the planning input for semantic generation (Mode B). Generated from aetherfx.ead; see docs/EAD.md.",
+  "x-ead-version": "0.1.0",
+  "$defs": {
+    "DominantColor": {
+      "additionalProperties": false,
+      "description": "One entry of a colour palette: linear RGB plus the share of the image.",
+      "properties": {
+        "rgb": {
+          "description": "Linear RGB; values may exceed 1 for emissive colours.",
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Rgb",
+          "type": "array"
+        },
+        "share": {
+          "description": "Fraction of the analysed pixels this colour covers.",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Share",
+          "type": "number"
+        },
+        "role": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "What the colour is, e.g. 'flame', 'smoke', 'rim'.",
+          "title": "Role"
+        }
+      },
+      "required": [
+        "rgb",
+        "share"
+      ],
+      "title": "DominantColor",
+      "type": "object"
+    },
+    "GlobalAnalysis": {
+      "additionalProperties": false,
+      "description": "Whole-image observations.  Serialised as the ``global`` member.",
+      "properties": {
+        "effect_category": {
+          "description": "Open vocabulary; documented values: fire_aoe, projectile, beam, impact, aura, environmental.",
+          "title": "Effect Category",
+          "type": "string"
+        },
+        "estimated_scale_m": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Rough world size in metres.",
+          "title": "Estimated Scale M"
+        },
+        "visual_style": {
+          "default": "stylized",
+          "enum": [
+            "realistic",
+            "stylized",
+            "painterly",
+            "anime",
+            "hybrid"
+          ],
+          "title": "Visual Style",
+          "type": "string"
+        },
+        "dominant_colors": {
+          "items": {
+            "$ref": "#/$defs/DominantColor"
+          },
+          "title": "Dominant Colors",
+          "type": "array"
+        },
+        "contrast": {
+          "default": "medium",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "title": "Contrast",
+          "type": "string"
+        },
+        "energy": {
+          "default": "moderate",
+          "enum": [
+            "calm",
+            "moderate",
+            "violent"
+          ],
+          "title": "Energy",
+          "type": "string"
+        },
+        "symmetry": {
+          "default": "none",
+          "enum": [
+            "radial",
+            "bilateral",
+            "none"
+          ],
+          "title": "Symmetry",
+          "type": "string"
+        },
+        "camera_angle": {
+          "default": "three_quarter",
+          "enum": [
+            "top_down",
+            "three_quarter",
+            "eye_level",
+            "low"
+          ],
+          "title": "Camera Angle",
+          "type": "string"
+        },
+        "probable_duration_s": {
+          "default": 2.0,
+          "description": "Inferred effect duration in seconds.",
+          "exclusiveMinimum": 0.0,
+          "title": "Probable Duration S",
+          "type": "number"
+        },
+        "confidence": {
+          "default": 0.5,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        }
+      },
+      "required": [
+        "effect_category"
+      ],
+      "title": "GlobalAnalysis",
+      "type": "object"
+    },
+    "ImplementationPlanEntry": {
+      "additionalProperties": false,
+      "description": "The nodes that realise one analysed layer.",
+      "properties": {
+        "layer": {
+          "description": "Layer id; should match a LayerAnalysis.id.",
+          "title": "Layer",
+          "type": "string"
+        },
+        "nodes": {
+          "items": {
+            "$ref": "#/$defs/PlannedNode"
+          },
+          "title": "Nodes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "layer"
+      ],
+      "title": "ImplementationPlanEntry",
+      "type": "object"
+    },
+    "LayerAnalysis": {
+      "additionalProperties": false,
+      "description": "One visually separable element of the effect.",
+      "properties": {
+        "id": {
+          "description": "Stable identifier, e.g. 'outer_flame_wall'.",
+          "title": "Id",
+          "type": "string"
+        },
+        "semantic_role": {
+          "enum": [
+            "telegraph",
+            "ignition",
+            "primary",
+            "secondary",
+            "interaction",
+            "aftermath"
+          ],
+          "title": "Semantic Role",
+          "type": "string"
+        },
+        "primitive": {
+          "description": "The vocabulary node type that best matches this layer.",
+          "enum": [
+            "emitter",
+            "particle_system",
+            "volume",
+            "force",
+            "field",
+            "mesh",
+            "curve",
+            "trail",
+            "beam",
+            "light",
+            "decal",
+            "material",
+            "event",
+            "noise",
+            "collider",
+            "camera",
+            "post_effect",
+            "texture"
+          ],
+          "title": "Primitive",
+          "type": "string"
+        },
+        "shape_hint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Free-form, e.g. 'ring', 'column', 'sheet'.",
+          "title": "Shape Hint"
+        },
+        "screen_coverage": {
+          "default": 0.0,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Screen Coverage",
+          "type": "number"
+        },
+        "world_hypothesis": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WorldHypothesis"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "depth": {
+          "default": "midground",
+          "enum": [
+            "foreground",
+            "midground",
+            "background"
+          ],
+          "title": "Depth",
+          "type": "string"
+        },
+        "inside_of": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Layer id that contains this one, if any.",
+          "title": "Inside Of"
+        },
+        "color": {
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "description": "Representative linear RGB.",
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Color",
+          "type": "array"
+        },
+        "brightness": {
+          "default": "lit",
+          "enum": [
+            "emissive_high",
+            "emissive",
+            "lit",
+            "dark"
+          ],
+          "title": "Brightness",
+          "type": "string"
+        },
+        "opacity": {
+          "default": "translucent",
+          "enum": [
+            "opaque",
+            "translucent",
+            "additive_glow"
+          ],
+          "title": "Opacity",
+          "type": "string"
+        },
+        "material_behavior": {
+          "default": "energy",
+          "enum": [
+            "flame",
+            "smoke",
+            "sparks",
+            "solid",
+            "energy",
+            "liquid",
+            "distortion"
+          ],
+          "title": "Material Behavior",
+          "type": "string"
+        },
+        "motion_hypothesis": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MotionHypothesis"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "simulation_type": {
+          "default": "particles",
+          "enum": [
+            "particles",
+            "analytic",
+            "rigid",
+            "volume"
+          ],
+          "title": "Simulation Type",
+          "type": "string"
+        },
+        "confidence": {
+          "default": 0.5,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "semantic_role",
+        "primitive"
+      ],
+      "title": "LayerAnalysis",
+      "type": "object"
+    },
+    "MotionHypothesis": {
+      "additionalProperties": false,
+      "description": "Guessed motion.  ``inferred`` stays true for anything read off a still.",
+      "properties": {
+        "inferred": {
+          "default": true,
+          "title": "Inferred",
+          "type": "boolean"
+        },
+        "description": {
+          "description": "Plain language, e.g. 'rising turbulent flames'.",
+          "title": "Description",
+          "type": "string"
+        },
+        "speed_mps": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Speed Mps"
+        },
+        "direction": {
+          "anyOf": [
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Direction"
+        }
+      },
+      "required": [
+        "description"
+      ],
+      "title": "MotionHypothesis",
+      "type": "object"
+    },
+    "OcclusionPair": {
+      "additionalProperties": false,
+      "description": "``front`` draws over ``behind``; both are layer ids.",
+      "properties": {
+        "front": {
+          "title": "Front",
+          "type": "string"
+        },
+        "behind": {
+          "title": "Behind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "front",
+        "behind"
+      ],
+      "title": "OcclusionPair",
+      "type": "object"
+    },
+    "PlannedNode": {
+      "additionalProperties": true,
+      "description": "One node to create, as ``type`` plus free-form parameters.\n\ndocs/EAD.md writes planned nodes flat - ``{\"type\": \"emitter\", \"shape\":\n\"ring\", \"radius\": 3.0}`` - so any member other than ``type``, ``id`` and\n``parameters`` is folded into :attr:`parameters` on validation and written\nback flat on serialisation.  Parameter names and value encodings are not\nchecked here; the engine validates them (E004/E005/E006/E007) and reports\ndiagnostics on ``create_node``.",
+      "properties": {
+        "type": {
+          "enum": [
+            "emitter",
+            "particle_system",
+            "volume",
+            "force",
+            "field",
+            "mesh",
+            "curve",
+            "trail",
+            "beam",
+            "light",
+            "decal",
+            "material",
+            "event",
+            "noise",
+            "collider",
+            "camera",
+            "post_effect",
+            "texture"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional node id; the planner derives one when absent.",
+          "title": "Id"
+        },
+        "parameters": {
+          "additionalProperties": true,
+          "title": "Parameters",
+          "type": "object"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "PlannedNode",
+      "type": "object"
+    },
+    "PrimaryForm": {
+      "additionalProperties": false,
+      "description": "A silhouette read off the reference, with where it sits on screen.",
+      "properties": {
+        "form": {
+          "enum": [
+            "ring",
+            "circle",
+            "sphere",
+            "column",
+            "cone",
+            "beam",
+            "arc",
+            "wave",
+            "cloud",
+            "spiral",
+            "trail",
+            "explosion"
+          ],
+          "title": "Form",
+          "type": "string"
+        },
+        "screen_bbox": {
+          "anyOf": [
+            {
+              "maxItems": 4,
+              "minItems": 4,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "[x0, y0, x1, y1] normalised to [0,1] with the origin at the top left.",
+          "title": "Screen Bbox"
+        },
+        "role": {
+          "description": "What this form is in the effect, e.g. 'outer flame wall'.",
+          "title": "Role",
+          "type": "string"
+        },
+        "confidence": {
+          "default": 0.5,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        }
+      },
+      "required": [
+        "form",
+        "role"
+      ],
+      "title": "PrimaryForm",
+      "type": "object"
+    },
+    "Source": {
+      "additionalProperties": false,
+      "description": "Where the analysis came from.",
+      "properties": {
+        "kind": {
+          "enum": [
+            "image",
+            "video",
+            "text"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Reference image or video path, when there is a file.",
+          "title": "Path"
+        },
+        "prompt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Text prompt, or extra instructions given with an image.",
+          "title": "Prompt"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "Source",
+      "type": "object"
+    },
+    "TemporalHypothesis": {
+      "additionalProperties": false,
+      "description": "The guessed timeline.  Always ``inferred`` when the source is a still.",
+      "properties": {
+        "inferred": {
+          "default": true,
+          "title": "Inferred",
+          "type": "boolean"
+        },
+        "phases": {
+          "items": {
+            "$ref": "#/$defs/TemporalPhase"
+          },
+          "title": "Phases",
+          "type": "array"
+        }
+      },
+      "title": "TemporalHypothesis",
+      "type": "object"
+    },
+    "TemporalPhase": {
+      "additionalProperties": false,
+      "description": "One absolute ``[start, end]`` window in seconds.",
+      "properties": {
+        "name": {
+          "description": "anticipation | activation | peak | sustain | decay | <custom>",
+          "title": "Name",
+          "type": "string"
+        },
+        "start": {
+          "minimum": 0.0,
+          "title": "Start",
+          "type": "number"
+        },
+        "end": {
+          "minimum": 0.0,
+          "title": "End",
+          "type": "number"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        }
+      },
+      "required": [
+        "name",
+        "start",
+        "end"
+      ],
+      "title": "TemporalPhase",
+      "type": "object"
+    },
+    "WorldHypothesis": {
+      "additionalProperties": false,
+      "description": "Guessed world-space placement and size of a layer, in metres.",
+      "properties": {
+        "center": {
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Center",
+          "type": "array"
+        },
+        "radius_m": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Radius M"
+        },
+        "height_m": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Height M"
+        },
+        "length_m": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Length M"
+        }
+      },
+      "title": "WorldHypothesis",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "ead_version": {
+      "default": "0.1.0",
+      "title": "Ead Version",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/Source"
+    },
+    "global": {
+      "$ref": "#/$defs/GlobalAnalysis"
+    },
+    "primary_forms": {
+      "items": {
+        "$ref": "#/$defs/PrimaryForm"
+      },
+      "title": "Primary Forms",
+      "type": "array"
+    },
+    "layers": {
+      "items": {
+        "$ref": "#/$defs/LayerAnalysis"
+      },
+      "title": "Layers",
+      "type": "array"
+    },
+    "temporal_hypothesis": {
+      "$ref": "#/$defs/TemporalHypothesis"
+    },
+    "occlusion": {
+      "items": {
+        "$ref": "#/$defs/OcclusionPair"
+      },
+      "title": "Occlusion",
+      "type": "array"
+    },
+    "implementation_plan": {
+      "items": {
+        "$ref": "#/$defs/ImplementationPlanEntry"
+      },
+      "title": "Implementation Plan",
+      "type": "array"
+    },
+    "open_questions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Open Questions",
+      "type": "array"
+    }
+  },
+  "required": [
+    "source",
+    "global"
+  ],
+  "type": "object"
+}

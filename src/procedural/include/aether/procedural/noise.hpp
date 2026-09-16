@@ -15,13 +15,17 @@ float perlin3(Vec3 p, uint32_t seed);
 float simplex2(Vec2 p, uint32_t seed);
 float simplex3(Vec3 p, uint32_t seed);
 float simplex4(Vec4 p, uint32_t seed);   // 4th component used for animation
+float perlin4(Vec4 p, uint32_t seed);    // 4D Perlin (tiling texture ops embed uv on a 4D torus)
 
 // Worley / cellular: F1 distance in [0, ~1.5]; `f2` receives F2 when non-null.
 float worley2(Vec2 p, uint32_t seed, float* f2 = nullptr);
 float worley3(Vec3 p, uint32_t seed, float* f2 = nullptr);
-// Cell id noise: constant random value in [0,1) per cell.
+float worley4(Vec4 p, uint32_t seed, float* f2 = nullptr);
+// Cell id noise: constant random value in [0,1), constant inside each Voronoi cell
+// (the cell owning the nearest feature point).
 float cellular2(Vec2 p, uint32_t seed);
 float cellular3(Vec3 p, uint32_t seed);
+float cellular4(Vec4 p, uint32_t seed);
 
 struct FbmParams {
     int octaves = 3;
@@ -42,6 +46,7 @@ Vec3 curl4(Vec3 p, float time, uint32_t seed, const FbmParams& params, float eps
 // Blue-noise-like value per integer cell (hash based, not true blue noise).
 float hash_noise2(Vec2 cell, uint32_t seed);
 float hash_noise3(Vec3 cell, uint32_t seed);
+float hash_noise4(Vec4 cell, uint32_t seed);
 
 // Dispatch matching the `noise` node vocabulary (docs/VOCABULARY.md).
 struct NoiseNodeParams {

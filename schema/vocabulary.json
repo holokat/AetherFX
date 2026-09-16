@@ -1,0 +1,3444 @@
+{
+  "blend_modes": [
+    "additive",
+    "alpha",
+    "premultiplied"
+  ],
+  "layer_roles": [
+    "telegraph",
+    "ignition",
+    "primary",
+    "secondary",
+    "interaction",
+    "aftermath",
+    "custom"
+  ],
+  "node_types": {
+    "beam": {
+      "default_tier": 0,
+      "description": "Analytic lightning / laser between two points.",
+      "inputs": {
+        "material": {
+          "accepts": [
+            "material"
+          ],
+          "description": "surface description",
+          "multi": false,
+          "required": false
+        },
+        "origin_node": {
+          "accepts": [
+            "mesh",
+            "emitter",
+            "light",
+            "curve"
+          ],
+          "description": "node whose world position overrides origin",
+          "multi": false,
+          "required": false
+        },
+        "target_node": {
+          "accepts": [
+            "mesh",
+            "emitter",
+            "light",
+            "curve"
+          ],
+          "description": "node whose world position overrides target",
+          "multi": false,
+          "required": false
+        }
+      },
+      "outputs": [
+        "beam"
+      ],
+      "parameters": {
+        "blend": {
+          "animatable": false,
+          "default": "additive",
+          "description": "blend mode",
+          "enum": [
+            "additive",
+            "alpha",
+            "premultiplied"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
+          "units": ""
+        },
+        "branch_length": {
+          "animatable": false,
+          "default": 0.3,
+          "description": "fraction of the main beam length",
+          "enum": [],
+          "max": 1,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "branch_probability": {
+          "animatable": false,
+          "default": 0.5,
+          "description": "chance a branch is spawned",
+          "enum": [],
+          "max": 1,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "branching": {
+          "animatable": false,
+          "default": 0,
+          "description": "branch count",
+          "enum": [],
+          "max": 16,
+          "min": 0,
+          "type": "int",
+          "units": ""
+        },
+        "color": {
+          "animatable": true,
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "description": "beam color (linear)",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "color",
+          "units": ""
+        },
+        "duration": {
+          "animatable": false,
+          "default": -1.0,
+          "description": "active duration; -1 = until the end of the effect",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "s"
+        },
+        "emissive": {
+          "animatable": true,
+          "default": 4.0,
+          "description": "emissive multiplier (HDR)",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "jitter_rate": {
+          "animatable": false,
+          "default": 30.0,
+          "description": "re-randomizations per second (0 = static)",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "1/s"
+        },
+        "noise_amplitude": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "displacement of interior points",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "m"
+        },
+        "noise_frequency": {
+          "animatable": false,
+          "default": 4.0,
+          "description": "displacement frequency",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "1/m"
+        },
+        "origin": {
+          "animatable": true,
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "description": "start point (world)",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": "m"
+        },
+        "phase": {
+          "animatable": false,
+          "default": "",
+          "description": "timeline phase name; when set it overrides start_time/duration",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "string",
+          "units": ""
+        },
+        "pulse_frequency": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "pulses per beam length",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": ""
+        },
+        "pulse_speed": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "pulse travel speed (beam lengths/s)",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "1/s"
+        },
+        "segments": {
+          "animatable": false,
+          "default": 16,
+          "description": "polyline segments",
+          "enum": [],
+          "max": 256,
+          "min": 1,
+          "type": "int",
+          "units": ""
+        },
+        "start_time": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "effect time at which the node becomes active",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "s"
+        },
+        "target": {
+          "animatable": true,
+          "default": [
+            0.0,
+            2.0,
+            0.0
+          ],
+          "description": "end point (world)",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": "m"
+        },
+        "width": {
+          "animatable": true,
+          "default": 0.05,
+          "description": "beam width",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "m"
+        }
+      },
+      "spatial": false,
+      "time_bound": true,
+      "version": 1
+    },
+    "camera": {
+      "default_tier": 0,
+      "description": "Preview camera; tools use it by default.",
+      "inputs": {},
+      "outputs": [
+        "camera"
+      ],
+      "parameters": {
+        "exposure": {
+          "animatable": false,
+          "default": 1.0,
+          "description": "linear exposure multiplier",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "far": {
+          "animatable": false,
+          "default": 200.0,
+          "description": "far plane",
+          "enum": [],
+          "max": null,
+          "min": 0.001,
+          "type": "float",
+          "units": "m"
+        },
+        "fov": {
+          "animatable": false,
+          "default": 45.0,
+          "description": "vertical field of view",
+          "enum": [],
+          "max": 170,
+          "min": 1,
+          "type": "float",
+          "units": "deg"
+        },
+        "near": {
+          "animatable": false,
+          "default": 0.05,
+          "description": "near plane",
+          "enum": [],
+          "max": null,
+          "min": 0.0001,
+          "type": "float",
+          "units": "m"
+        },
+        "position": {
+          "animatable": true,
+          "default": [
+            0.0,
+            1.5,
+            5.0
+          ],
+          "description": "eye position",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": "m"
+        },
+        "target": {
+          "animatable": true,
+          "default": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "description": "look-at point",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": "m"
+        },
+        "up": {
+          "animatable": false,
+          "default": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "description": "up vector",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": ""
+        }
+      },
+      "spatial": false,
+      "time_bound": false,
+      "version": 1
+    },
+    "collider": {
+      "default_tier": 0,
+      "description": "A collision shape particles and volumes test against.",
+      "inputs": {
+        "mesh": {
+          "accepts": [
+            "mesh"
+          ],
+          "description": "geometry when collider_type=mesh|sdf",
+          "multi": false,
+          "required": false
+        }
+      },
+      "outputs": [
+        "collider",
+        "on_collision"
+      ],
+      "parameters": {
+        "bounce": {
+          "animatable": false,
+          "default": 0.3,
+          "description": "restitution",
+          "enum": [],
+          "max": 1,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "collider_type": {
+          "animatable": false,
+          "default": "plane",
+          "description": "collision shape",
+          "enum": [
+            "plane",
+            "sphere",
+            "box",
+            "capsule",
+            "mesh",
+            "sdf"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
+          "units": ""
+        },
+        "friction": {
+          "animatable": false,
+          "default": 0.2,
+          "description": "tangential friction",
+          "enum": [],
+          "max": 1,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "height": {
+          "animatable": false,
+          "default": 1.0,
+          "description": "capsule height",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "m"
+        },
+        "kill_on_collision": {
+          "animatable": false,
+          "default": false,
+          "description": "destroy particles on contact",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "bool",
+          "units": ""
+        },
+        "normal": {
+          "animatable": false,
+          "default": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "description": "plane normal",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": ""
+        },
+        "position": {
+          "animatable": true,
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "description": "local position",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": "m"
+        },
+        "radius": {
+          "animatable": false,
+          "default": 0.5,
+          "description": "sphere/capsule radius",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "m"
+        },
+        "rotation": {
+          "animatable": true,
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "description": "euler angles, applied X then Y then Z",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": "deg"
+        },
+        "scale": {
+          "animatable": true,
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "description": "local scale",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": ""
+        },
+        "size": {
+          "animatable": false,
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "description": "box extents",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": "m"
+        }
+      },
+      "spatial": true,
+      "time_bound": false,
+      "version": 1
+    },
+    "curve": {
+      "default_tier": 0,
+      "description": "A path used by emitters, trails, beams and motion.",
+      "inputs": {},
+      "outputs": [
+        "curve"
+      ],
+      "parameters": {
+        "closed": {
+          "animatable": false,
+          "default": false,
+          "description": "close the loop",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "bool",
+          "units": ""
+        },
+        "curve_type": {
+          "animatable": false,
+          "default": "catmull_rom",
+          "description": "interpolation",
+          "enum": [
+            "linear",
+            "catmull_rom",
+            "bezier"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
+          "units": ""
+        },
+        "noise_amplitude": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "displacement of sampled points",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "m"
+        },
+        "noise_frequency": {
+          "animatable": false,
+          "default": 1.0,
+          "description": "displacement frequency",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "1/m"
+        },
+        "points": {
+          "animatable": false,
+          "default": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0
+            ]
+          ],
+          "description": "control points (local space)",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3_list",
+          "units": "m"
+        },
+        "position": {
+          "animatable": true,
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "description": "local position",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": "m"
+        },
+        "rotation": {
+          "animatable": true,
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "description": "euler angles, applied X then Y then Z",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": "deg"
+        },
+        "scale": {
+          "animatable": true,
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "description": "local scale",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": ""
+        },
+        "segments": {
+          "animatable": false,
+          "default": 32,
+          "description": "sampling resolution",
+          "enum": [],
+          "max": 1024,
+          "min": 1,
+          "type": "int",
+          "units": ""
+        }
+      },
+      "spatial": true,
+      "time_bound": false,
+      "version": 1
+    },
+    "decal": {
+      "default_tier": 0,
+      "description": "A projected sprite on the ground or a surface.",
+      "inputs": {
+        "material": {
+          "accepts": [
+            "material"
+          ],
+          "description": "surface description",
+          "multi": false,
+          "required": false
+        },
+        "texture": {
+          "accepts": [
+            "texture"
+          ],
+          "description": "decal texture",
+          "multi": false,
+          "required": false
+        }
+      },
+      "outputs": [
+        "decal"
+      ],
+      "parameters": {
+        "blend": {
+          "animatable": false,
+          "default": "alpha",
+          "description": "blend mode",
+          "enum": [
+            "additive",
+            "alpha",
+            "premultiplied"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
+          "units": ""
+        },
+        "color": {
+          "animatable": true,
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "description": "tint (linear)",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "color",
+          "units": ""
+        },
+        "duration": {
+          "animatable": false,
+          "default": -1.0,
+          "description": "active duration; -1 = until the end of the effect",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "s"
+        },
+        "emissive": {
+          "animatable": true,
+          "default": 0.0,
+          "description": "emissive multiplier (HDR)",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "fade_in": {
+          "animatable": false,
+          "default": 0.1,
+          "description": "fade in duration",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "s"
+        },
+        "fade_out": {
+          "animatable": false,
+          "default": 0.5,
+          "description": "fade out duration",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "s"
+        },
+        "opacity": {
+          "animatable": true,
+          "default": 1.0,
+          "description": "overall opacity",
+          "enum": [],
+          "max": 1,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "phase": {
+          "animatable": false,
+          "default": "",
+          "description": "timeline phase name; when set it overrides start_time/duration",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "string",
+          "units": ""
+        },
+        "position": {
+          "animatable": true,
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "description": "local position",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": "m"
+        },
+        "projection_normal": {
+          "animatable": false,
+          "default": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "description": "surface normal the decal projects along",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": ""
+        },
+        "rotation": {
+          "animatable": true,
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "description": "euler angles, applied X then Y then Z",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": "deg"
+        },
+        "scale": {
+          "animatable": true,
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "description": "local scale",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": ""
+        },
+        "shape": {
+          "animatable": false,
+          "default": "circle",
+          "description": "decal footprint",
+          "enum": [
+            "circle",
+            "rect"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
+          "units": ""
+        },
+        "size": {
+          "animatable": true,
+          "default": [
+            1.0,
+            1.0
+          ],
+          "description": "footprint extents",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec2",
+          "units": "m"
+        },
+        "start_time": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "effect time at which the node becomes active",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "s"
+        }
+      },
+      "spatial": true,
+      "time_bound": true,
+      "version": 1
+    },
+    "emitter": {
+      "default_tier": 1,
+      "description": "Produces particles for one particle_system, or acts as a source for a volume.",
+      "inputs": {
+        "particle": {
+          "accepts": [
+            "particle_system"
+          ],
+          "description": "the particle system this emitter spawns into (not required when feeding a volume)",
+          "multi": false,
+          "required": true
+        },
+        "shape_curve": {
+          "accepts": [
+            "curve"
+          ],
+          "description": "emission path when shape=curve",
+          "multi": false,
+          "required": false
+        },
+        "shape_mesh": {
+          "accepts": [
+            "mesh"
+          ],
+          "description": "emission mesh when shape=mesh",
+          "multi": false,
+          "required": false
+        },
+        "shape_volume": {
+          "accepts": [
+            "volume"
+          ],
+          "description": "emission volume when shape=volume",
+          "multi": false,
+          "required": false
+        }
+      },
+      "outputs": [
+        "particles",
+        "spawn"
+      ],
+      "parameters": {
+        "angle": {
+          "animatable": false,
+          "default": 30.0,
+          "description": "cone half-angle",
+          "enum": [],
+          "max": 180,
+          "min": 0,
+          "type": "float",
+          "units": "deg"
+        },
+        "burst_count": {
+          "animatable": false,
+          "default": 0,
+          "description": "particles emitted at each burst time",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "int",
+          "units": ""
+        },
+        "burst_times": {
+          "animatable": false,
+          "default": [
+            0.0
+          ],
+          "description": "seconds relative to start_time",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float_list",
+          "units": "s"
+        },
+        "direction": {
+          "animatable": false,
+          "default": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "description": "local direction; zero vector = radial from shape center",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": ""
+        },
+        "duration": {
+          "animatable": false,
+          "default": -1.0,
+          "description": "active duration; -1 = until the end of the effect",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "s"
+        },
+        "inherit_velocity": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "fraction of the emitter's own velocity added",
+          "enum": [],
+          "max": 1,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "inner_radius": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "ring/disc (annulus)",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "m"
+        },
+        "length": {
+          "animatable": false,
+          "default": 1.0,
+          "description": "line length along +X (local)",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "m"
+        },
+        "max_particles": {
+          "animatable": false,
+          "default": 0,
+          "description": "0 = unlimited (the system cap still applies)",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "int",
+          "units": ""
+        },
+        "phase": {
+          "animatable": false,
+          "default": "",
+          "description": "timeline phase name; when set it overrides start_time/duration",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "string",
+          "units": ""
+        },
+        "position": {
+          "animatable": true,
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "description": "local position",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": "m"
+        },
+        "radial_velocity": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "extra speed along (particle - center)",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "m/s"
+        },
+        "radius": {
+          "animatable": false,
+          "default": 0.5,
+          "description": "sphere/hemisphere/disc/ring/cone base",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "m"
+        },
+        "rate": {
+          "animatable": true,
+          "default": 50.0,
+          "description": "particles per second",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "1/s"
+        },
+        "rotation": {
+          "animatable": true,
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "description": "euler angles, applied X then Y then Z",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": "deg"
+        },
+        "scale": {
+          "animatable": true,
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "description": "local scale",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": ""
+        },
+        "shape": {
+          "animatable": false,
+          "default": "sphere",
+          "description": "emission shape",
+          "enum": [
+            "point",
+            "sphere",
+            "hemisphere",
+            "box",
+            "disc",
+            "ring",
+            "cone",
+            "line",
+            "curve",
+            "mesh",
+            "volume"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
+          "units": ""
+        },
+        "size": {
+          "animatable": false,
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "description": "box extents (full)",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": "m"
+        },
+        "spread": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "cone half-angle around direction",
+          "enum": [],
+          "max": 180,
+          "min": 0,
+          "type": "float",
+          "units": "deg"
+        },
+        "start_time": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "effect time at which the node becomes active",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "s"
+        },
+        "surface_only": {
+          "animatable": false,
+          "default": false,
+          "description": "emit on the surface instead of the volume",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "bool",
+          "units": ""
+        },
+        "velocity": {
+          "animatable": true,
+          "default": 1.0,
+          "description": "initial speed",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "m/s"
+        },
+        "velocity_variance": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "+/- uniform on speed",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "m/s"
+        }
+      },
+      "spatial": true,
+      "time_bound": true,
+      "version": 1
+    },
+    "event": {
+      "default_tier": 0,
+      "description": "Triggers bursts on target emitters when something happens.",
+      "inputs": {
+        "source": {
+          "accepts": [
+            "particle_system",
+            "emitter",
+            "collider"
+          ],
+          "description": "required for the particle triggers (on_spawn/on_death/on_collision/on_distance)",
+          "multi": false,
+          "required": false
+        },
+        "targets": {
+          "accepts": [
+            "emitter"
+          ],
+          "description": "emitters to burst",
+          "multi": true,
+          "required": true
+        }
+      },
+      "outputs": [
+        "event"
+      ],
+      "parameters": {
+        "burst_count": {
+          "animatable": false,
+          "default": 0,
+          "description": "override burst on targets (0 = the target's own burst_count)",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "int",
+          "units": ""
+        },
+        "distance": {
+          "animatable": false,
+          "default": 1.0,
+          "description": "on_distance: from the source origin",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "m"
+        },
+        "inherit_position": {
+          "animatable": false,
+          "default": true,
+          "description": "spawn at the triggering particle position",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "bool",
+          "units": ""
+        },
+        "inherit_velocity": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "fraction of the triggering velocity",
+          "enum": [],
+          "max": 1,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "max_triggers": {
+          "animatable": false,
+          "default": 0,
+          "description": "0 = unlimited",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "int",
+          "units": ""
+        },
+        "probability": {
+          "animatable": false,
+          "default": 1.0,
+          "description": "chance the event fires",
+          "enum": [],
+          "max": 1,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "time": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "on_time: absolute effect time",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "s"
+        },
+        "trigger": {
+          "animatable": false,
+          "default": "on_time",
+          "description": "what fires the event",
+          "enum": [
+            "on_spawn",
+            "on_death",
+            "on_collision",
+            "on_distance",
+            "on_time",
+            "on_peak",
+            "on_impact"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
+          "units": ""
+        }
+      },
+      "spatial": false,
+      "time_bound": false,
+      "version": 1
+    },
+    "field": {
+      "default_tier": 0,
+      "description": "Sampled data grid (V1 evaluates only noise fields).",
+      "inputs": {
+        "source": {
+          "accepts": [
+            "noise",
+            "volume",
+            "mesh"
+          ],
+          "description": "field source",
+          "multi": false,
+          "required": false
+        }
+      },
+      "outputs": [
+        "field"
+      ],
+      "parameters": {
+        "bounds_max": {
+          "animatable": false,
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "description": "field upper bound",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": "m"
+        },
+        "bounds_min": {
+          "animatable": false,
+          "default": [
+            -1.0,
+            -1.0,
+            -1.0
+          ],
+          "description": "field lower bound",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": "m"
+        },
+        "field_type": {
+          "animatable": false,
+          "default": "scalar",
+          "description": "what the field stores",
+          "enum": [
+            "scalar",
+            "vector",
+            "density",
+            "temperature",
+            "fuel",
+            "velocity",
+            "sdf",
+            "noise"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
+          "units": ""
+        },
+        "resolution": {
+          "animatable": false,
+          "default": 32,
+          "description": "cells along the longest axis",
+          "enum": [],
+          "max": 512,
+          "min": 4,
+          "type": "int",
+          "units": ""
+        }
+      },
+      "spatial": false,
+      "time_bound": false,
+      "version": 1
+    },
+    "force": {
+      "default_tier": 0,
+      "description": "A force field applied to particles and volumes.",
+      "inputs": {
+        "noise": {
+          "accepts": [
+            "noise"
+          ],
+          "description": "optional noise override for turbulence/curl",
+          "multi": false,
+          "required": false
+        }
+      },
+      "outputs": [
+        "force"
+      ],
+      "parameters": {
+        "direction": {
+          "animatable": false,
+          "default": [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          "description": "gravity/directional/wind/vortex axis",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": ""
+        },
+        "duration": {
+          "animatable": false,
+          "default": -1.0,
+          "description": "active duration; -1 = until the end of the effect",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "s"
+        },
+        "falloff": {
+          "animatable": false,
+          "default": "none",
+          "description": "falloff with distance",
+          "enum": [
+            "none",
+            "linear",
+            "inverse_square",
+            "smooth"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
+          "units": ""
+        },
+        "force_type": {
+          "animatable": false,
+          "default": "gravity",
+          "description": "force model",
+          "enum": [
+            "gravity",
+            "directional",
+            "radial",
+            "vortex",
+            "turbulence",
+            "curl_noise",
+            "drag",
+            "attractor",
+            "repulsor",
+            "wind",
+            "buoyancy"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
+          "units": ""
+        },
+        "frequency": {
+          "animatable": false,
+          "default": 1.0,
+          "description": "turbulence/curl noise spatial frequency",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "1/m"
+        },
+        "octaves": {
+          "animatable": false,
+          "default": 2,
+          "description": "noise octaves",
+          "enum": [],
+          "max": 8,
+          "min": 1,
+          "type": "int",
+          "units": ""
+        },
+        "phase": {
+          "animatable": false,
+          "default": "",
+          "description": "timeline phase name; when set it overrides start_time/duration",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "string",
+          "units": ""
+        },
+        "position": {
+          "animatable": true,
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "description": "radial/vortex/attractor/repulsor center",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": "m"
+        },
+        "radius": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "0 = infinite; falloff applies inside the radius",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "m"
+        },
+        "speed": {
+          "animatable": false,
+          "default": 0.5,
+          "description": "noise animation speed",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "1/s"
+        },
+        "start_time": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "effect time at which the node becomes active",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "s"
+        },
+        "strength": {
+          "animatable": true,
+          "default": 9.81,
+          "description": "force magnitude",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": ""
+        },
+        "temperature": {
+          "animatable": false,
+          "default": 1.0,
+          "description": "buoyancy: multiplies strength",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        }
+      },
+      "spatial": false,
+      "time_bound": true,
+      "version": 1
+    },
+    "light": {
+      "default_tier": 0,
+      "description": "A dynamic light the effect casts onto the scene.",
+      "inputs": {},
+      "outputs": [
+        "light"
+      ],
+      "parameters": {
+        "area_size": {
+          "animatable": false,
+          "default": [
+            1.0,
+            1.0
+          ],
+          "description": "area light extents",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec2",
+          "units": "m"
+        },
+        "cast_shadows": {
+          "animatable": false,
+          "default": false,
+          "description": "shadow casting (renderer dependent)",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "bool",
+          "units": ""
+        },
+        "color": {
+          "animatable": true,
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "description": "light color (linear)",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "color",
+          "units": ""
+        },
+        "cone_angle": {
+          "animatable": false,
+          "default": 45.0,
+          "description": "spot half-angle",
+          "enum": [],
+          "max": 90,
+          "min": 0,
+          "type": "float",
+          "units": "deg"
+        },
+        "direction": {
+          "animatable": false,
+          "default": [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          "description": "spot/area direction",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": ""
+        },
+        "duration": {
+          "animatable": false,
+          "default": -1.0,
+          "description": "active duration; -1 = until the end of the effect",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "s"
+        },
+        "flicker_amplitude": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "flicker depth",
+          "enum": [],
+          "max": 1,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "flicker_frequency": {
+          "animatable": false,
+          "default": 12.0,
+          "description": "flicker rate",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "1/s"
+        },
+        "intensity": {
+          "animatable": true,
+          "default": 10.0,
+          "description": "radiometric-ish, linear",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "light_type": {
+          "animatable": false,
+          "default": "point",
+          "description": "light model",
+          "enum": [
+            "point",
+            "spot",
+            "area"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
+          "units": ""
+        },
+        "phase": {
+          "animatable": false,
+          "default": "",
+          "description": "timeline phase name; when set it overrides start_time/duration",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "string",
+          "units": ""
+        },
+        "position": {
+          "animatable": true,
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "description": "local position",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": "m"
+        },
+        "radius": {
+          "animatable": true,
+          "default": 5.0,
+          "description": "influence radius",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "m"
+        },
+        "rotation": {
+          "animatable": true,
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "description": "euler angles, applied X then Y then Z",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": "deg"
+        },
+        "scale": {
+          "animatable": true,
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "description": "local scale",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": ""
+        },
+        "start_time": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "effect time at which the node becomes active",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "s"
+        },
+        "temperature": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "Kelvin; 0 = use color as-is",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "K"
+        }
+      },
+      "spatial": true,
+      "time_bound": true,
+      "version": 1
+    },
+    "material": {
+      "default_tier": 0,
+      "description": "Surface description shared by particles, meshes, trails, beams and decals.",
+      "inputs": {
+        "base_texture": {
+          "accepts": [
+            "texture"
+          ],
+          "description": "albedo / sprite",
+          "multi": false,
+          "required": false
+        },
+        "gradient_texture": {
+          "accepts": [
+            "texture"
+          ],
+          "description": "color ramp lookup",
+          "multi": false,
+          "required": false
+        },
+        "noise_texture": {
+          "accepts": [
+            "texture"
+          ],
+          "description": "dissolve / erosion noise",
+          "multi": false,
+          "required": false
+        }
+      },
+      "outputs": [
+        "material"
+      ],
+      "parameters": {
+        "base_color": {
+          "animatable": false,
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "description": "base color (linear)",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "color",
+          "units": ""
+        },
+        "blend": {
+          "animatable": false,
+          "default": "additive",
+          "description": "blend mode",
+          "enum": [
+            "additive",
+            "alpha",
+            "premultiplied"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
+          "units": ""
+        },
+        "depth_fade": {
+          "animatable": false,
+          "default": 0.1,
+          "description": "soft particle fade distance",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "m"
+        },
+        "dissolve": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "threshold against the noise texture",
+          "enum": [],
+          "max": 1,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "distortion": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "screen-space refraction strength",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "double_sided": {
+          "animatable": false,
+          "default": true,
+          "description": "disable backface culling",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "bool",
+          "units": ""
+        },
+        "emissive_color": {
+          "animatable": false,
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "description": "emissive tint (linear)",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "color",
+          "units": ""
+        },
+        "emissive_intensity": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "emissive multiplier (HDR)",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "erosion": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "edge erosion width",
+          "enum": [],
+          "max": 1,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "fresnel_power": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "0 = off",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "opacity": {
+          "animatable": false,
+          "default": 1.0,
+          "description": "overall opacity",
+          "enum": [],
+          "max": 1,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "shading": {
+          "animatable": false,
+          "default": "unlit",
+          "description": "shading model",
+          "enum": [
+            "unlit",
+            "lit"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
+          "units": ""
+        },
+        "soft_particle": {
+          "animatable": false,
+          "default": true,
+          "description": "depth fade against the depth buffer",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "bool",
+          "units": ""
+        },
+        "temperature_gradient": {
+          "animatable": false,
+          "default": [],
+          "description": "when non-empty, remaps luminance/temperature to color",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "gradient",
+          "units": ""
+        },
+        "uv_rotate": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "UV rotation speed",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "deg/s"
+        },
+        "uv_scroll": {
+          "animatable": false,
+          "default": [
+            0.0,
+            0.0
+          ],
+          "description": "UV units per second",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec2",
+          "units": "1/s"
+        }
+      },
+      "spatial": false,
+      "time_bound": false,
+      "version": 1
+    },
+    "mesh": {
+      "default_tier": 0,
+      "description": "A renderable mesh, an emitter shape or a particle instance source.",
+      "inputs": {
+        "material": {
+          "accepts": [
+            "material"
+          ],
+          "description": "surface description",
+          "multi": false,
+          "required": false
+        }
+      },
+      "outputs": [
+        "mesh"
+      ],
+      "parameters": {
+        "color": {
+          "animatable": true,
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "description": "tint (linear)",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "color",
+          "units": ""
+        },
+        "duration": {
+          "animatable": false,
+          "default": -1.0,
+          "description": "active duration; -1 = until the end of the effect",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "s"
+        },
+        "emissive": {
+          "animatable": true,
+          "default": 0.0,
+          "description": "emissive multiplier (HDR)",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "height": {
+          "animatable": false,
+          "default": 1.0,
+          "description": "cone/cylinder/capsule/tube height",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "m"
+        },
+        "inner_radius": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "ring inner radius",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "m"
+        },
+        "path": {
+          "animatable": false,
+          "default": "",
+          "description": "imported (obj) - V1 loads OBJ only",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "string",
+          "units": ""
+        },
+        "phase": {
+          "animatable": false,
+          "default": "",
+          "description": "timeline phase name; when set it overrides start_time/duration",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "string",
+          "units": ""
+        },
+        "position": {
+          "animatable": true,
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "description": "local position",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": "m"
+        },
+        "primitive": {
+          "animatable": false,
+          "default": "sphere",
+          "description": "built-in primitive",
+          "enum": [
+            "sphere",
+            "cube",
+            "plane",
+            "disc",
+            "ring",
+            "cone",
+            "cylinder",
+            "capsule",
+            "ribbon",
+            "tube"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
+          "units": ""
+        },
+        "radius": {
+          "animatable": false,
+          "default": 0.5,
+          "description": "sphere/disc/ring/cone/cylinder radius",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "m"
+        },
+        "rotation": {
+          "animatable": true,
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "description": "euler angles, applied X then Y then Z",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": "deg"
+        },
+        "scale": {
+          "animatable": true,
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "description": "local scale",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": ""
+        },
+        "segments": {
+          "animatable": false,
+          "default": 24,
+          "description": "tessellation",
+          "enum": [],
+          "max": 256,
+          "min": 3,
+          "type": "int",
+          "units": ""
+        },
+        "size": {
+          "animatable": false,
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "description": "cube/plane extents",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": "m"
+        },
+        "source": {
+          "animatable": false,
+          "default": "primitive",
+          "description": "where the geometry comes from",
+          "enum": [
+            "primitive",
+            "imported",
+            "procedural",
+            "generated",
+            "particle_instanced"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
+          "units": ""
+        },
+        "start_time": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "effect time at which the node becomes active",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "s"
+        },
+        "visible": {
+          "animatable": false,
+          "default": true,
+          "description": "false = geometry source only, never drawn",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "bool",
+          "units": ""
+        }
+      },
+      "spatial": true,
+      "time_bound": true,
+      "version": 1
+    },
+    "noise": {
+      "default_tier": 0,
+      "description": "Parameter provider for forces and textures.",
+      "inputs": {},
+      "outputs": [
+        "noise"
+      ],
+      "parameters": {
+        "amplitude": {
+          "animatable": false,
+          "default": 1.0,
+          "description": "output scale",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": ""
+        },
+        "frequency": {
+          "animatable": false,
+          "default": 1.0,
+          "description": "spatial frequency",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "1/m"
+        },
+        "gain": {
+          "animatable": false,
+          "default": 0.5,
+          "description": "amplitude multiplier per octave",
+          "enum": [],
+          "max": 1,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "lacunarity": {
+          "animatable": false,
+          "default": 2.0,
+          "description": "frequency multiplier per octave",
+          "enum": [],
+          "max": null,
+          "min": 1,
+          "type": "float",
+          "units": ""
+        },
+        "noise_type": {
+          "animatable": false,
+          "default": "simplex",
+          "description": "noise basis",
+          "enum": [
+            "perlin",
+            "simplex",
+            "worley",
+            "fbm",
+            "curl",
+            "blue_noise",
+            "cellular"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
+          "units": ""
+        },
+        "octaves": {
+          "animatable": false,
+          "default": 3,
+          "description": "fbm octaves",
+          "enum": [],
+          "max": 8,
+          "min": 1,
+          "type": "int",
+          "units": ""
+        },
+        "offset": {
+          "animatable": false,
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "description": "domain offset",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": "m"
+        },
+        "speed": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "animation along the 4th dimension",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "1/s"
+        }
+      },
+      "spatial": false,
+      "time_bound": false,
+      "version": 1
+    },
+    "particle_system": {
+      "default_tier": 1,
+      "description": "Defines what a particle is: initial state, evolution over life, rendering.",
+      "inputs": {
+        "colliders": {
+          "accepts": [
+            "collider"
+          ],
+          "description": "colliders the particles test against",
+          "multi": true,
+          "required": false
+        },
+        "forces": {
+          "accepts": [
+            "force"
+          ],
+          "description": "forces acting on the particles",
+          "multi": true,
+          "required": false
+        },
+        "material": {
+          "accepts": [
+            "material"
+          ],
+          "description": "surface description",
+          "multi": false,
+          "required": false
+        },
+        "mesh": {
+          "accepts": [
+            "mesh"
+          ],
+          "description": "instanced mesh when render_mode=mesh",
+          "multi": false,
+          "required": false
+        },
+        "sprite": {
+          "accepts": [
+            "texture"
+          ],
+          "description": "billboard sprite / flipbook",
+          "multi": false,
+          "required": false
+        },
+        "trail": {
+          "accepts": [
+            "trail"
+          ],
+          "description": "per-particle trail",
+          "multi": false,
+          "required": false
+        }
+      },
+      "outputs": [
+        "particles",
+        "on_spawn",
+        "on_death",
+        "on_collision"
+      ],
+      "parameters": {
+        "align_to_velocity": {
+          "animatable": false,
+          "default": false,
+          "description": "orient the billboard along the velocity",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "bool",
+          "units": ""
+        },
+        "angular_velocity": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "roll speed",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "deg/s"
+        },
+        "angular_velocity_variance": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "+/- uniform on angular_velocity",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "deg/s"
+        },
+        "blend": {
+          "animatable": false,
+          "default": "additive",
+          "description": "blend mode",
+          "enum": [
+            "additive",
+            "alpha",
+            "premultiplied"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
+          "units": ""
+        },
+        "bounce": {
+          "animatable": false,
+          "default": 0.3,
+          "description": "restitution on collision",
+          "enum": [],
+          "max": 1,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "collision_radius": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "0 = use size*0.5",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "m"
+        },
+        "color": {
+          "animatable": false,
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "description": "base particle color (linear)",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "color",
+          "units": ""
+        },
+        "color_over_life": {
+          "animatable": false,
+          "default": [
+            [
+              0.0,
+              [
+                1.0,
+                1.0,
+                1.0
+              ]
+            ],
+            [
+              1.0,
+              [
+                1.0,
+                1.0,
+                1.0
+              ]
+            ]
+          ],
+          "description": "multiplies color over normalized age",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "gradient",
+          "units": ""
+        },
+        "drag": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "linear drag coefficient",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "1/s"
+        },
+        "emissive": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "emissive multiplier (HDR)",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "emissive_over_life": {
+          "animatable": false,
+          "default": [
+            [
+              0.0,
+              1.0
+            ],
+            [
+              1.0,
+              1.0
+            ]
+          ],
+          "description": "emissive over normalized age",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "curve",
+          "units": ""
+        },
+        "friction": {
+          "animatable": false,
+          "default": 0.2,
+          "description": "tangential friction on collision",
+          "enum": [],
+          "max": 1,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "kill_on_collision": {
+          "animatable": false,
+          "default": false,
+          "description": "destroy the particle on the first collision",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "bool",
+          "units": ""
+        },
+        "lifetime": {
+          "animatable": false,
+          "default": 1.0,
+          "description": "particle lifetime",
+          "enum": [],
+          "max": null,
+          "min": 0.001,
+          "type": "float",
+          "units": "s"
+        },
+        "lifetime_variance": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "+/- uniform on lifetime",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "s"
+        },
+        "mass": {
+          "animatable": false,
+          "default": 1.0,
+          "description": "particle mass",
+          "enum": [],
+          "max": null,
+          "min": 0.0001,
+          "type": "float",
+          "units": "kg"
+        },
+        "max_particles": {
+          "animatable": false,
+          "default": 10000,
+          "description": "hard cap on live particles",
+          "enum": [],
+          "max": 2000000,
+          "min": 1,
+          "type": "int",
+          "units": ""
+        },
+        "opacity": {
+          "animatable": false,
+          "default": 1.0,
+          "description": "base opacity",
+          "enum": [],
+          "max": 1,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "opacity_over_life": {
+          "animatable": false,
+          "default": [
+            [
+              0.0,
+              1.0
+            ],
+            [
+              1.0,
+              0.0
+            ]
+          ],
+          "description": "opacity over normalized age",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "curve",
+          "units": ""
+        },
+        "physics": {
+          "animatable": false,
+          "default": "none",
+          "description": "rigid selects Tier 2 (V1 falls back to Tier 1)",
+          "enum": [
+            "none",
+            "rigid"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
+          "units": ""
+        },
+        "render_mode": {
+          "animatable": false,
+          "default": "billboard",
+          "description": "how a particle is drawn",
+          "enum": [
+            "billboard",
+            "stretched_billboard",
+            "mesh",
+            "ribbon",
+            "none"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
+          "units": ""
+        },
+        "rotation": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "initial roll",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "deg"
+        },
+        "rotation_variance": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "+/- uniform on the initial roll",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "deg"
+        },
+        "size": {
+          "animatable": false,
+          "default": 0.1,
+          "description": "particle diameter",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "m"
+        },
+        "size_over_life": {
+          "animatable": false,
+          "default": [
+            [
+              0.0,
+              1.0
+            ],
+            [
+              1.0,
+              1.0
+            ]
+          ],
+          "description": "multiplies size over normalized age",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "curve",
+          "units": ""
+        },
+        "size_variance": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "+/- uniform on size",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "m"
+        },
+        "soft_particle_distance": {
+          "animatable": false,
+          "default": 0.1,
+          "description": "depth fade distance",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "m"
+        },
+        "sort": {
+          "animatable": false,
+          "default": false,
+          "description": "back-to-front sort for alpha blending",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "bool",
+          "units": ""
+        },
+        "sprite_columns": {
+          "animatable": false,
+          "default": 1,
+          "description": "sprite sheet columns",
+          "enum": [],
+          "max": 64,
+          "min": 1,
+          "type": "int",
+          "units": ""
+        },
+        "sprite_fps": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "0 = map life to the sheet",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "1/s"
+        },
+        "sprite_rows": {
+          "animatable": false,
+          "default": 1,
+          "description": "sprite sheet rows",
+          "enum": [],
+          "max": 64,
+          "min": 1,
+          "type": "int",
+          "units": ""
+        },
+        "velocity_stretch": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "stretched_billboard: length = size*(1+stretch*speed)",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        }
+      },
+      "spatial": false,
+      "time_bound": false,
+      "version": 1
+    },
+    "post_effect": {
+      "default_tier": 0,
+      "description": "Full-screen post process; use sparingly.",
+      "inputs": {},
+      "outputs": [
+        "post"
+      ],
+      "parameters": {
+        "duration": {
+          "animatable": false,
+          "default": -1.0,
+          "description": "active duration; -1 = until the end of the effect",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "s"
+        },
+        "frequency": {
+          "animatable": false,
+          "default": 8.0,
+          "description": "heat_haze / pulse frequency",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "1/s"
+        },
+        "intensity": {
+          "animatable": true,
+          "default": 1.0,
+          "description": "effect strength",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "phase": {
+          "animatable": false,
+          "default": "",
+          "description": "timeline phase name; when set it overrides start_time/duration",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "string",
+          "units": ""
+        },
+        "post_type": {
+          "animatable": false,
+          "default": "bloom",
+          "description": "post process kind",
+          "enum": [
+            "bloom",
+            "distortion",
+            "heat_haze",
+            "chromatic_aberration",
+            "exposure_pulse"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
+          "units": ""
+        },
+        "radius": {
+          "animatable": false,
+          "default": 0.05,
+          "description": "bloom (fraction of width) / haze radius",
+          "enum": [],
+          "max": 1,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "start_time": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "effect time at which the node becomes active",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "s"
+        },
+        "threshold": {
+          "animatable": false,
+          "default": 1.0,
+          "description": "bloom luminance threshold",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        }
+      },
+      "spatial": false,
+      "time_bound": true,
+      "version": 1
+    },
+    "texture": {
+      "default_tier": 0,
+      "description": "Procedural texture graph or file, baked by the compiler.",
+      "inputs": {},
+      "outputs": [
+        "texture"
+      ],
+      "parameters": {
+        "frames": {
+          "animatable": false,
+          "default": 1,
+          "description": "flipbook frames",
+          "enum": [],
+          "max": 256,
+          "min": 1,
+          "type": "int",
+          "units": ""
+        },
+        "graph": {
+          "animatable": false,
+          "default": {},
+          "description": "procedural texture graph {nodes:[{id,op,params,inputs}], output}",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "json",
+          "units": ""
+        },
+        "height": {
+          "animatable": false,
+          "default": 256,
+          "description": "baked height",
+          "enum": [],
+          "max": 4096,
+          "min": 1,
+          "type": "int",
+          "units": "px"
+        },
+        "path": {
+          "animatable": false,
+          "default": "",
+          "description": "image path when source=file",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "string",
+          "units": ""
+        },
+        "source": {
+          "animatable": false,
+          "default": "procedural",
+          "description": "where the pixels come from",
+          "enum": [
+            "procedural",
+            "file"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
+          "units": ""
+        },
+        "width": {
+          "animatable": false,
+          "default": 256,
+          "description": "baked width",
+          "enum": [],
+          "max": 4096,
+          "min": 1,
+          "type": "int",
+          "units": "px"
+        }
+      },
+      "spatial": false,
+      "time_bound": false,
+      "version": 1
+    },
+    "trail": {
+      "default_tier": 0,
+      "description": "A ribbon following a source node or a particle.",
+      "inputs": {
+        "material": {
+          "accepts": [
+            "material"
+          ],
+          "description": "surface description",
+          "multi": false,
+          "required": false
+        },
+        "source": {
+          "accepts": [
+            "mesh",
+            "emitter",
+            "light",
+            "curve",
+            "particle_system"
+          ],
+          "description": "the node the trail follows",
+          "multi": false,
+          "required": true
+        }
+      },
+      "outputs": [
+        "trail"
+      ],
+      "parameters": {
+        "blend": {
+          "animatable": false,
+          "default": "additive",
+          "description": "blend mode",
+          "enum": [
+            "additive",
+            "alpha",
+            "premultiplied"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
+          "units": ""
+        },
+        "color": {
+          "animatable": true,
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "description": "ribbon color (linear)",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "color",
+          "units": ""
+        },
+        "duration": {
+          "animatable": false,
+          "default": -1.0,
+          "description": "active duration; -1 = until the end of the effect",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "s"
+        },
+        "emissive": {
+          "animatable": true,
+          "default": 0.0,
+          "description": "emissive multiplier (HDR)",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "lifetime": {
+          "animatable": false,
+          "default": 0.5,
+          "description": "segment lifetime",
+          "enum": [],
+          "max": null,
+          "min": 0.001,
+          "type": "float",
+          "units": "s"
+        },
+        "max_segments": {
+          "animatable": false,
+          "default": 64,
+          "description": "ring buffer size",
+          "enum": [],
+          "max": 1024,
+          "min": 2,
+          "type": "int",
+          "units": ""
+        },
+        "min_vertex_distance": {
+          "animatable": false,
+          "default": 0.02,
+          "description": "minimum spacing between samples",
+          "enum": [],
+          "max": null,
+          "min": 0.0001,
+          "type": "float",
+          "units": "m"
+        },
+        "noise_amplitude": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "lateral displacement",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "m"
+        },
+        "noise_frequency": {
+          "animatable": false,
+          "default": 1.0,
+          "description": "displacement frequency",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "1/m"
+        },
+        "opacity_over_life": {
+          "animatable": false,
+          "default": [
+            [
+              0.0,
+              1.0
+            ],
+            [
+              1.0,
+              0.0
+            ]
+          ],
+          "description": "opacity over segment age",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "curve",
+          "units": ""
+        },
+        "phase": {
+          "animatable": false,
+          "default": "",
+          "description": "timeline phase name; when set it overrides start_time/duration",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "string",
+          "units": ""
+        },
+        "start_time": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "effect time at which the node becomes active",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "s"
+        },
+        "taper": {
+          "animatable": false,
+          "default": [
+            [
+              0.0,
+              1.0
+            ],
+            [
+              1.0,
+              0.0
+            ]
+          ],
+          "description": "width over segment age",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "curve",
+          "units": ""
+        },
+        "twist": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "twist over the trail length",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "deg"
+        },
+        "uv_scroll": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "UV units per second",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "1/s"
+        },
+        "width": {
+          "animatable": true,
+          "default": 0.1,
+          "description": "ribbon width",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "m"
+        }
+      },
+      "spatial": false,
+      "time_bound": true,
+      "version": 1
+    },
+    "volume": {
+      "default_tier": 3,
+      "description": "Volumetric simulation (Tier 3; the V1 backend is a stub that reports statistics).",
+      "inputs": {
+        "colliders": {
+          "accepts": [
+            "collider"
+          ],
+          "description": "obstacles",
+          "multi": true,
+          "required": false
+        },
+        "forces": {
+          "accepts": [
+            "force"
+          ],
+          "description": "forces applied to the velocity field",
+          "multi": true,
+          "required": false
+        },
+        "material": {
+          "accepts": [
+            "material"
+          ],
+          "description": "shading description",
+          "multi": false,
+          "required": false
+        },
+        "sources": {
+          "accepts": [
+            "emitter"
+          ],
+          "description": "emitters injecting density/temperature/fuel",
+          "multi": true,
+          "required": false
+        }
+      },
+      "outputs": [
+        "volume"
+      ],
+      "parameters": {
+        "bounds": {
+          "animatable": false,
+          "default": [
+            2.0,
+            2.0,
+            2.0
+          ],
+          "description": "simulation domain extents",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": "m"
+        },
+        "buoyancy": {
+          "animatable": false,
+          "default": 1.0,
+          "description": "temperature driven lift",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": ""
+        },
+        "combustion_rate": {
+          "animatable": false,
+          "default": 1.0,
+          "description": "fuel burned per second",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "1/s"
+        },
+        "cooling": {
+          "animatable": false,
+          "default": 0.5,
+          "description": "temperature decay",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "1/s"
+        },
+        "density": {
+          "animatable": true,
+          "default": 1.0,
+          "description": "injected density",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "dissipation": {
+          "animatable": false,
+          "default": 0.1,
+          "description": "density decay",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "1/s"
+        },
+        "duration": {
+          "animatable": false,
+          "default": -1.0,
+          "description": "active duration; -1 = until the end of the effect",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "s"
+        },
+        "expansion": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "gas expansion on combustion",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "fuel": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "injected fuel (combustion)",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "phase": {
+          "animatable": false,
+          "default": "",
+          "description": "timeline phase name; when set it overrides start_time/duration",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "string",
+          "units": ""
+        },
+        "position": {
+          "animatable": true,
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "description": "local position",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": "m"
+        },
+        "rotation": {
+          "animatable": true,
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "description": "euler angles, applied X then Y then Z",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": "deg"
+        },
+        "scale": {
+          "animatable": true,
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "description": "local scale",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": ""
+        },
+        "start_time": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "effect time at which the node becomes active",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "s"
+        },
+        "temperature": {
+          "animatable": true,
+          "default": 0.0,
+          "description": "injected temperature",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "volume_type": {
+          "animatable": false,
+          "default": "smoke",
+          "description": "volume model",
+          "enum": [
+            "smoke",
+            "fire",
+            "fog",
+            "dust",
+            "magic",
+            "generic_density"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
+          "units": ""
+        },
+        "vorticity": {
+          "animatable": false,
+          "default": 0.2,
+          "description": "vorticity confinement",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "voxel_size": {
+          "animatable": false,
+          "default": 0.05,
+          "description": "voxel edge length",
+          "enum": [],
+          "max": 1,
+          "min": 0.005,
+          "type": "float",
+          "units": "m"
+        }
+      },
+      "spatial": true,
+      "time_bound": true,
+      "version": 1
+    }
+  },
+  "render_modes": [
+    "billboard",
+    "stretched_billboard",
+    "mesh",
+    "ribbon",
+    "none"
+  ],
+  "schema_version": "0.1.0",
+  "validation_codes": {
+    "E001": "duplicate node id",
+    "E002": "invalid id format (^[a-z][a-z0-9_]*$)",
+    "E003": "unknown node type",
+    "E004": "unknown parameter",
+    "E005": "parameter type mismatch",
+    "E006": "value out of range",
+    "E007": "invalid enum value",
+    "E008": "unresolved reference",
+    "E009": "port type mismatch",
+    "E010": "required input missing",
+    "E011": "multi-input given to a single port",
+    "E012": "cycle in the parent chain",
+    "E013": "cycle in the input graph",
+    "E014": "unknown layer",
+    "E015": "effect duration invalid",
+    "E016": "timeline phase invalid (end<=start or outside duration)",
+    "E017": "unknown port",
+    "E018": "keyframe time invalid",
+    "E019": "curve/gradient keys not sorted or out of [0,1]",
+    "E020": "schema version unsupported",
+    "W001": "unknown phase reference",
+    "W002": "unused node (no consumer and not renderable)",
+    "W003": "max_particles budget high",
+    "W004": "node disabled but referenced",
+    "W005": "deprecated parameter"
+  },
+  "value_types": [
+    "bool",
+    "int",
+    "float",
+    "vec2",
+    "vec3",
+    "vec4",
+    "color",
+    "string",
+    "enum",
+    "curve",
+    "gradient",
+    "ref",
+    "float_list",
+    "vec3_list",
+    "json"
+  ]
+}
