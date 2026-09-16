@@ -29,6 +29,20 @@ comparison, flipbook/frames/video export. GPU (wgpu-native) is bootstrapped
 but not yet used for simulation or rendering. Volumes (Tier 3) and rigid
 physics (Tier 2) are stubs with compile warnings. See docs/ROADMAP.md.
 
+## Studio
+
+`aetherfx-studio` is a local web app (default http://127.0.0.1:8770) that
+spawns the engine itself: preview any effect with play/scrub, edit every
+parameter live in the graph panel, and generate or modify effects from a text
+prompt. Generation is done by an AI agent driving the same tool API and
+looking at its own renders; the backend is picked automatically: Anthropic
+API key, a logged-in Claude Code (Agent SDK), or a worker attached from an
+interactive Claude Code session (`aetherfx.studio.worker_cli`).
+
+```bash
+python/.venv/bin/aetherfx-studio --port 8770 --output-dir out/studio
+```
+
 ## Build
 
 ```bash
