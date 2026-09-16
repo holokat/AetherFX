@@ -1,7 +1,8 @@
-# All third-party dependencies, pinned. See docs/DEPENDENCIES.md for licenses.
+# All third-party dependencies, pinned by URL + SHA256. See docs/DEPENDENCIES.md.
+# Each build directory keeps its own copy under <build>/_deps so that several
+# build trees (and several agents) can configure and build concurrently.
 include(FetchContent)
 set(FETCHCONTENT_QUIET OFF)
-set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/third_party/_fetched" CACHE PATH "" FORCE)
 
 # --- nlohmann/json v3.12.0 (MIT) ---------------------------------------------
 FetchContent_Declare(nlohmann_json
@@ -12,11 +13,11 @@ set(JSON_BuildTests OFF CACHE INTERNAL "")
 set(JSON_Install OFF CACHE INTERNAL "")
 FetchContent_MakeAvailable(nlohmann_json)
 
-# --- stb (MIT / Unlicense) pinned 2026-08-02 ---------------------------------
+# --- stb (MIT / Unlicense), commit 2c980bb 2026-08-02 -------------------------
 FetchContent_Declare(stb
-  GIT_REPOSITORY https://github.com/nothings/stb.git
-  GIT_TAG 2c980bb59875b0d32144a71867fbdebb2f77cd20
-  GIT_SHALLOW FALSE
+  URL https://github.com/nothings/stb/archive/2c980bb59875b0d32144a71867fbdebb2f77cd20.tar.gz
+  URL_HASH SHA256=9a955b1b49a4410088a2e0ee2a9c057c3c907d0c1d75454144cb980aca0ba515
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
   SOURCE_SUBDIR cmake_disabled)
 FetchContent_MakeAvailable(stb)
 add_library(stb INTERFACE)
@@ -25,9 +26,9 @@ add_library(stb::stb ALIAS stb)
 
 # --- tinyexr v3.2.0 (BSD-3-Clause, bundles miniz MIT) ------------------------
 FetchContent_Declare(tinyexr
-  GIT_REPOSITORY https://github.com/syoyo/tinyexr.git
-  GIT_TAG 6f470c9ab24bf3992bc512ce07e8ecb00d9bf105
-  GIT_SHALLOW FALSE
+  URL https://github.com/syoyo/tinyexr/archive/refs/tags/v3.2.0.tar.gz
+  URL_HASH SHA256=df2bd61124a35d8138f8b0bc22418a1d4fe33622c818e0e022f5522afc0821b0
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
   SOURCE_SUBDIR cmake_disabled)
 FetchContent_MakeAvailable(tinyexr)
 add_library(tinyexr STATIC "${tinyexr_SOURCE_DIR}/deps/miniz/miniz.c")
@@ -39,9 +40,9 @@ add_library(tinyexr::tinyexr ALIAS tinyexr)
 # --- Catch2 v3.16.0 (BSL-1.0), tests only ------------------------------------
 if(AETHER_BUILD_TESTS)
   FetchContent_Declare(Catch2
-    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-    GIT_TAG v3.16.0
-    GIT_SHALLOW TRUE)
+    URL https://github.com/catchorg/Catch2/archive/refs/tags/v3.16.0.tar.gz
+    URL_HASH SHA256=0957cae5821b17ce07f0833aaa52b5137643a8382203221f363a8303c109af34
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
   FetchContent_MakeAvailable(Catch2)
   list(APPEND CMAKE_MODULE_PATH "${Catch2_SOURCE_DIR}/extras")
   set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" PARENT_SCOPE)
