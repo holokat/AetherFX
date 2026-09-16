@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aetherfx"
+version = "0.1.0"
+description = "Python client, MCP server, AI adapters and evaluation metrics for the AetherFX VFX engine"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "AetherFX" }]
+keywords = ["vfx", "mcp", "jsonrpc", "particles", "agent"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Multimedia :: Graphics",
+]
+dependencies = [
+    "pydantic>=2.6",
+    "numpy>=1.26",
+    "pillow>=10.0",
+    "mcp>=2.2",
+    "anyio>=4.0",
+]
+
+[project.optional-dependencies]
+claude = ["anthropic>=0.40"]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+aetherfx-mcp = "aetherfx.mcp_server:main"
+
+[tool.setuptools]
+packages = ["aetherfx", "aetherfx.ai"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]

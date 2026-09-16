@@ -26,6 +26,8 @@ Verified 2026-09-17 against GitHub / Homebrew.
 | Python `pydantic` | EAD schema | >=2.x | MIT | python only | in use |
 | Python `numpy`, `pillow` | evaluation metrics, image handling | current | BSD / MIT-CMU | python only | in use |
 | Python `anthropic` | Claude vision adapter | current | MIT | optional extra `[claude]` | optional |
+| Python `anyio` | async runtime for the MCP stdio server | >=4.0 (4.15.1 installed) | MIT | python only; also a `mcp` transitive dep | in use |
+| Python `pytest` | python test suite | >=8.0 (9.1.1 installed) | MIT | python only; dev extra `[dev]` | in use (tests) |
 
 Tooling: CMake >= 3.28, Ninja, Apple clang 21 / GCC 13+ / MSVC 2022, Python >= 3.10.
 
