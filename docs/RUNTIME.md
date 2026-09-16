@@ -10,10 +10,14 @@ here. Units: meters, seconds, degrees in parameters (radians internally).
 `step()` advances from `t0 = time` to `t1 = t0 + dt` (fixed `dt`, default
 1/60). Order, per compiled node in execution order (topological, ties by id):
 
-1. Evaluate animated parameters at `t1` (keyframe tracks).
+1. Evaluate animated parameters at `t1` (keyframe tracks). Time is exact:
+   `time = frame_index * dt`, never accumulated.
 2. Analytic nodes (light, mesh, decal, beam, curve, camera, post_effect,
    volume stub) produce their FrameState entries if `t1` is inside their
-   window; otherwise nothing.
+   window; otherwise nothing. Bounded windows are `[start, end)`; an
+   unbounded window (`end < 0`) is open-ended so the frame at exactly
+   `t == duration` still renders. `reset()` evaluates the analytic scene at
+   t = 0 so frame 0 is renderable without stepping.
 3. Emitters compute spawn requests for the interval `(t0, t1]`:
    * continuous: `acc += rate(t1) * dt; n = floor(acc); acc -= n` while the
      emitter window contains `t1`; `acc` is reset to 0 when the window is
@@ -144,9 +148,15 @@ to the collider surface minus `cr` and the surface normal `n` pointing out:
 * mesh, sdf: unsupported in V1 (compiler warning W101; ignored)
 
 If `sd < 0`: `p += n * (-sd)`; `vn = dot(v, n)`; if `vn < 0`:
-`v = (v - n*vn) * (1 - friction) - n * vn * bounce`. Counts a collision;
-fires `on_collision`; if `kill_on_collision` the particle dies after the
-event.
+`v = (v - n*vn) * (1 - friction) - n * vn * bounce`, where the material
+terms combine both nodes: `bounce = sqrt(system.bounce * collider.bounce)`,
+`friction = sqrt(system.friction * collider.friction)` (defaults give the
+defaults; either side can zero it). `kill_on_collision` is the OR of both.
+A **contact** is counted, and `on_collision` fires, only when the particle
+was not already resting on that collider in the previous step or its
+pre-response normal speed `-vn` exceeds 0.1 m/s (resting contacts do not
+re-fire every step). If the particle is killed, `on_collision` fires first
+and then `on_death`.
 
 `physics: rigid` (Tier 2) falls back to this path in V1 with a compile
 warning W102; rotation still integrates angular velocity.
@@ -207,14 +217,15 @@ emissive = emissive_base * emissive_over_life(u)
 
 | trigger | fires |
 |---|---|
-| on_time | once when `t0 < time <= t1` |
+| on_time | once when `t0 < time <= t1` (time events are processed after the systems, so their bursts spawn on the next step) |
 | on_peak | once at the start of the `peak` phase if it exists, else at `duration/2` |
 | on_spawn / on_death / on_collision (on_impact = alias) | per particle occurrence in `source` |
 | on_distance | once per particle when `|p - spawn_position| >= distance` |
 
-Each firing passes `probability` (particle events use the particle's RNG
-stream advanced by a fixed extra draw; time events use the event node
-stream) and `max_triggers` (0 = unlimited, counted per event node). Action
+Each firing passes `probability` (particle events draw from
+`Pcg32(derive_seed(particle_seed, event_seed))`, a pure function of the
+particle and the event; time events use the event node stream) and
+`max_triggers` (0 = unlimited, counted per event node). Action
 per target emitter: burst of `count = event.burst_count > 0 ?
 event.burst_count : target.burst_count > 0 ? target.burst_count : 1` at
 `inherit_position ? trigger position : target's own position`, adding
