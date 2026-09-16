@@ -212,15 +212,41 @@ class Studio:
 
     # -- engine ------------------------------------------------------------
 
+    #: Bumped after every mutating engine call from any path (UI, /api/tool, MCP,
+    #: generators) so the frontend can follow changes made outside it.
+    revision: int = 0
+    _mutating_tools: set[str] | None = None
+
+    def _is_mutating(self, tool: str) -> bool:
+        if self._mutating_tools is None:
+            try:
+                infos = self.client.tools()
+                self._mutating_tools = {getattr(i, "name", None) or i["name"] for i in infos
+                                        if (getattr(i, "mutating", None) if not isinstance(i, dict) else i.get("mutating"))}
+            except Exception:  # noqa: BLE001
+                self._mutating_tools = set()
+        if tool in self._mutating_tools:
+            return True
+        return tool.startswith(("create_", "set_", "delete_", "duplicate_", "connect_", "disconnect_", "remove_",
+                                "load_", "undo", "redo", "clear_", "reset_parameter"))
+
+    def note_call(self, tool: str) -> None:
+        if self._is_mutating(tool):
+            self.revision += 1
+
     def call(self, tool: str, /, **args: Any) -> JsonDict:
         """Blocking engine call, serialised on :attr:`engine_lock`."""
         with self.engine_lock:
-            return self.client.call(tool, **args)
+            result = self.client.call(tool, **args)
+            self.note_call(tool)
+            return result
 
     def call_with_args(self, tool: str, args: JsonDict) -> JsonDict:
         """Blocking engine call taking the argument object as a mapping."""
         with self.engine_lock:
-            return self.client.call_with(tool, args)
+            result = self.client.call_with(tool, args)
+            self.note_call(tool)
+            return result
 
     async def acall(self, tool: str, /, **args: Any) -> JsonDict:
         """:meth:`call` off the event loop."""
@@ -231,7 +257,10 @@ class Studio:
 
         def run() -> list[JsonDict]:
             with self.engine_lock:
-                return [self.client.call_with(name, args) for name, args in calls]
+                out = [self.client.call_with(name, args) for name, args in calls]
+                for name, _ in calls:
+                    self.note_call(name)
+                return out
 
         return await run_in_threadpool(run)
 
@@ -413,6 +442,7 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
             "studio_url": studio.studio_url,
             "active_effect": active,
             "active_job": job.job_id if job else None,
+            "revision": studio.revision,
         }
 
     @endpoint
@@ -784,7 +814,20 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
             from ..mcp_server import AetherMCPServer  # noqa: PLC0415
             from .locked_client import LockedClient  # noqa: PLC0415
 
-            mcp_server = AetherMCPServer(LockedClient(studio.client, studio.engine_lock))  # type: ignore[arg-type]
+            class _StudioClient(LockedClient):
+                """Locked client that also bumps the studio revision (MCP-driven edits)."""
+
+                def call(self, tool_name: str, /, **args: Any) -> Any:
+                    result = super().call(tool_name, **args)
+                    studio.note_call(tool_name)
+                    return result
+
+                def call_with(self, name: str, args: dict[str, Any] | None = None) -> Any:
+                    result = super().call_with(name, args)
+                    studio.note_call(name)
+                    return result
+
+            mcp_server = AetherMCPServer(_StudioClient(studio.client, studio.engine_lock))  # type: ignore[arg-type]
             mcp_manager = StreamableHTTPSessionManager(app=mcp_server.build_server())
 
             class _McpEndpoint:

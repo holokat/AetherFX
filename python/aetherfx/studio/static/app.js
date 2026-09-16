@@ -208,6 +208,7 @@ function refreshStatus() {
     button.disabled = !gen.available || busy;
     button.title = gen.available ? 'Generate an effect from the prompt' : (gen.reason || 'no generator backend configured');
     setEffectName(status.active_effect);
+    followExternalChanges(status);
     return status;
   }, function (err) {
     $('engine-dot').className = 'dot bad';
@@ -215,6 +216,29 @@ function refreshStatus() {
     $('engine-status').title = err && err.message ? err.message : 'cannot reach the studio server';
     return null;
   });
+}
+
+/* The engine is shared with MCP clients (Claude Code) and generation workers.
+ * When the active effect or the revision counter changes without a UI action,
+ * reload the graph; when a different effect became active, render its preview. */
+var externalSyncPending = false;
+function followExternalChanges(status) {
+  var activeId = status.active_effect ? status.active_effect.effect_id : null;
+  var revision = typeof status.revision === 'number' ? status.revision : null;
+  var first = S.revision === undefined;
+  var idChanged = S.activeId !== undefined && activeId !== S.activeId;
+  var revChanged = !first && revision !== null && revision !== S.revision;
+  S.activeId = activeId;
+  S.revision = revision;
+  if (first || (!idChanged && !revChanged) || externalSyncPending || S.uiMutating) return;
+  externalSyncPending = true;
+  var work = idChanged ? Promise.resolve(resetPreview()).then(function () { return afterEffectChange(); })
+                       : refreshEffect().then(function () { S.previewStale = true; updatePreviewHint(); });
+  if (idChanged) work = work.then(function () { return refreshEffects(); });
+  work.then(function () {
+    externalSyncPending = false;
+    if (idChanged && S.data && !S.job) { toast('effect changed externally: ' + (status.active_effect && status.active_effect.name), 'ok'); renderPreview(true); }
+  }, function () { externalSyncPending = false; });
 }
 
 function setEffectName(active) {
@@ -276,6 +300,7 @@ function fillTemplateSelect(examples) {
 
 function loadEffect(path) {
   S.paramMessage = null;
+  S.activeId = undefined; // let the next status poll adopt the new id silently
   return guard(api('/api/effects/load', { body: { path: path } }).then(function (result) {
     toast('loaded ' + (result.name || path), 'ok');
     resetPreview();
@@ -285,6 +310,7 @@ function loadEffect(path) {
 
 function activateEffect(effectId) {
   S.paramMessage = null;
+  S.activeId = undefined;
   return guard(api('/api/effects/activate', { body: { effect_id: effectId } }).then(function () {
     resetPreview();
     return afterEffectChange();
