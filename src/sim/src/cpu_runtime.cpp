@@ -54,6 +54,9 @@ using compiler::CompiledNode;
 // ---------------------------------------------------------------------------
 
 constexpr float kTiny = 1e-12f;
+// Normal approach speed above which an existing contact reports again
+// (docs/RUNTIME.md section 5).
+constexpr float kImpactSpeed = 0.1f;
 
 uint32_t seed32_of(uint64_t seed) { return static_cast<uint32_t>(seed ^ (seed >> 32)); }
 
@@ -299,6 +302,7 @@ struct SystemRuntime {
     Gradient color_over_life;
     bool kill_on_collision = false;
     float collision_radius = 0.0f;
+    float bounce = 0.3f, friction = 0.2f;
     std::vector<size_t> forces, colliders;
     std::vector<size_t> spawn_events, death_events, collision_events, distance_events;
     std::vector<size_t> trails;
@@ -308,6 +312,10 @@ struct SystemRuntime {
     std::vector<Vec3> spawn_position;
     std::vector<uint64_t> seed64;
     std::vector<uint32_t> distance_mask;
+    // bit j = "was in contact with colliders[j] at the end of the previous
+    // step" (docs/RUNTIME.md section 5, resting contacts); colliders beyond
+    // the first 32 on one system are not contact-tracked.
+    std::vector<uint32_t> contact_mask;
     // spawn queues
     std::vector<SpawnBatch> emitter_batches, event_batches;
     // statistics
@@ -402,6 +410,7 @@ private:
     std::vector<AnalyticEntry> analytic_order_;
     const Node* camera_node_ = nullptr;
     std::vector<uint8_t> dead_scratch_;
+    std::vector<Vec3> arrival_velocity_;  // velocity before this step's integration
 };
 
 // ---------------------------------------------------------------------------
@@ -488,6 +497,8 @@ void CpuRuntime::build() {
             s.color_over_life = param_gradient(*n, "color_over_life");
             s.kill_on_collision = param_bool(*n, "kill_on_collision");
             s.collision_radius = param_float(*n, "collision_radius");
+            s.bounce = param_float(*n, "bounce");
+            s.friction = param_float(*n, "friction");
             for (const NodeId& id : cn.forces) {
                 auto it = force_of_node_.find(id);
                 if (it != force_of_node_.end()) s.forces.push_back(it->second);
@@ -687,6 +698,7 @@ void CpuRuntime::rebuild_state() {
         s.spawn_position.clear();
         s.seed64.clear();
         s.distance_mask.clear();
+        s.contact_mask.clear();
         s.emitter_batches.clear();
         s.event_batches.clear();
         s.spawned_total = s.died_total = s.peak_alive = s.dropped = s.collisions = 0;
@@ -1276,6 +1288,7 @@ void CpuRuntime::spawn_one(SystemRuntime& s, EmitterRuntime& em, const SpawnBatc
     s.spawn_position.push_back(position);
     s.seed64.push_back(particle_seed);
     s.distance_mask.push_back(0u);
+    s.contact_mask.push_back(0u);
     ++s.spawned_total;
     ++em.emitted;
 
@@ -1411,9 +1424,16 @@ float box_distance(Vec3 p, Vec3 half, Vec3& normal) {
 void CpuRuntime::collide(SystemRuntime& s, ParticleBuffer& b, std::vector<uint8_t>& dead, size_t& dead_count) {
     if (s.colliders.empty()) return;
     const size_t n = b.count();
-    for (size_t ci : s.colliders) {
-        const ColliderRuntime& c = colliders_[ci];
+    for (size_t slot = 0; slot < s.colliders.size(); ++slot) {
+        const ColliderRuntime& c = colliders_[s.colliders[slot]];
         const bool kill = c.kill || s.kill_on_collision;
+        // The material combines both nodes (docs/RUNTIME.md section 5), so
+        // either side can zero the response.
+        const float bounce = std::sqrt(std::max(0.0f, s.bounce * c.bounce));
+        const float friction = std::sqrt(std::max(0.0f, s.friction * c.friction));
+        // Contact bit for this collider; slots past 32 are not tracked and
+        // therefore always report (no system in the vocabulary needs that many).
+        const uint32_t contact_bit = slot < 32 ? (1u << static_cast<uint32_t>(slot)) : 0u;
         for (size_t i = 0; i < n; ++i) {
             if (dead[i]) continue;
             const float collision_radius = s.collision_radius > 0.0f ? s.collision_radius : b.size[i] * 0.5f;
@@ -1456,12 +1476,28 @@ void CpuRuntime::collide(SystemRuntime& s, ParticleBuffer& b, std::vector<uint8_
                 case ColliderKind::Unsupported:
                     continue;
             }
-            if (sd >= 0.0f) continue;
+            if (sd >= 0.0f) {
+                s.contact_mask[i] &= ~contact_bit;
+                continue;
+            }
 
+            // The push-out and the velocity response happen on every
+            // overlapping step, so particles never sink through a surface.
             b.position[i] = p + normal * (-sd);
             const float vn = dot(b.velocity[i], normal);
             if (vn < 0.0f)
-                b.velocity[i] = (b.velocity[i] - normal * vn) * (1.0f - c.friction) - normal * (vn * c.bounce);
+                b.velocity[i] = (b.velocity[i] - normal * vn) * (1.0f - friction) - normal * (vn * bounce);
+
+            // A resting particle re-penetrates by the velocity it picks up
+            // from acceleration within the step, so the impact speed is
+            // measured before this step's integration: a particle that is
+            // already in contact only reports again when it is driven into
+            // the surface at more than kImpactSpeed.
+            const bool was_touching = (s.contact_mask[i] & contact_bit) != 0u;
+            s.contact_mask[i] |= contact_bit;
+            const float approach = -dot(arrival_velocity_[i], normal);
+            if (was_touching && approach <= kImpactSpeed) continue;
+
             ++s.collisions;
             for (size_t ei : s.collision_events)
                 fire_particle_event(events_[ei], b.position[i], b.velocity[i], s.seed64[i]);
@@ -1525,6 +1561,7 @@ void CpuRuntime::remove_dead(SystemRuntime& s, const std::vector<uint8_t>& dead)
             s.spawn_position[w] = s.spawn_position[r];
             s.seed64[w] = s.seed64[r];
             s.distance_mask[w] = s.distance_mask[r];
+            s.contact_mask[w] = s.contact_mask[r];
         }
         ++w;
     }
@@ -1551,6 +1588,7 @@ void CpuRuntime::remove_dead(SystemRuntime& s, const std::vector<uint8_t>& dead)
     s.spawn_position.resize(w);
     s.seed64.resize(w);
     s.distance_mask.resize(w);
+    s.contact_mask.resize(w);
 }
 
 // ---------------------------------------------------------------------------
@@ -1666,6 +1704,7 @@ void CpuRuntime::update_system(SystemRuntime& s, double t1) {
 
         // (d) semi-implicit Euler integration
         const float damping = std::max(0.0f, 1.0f - s.drag * dt);
+        if (!s.colliders.empty()) arrival_velocity_ = b.velocity;  // impact speed for section 5
         for (size_t i = 0; i < n; ++i) {
             b.velocity[i] += b.acceleration[i] * dt;
             b.velocity[i] *= damping;

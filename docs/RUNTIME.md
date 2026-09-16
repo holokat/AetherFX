@@ -153,9 +153,10 @@ terms combine both nodes: `bounce = sqrt(system.bounce * collider.bounce)`,
 `friction = sqrt(system.friction * collider.friction)` (defaults give the
 defaults; either side can zero it). `kill_on_collision` is the OR of both.
 A **contact** is counted, and `on_collision` fires, only when the particle
-was not already resting on that collider in the previous step or its
-pre-response normal speed `-vn` exceeds 0.1 m/s (resting contacts do not
-re-fire every step). If the particle is killed, `on_collision` fires first
+was not already in contact with that collider at the end of the previous
+step, or its arrival normal speed (the normal speed at the start of the
+step, before this step's forces were integrated) exceeds 0.1 m/s. Resting
+contacts therefore do not re-fire every step even under gravity. If the particle is killed, `on_collision` fires first
 and then `on_death`.
 
 `physics: rigid` (Tier 2) falls back to this path in V1 with a compile

@@ -938,3 +938,165 @@ TEST_CASE("event probability uses a deterministic per-particle draw", "[sim][eve
     CHECK(half < 140u);
     CHECK(spawned_with_probability(0.5f) == half);  // deterministic
 }
+
+// ---------------------------------------------------------------------------
+// collision materials and resting contacts (docs/RUNTIME.md section 5)
+// ---------------------------------------------------------------------------
+
+namespace {
+
+// Drops one particle from y=3 onto a plane and returns rebound_speed /
+// impact_speed, which is exactly the combined bounce for a vertical drop.
+float rebound_ratio(float system_bounce, float collider_bounce) {
+    Effect e = single_burst_effect(0.0f, Vec3{0, 1, 0}, Vec3{0, 3, 0});
+    attach_force(e, "g", "gravity", 9.81f);
+    e.find_node("ps")->parameters["bounce"] = Parameter{system_bounce};
+    e.find_node("ps")->parameters["friction"] = Parameter{0.0f};
+    Node collider = node_of(NodeType::Collider, "ground");
+    collider.parameters["collider_type"] = Parameter{std::string("plane")};
+    collider.parameters["bounce"] = Parameter{collider_bounce};
+    collider.parameters["friction"] = Parameter{0.0f};
+    e.add_node(collider);
+    e.find_node("ps")->inputs["colliders"] = {NodeRef::parse("ground")};
+
+    std::unique_ptr<sim::IRuntime> rt = runtime_for(e);
+    float previous = 0.0f;
+    for (int i = 0; i < 180; ++i) {
+        rt->step();
+        const ParticleBuffer* b = rt->state().find_particles("ps");
+        REQUIRE(b != nullptr);
+        REQUIRE(b->count() == 1u);
+        const float vy = b->velocity[0].y;
+        if (vy >= 0.0f && previous < 0.0f) {
+            // the colliding step integrated one more dt of gravity first
+            const float impact = -previous + 9.81f / 60.0f;
+            return vy / impact;
+        }
+        previous = vy;
+    }
+    FAIL("the particle never reached the plane");
+    return -1.0f;
+}
+
+}  // namespace
+
+TEST_CASE("bounce and friction combine both nodes", "[sim][collision]") {
+    // sqrt(system * collider): either side can zero the response
+    CHECK(rebound_ratio(0.0f, 0.3f) == Approx(0.0f).margin(1e-4));
+    CHECK(rebound_ratio(0.3f, 0.0f) == Approx(0.0f).margin(1e-4));
+    CHECK(rebound_ratio(0.3f, 0.3f) == Approx(0.3f).margin(0.005));
+    CHECK(rebound_ratio(1.0f, 0.25f) == Approx(0.5f).margin(0.005));
+    CHECK(rebound_ratio(0.5f, 0.5f) == Approx(0.5f).margin(0.005));
+
+    // friction combines the same way and damps the tangential component
+    const auto tangential_after_impact = [](float system_friction, float collider_friction) {
+        Effect e = single_burst_effect(2.0f, Vec3{1, 0, 0}, Vec3{0, 1, 0});
+        attach_force(e, "g", "gravity", 9.81f);
+        e.find_node("ps")->parameters["friction"] = Parameter{system_friction};
+        e.find_node("ps")->parameters["bounce"] = Parameter{0.0f};
+        Node collider = node_of(NodeType::Collider, "ground");
+        collider.parameters["collider_type"] = Parameter{std::string("plane")};
+        collider.parameters["friction"] = Parameter{collider_friction};
+        collider.parameters["bounce"] = Parameter{0.0f};
+        e.add_node(collider);
+        e.find_node("ps")->inputs["colliders"] = {NodeRef::parse("ground")};
+        std::unique_ptr<sim::IRuntime> rt = runtime_for(e);
+        rt->simulate_to(1.0);
+        return rt->state().find_particles("ps")->velocity[0].x;
+    };
+    CHECK(tangential_after_impact(0.0f, 0.8f) == Approx(2.0f).margin(1e-4));  // sqrt(0 * 0.8) = 0
+    CHECK(tangential_after_impact(1.0f, 1.0f) == Approx(0.0f).margin(1e-4));
+    const float half = tangential_after_impact(0.5f, 0.5f);
+    CHECK(half > 0.0f);
+    CHECK(half < 2.0f);
+}
+
+TEST_CASE("resting contacts do not re-fire every step", "[sim][collision]") {
+    Effect e = single_burst_effect(0.0f, Vec3{0, 1, 0}, Vec3{0, 1, 0}, 1);
+    attach_force(e, "g", "gravity", 9.81f);
+    e.find_node("ps")->parameters["bounce"] = Parameter{0.0f};
+    Node collider = node_of(NodeType::Collider, "ground");
+    collider.parameters["collider_type"] = Parameter{std::string("plane")};
+    collider.parameters["bounce"] = Parameter{0.3f};
+    collider.parameters["friction"] = Parameter{0.5f};
+    e.add_node(collider);
+    e.find_node("ps")->inputs["colliders"] = {NodeRef::parse("ground")};
+
+    std::unique_ptr<sim::IRuntime> rt = runtime_for(e);
+    float lowest = 1e9f;
+    for (int i = 0; i < 120; ++i) {  // 2 s
+        rt->step();
+        const ParticleBuffer* b = rt->state().find_particles("ps");
+        REQUIRE(b->count() == 1u);
+        lowest = std::min(lowest, b->position[0].y);
+    }
+    const sim::SystemStatistics s = system_stats(*rt, "ps");
+    CHECK(s.collisions >= 1u);
+    CHECK(s.collisions <= 3u);  // one landing, not 120 steps of contact
+    CHECK(lowest > -1e-3f);     // the push-out still runs every step
+}
+
+TEST_CASE("a bouncing particle reports each landing", "[sim][collision]") {
+    Effect e = single_burst_effect(0.0f, Vec3{0, 1, 0}, Vec3{0, 3, 0}, 1);
+    attach_force(e, "g", "gravity", 9.81f);
+    e.find_node("ps")->parameters["bounce"] = Parameter{0.8f};
+    Node collider = node_of(NodeType::Collider, "ground");
+    collider.parameters["collider_type"] = Parameter{std::string("plane")};
+    collider.parameters["bounce"] = Parameter{0.8f};
+    collider.parameters["friction"] = Parameter{0.0f};
+    e.add_node(collider);
+    e.find_node("ps")->inputs["colliders"] = {NodeRef::parse("ground")};
+
+    std::unique_ptr<sim::IRuntime> rt = runtime_for(e);
+    rt->simulate_to(4.0);
+    const sim::SystemStatistics s = system_stats(*rt, "ps");
+    CHECK(s.collisions >= 3u);   // several real bounces
+    CHECK(s.collisions <= 20u);  // but nothing like one per step (240 steps)
+}
+
+TEST_CASE("an on_collision burst fires once per landing", "[sim][events]") {
+    Effect e = single_burst_effect(0.0f, Vec3{0, 1, 0}, Vec3{0, 2, 0}, 3);
+    attach_force(e, "g", "gravity", 9.81f);
+    e.find_node("ps")->parameters["bounce"] = Parameter{0.0f};  // land and rest
+    Node collider = node_of(NodeType::Collider, "ground");
+    collider.parameters["collider_type"] = Parameter{std::string("plane")};
+    collider.parameters["bounce"] = Parameter{0.3f};
+    collider.parameters["friction"] = Parameter{0.6f};
+    e.add_node(collider);
+    e.find_node("ps")->inputs["colliders"] = {NodeRef::parse("ground")};
+
+    Node ps2 = node_of(NodeType::ParticleSystem, "dust_ps");
+    ps2.parameters["max_particles"] = Parameter{500};
+    ps2.parameters["lifetime"] = Parameter{5.0f};
+    e.add_node(ps2);
+    Node em2 = node_of(NodeType::Emitter, "dust");
+    em2.parameters["shape"] = Parameter{std::string("point")};
+    em2.parameters["rate"] = Parameter{0.0f};
+    em2.parameters["burst_count"] = Parameter{2};
+    em2.parameters["burst_times"] = Parameter{std::vector<float>{}};
+    em2.inputs["particle"] = {NodeRef::parse("dust_ps")};
+    e.add_node(em2);
+    Node ev = node_of(NodeType::Event, "impact");
+    ev.parameters["trigger"] = Parameter{std::string("on_collision")};
+    ev.inputs["source"] = {NodeRef::parse("ps")};
+    ev.inputs["targets"] = {NodeRef::parse("dust")};
+    e.add_node(ev);
+
+    std::unique_ptr<sim::IRuntime> rt = runtime_for(e);
+    rt->simulate_to(2.0);
+    CHECK(system_stats(*rt, "ps").collisions == 3u);        // one landing each
+    CHECK(system_stats(*rt, "dust_ps").spawned_total == 6u);  // 3 landings x burst 2
+    rt->simulate_to(4.0);
+    CHECK(system_stats(*rt, "dust_ps").spawned_total == 6u);  // resting: no new bursts
+}
+
+TEST_CASE("lightning collision counts stay close to one per particle", "[sim][examples]") {
+    std::unique_ptr<sim::IRuntime> rt = runtime_for(load_example("lightning_strike.json"));
+    rt->simulate_to(1.2);
+    const sim::SystemStatistics sparks = system_stats(*rt, "spark_ps");
+    const sim::SystemStatistics debris = system_stats(*rt, "debris_ps");
+    CHECK(sparks.spawned_total == 350u);
+    CHECK(sparks.collisions > 100u);
+    CHECK(sparks.collisions < 1000u);  // was one contact per resting particle per step
+    CHECK(debris.collisions < 200u);
+}
