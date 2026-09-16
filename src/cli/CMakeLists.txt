@@ -1,0 +1,5 @@
+file(GLOB_RECURSE AETHER_CLI_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+add_executable(aetherfx ${AETHER_CLI_SOURCES})
+target_link_libraries(aetherfx PRIVATE aether::tools)
+aether_set_warnings(aetherfx)
+set_target_properties(aetherfx PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")

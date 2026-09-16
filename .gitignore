@@ -1,0 +1,36 @@
+# build
+build/
+build-*/
+cmake-build-*/
+_deps/
+third_party/_fetched/
+*.o
+*.a
+*.dylib
+*.so
+compile_commands.json
+
+# outputs
+out/
+renders/
+*.exr
+*.mp4
+!examples/references/*.png
+!examples/references/*.jpg
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# editors / os
+.DS_Store
+.vscode/
+.idea/
+*.swp
