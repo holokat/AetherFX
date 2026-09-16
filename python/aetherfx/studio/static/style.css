@@ -459,3 +459,6 @@ label.inline select { margin-left: 2px; }
 .stage-controls input[type=range] { width: 64px; }
 .stage-controls input[type=color] { width: 26px; height: 18px; padding: 0; border: 1px solid #333; background: none; }
 #transport { flex-wrap: wrap; row-gap: 4px; }
+
+/* wrap the library hint */
+#panel-effects .hint.small { white-space: normal; line-height: 1.35; margin: 4px 0 6px; }
