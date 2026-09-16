@@ -25,8 +25,10 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import math
 import mimetypes
 import os
+import random
 import re
 import sys
 import threading
@@ -418,6 +420,117 @@ def effect_summary(effect: Any, effect_id: str | None, diagnostics: Any = None) 
 # =========================================================================
 
 
+
+
+# ---------------------------------------------------------------------------
+# randomize: mutate parameter values for exploration
+# ---------------------------------------------------------------------------
+
+_RANDOMIZE_SKIP_TYPES = {"camera", "texture", "event", "field"}
+_RANDOMIZE_SKIP_PARAMS = {
+    "max_particles", "width", "height", "frames", "graph", "path", "segments", "sprite_columns", "sprite_rows",
+    "sprite_fps", "points", "source", "primitive", "physics", "kill_on_collision", "sort", "surface_only",
+    "cast_shadows", "double_sided", "soft_particle", "shading", "light_type", "collider_type", "trigger",
+    "post_type", "volume_type", "field_type", "curve_type", "closed", "phase", "start_time", "duration", "time",
+    "max_triggers", "burst_times", "projection_normal", "normal", "direction", "position", "rotation", "scale",
+    "target", "up", "origin", "fov", "near", "far", "exposure", "offset", "bounds_min", "bounds_max",
+    "resolution", "inherit_position", "visible", "noise_type", "force_type", "render_mode", "voxel_size",
+    "collision_radius", "min_vertex_distance", "max_segments", "octaves",
+}
+_UNIT_RANGE_PARAMS = {"opacity", "friction", "bounce", "gain", "branch_probability", "branch_length",
+                      "inherit_velocity", "probability", "flicker_amplitude", "dissolve", "erosion",
+                      "ground_albedo", "bloom_intensity", "depth_fade"}
+_ENUM_SWAPS = {"shape": {"point", "sphere", "hemisphere", "box", "disc", "ring", "cone", "line"},
+               "blend": {"additive", "alpha", "premultiplied"},
+               "falloff": {"none", "linear", "inverse_square", "smooth"}}
+
+
+def _jitter_number(rng: "random.Random", value: float, amount: float, spec: JsonDict, name: str) -> float:
+    lo, hi = spec.get("min"), spec.get("max")
+    if name in _UNIT_RANGE_PARAMS or (lo == 0 and hi == 1):
+        out = value + rng.uniform(-1.0, 1.0) * amount * 0.5
+    else:
+        base = value
+        if base == 0 and isinstance(spec.get("default"), (int, float)) and spec["default"]:
+            base = float(spec["default"])
+        if base == 0:
+            return value
+        out = base * math.exp(rng.uniform(-1.0, 1.0) * amount * 1.2)
+    if lo is not None:
+        out = max(float(lo), out)
+    if hi is not None:
+        out = min(float(hi), out)
+    return out
+
+
+def _jitter_color(rng: "random.Random", color: list[float], amount: float) -> list[float]:
+    import colorsys  # noqa: PLC0415
+
+    rgb = [max(0.0, float(c)) for c in color[:3]]
+    alpha = float(color[3]) if len(color) > 3 else 1.0
+    peak = max(rgb) or 1.0
+    h, s, v = colorsys.rgb_to_hsv(rgb[0] / peak, rgb[1] / peak, rgb[2] / peak)
+    h = (h + rng.uniform(-1.0, 1.0) * amount * 0.25) % 1.0
+    s = min(1.0, max(0.0, s + rng.uniform(-1.0, 1.0) * amount * 0.3))
+    v = min(1.0, max(0.05, v + rng.uniform(-1.0, 1.0) * amount * 0.3))
+    r, g, b = colorsys.hsv_to_rgb(h, s, v)
+    scale = peak * math.exp(rng.uniform(-1.0, 1.0) * amount * 0.5)
+    return [round(r * scale, 4), round(g * scale, 4), round(b * scale, 4), alpha]
+
+
+def randomize_parameters(node_json: JsonDict, spec: JsonDict, effective: JsonDict, amount: float,
+                         rng: "random.Random") -> JsonDict:
+    """New values for one node. Never touches animated, structural or framing parameters."""
+    changes: JsonDict = {}
+    raw = node_json.get("parameters") or {}
+    for name, pspec in (spec.get("parameters") or {}).items():
+        if name in _RANDOMIZE_SKIP_PARAMS:
+            continue
+        current_raw = raw.get(name)
+        if isinstance(current_raw, dict) and "track" in current_raw:
+            continue  # keep keyframed envelopes
+        value = effective.get(name)
+        ptype = pspec.get("type")
+        if ptype in ("float", "int") and isinstance(value, (int, float)) and not isinstance(value, bool):
+            new = _jitter_number(rng, float(value), amount, pspec, name)
+            if ptype == "int":
+                new = int(round(new))
+            else:
+                new = round(new, 4)
+            if new != value:
+                changes[name] = new
+        elif ptype == "color" and isinstance(value, list) and len(value) >= 3:
+            changes[name] = _jitter_color(rng, value, amount)
+        elif ptype in ("vec2", "vec3") and isinstance(value, list) and name in ("size", "area_size"):
+            changes[name] = [round(float(v) * math.exp(rng.uniform(-1.0, 1.0) * amount * 0.8), 4) for v in value]
+        elif ptype == "enum" and amount >= 0.6 and name in _ENUM_SWAPS and rng.random() < 0.35:
+            options = [e for e in (pspec.get("enum") or []) if e in _ENUM_SWAPS[name] and e != value]
+            if options:
+                changes[name] = rng.choice(options)
+    return changes
+
+
+def _parse_camera(value: Any) -> JsonDict | None:
+    """Camera override from a JSON string (query) or object (body): position/target/up/fov."""
+    if not value:
+        return None
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except json.JSONDecodeError as exc:
+            raise StudioError(f"camera is not valid JSON: {exc}", 400) from exc
+    if not isinstance(value, dict):
+        raise StudioError("camera must be an object", 400)
+    out: JsonDict = {}
+    for key in ("position", "target", "up"):
+        vec = value.get(key)
+        if isinstance(vec, list) and len(vec) == 3:
+            out[key] = [float(v) for v in vec]
+    if isinstance(value.get("fov"), (int, float)):
+        out["fov"] = max(1.0, min(170.0, float(value["fov"])))
+    return out or None
+
+
 def create_app(config: StudioConfig | None = None) -> Starlette:
     """Build the studio application.  ``config.client`` may be a fake engine."""
     studio = Studio(config or StudioConfig())
@@ -624,11 +737,14 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
             raise StudioError(400, "bad_request", f"invalid frame parameters: {exc}") from exc
         width = max(16, min(width, 2048))
         height = max(16, min(height, 2048))
+        camera = _parse_camera(params.get("camera"))
+        cam_tag = f"_{abs(hash(json.dumps(camera, sort_keys=True))) % 10**8:08d}" if camera else ""
         time_s = max(0.0, time_s)
-        path = studio.frames_dir / f"frame_{width}x{height}_{time_s:.3f}.png"
+        path = studio.frames_dir / f"frame_{width}x{height}_{time_s:.3f}{cam_tag}.png"
         await run_in_threadpool(lambda: path.parent.mkdir(parents=True, exist_ok=True))
         result = await studio.acall(
-            "render_frame", time=time_s, width=width, height=height, path=str(path), format="png"
+            "render_frame", time=time_s, width=width, height=height, path=str(path), format="png",
+            **({"camera": camera} if camera else {})
         )
         rendered = Path(result.get("path") or path)
         data = await run_in_threadpool(rendered.read_bytes)
@@ -656,6 +772,7 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
             "width": width,
             "height": height,
             "out_dir": str(out_dir),
+            **({"camera": _parse_camera(data.get("camera"))} if data.get("camera") else {}),
             "contact_sheet": True,
         }
         if end is not None:
@@ -711,6 +828,44 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
         return await run_in_threadpool(lambda: studio.call_with_args(name, args))
 
     # -- generation jobs ------------------------------------------------
+
+
+    @endpoint
+    async def api_randomize(request: Request) -> JsonDict:
+        body = await read_json(request)
+        amount = min(1.0, max(0.02, float(body.get("amount", 0.35))))
+        target = body.get("node_id")
+        seed = body.get("seed")
+        rng = random.Random(seed)
+        graph = await studio.acall("inspect_graph")
+        nodes = [n for n in graph.get("nodes", []) if n.get("enabled", True)]
+        if target:
+            nodes = [n for n in nodes if n.get("id") == target]
+            if not nodes:
+                raise StudioError(f"no node {target!r}", 404)
+        changed_nodes = 0
+        changed_params = 0
+        diagnostics: list[JsonDict] = []
+        for entry in nodes:
+            if entry.get("type") in _RANDOMIZE_SKIP_TYPES:
+                continue
+            info = await studio.acall("inspect_node", node_id=entry["id"])
+            changes = randomize_parameters(info.get("node") or {}, info.get("spec") or {},
+                                           info.get("effective_parameters") or {}, amount, rng)
+            if not changes:
+                continue
+            result = await studio.acall("set_parameters", node_id=entry["id"], parameters=changes)
+            changed_nodes += 1
+            changed_params += len(changes)
+            for item in (result.get("diagnostics") or {}).get("items", []):
+                if item.get("severity") == "error":
+                    diagnostics.append(item)
+        new_seed = None
+        if not target and rng.random() < amount + 0.3:
+            new_seed = rng.randrange(1, 1_000_000)
+            await studio.acall("set_effect_property", seed=new_seed)
+        return {"changed_nodes": changed_nodes, "changed_params": changed_params, "seed": new_seed,
+                "errors": diagnostics}
 
     @endpoint
     async def api_generate(request: Request) -> JsonDict:
@@ -800,6 +955,7 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
         Route("/api/vocabulary", api_vocabulary),
         Route("/api/tools", api_tools),
         Route("/api/tool", api_tool, methods=["POST"]),
+        Route("/api/randomize", api_randomize, methods=["POST"]),
         Route("/api/generate", api_generate, methods=["POST"]),
         Route("/api/jobs/{job_id}", api_job),
         Route("/api/jobs/{job_id}/cancel", api_job_cancel, methods=["POST"]),

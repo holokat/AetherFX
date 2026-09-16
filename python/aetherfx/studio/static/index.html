@@ -100,15 +100,18 @@
         </select>
       </label>
       <label class="inline">size
-        <select id="sel-size">
+        <select id="sel-size" title="Render resolution: fit = the viewport's own size">
+          <option value="fit" selected>fit</option>
           <option value="256">256</option>
-          <option value="384" selected>384</option>
+          <option value="384">384</option>
           <option value="512">512</option>
           <option value="768">768</option>
+          <option value="1024">1024</option>
         </select>
       </label>
       <label class="check inline" title="Loop playback"><input id="chk-loop" type="checkbox" checked> loop</label>
       <button id="btn-preview" type="button" title="Render the whole sequence and play it">Render preview</button>
+      <button id="btn-view-reset" type="button" title="Reset the camera to the effect's camera (wheel: zoom, drag: orbit, shift-drag: pan)">Reset view</button>
       <span id="preview-hint" class="hint"></span>
     </div>
 
@@ -121,7 +124,16 @@
   <section class="column" id="col-right">
 
     <div class="panel" id="panel-graph">
-      <h2>Graph</h2>
+      <h2>Graph
+        <span class="panel-tools">
+          <select id="sel-random-amount" title="How far values move">
+            <option value="0.15">subtle</option>
+            <option value="0.35" selected>medium</option>
+            <option value="1.0">wild</option>
+          </select>
+          <button id="btn-random" type="button" title="Randomize the selected node, or the whole effect when nothing is selected (undoable)">Random</button>
+        </span>
+      </h2>
       <div class="panel-body">
         <div id="timeline-phases" class="phases"></div>
         <div id="graph-tree" class="graph-tree"><p class="dim small">no effect loaded</p></div>

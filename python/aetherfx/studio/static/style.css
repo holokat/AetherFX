@@ -262,7 +262,7 @@ label.inline select { margin-left: 2px; }
   overflow: hidden;
   background-image: radial-gradient(circle at 50% 45%, #14161b 0%, #000 72%);
 }
-#viewport-img { max-width: 100%; max-height: 100%; object-fit: contain; image-rendering: auto; }
+#viewport-img { width: 100%; height: 100%; object-fit: contain; image-rendering: auto; display: block; }
 #viewport-empty { text-align: center; color: var(--text-dim); }
 #viewport-empty p { margin: 4px 0; }
 
@@ -445,3 +445,10 @@ label.inline select { margin-left: 2px; }
 ::-webkit-scrollbar-track { background: var(--bg-sunken); }
 ::-webkit-scrollbar-thumb { background: #2f343e; border-radius: 5px; border: 2px solid var(--bg-sunken); }
 ::-webkit-scrollbar-thumb:hover { background: #3c424e; }
+
+/* panel header tools (Random button) */
+.panel > h2 { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.panel-tools { display: inline-flex; gap: 6px; align-items: center; font-weight: normal; text-transform: none; letter-spacing: 0; }
+.panel-tools select, .panel-tools button { font-size: 11px; padding: 2px 6px; }
+#viewport { cursor: grab; }
+#viewport.dragging { cursor: grabbing; }

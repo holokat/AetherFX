@@ -304,7 +304,7 @@ function loadEffect(path) {
   return guard(api('/api/effects/load', { body: { path: path } }).then(function (result) {
     toast('loaded ' + (result.name || path), 'ok');
     resetPreview();
-    return afterEffectChange();
+    return afterEffectChange().then(function (r) { if (S.data) renderPreview(true); return r; });
   }), 'load');
 }
 
@@ -313,7 +313,7 @@ function activateEffect(effectId) {
   S.activeId = undefined;
   return guard(api('/api/effects/activate', { body: { effect_id: effectId } }).then(function () {
     resetPreview();
-    return afterEffectChange();
+    return afterEffectChange().then(function (r) { if (S.data) renderPreview(true); return r; });
   }), 'activate');
 }
 
@@ -359,6 +359,7 @@ function afterEffectChange() {
 function refreshEffect() {
   return apiRaw('/api/effect').then(function (res) { return res.json(); }).then(function (data) {
     S.data = data;
+    if (!S.camera || S.cameraEffectId !== S.activeId) resetCamera();
     renderPhases(data.timeline);
     renderGraph(data.graph);
     renderStatistics(data.statistics);
@@ -960,6 +961,160 @@ function step(delta) {
   setIndex(next);
 }
 
+/* Render resolution. 'fit' renders at the viewport's pixel size (aspect matched,
+ * rounded to 8 px, long side capped) so the frame fills the canvas 1:1. */
+function parseSize(value) { return value === 'fit' ? 'fit' : (parseInt(value, 10) || 384); }
+function renderSize() {
+  if (S.size !== 'fit') return { w: S.size, h: S.size };
+  var vp = $('viewport');
+  var w = Math.max(128, vp.clientWidth || 384), h = Math.max(128, vp.clientHeight || 384);
+  var cap = 1024, scale = Math.min(1, cap / Math.max(w, h));
+  w = Math.max(128, Math.floor(w * scale / 8) * 8); h = Math.max(128, Math.floor(h * scale / 8) * 8);
+  return { w: w, h: h };
+}
+var resizeTimer = null;
+function onViewportResize() {
+  if (S.size !== 'fit' || !S.data) return;
+  if (resizeTimer) clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(function () {
+    resizeTimer = null;
+    var size = renderSize();
+    if (S.preview && S.preview.w === size.w && S.preview.h === size.h) return;
+    if (S.preview) { invalidatePreview(); schedulePreviewRefresh(); } else { showCurrentFrame(); }
+  }, 600);
+}
+
+/* Auto re-render: after edits the preview is re-rendered (debounced) and keeps playing. */
+var previewRefreshTimer = null;
+function schedulePreviewRefresh() {
+  if (previewRefreshTimer) clearTimeout(previewRefreshTimer);
+  previewRefreshTimer = setTimeout(function () {
+    previewRefreshTimer = null;
+    if (!S.data) return;
+    if (S.previewBusy) { S.previewDirty = true; return; }
+    renderPreview(true);
+  }, 800);
+}
+
+/* ====================================================================== *
+ * camera: wheel zoom, drag orbit, shift/middle-drag pan (studio-only view)
+ * ====================================================================== */
+
+var DEFAULT_CAMERA = { position: [0, 1.5, 5], target: [0, 1, 0], up: [0, 1, 0], fov: 45 };
+var STUDIO_ZOOM_OUT = 1.45;   /* the studio starts a little wider than the effect's own camera */
+
+function trackValue(v) { return (v && typeof v === 'object' && !Array.isArray(v) && 'value' in v) ? v.value : v; }
+function effectCamera() {
+  var nodes = (S.data && S.data.effect && S.data.effect.nodes) || [];
+  var cam = null;
+  for (var i = 0; i < nodes.length; i++) if (nodes[i].type === 'camera') { cam = nodes[i]; break; }
+  var p = cam && cam.parameters ? cam.parameters : {};
+  var position = trackValue(p.position) || DEFAULT_CAMERA.position.slice();
+  var target = trackValue(p.target) || DEFAULT_CAMERA.target.slice();
+  return { position: position.slice(), target: target.slice(), up: (trackValue(p.up) || DEFAULT_CAMERA.up).slice(),
+           fov: typeof trackValue(p.fov) === 'number' ? trackValue(p.fov) : DEFAULT_CAMERA.fov };
+}
+function vsub(a, b) { return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]; }
+function vadd(a, b) { return [a[0] + b[0], a[1] + b[1], a[2] + b[2]]; }
+function vscale(a, s) { return [a[0] * s, a[1] * s, a[2] * s]; }
+function vlen(a) { return Math.sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]); }
+function vnorm(a) { var l = vlen(a) || 1; return [a[0] / l, a[1] / l, a[2] / l]; }
+function vcross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
+
+function resetCamera(zoomOut) {
+  var cam = effectCamera();
+  if (zoomOut !== false) {
+    var offset = vsub(cam.position, cam.target);
+    cam.position = vadd(cam.target, vscale(offset, STUDIO_ZOOM_OUT));
+  }
+  S.camera = cam;
+  S.cameraEffectId = S.activeId;
+}
+function cameraParam() {
+  if (!S.camera) resetCamera();
+  return { position: S.camera.position.map(function (v) { return +v.toFixed(4); }),
+           target: S.camera.target.map(function (v) { return +v.toFixed(4); }),
+           up: S.camera.up, fov: S.camera.fov };
+}
+function cameraQuery() { return '&camera=' + encodeURIComponent(JSON.stringify(cameraParam())); }
+
+var cameraSettleTimer = null;
+function cameraChanged() {
+  /* live: re-render the current frame; settled: re-render the preview and keep playing */
+  if (usingPreview()) { S.previewStale = true; updatePreviewHint(); }
+  requestFrame(timeAt(S.index), false);
+  if (cameraSettleTimer) clearTimeout(cameraSettleTimer);
+  cameraSettleTimer = setTimeout(function () { cameraSettleTimer = null; if (S.preview) schedulePreviewRefresh(); }, 700);
+}
+function dolly(factor) {
+  var cam = S.camera || (resetCamera(), S.camera);
+  var offset = vsub(cam.position, cam.target);
+  var dist = Math.max(0.25, Math.min(80, vlen(offset) * factor));
+  cam.position = vadd(cam.target, vscale(vnorm(offset), dist));
+  cameraChanged();
+}
+function orbit(dx, dy) {
+  var cam = S.camera || (resetCamera(), S.camera);
+  var offset = vsub(cam.position, cam.target);
+  var dist = vlen(offset);
+  var yaw = Math.atan2(offset[0], offset[2]);
+  var pitch = Math.asin(Math.max(-1, Math.min(1, offset[1] / (dist || 1))));
+  yaw -= dx * 0.006; pitch = Math.max(-1.45, Math.min(1.45, pitch + dy * 0.006));
+  cam.position = vadd(cam.target, [dist * Math.cos(pitch) * Math.sin(yaw), dist * Math.sin(pitch), dist * Math.cos(pitch) * Math.cos(yaw)]);
+  cameraChanged();
+}
+function pan(dx, dy) {
+  var cam = S.camera || (resetCamera(), S.camera);
+  var forward = vnorm(vsub(cam.target, cam.position));
+  var right = vnorm(vcross(forward, cam.up));
+  var upv = vnorm(vcross(right, forward));
+  var dist = vlen(vsub(cam.position, cam.target));
+  var k = dist * 0.0018;
+  var delta = vadd(vscale(right, -dx * k), vscale(upv, dy * k));
+  cam.position = vadd(cam.position, delta); cam.target = vadd(cam.target, delta);
+  cameraChanged();
+}
+function wireCamera() {
+  var vp = $('viewport');
+  vp.addEventListener('wheel', function (ev) {
+    if (!S.data) return;
+    ev.preventDefault();
+    dolly(Math.exp(ev.deltaY * 0.0012));
+  }, { passive: false });
+  var drag = null;
+  vp.addEventListener('mousedown', function (ev) {
+    if (!S.data || ev.button === 2) return;
+    drag = { x: ev.clientX, y: ev.clientY, pan: ev.button === 1 || ev.shiftKey };
+    vp.classList.add('dragging');
+    ev.preventDefault();
+  });
+  window.addEventListener('mousemove', function (ev) {
+    if (!drag) return;
+    var dx = ev.clientX - drag.x, dy = ev.clientY - drag.y;
+    drag.x = ev.clientX; drag.y = ev.clientY;
+    if (drag.pan) pan(dx, dy); else orbit(dx, dy);
+  });
+  window.addEventListener('mouseup', function () { if (drag) { drag = null; vp.classList.remove('dragging'); } });
+  $('btn-view-reset').addEventListener('click', function () { resetCamera(); cameraChanged(); });
+}
+
+/* ====================================================================== *
+ * randomize
+ * ====================================================================== */
+
+function randomizeEffect() {
+  if (!S.data) { toast('load or create an effect first', 'warn'); return; }
+  var amount = parseFloat($('sel-random-amount').value) || 0.35;
+  var body = { amount: amount };
+  if (S.selected) body.node_id = S.selected;
+  $('btn-random').disabled = true;
+  api('/api/randomize', { body: body }).then(function (r) {
+    toast('randomized ' + r.changed_params + ' value(s) in ' + r.changed_nodes + ' node(s)' + (r.seed ? ', seed ' + r.seed : ''), 'ok');
+    return afterEffectChange().then(function () { invalidatePreview(); });
+  }).catch(function (err) { toast(err && err.message ? err.message : 'randomize failed', 'error'); })
+    .then(function () { $('btn-random').disabled = false; });
+}
+
 function showCurrentFrame() {
   if (!S.data) { clearViewport(); return; }
   if (usingPreview()) showPreviewFrame(S.index);
@@ -1003,8 +1158,9 @@ function requestFrame(time, immediate) {
     if (S.frameAbort) { try { S.frameAbort.abort(); } catch (e) { /* ignore */ } }
     var controller = (typeof AbortController === 'function') ? new AbortController() : null;
     S.frameAbort = controller;
+    var size = renderSize();
     var url = '/api/frame?time=' + encodeURIComponent(time.toFixed(3)) +
-      '&width=' + S.size + '&height=' + S.size;
+      '&width=' + size.w + '&height=' + size.h + cameraQuery();
     setBusy(true, 'rendering frame');
     apiRaw(url, controller ? { signal: controller.signal } : {}).then(function (res) {
       var stats = res.headers.get('X-Aether-Render');
@@ -1042,6 +1198,7 @@ function applyRenderStats(raw) {
 function invalidatePreview() {
   if (S.preview) S.previewStale = true;
   updatePreviewHint();
+  schedulePreviewRefresh();
 }
 
 function resetPreview() {
@@ -1061,15 +1218,18 @@ function updatePreviewHint() {
 
 function renderPreview(autoplay) {
   if (!S.data) { toast('load or create an effect first', 'warn'); return Promise.resolve(null); }
-  if (S.previewBusy) return Promise.resolve(null);
+  if (S.previewBusy) { S.previewDirty = true; return Promise.resolve(null); }
   pause();
   S.previewBusy = true;
   updatePreviewHint();
   setBusy(true, 'rendering preview');
   $('btn-preview').disabled = true;
 
-  var body = { fps: S.fps, width: S.size, height: S.size, start: 0, end: duration() };
+  var size = renderSize();
+  var body = { fps: S.fps, width: size.w, height: size.h, start: 0, end: duration(), camera: cameraParam() };
+  S.previewDirty = false;
   return api('/api/preview', { body: body }).then(function (result) {
+    result.w = size.w; result.h = size.h;
     if (!result.frames || !result.frames.length) throw new ApiError('the engine returned no frames', 0, null);
     setBusy(true, 'loading ' + result.frames.length + ' frames');
     return Promise.all(result.frames.map(function (url) {
@@ -1079,7 +1239,7 @@ function renderPreview(autoplay) {
       S.preview = {
         frames: objectUrls, fps: result.fps || S.fps, count: objectUrls.length,
         start: result.start || 0, duration: result.duration || 0
-      };
+      , w: result.w, h: result.h };
       S.previewStale = false;
       if (result.statistics) { S.data.statistics = result.statistics; renderStatistics(result.statistics); }
       syncTransportRange();
@@ -1276,6 +1436,8 @@ function wire() {
 
   $('btn-play').addEventListener('click', togglePlay);
   $('btn-preview').addEventListener('click', function () { renderPreview(true); });
+  $('btn-random').addEventListener('click', randomizeEffect);
+  wireCamera();
   $('chk-loop').addEventListener('change', function () { S.loop = $('chk-loop').checked; });
 
   var slider = $('frame-slider');
@@ -1288,10 +1450,10 @@ function wire() {
     showCurrentFrame();
   });
   $('sel-size').addEventListener('change', function () {
-    S.size = parseInt($('sel-size').value, 10) || 384;
-    if (S.preview) invalidatePreview();
-    showCurrentFrame();
+    S.size = parseSize($('sel-size').value);
+    if (S.preview) invalidatePreview(); else showCurrentFrame();
   });
+  window.addEventListener('resize', onViewportResize);
 
   document.addEventListener('keydown', function (ev) {
     var key = ev.key;
@@ -1323,7 +1485,7 @@ function pollStatus() {
 function init() {
   wire();
   S.fps = parseInt($('sel-fps').value, 10) || 24;
-  S.size = parseInt($('sel-size').value, 10) || 384;
+  S.size = parseSize($('sel-size').value);
   S.loop = $('chk-loop').checked;
 
   refreshStatus().then(function () {
