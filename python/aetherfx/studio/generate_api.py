@@ -17,7 +17,7 @@ from typing import Any
 from ..client import Client
 from .authoring_guide import (
     CURATED_TOOLS, build_authoring_guide, build_task_prompt, image_png_base64, render_image_paths,
-    summarize_result,
+    summarize_result, tool_fields,
 )
 from .generator import EventSink, GenerationResult
 
@@ -70,11 +70,12 @@ class ApiGenerator:
     def _tool_definitions(self) -> list[dict[str, Any]]:
         with self.lock:
             specs = self.client.tools()
-        return [
-            {"name": s["name"], "description": s.get("description", s["name"]),
-             "input_schema": s.get("input_schema") or {"type": "object", "properties": {}}}
-            for s in specs if s["name"] in CURATED_TOOLS
-        ]
+        defs = []
+        for s in specs:
+            name, description, schema = tool_fields(s)
+            if name in CURATED_TOOLS:
+                defs.append({"name": name, "description": description, "input_schema": schema})
+        return defs
 
     def _execute(self, name: str, args: dict[str, Any], on_event: EventSink, counters: dict[str, int]) -> dict[str, Any]:
         counters["calls"] += 1

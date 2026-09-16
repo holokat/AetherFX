@@ -19,7 +19,7 @@ from typing import Any
 from ..client import Client
 from .authoring_guide import (
     CURATED_TOOLS, build_authoring_guide, build_task_prompt, image_png_base64, render_image_paths,
-    summarize_result,
+    summarize_result, tool_fields,
 )
 from .generator import EventSink, GenerationResult
 
@@ -96,14 +96,13 @@ class ClaudeCodeGenerator:
         import anyio  # noqa: PLC0415
         from claude_agent_sdk import tool  # noqa: PLC0415
 
-        name = spec["name"]
-        schema = spec.get("input_schema") or {"type": "object", "properties": {}}
+        name, description, schema = tool_fields(spec)
 
         def run_sync(args: dict[str, Any]) -> Any:
             with self.lock:
                 return self.client.call(name, **args)
 
-        @tool(name, spec.get("description", name), schema)
+        @tool(name, description, schema)
         async def handler(args: dict[str, Any]) -> dict[str, Any]:
             counters["calls"] += 1
             on_event({"kind": "tool_call", "name": name, "args": args})
@@ -135,7 +134,7 @@ class ClaudeCodeGenerator:
         counters = {"calls": 0, "renders": 0}
         with self.lock:
             specs = self.client.tools()
-        sdk_tools = [self._make_tool(s, on_event, counters) for s in specs if s["name"] in CURATED_TOOLS]
+        sdk_tools = [self._make_tool(s, on_event, counters) for s in specs if tool_fields(s)[0] in CURATED_TOOLS]
         server = create_sdk_mcp_server("aetherfx", "0.1.0", sdk_tools)
         options = ClaudeAgentOptions(
             system_prompt=self._guide(),

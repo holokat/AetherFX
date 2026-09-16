@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AetherFX Studio</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='%234aa3ff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header id="topbar">
+  <div class="brand">Aether<span>FX</span><em>Studio</em></div>
+  <div id="effect-name" class="effect-name" title="active effect">no effect</div>
+  <div class="grow"></div>
+  <div class="status" id="engine-status" title="engine connection">
+    <span class="dot" id="engine-dot"></span><span id="engine-text">connecting</span>
+  </div>
+  <div class="status dim" id="generator-status" title="generator backend">generator: checking</div>
+  <div class="actions">
+    <button id="btn-new" type="button" title="Create a new effect">New</button>
+    <button id="btn-save" type="button" title="Save the active effect (Ctrl+S)">Save</button>
+    <button id="btn-undo" type="button" title="Undo the last change (Ctrl+Z)">Undo</button>
+    <button id="btn-redo" type="button" title="Redo (Ctrl+Shift+Z)">Redo</button>
+  </div>
+</header>
+
+<main id="layout">
+
+  <!-- ================= LEFT ================= -->
+  <section class="column" id="col-left">
+
+    <div class="panel" id="panel-generate">
+      <h2>Generate</h2>
+      <div class="panel-body">
+        <textarea id="gen-prompt" rows="4" spellcheck="false"
+          placeholder="Describe an effect... e.g. a blue magic missile with a glowing core, trailing sparks and a soft smoke trail"></textarea>
+        <div class="row gen-modes">
+          <label class="check"><input type="radio" name="gen-mode" value="new" checked> New effect</label>
+          <label class="check"><input type="radio" name="gen-mode" value="modify"> Modify current</label>
+        </div>
+        <div class="row">
+          <button id="btn-generate" type="button" class="primary">Generate</button>
+          <button id="btn-cancel-job" type="button" class="danger" hidden>Cancel</button>
+          <span id="gen-spinner" class="spinner" hidden></span>
+          <span id="gen-state" class="dim small"></span>
+        </div>
+        <div id="job-log" class="job-log" tabindex="0" aria-live="polite"></div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-effects">
+      <h2>Effects <button id="btn-refresh-effects" class="icon" type="button" title="Refresh lists">&#x21bb;</button></h2>
+      <div class="panel-body">
+        <details id="new-effect-form">
+          <summary>New effect</summary>
+          <div class="form-grid">
+            <label for="new-name">name</label>
+            <input id="new-name" type="text" value="Untitled" spellcheck="false">
+            <label for="new-duration">duration</label>
+            <input id="new-duration" type="number" value="2" min="0.05" step="0.1">
+            <label for="new-template">template</label>
+            <select id="new-template"><option value="empty">empty</option></select>
+          </div>
+          <div class="row"><button id="btn-create" type="button" class="primary">Create</button></div>
+        </details>
+
+        <h3>Examples</h3>
+        <ul id="list-examples" class="file-list"></ul>
+        <h3>Saved</h3>
+        <ul id="list-saved" class="file-list"></ul>
+        <h3>Open</h3>
+        <ul id="list-open" class="file-list"></ul>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ================= CENTER ================= -->
+  <section class="column" id="col-center">
+
+    <div id="viewport">
+      <img id="viewport-img" alt="rendered frame" hidden>
+      <div id="viewport-empty">
+        <p>No effect loaded.</p>
+        <p class="dim">Pick an example on the left, or describe an effect and press Generate.</p>
+      </div>
+      <div id="viewport-busy" class="viewport-busy" hidden><span class="spinner"></span><span id="viewport-busy-text">rendering</span></div>
+    </div>
+
+    <div id="transport">
+      <button id="btn-play" type="button" class="play" title="Play / pause (Space)">&#9654;</button>
+      <input id="frame-slider" type="range" min="0" max="1" step="1" value="0" title="Scrub (arrow keys step, Home/End jump)">
+      <span id="time-readout" class="mono">0.00 s / 0.00 s &nbsp;frame 1/1</span>
+      <label class="inline">fps
+        <select id="sel-fps">
+          <option value="12">12</option>
+          <option value="24" selected>24</option>
+          <option value="30">30</option>
+        </select>
+      </label>
+      <label class="inline">size
+        <select id="sel-size">
+          <option value="256">256</option>
+          <option value="384" selected>384</option>
+          <option value="512">512</option>
+          <option value="768">768</option>
+        </select>
+      </label>
+      <label class="check inline" title="Loop playback"><input id="chk-loop" type="checkbox" checked> loop</label>
+      <button id="btn-preview" type="button" title="Render the whole sequence and play it">Render preview</button>
+      <span id="preview-hint" class="hint"></span>
+    </div>
+
+    <div id="statline" class="statline mono dim">no statistics yet</div>
+    <div id="diagnostics" class="diagnostics"></div>
+
+  </section>
+
+  <!-- ================= RIGHT ================= -->
+  <section class="column" id="col-right">
+
+    <div class="panel" id="panel-graph">
+      <h2>Graph</h2>
+      <div class="panel-body">
+        <div id="timeline-phases" class="phases"></div>
+        <div id="graph-tree" class="graph-tree"><p class="dim small">no effect loaded</p></div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-params">
+      <h2>Parameters <span id="param-node-title" class="dim small"></span></h2>
+      <div class="panel-body" id="params-body">
+        <p class="dim small">Select a node in the graph.</p>
+      </div>
+    </div>
+
+  </section>
+
+</main>
+
+<div id="toasts" aria-live="assertive"></div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

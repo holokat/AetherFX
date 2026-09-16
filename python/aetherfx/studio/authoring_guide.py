@@ -66,6 +66,13 @@ RECIPES (proven values from the shipped examples)
 """
 
 
+def tool_fields(spec: Any) -> tuple[str, str, dict[str, Any]]:
+    """(name, description, input_schema) from a Client.tools() entry (ToolInfo or dict)."""
+    if isinstance(spec, dict):
+        return spec["name"], spec.get("description") or spec["name"], spec.get("input_schema") or {"type": "object", "properties": {}}
+    return spec.name, getattr(spec, "description", None) or spec.name, getattr(spec, "input_schema", None) or {"type": "object", "properties": {}}
+
+
 def _fmt(value: Any) -> str:
     if isinstance(value, float):
         return f"{value:g}"

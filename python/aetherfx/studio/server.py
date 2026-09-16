@@ -1,0 +1,866 @@
+"""AetherFX Studio: a local web UI for previewing, editing and generating effects.
+
+One process holds one engine session.  :class:`aetherfx.Client` speaks JSON-RPC
+to a single ``aetherfx serve`` subprocess and is *not* thread-safe, so every
+engine call in this module - including the ones a generation job makes from its
+own thread - is serialised through one :class:`threading.Lock`
+(``Studio.engine_lock``) and executed off the event loop with
+:func:`starlette.concurrency.run_in_threadpool`.  UI requests stay responsive
+while a job runs; they simply queue on the lock.
+
+Layout:
+
+* ``GET /`` and ``GET /static/*`` serve the vanilla HTML/CSS/JS frontend.
+* ``/api/*`` is a thin, honest wrapper over docs/AGENT_API.md: nothing is
+  reinterpreted, engine errors come back as ``{"error": {"code", "message"}}``
+  and the server never dies because the engine said no.
+* Rendered files are served only from inside the session output directory
+  (resolve + prefix check), so the browser cannot walk the filesystem.
+
+Run it with ``aetherfx-studio`` (see :func:`main`).
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+import mimetypes
+import os
+import re
+import sys
+import threading
+import webbrowser
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Callable, Sequence
+
+from starlette.applications import Starlette
+from starlette.concurrency import run_in_threadpool
+from starlette.requests import Request
+from starlette.responses import FileResponse, JSONResponse, Response
+from starlette.routing import Mount, Route
+from starlette.staticfiles import StaticFiles
+
+from ..client import BINARY_ENV_VAR, Client
+from ..jsonrpc import ERROR_METHOD_NOT_FOUND, AetherError, JsonDict, TransportError
+from .generator import Generator, get_generator
+from .jobs import CANCELLED, DONE, ERROR, JobBusy, JobManager
+
+__all__ = ["StudioConfig", "StudioError", "Studio", "create_app", "build_parser", "main"]
+
+LOGGER = logging.getLogger("aetherfx.studio")
+
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+NO_STORE = {"Cache-Control": "no-store"}
+
+#: Files the studio is willing to hand to the browser out of the output dir.
+SERVABLE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".json", ".mp4", ".webm", ".txt"}
+
+
+def _repo_root() -> Path:
+    """``<repo>/python/aetherfx/studio/server.py`` -> ``<repo>``."""
+    return Path(__file__).resolve().parents[3]
+
+
+def slugify(name: str, fallback: str = "effect") -> str:
+    """``"Blue Magic Missile"`` -> ``"blue_magic_missile"``; safe as a filename."""
+    slug = re.sub(r"[^a-z0-9]+", "_", str(name or "").lower()).strip("_")
+    return slug or fallback
+
+
+# =========================================================================
+# configuration and errors
+# =========================================================================
+
+
+@dataclass
+class StudioConfig:
+    """Everything :func:`create_app` needs.  Tests build one directly."""
+
+    output_dir: Path = field(default_factory=lambda: _repo_root() / "out" / "studio")
+    examples_dir: Path = field(default_factory=lambda: _repo_root() / "examples" / "effects")
+    binary: str | None = None
+    generator: str | None = None
+    host: str = "127.0.0.1"
+    port: int = 8770
+    #: Inject a ready-made client (a real or fake engine) instead of spawning one.
+    client: Client | None = None
+
+    def __post_init__(self) -> None:
+        self.output_dir = Path(self.output_dir).expanduser()
+        self.examples_dir = Path(self.examples_dir).expanduser()
+
+
+class StudioError(Exception):
+    """An error the studio itself raises, carrying the HTTP status to use."""
+
+    def __init__(self, status: int, code: str, message: str, **extra: Any) -> None:
+        super().__init__(message)
+        self.status = status
+        self.code = code
+        self.message = message
+        self.extra = extra
+
+
+def error_response(status: int, code: str, message: str, **extra: Any) -> JSONResponse:
+    payload: JsonDict = {"code": code, "message": message}
+    payload.update({key: value for key, value in extra.items() if value is not None})
+    return JSONResponse({"error": payload}, status_code=status, headers=NO_STORE)
+
+
+def endpoint(handler: Callable[[Request], Any]) -> Callable[[Request], Any]:
+    """Turn engine and studio failures into ``{"error": {...}}`` responses.
+
+    An engine that rejects a call is normal operation, not a server fault: the
+    studio logs it and keeps running so the browser can fix and retry.
+    """
+
+    async def wrapper(request: Request) -> Response:
+        try:
+            result = await handler(request)
+        except StudioError as exc:
+            LOGGER.warning("%s %s -> %d %s: %s", request.method, request.url.path, exc.status, exc.code, exc.message)
+            return error_response(exc.status, exc.code, exc.message, **exc.extra)
+        except AetherError as exc:
+            status = 404 if exc.code == ERROR_METHOD_NOT_FOUND else 400
+            LOGGER.warning("%s %s -> engine error %s: %s", request.method, request.url.path, exc.aether_code, exc.message)
+            return error_response(
+                status, exc.aether_code or f"rpc{exc.code}", exc.message, node=exc.node, param=exc.param
+            )
+        except TransportError as exc:
+            LOGGER.error("%s %s -> transport error: %s", request.method, request.url.path, exc)
+            return error_response(500, "engine_unavailable", str(exc))
+        except JobBusy as exc:
+            return error_response(409, "job_running", str(exc), job_id=exc.job_id)
+        except Exception as exc:  # noqa: BLE001 - the studio must stay up
+            LOGGER.exception("%s %s -> unhandled error", request.method, request.url.path)
+            return error_response(500, "internal_error", f"{type(exc).__name__}: {exc}")
+        if isinstance(result, Response):
+            return result
+        return JSONResponse(result, headers=NO_STORE)
+
+    wrapper.__name__ = getattr(handler, "__name__", "endpoint")
+    return wrapper
+
+
+# =========================================================================
+# studio state
+# =========================================================================
+
+
+class Studio:
+    """The engine session, the lock protecting it, the generator and the jobs."""
+
+    def __init__(self, config: StudioConfig) -> None:
+        self.config = config
+        self.output_dir = Path(config.output_dir).resolve()
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.examples_dir = Path(config.examples_dir)
+        self.effects_dir = self.output_dir / "effects"
+        self.frames_dir = self.output_dir / "studio_frames"
+        self.preview_dir = self.output_dir / "preview"
+        self.jobs_dir = self.output_dir / "jobs"
+        for directory in (self.effects_dir, self.frames_dir, self.preview_dir, self.jobs_dir):
+            directory.mkdir(parents=True, exist_ok=True)
+
+        #: The one lock every engine call goes through, jobs included.
+        self.engine_lock = threading.Lock()
+        self.client = config.client or Client(binary=config.binary, output_dir=str(self.output_dir))
+        self.generator: Generator = self._make_generator(config.generator)
+        self.jobs = JobManager()
+        self._vocabulary: JsonDict | None = None
+        self._vocabulary_lock = threading.Lock()
+
+    # -- generator ---------------------------------------------------------
+
+    def _make_generator(self, backend: str | None) -> Generator:
+        """Build the generator, tolerating older ``generator.py`` signatures."""
+        attempts: list[JsonDict] = [
+            {"jobs_dir": str(self.jobs_dir), "output_dir": str(self.output_dir)},
+            {"jobs_dir": str(self.jobs_dir)},
+            {},
+        ]
+        last: TypeError | None = None
+        for extra in attempts:
+            try:
+                return get_generator(self.client, self.engine_lock, backend, **extra)
+            except TypeError as exc:
+                last = exc
+        raise last or TypeError("get_generator refused every call signature")
+
+    def generator_status(self) -> JsonDict:
+        """Read the generator's availability *now* (a session backend changes it)."""
+        try:
+            available = bool(getattr(self.generator, "available", False))
+            reason = getattr(self.generator, "unavailable_reason", None)
+            name = str(getattr(self.generator, "name", "unknown"))
+        except Exception as exc:  # noqa: BLE001 - a broken backend must not hide the UI
+            return {"name": "unknown", "available": False, "reason": f"{type(exc).__name__}: {exc}"}
+        return {"name": name, "available": available, "reason": None if available else (reason or "unavailable")}
+
+    @property
+    def studio_url(self) -> str:
+        host = self.config.host
+        if host in ("0.0.0.0", "::", ""):
+            host = "127.0.0.1"
+        return f"http://{host}:{self.config.port}"
+
+    # -- engine ------------------------------------------------------------
+
+    def call(self, tool: str, /, **args: Any) -> JsonDict:
+        """Blocking engine call, serialised on :attr:`engine_lock`."""
+        with self.engine_lock:
+            return self.client.call(tool, **args)
+
+    def call_with_args(self, tool: str, args: JsonDict) -> JsonDict:
+        """Blocking engine call taking the argument object as a mapping."""
+        with self.engine_lock:
+            return self.client.call_with(tool, args)
+
+    async def acall(self, tool: str, /, **args: Any) -> JsonDict:
+        """:meth:`call` off the event loop."""
+        return await run_in_threadpool(lambda: self.call(tool, **args))
+
+    async def acall_many(self, calls: Sequence[tuple[str, JsonDict]]) -> list[JsonDict]:
+        """Run several tools under a single acquisition of the lock."""
+
+        def run() -> list[JsonDict]:
+            with self.engine_lock:
+                return [self.client.call_with(name, args) for name, args in calls]
+
+        return await run_in_threadpool(run)
+
+    def engine_status(self) -> JsonDict:
+        """``ping`` the engine; never raises."""
+        binary = getattr(self.client, "binary", None)
+        try:
+            with self.engine_lock:
+                ok = bool(self.client.ping().get("ok", False))
+        except (AetherError, TransportError, OSError) as exc:
+            return {"ok": False, "error": str(exc), "binary": binary}
+        return {"ok": ok, "error": None if ok else "engine did not answer ping", "binary": binary}
+
+    async def active_effect(self) -> JsonDict | None:
+        """``{effect_id, name, path, dirty}`` for the active effect, or ``None``."""
+        listed = await self.acall("list_effects")
+        for entry in listed.get("effects") or []:
+            if entry.get("active"):
+                return {
+                    "effect_id": entry.get("effect_id"),
+                    "name": entry.get("name"),
+                    "path": entry.get("path"),
+                    "dirty": bool(entry.get("dirty", False)),
+                }
+        return None
+
+    async def require_active_effect(self) -> JsonDict:
+        active = await self.active_effect()
+        if active is None:
+            raise StudioError(404, "no_active_effect", "no effect is open; load an example or create a new effect")
+        return active
+
+    def vocabulary(self) -> JsonDict:
+        """``describe_vocabulary``, cached for the life of the process."""
+        with self._vocabulary_lock:
+            if self._vocabulary is None:
+                self._vocabulary = self.call("describe_vocabulary")
+            return self._vocabulary
+
+    # -- paths -------------------------------------------------------------
+
+    def resolve_inside_output(self, raw: str) -> Path:
+        """Resolve ``raw`` and refuse anything outside the session output dir."""
+        if not raw:
+            raise StudioError(400, "bad_request", "path is required")
+        candidate = Path(raw).expanduser()
+        if not candidate.is_absolute():
+            candidate = self.output_dir / candidate
+        try:
+            resolved = candidate.resolve()
+        except OSError as exc:
+            raise StudioError(400, "bad_request", f"cannot resolve path: {exc}") from exc
+        if resolved != self.output_dir and self.output_dir not in resolved.parents:
+            raise StudioError(403, "forbidden", "path is outside the session output directory")
+        return resolved
+
+    def file_url(self, path: str | os.PathLike[str] | None) -> str | None:
+        """A ``/api/file`` URL for ``path`` when it lives inside the output dir."""
+        if not path:
+            return None
+        try:
+            resolved = Path(path).resolve()
+        except OSError:
+            return None
+        if resolved != self.output_dir and self.output_dir not in resolved.parents:
+            return None
+        from urllib.parse import quote  # noqa: PLC0415
+
+        return "/api/file?path=" + quote(str(resolved), safe="")
+
+    def close(self) -> None:
+        try:
+            self.client.close()
+        except Exception:  # noqa: BLE001 - shutting down anyway
+            LOGGER.debug("client close failed", exc_info=True)
+
+
+# =========================================================================
+# helpers
+# =========================================================================
+
+
+async def read_json(request: Request) -> JsonDict:
+    """Parse the request body as a JSON object (an empty body means ``{}``)."""
+    raw = await request.body()
+    if not raw:
+        return {}
+    try:
+        data = json.loads(raw)
+    except ValueError as exc:
+        raise StudioError(400, "bad_request", f"invalid JSON body: {exc}") from exc
+    if not isinstance(data, dict):
+        raise StudioError(400, "bad_request", "request body must be a JSON object")
+    return data
+
+
+def _number(data: JsonDict, key: str, default: float, minimum: float | None = None, maximum: float | None = None) -> float:
+    value = data.get(key, default)
+    if value is None:
+        return default
+    try:
+        number = float(value)
+    except (TypeError, ValueError) as exc:
+        raise StudioError(400, "bad_request", f"{key} must be a number") from exc
+    if minimum is not None and number < minimum:
+        raise StudioError(400, "bad_request", f"{key} must be >= {minimum}")
+    if maximum is not None and number > maximum:
+        raise StudioError(400, "bad_request", f"{key} must be <= {maximum}")
+    return number
+
+
+def _int(data: JsonDict, key: str, default: int, minimum: int | None = None, maximum: int | None = None) -> int:
+    return int(_number(data, key, default, minimum, maximum))
+
+
+def _string(data: JsonDict, key: str, default: str | None = None, required: bool = False) -> str:
+    value = data.get(key, default)
+    if value is None or value == "":
+        if required:
+            raise StudioError(400, "bad_request", f"{key} is required")
+        return default or ""
+    if not isinstance(value, str):
+        raise StudioError(400, "bad_request", f"{key} must be a string")
+    return value
+
+
+def trim_statistics(statistics: Any) -> Any:
+    """Drop the per-node plan dump; the UI only needs the summary numbers."""
+    if not isinstance(statistics, dict):
+        return statistics
+    trimmed = dict(statistics)
+    plan = trimmed.get("plan")
+    if isinstance(plan, dict):
+        small = {key: value for key, value in plan.items() if key not in ("nodes", "resources")}
+        nodes = plan.get("nodes")
+        if isinstance(nodes, list):
+            small["node_count"] = len(nodes)
+        trimmed["plan"] = small
+    return trimmed
+
+
+def effect_summary(effect: Any, effect_id: str | None, diagnostics: Any = None) -> JsonDict:
+    """``{effect_id, name, duration, diagnostics}`` from a load/create result."""
+    document = effect if isinstance(effect, dict) else {}
+    return {
+        "effect_id": effect_id,
+        "name": document.get("name"),
+        "duration": document.get("duration"),
+        "diagnostics": diagnostics,
+    }
+
+
+# =========================================================================
+# routes
+# =========================================================================
+
+
+def create_app(config: StudioConfig | None = None) -> Starlette:
+    """Build the studio application.  ``config.client`` may be a fake engine."""
+    studio = Studio(config or StudioConfig())
+
+    # -- static --------------------------------------------------------
+
+    async def index(_request: Request) -> Response:
+        return FileResponse(STATIC_DIR / "index.html", headers=NO_STORE)
+
+    # -- status and effects --------------------------------------------
+
+    @endpoint
+    async def api_status(_request: Request) -> JsonDict:
+        engine = await run_in_threadpool(studio.engine_status)
+        active = await studio.active_effect() if engine.get("ok") else None
+        job = studio.jobs.active()
+        return {
+            "engine": engine,
+            "generator": studio.generator_status(),
+            "output_dir": str(studio.output_dir),
+            "examples_dir": str(studio.examples_dir),
+            "studio_url": studio.studio_url,
+            "active_effect": active,
+            "active_job": job.job_id if job else None,
+        }
+
+    @endpoint
+    async def api_effects(_request: Request) -> JsonDict:
+        def listing(directory: Path, with_mtime: bool) -> list[JsonDict]:
+            items: list[JsonDict] = []
+            if not directory.is_dir():
+                return items
+            for path in sorted(directory.glob("*.json")):
+                entry: JsonDict = {"name": path.stem, "path": str(path)}
+                if with_mtime:
+                    try:
+                        entry["modified"] = path.stat().st_mtime
+                    except OSError:
+                        entry["modified"] = None
+                items.append(entry)
+            return items
+
+        examples = await run_in_threadpool(listing, studio.examples_dir, False)
+        saved = await run_in_threadpool(listing, studio.effects_dir, True)
+        try:
+            listed = await studio.acall("list_effects")
+        except (AetherError, TransportError):
+            listed = {"effects": []}
+        open_effects = [
+            {
+                "effect_id": entry.get("effect_id"),
+                "name": entry.get("name"),
+                "active": bool(entry.get("active", False)),
+                "dirty": bool(entry.get("dirty", False)),
+                "path": entry.get("path"),
+            }
+            for entry in (listed.get("effects") or [])
+        ]
+        return {"examples": examples, "saved": saved, "open": open_effects}
+
+    @endpoint
+    async def api_effect_load(request: Request) -> JsonDict:
+        data = await read_json(request)
+        raw = _string(data, "path", required=True)
+        path = Path(raw).expanduser()
+        if not path.is_absolute():
+            for base in (studio.examples_dir, studio.effects_dir, studio.output_dir):
+                candidate = base / raw
+                if candidate.is_file():
+                    path = candidate
+                    break
+        if not path.is_file():
+            raise StudioError(404, "not_found", f"no effect file at {path}")
+        result = await studio.acall("load_effect", path=str(path))
+        LOGGER.info("loaded effect %s from %s", result.get("effect_id"), path)
+        summary = effect_summary(result.get("effect"), result.get("effect_id"), result.get("diagnostics"))
+        summary["path"] = str(path)
+        return summary
+
+    @endpoint
+    async def api_effect_new(request: Request) -> JsonDict:
+        data = await read_json(request)
+        name = _string(data, "name", "Untitled")
+        duration = _number(data, "duration", 2.0, minimum=0.01)
+        template = data.get("template") or None
+        args: JsonDict = {"name": name, "duration": duration}
+        if template and template != "empty":
+            args["template"] = template
+        result = await studio.acall("create_effect", **args)
+        LOGGER.info("created effect %s (%s)", result.get("effect_id"), name)
+        return effect_summary(result.get("effect"), result.get("effect_id"), result.get("diagnostics"))
+
+    @endpoint
+    async def api_effect_activate(request: Request) -> JsonDict:
+        data = await read_json(request)
+        effect_id = _string(data, "effect_id", required=True)
+        await studio.acall("set_active_effect", effect_id=effect_id)
+        active = await studio.active_effect()
+        return {"ok": True, "active_effect": active}
+
+    @endpoint
+    async def api_effect_save(request: Request) -> JsonDict:
+        data = await read_json(request)
+        active = await studio.require_active_effect()
+        raw = data.get("path")
+        if raw:
+            path = Path(str(raw)).expanduser()
+            if not path.is_absolute():
+                path = studio.effects_dir / path
+        else:
+            path = studio.effects_dir / f"{slugify(active.get('name') or 'effect')}.json"
+        await run_in_threadpool(lambda: path.parent.mkdir(parents=True, exist_ok=True))
+        result = await studio.acall("save_effect", path=str(path))
+        saved = result.get("path") or str(path)
+        LOGGER.info("saved effect %s to %s", active.get("effect_id"), saved)
+        return {"path": saved, "effect_id": active.get("effect_id")}
+
+    @endpoint
+    async def api_effect(_request: Request) -> JsonDict:
+        active = await studio.require_active_effect()
+        effect, graph, timeline, statistics = await studio.acall_many(
+            [("get_effect_json", {}), ("inspect_graph", {}), ("get_timeline", {}), ("inspect_statistics", {})]
+        )
+        return {
+            "active_effect": active,
+            "effect": effect,
+            "graph": graph,
+            "timeline": timeline,
+            "statistics": trim_statistics(statistics),
+        }
+
+    # -- nodes and parameters ------------------------------------------
+
+    @endpoint
+    async def api_node(request: Request) -> JsonDict:
+        node_id = request.path_params["node_id"]
+        return await studio.acall("inspect_node", node_id=node_id)
+
+    @endpoint
+    async def api_param(request: Request) -> JsonDict:
+        data = await read_json(request)
+        node_id = _string(data, "node_id", required=True)
+        name = _string(data, "name", required=True)
+        if "value" not in data:
+            raise StudioError(400, "bad_request", "value is required")
+        result = await studio.acall("set_parameter", node_id=node_id, name=name, value=data["value"])
+        return {
+            "ok": True,
+            "node_id": result.get("node_id", node_id),
+            "name": result.get("name", name),
+            "value": result.get("value", data["value"]),
+            "diagnostics": result.get("diagnostics"),
+        }
+
+    @endpoint
+    async def api_node_property(request: Request) -> JsonDict:
+        data = await read_json(request)
+        node_id = _string(data, "node_id", required=True)
+        args: JsonDict = {"node_id": node_id}
+        if "enabled" in data and data["enabled"] is not None:
+            args["enabled"] = bool(data["enabled"])
+        for key in ("layer", "parent"):
+            if key in data and data[key] is not None:
+                args[key] = str(data[key])
+        if len(args) == 1:
+            raise StudioError(400, "bad_request", "one of enabled, layer or parent is required")
+        result = await studio.acall("set_node_property", **args)
+        return {"ok": True, "node": result.get("node"), "diagnostics": result.get("diagnostics")}
+
+    @endpoint
+    async def api_node_delete(request: Request) -> JsonDict:
+        data = await read_json(request)
+        node_id = _string(data, "node_id", required=True)
+        result = await studio.acall("delete_node", node_id=node_id)
+        LOGGER.info("deleted node %s", node_id)
+        return {"ok": True, "dangling": result.get("dangling"), "diagnostics": result.get("diagnostics")}
+
+    def history_endpoint(tool: str) -> Callable[[Request], Any]:
+        @endpoint
+        async def handler(_request: Request) -> JsonDict:
+            result = await studio.acall(tool)
+            return {
+                "ok": bool(result.get("ok", True)),
+                "remaining": result.get("remaining"),
+                "redo_available": result.get("redo_available"),
+                "diagnostics": result.get("diagnostics"),
+            }
+
+        handler.__name__ = f"api_{tool}"
+        return handler
+
+    # -- rendering ------------------------------------------------------
+
+    @endpoint
+    async def api_frame(request: Request) -> Response:
+        await studio.require_active_effect()
+        params = request.query_params
+        try:
+            time_s = float(params.get("time", 0.0))
+            width = int(float(params.get("width", 384)))
+            height = int(float(params.get("height", 384)))
+        except ValueError as exc:
+            raise StudioError(400, "bad_request", f"invalid frame parameters: {exc}") from exc
+        width = max(16, min(width, 2048))
+        height = max(16, min(height, 2048))
+        time_s = max(0.0, time_s)
+        path = studio.frames_dir / f"frame_{width}x{height}_{time_s:.3f}.png"
+        await run_in_threadpool(lambda: path.parent.mkdir(parents=True, exist_ok=True))
+        result = await studio.acall(
+            "render_frame", time=time_s, width=width, height=height, path=str(path), format="png"
+        )
+        rendered = Path(result.get("path") or path)
+        data = await run_in_threadpool(rendered.read_bytes)
+        headers = dict(NO_STORE)
+        stats = result.get("render_statistics")
+        if isinstance(stats, dict):
+            headers["X-Aether-Render"] = json.dumps(stats, separators=(",", ":"))
+        headers["X-Aether-Time"] = f"{time_s:.3f}"
+        return Response(data, media_type="image/png", headers=headers)
+
+    @endpoint
+    async def api_preview(request: Request) -> JsonDict:
+        active = await studio.require_active_effect()
+        data = await read_json(request)
+        fps = _number(data, "fps", 24.0, minimum=1.0, maximum=120.0)
+        width = _int(data, "width", 384, minimum=16, maximum=2048)
+        height = _int(data, "height", 384, minimum=16, maximum=2048)
+        start = _number(data, "start", 0.0, minimum=0.0)
+        end = data.get("end")
+        out_dir = studio.preview_dir / slugify(active.get("name") or "effect")
+        await run_in_threadpool(lambda: out_dir.mkdir(parents=True, exist_ok=True))
+        args: JsonDict = {
+            "fps": fps,
+            "start": start,
+            "width": width,
+            "height": height,
+            "out_dir": str(out_dir),
+            "contact_sheet": True,
+        }
+        if end is not None:
+            args["end"] = _number(data, "end", 0.0, minimum=0.0)
+        result = await studio.acall("render_preview", **args)
+        frames = [studio.file_url(frame) for frame in (result.get("frames") or [])]
+        frames = [url for url in frames if url]
+        count = len(frames)
+        LOGGER.info("rendered preview: %d frames at %g fps into %s", count, fps, out_dir)
+        return {
+            "frames": frames,
+            "fps": fps,
+            "count": count,
+            "start": start,
+            "duration": (count / fps) if fps else 0.0,
+            "width": width,
+            "height": height,
+            "contact_sheet": studio.file_url(result.get("contact_sheet")),
+            "out_dir": str(out_dir),
+            "statistics": trim_statistics(result.get("statistics")),
+            "notes": result.get("notes") or [],
+        }
+
+    @endpoint
+    async def api_file(request: Request) -> Response:
+        raw = request.query_params.get("path", "")
+        path = studio.resolve_inside_output(raw)
+        if not path.is_file():
+            raise StudioError(404, "not_found", f"no file at {path}")
+        if path.suffix.lower() not in SERVABLE_SUFFIXES:
+            raise StudioError(403, "forbidden", f"refusing to serve {path.suffix or 'extension-less'} files")
+        media_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+        return FileResponse(path, media_type=media_type, headers=NO_STORE)
+
+    @endpoint
+    async def api_vocabulary(_request: Request) -> JsonDict:
+        return await run_in_threadpool(studio.vocabulary)
+
+    # -- raw tool access (used by out-of-process generation workers) ----
+
+    @endpoint
+    async def api_tools(_request: Request) -> JsonDict:
+        return await studio.acall("tools/list")
+
+    @endpoint
+    async def api_tool(request: Request) -> JsonDict:
+        data = await read_json(request)
+        name = _string(data, "name", required=True)
+        args = data.get("args") or {}
+        if not isinstance(args, dict):
+            raise StudioError(400, "bad_request", "args must be a JSON object")
+        LOGGER.info("tool %s(%s)", name, ", ".join(sorted(args)))
+        return await run_in_threadpool(lambda: studio.call_with_args(name, args))
+
+    # -- generation jobs ------------------------------------------------
+
+    @endpoint
+    async def api_generate(request: Request) -> JsonDict:
+        data = await read_json(request)
+        prompt = _string(data, "prompt", required=True).strip()
+        if not prompt:
+            raise StudioError(400, "bad_request", "prompt is required")
+        mode = _string(data, "mode", "new")
+        if mode not in ("new", "modify"):
+            raise StudioError(400, "bad_request", "mode must be 'new' or 'modify'")
+        status = studio.generator_status()
+        if not status.get("available"):
+            raise StudioError(503, "generator_unavailable", status.get("reason") or "no generator backend configured")
+        if mode == "modify":
+            await studio.require_active_effect()
+
+        generator = studio.generator
+
+        def target(job: Any) -> None:
+            def sink(event: JsonDict) -> None:
+                item = dict(event) if isinstance(event, dict) else {"kind": "text", "text": str(event)}
+                if item.get("kind") == "image":
+                    url = studio.file_url(item.get("path"))
+                    if url:
+                        item["url"] = url
+                job.add_event(item)
+
+            job.add_event({"kind": "status", "text": f"{generator.name}: {mode} - {prompt}"})
+            try:
+                result = generator.generate(prompt, mode=mode, on_event=sink, cancel=job.cancel)
+            except Exception as exc:  # noqa: BLE001 - reported to the browser, not fatal
+                LOGGER.exception("generation job %s failed", job.job_id)
+                job.add_event({"kind": "error", "text": f"{type(exc).__name__}: {exc}"})
+                job.finish(ERROR, summary=str(exc))
+                return
+            effect_id = getattr(result, "effect_id", None)
+            summary = getattr(result, "summary", "") or ""
+            if job.cancel.is_set():
+                job.finish(CANCELLED, effect_id, summary or "cancelled")
+            else:
+                job.finish(DONE, effect_id, summary)
+            LOGGER.info("generation job %s finished: %s (%s)", job.job_id, job.status, effect_id)
+
+        job = studio.jobs.start(prompt, mode, target)
+        LOGGER.info("generation job %s started (%s, %s)", job.job_id, generator.name, mode)
+        return {"job_id": job.job_id, "status": job.status, "generator": generator.name}
+
+    @endpoint
+    async def api_job(request: Request) -> JsonDict:
+        job = studio.jobs.get(request.path_params["job_id"])
+        if job is None:
+            raise StudioError(404, "not_found", "unknown job id")
+        try:
+            since = int(request.query_params.get("since", 0))
+        except ValueError:
+            since = 0
+        return job.snapshot(since)
+
+    @endpoint
+    async def api_job_cancel(request: Request) -> JsonDict:
+        job = studio.jobs.get(request.path_params["job_id"])
+        if job is None:
+            raise StudioError(404, "not_found", "unknown job id")
+        job.request_cancel()
+        job.add_event({"kind": "status", "text": "cancellation requested"})
+        LOGGER.info("generation job %s cancel requested", job.job_id)
+        return {"ok": True, "status": job.status}
+
+    routes = [
+        Route("/", index),
+        Route("/api/status", api_status),
+        Route("/api/effects", api_effects),
+        Route("/api/effects/load", api_effect_load, methods=["POST"]),
+        Route("/api/effects/new", api_effect_new, methods=["POST"]),
+        Route("/api/effects/activate", api_effect_activate, methods=["POST"]),
+        Route("/api/effects/save", api_effect_save, methods=["POST"]),
+        Route("/api/effect", api_effect),
+        Route("/api/node/property", api_node_property, methods=["POST"]),
+        Route("/api/node/delete", api_node_delete, methods=["POST"]),
+        Route("/api/node/{node_id}", api_node),
+        Route("/api/param", api_param, methods=["POST"]),
+        Route("/api/undo", history_endpoint("undo"), methods=["POST"]),
+        Route("/api/redo", history_endpoint("redo"), methods=["POST"]),
+        Route("/api/frame", api_frame),
+        Route("/api/preview", api_preview, methods=["POST"]),
+        Route("/api/file", api_file),
+        Route("/api/vocabulary", api_vocabulary),
+        Route("/api/tools", api_tools),
+        Route("/api/tool", api_tool, methods=["POST"]),
+        Route("/api/generate", api_generate, methods=["POST"]),
+        Route("/api/jobs/{job_id}", api_job),
+        Route("/api/jobs/{job_id}/cancel", api_job_cancel, methods=["POST"]),
+        Mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static"),
+    ]
+
+    async def on_startup() -> None:
+        LOGGER.info("output dir: %s", studio.output_dir)
+        LOGGER.info("examples dir: %s", studio.examples_dir)
+        status = await run_in_threadpool(studio.engine_status)
+        if status.get("ok"):
+            LOGGER.info("engine ready: %s", status.get("binary"))
+        else:
+            LOGGER.warning("engine not ready: %s", status.get("error"))
+        generator = studio.generator_status()
+        if generator.get("available"):
+            LOGGER.info("generator: %s", generator.get("name"))
+        else:
+            LOGGER.warning("generator unavailable: %s", generator.get("reason"))
+
+    async def on_shutdown() -> None:
+        await run_in_threadpool(studio.close)
+
+    app = Starlette(routes=routes, on_startup=[on_startup], on_shutdown=[on_shutdown])
+    app.state.studio = studio
+    app.state.config = studio.config
+    return app
+
+
+# =========================================================================
+# entry point
+# =========================================================================
+
+
+def build_parser() -> argparse.ArgumentParser:
+    repo = _repo_root()
+    parser = argparse.ArgumentParser(
+        prog="aetherfx-studio",
+        description="Local web UI for previewing, editing and generating AetherFX effects.",
+    )
+    parser.add_argument("--host", default="127.0.0.1", help="bind address (default 127.0.0.1).")
+    parser.add_argument("--port", type=int, default=8770, help="port (default 8770).")
+    parser.add_argument(
+        "--binary",
+        default=None,
+        help=f"path to the engine binary (default: ${BINARY_ENV_VAR}, build/bin/aetherfx, then PATH).",
+    )
+    parser.add_argument(
+        "--output-dir",
+        default=str(repo / "out" / "studio"),
+        help="session output directory; renders and saved effects land here.",
+    )
+    parser.add_argument(
+        "--examples-dir",
+        default=str(repo / "examples" / "effects"),
+        help="directory scanned for example effects.",
+    )
+    parser.add_argument(
+        "--generator",
+        default=None,
+        choices=["auto", "api", "claude-code", "none"],
+        help="generator backend (default: auto, or $AETHERFX_GENERATOR).",
+    )
+    parser.add_argument("--no-open", action="store_true", help="do not open a browser window at startup.")
+    parser.add_argument("--log-level", default="info", help="uvicorn log level (default info).")
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """Start the studio.  Returns a process exit code."""
+    args = build_parser().parse_args(list(argv) if argv is not None else None)
+    logging.basicConfig(
+        level=logging.INFO,
+        stream=sys.stderr,
+        format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
+        datefmt="%H:%M:%S",
+    )
+    config = StudioConfig(
+        output_dir=Path(args.output_dir),
+        examples_dir=Path(args.examples_dir),
+        binary=args.binary,
+        generator=args.generator,
+        host=args.host,
+        port=args.port,
+    )
+    app = create_app(config)
+    url = app.state.studio.studio_url
+    LOGGER.info("AetherFX Studio on %s", url)
+    if not args.no_open:
+        threading.Timer(1.0, lambda: webbrowser.open(url)).start()
+    import uvicorn  # noqa: PLC0415 - keep import cost out of create_app
+
+    uvicorn.run(app, host=args.host, port=args.port, log_level=args.log_level, access_log=False)
+    return 0
+
+
+if __name__ == "__main__":  # pragma: no cover
+    raise SystemExit(main())
