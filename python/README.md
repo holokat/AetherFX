@@ -186,6 +186,27 @@ Use the venv's `aetherfx-mcp` (or `python -m aetherfx.mcp_server`) so the server
 runs with its dependencies. If the engine binary is missing the server still
 starts, logs one line to stderr and returns a clear error from engine calls.
 
+### Long-lived HTTP server
+
+Instead of letting every client spawn its own engine over stdio, run one
+server and attach clients by URL (streamable HTTP, localhost only by default):
+
+```bash
+aetherfx-mcp --transport http --port 8765 --binary /path/to/aetherfx --output-dir ./out
+# serving MCP over HTTP at http://127.0.0.1:8765/mcp
+```
+
+Claude Code: `claude mcp add --transport http aetherfx http://127.0.0.1:8765/mcp`
+
+Claude Desktop (`claude_desktop_config.json`):
+
+```json
+{ "mcpServers": { "aetherfx": { "url": "http://127.0.0.1:8765/mcp" } } }
+```
+
+All attached clients share one engine session (the same effects, undo history
+and output directory). Bind to `--host 0.0.0.0` only on a trusted network.
+
 ## Regenerating the EAD schema
 
 `schema/ead.schema.json` is generated from `aetherfx.ead`; a test fails if it

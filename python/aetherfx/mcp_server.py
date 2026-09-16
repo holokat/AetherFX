@@ -29,6 +29,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from collections.abc import AsyncIterator
 from typing import Any, Sequence
 
 import mcp.types as types
@@ -428,6 +429,43 @@ class AetherMCPServer:
         async with stdio_server() as (read_stream, write_stream):
             await server.run(read_stream, write_stream, server.create_initialization_options())
 
+    async def run_http(self, host: str = "127.0.0.1", port: int = 8765, path: str = "/mcp") -> None:
+        """Serve MCP over streamable HTTP at ``http://host:port/path`` until interrupted.
+
+        Use this to keep one long-lived engine session that several clients (Claude
+        Code, Claude Desktop, scripts) can attach to by URL instead of each spawning
+        their own engine over stdio.  Binds to localhost by default.
+        """
+        import contextlib  # noqa: PLC0415 - only needed when actually serving
+        import uvicorn  # noqa: PLC0415
+        from mcp.server.streamable_http_manager import StreamableHTTPSessionManager  # noqa: PLC0415
+        from starlette.applications import Starlette  # noqa: PLC0415
+        from starlette.routing import Route  # noqa: PLC0415
+
+        server = self.build_server()
+        manager = StreamableHTTPSessionManager(app=server)
+
+        class _McpEndpoint:
+            """Raw ASGI endpoint (a class, so Starlette does not wrap it as a request handler)."""
+
+            async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
+                await manager.handle_request(scope, receive, send)
+
+        @contextlib.asynccontextmanager
+        async def lifespan(_app: Starlette) -> AsyncIterator[None]:
+            async with manager.run():
+                yield
+
+        # An exact Route (not a Mount) so clients are never redirected between
+        # "/mcp" and "/mcp/"; several MCP clients do not follow redirects on POST.
+        app = Starlette(
+            routes=[Route(path, _McpEndpoint(), methods=["GET", "POST", "DELETE"])],
+            lifespan=lifespan,
+        )
+        app.router.redirect_slashes = False
+        config = uvicorn.Config(app, host=host, port=port, log_level="info")
+        await uvicorn.Server(config).serve()
+
 
 def build_parser() -> argparse.ArgumentParser:
     """Build the ``aetherfx-mcp`` argument parser."""
@@ -450,6 +488,15 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Reference analyzer: 'mock' (default, offline) or 'claude' (default: $AETHERFX_ANALYZER).",
     )
+    parser.add_argument(
+        "--transport",
+        choices=("stdio", "http"),
+        default="stdio",
+        help="stdio (default; launched by the MCP client) or http (long-lived streamable HTTP server).",
+    )
+    parser.add_argument("--host", default="127.0.0.1", help="http transport bind address (default 127.0.0.1).")
+    parser.add_argument("--port", type=int, default=8765, help="http transport port (default 8765).")
+    parser.add_argument("--path", default="/mcp", help="http transport URL path (default /mcp).")
     return parser
 
 
@@ -470,7 +517,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             file=sys.stderr,
         )
     try:
-        anyio.run(server.run_stdio)
+        if args.transport == "http":
+            print(f"aetherfx-mcp: serving MCP over HTTP at http://{args.host}:{args.port}{args.path}", file=sys.stderr)
+            anyio.run(server.run_http, args.host, args.port, args.path)
+        else:
+            anyio.run(server.run_stdio)
     finally:
         client.close()
     return 0
