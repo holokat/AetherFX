@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "aether/core/error.hpp"
@@ -26,6 +27,24 @@ void write_frame(const std::filesystem::path& path, const Image& image, const st
     ensure_dir(path.parent_path());
     if (format == "exr") render::write_exr(path, image);
     else render::write_png(path, image);
+}
+
+// Statistics for a whole frame sequence: what was drawn is summed, overdraw is the worst frame,
+// and `render_ms` is the total work done - on several workers that adds up to more than the
+// elapsed time, which is the point of reporting `threads_used` next to it.
+nlohmann::json sequence_statistics(const std::vector<render::FrameRenderResult>& frames, int threads) {
+    RenderStatistics total;
+    for (const render::FrameRenderResult& frame : frames) {
+        total.particles_submitted += frame.statistics.particles_submitted;
+        total.particles_drawn += frame.statistics.particles_drawn;
+        total.fragments_shaded += frame.statistics.fragments_shaded;
+        total.overdraw = std::max(total.overdraw, frame.statistics.overdraw);
+        total.render_ms += frame.statistics.render_ms;
+    }
+    nlohmann::json out = total.to_json();
+    out["frames"] = frames.size();
+    out["threads_used"] = threads;
+    return out;
 }
 
 // The renderer needs the compiled resources, so everything here goes through the
@@ -108,6 +127,9 @@ nlohmann::json render_preview(Session& session, const nlohmann::json& args) {
             {"statistics",
              {{"simulation", sequence.simulation_statistics},
               {"render", sequence.render_statistics},
+              {"threads_used", sequence.render_statistics.is_object()
+                                   ? sequence.render_statistics.value("threads_used", 1)
+                                   : 1},
               {"frame_count", sequence.paths.size()}}}};
 }
 
@@ -126,22 +148,25 @@ nlohmann::json render_turntable(Session& session, const nlohmann::json& args) {
     const std::filesystem::path out_dir = output_path(session, slugify(doc.effect.name) + "_turntable");
     ensure_dir(out_dir);
 
-    std::vector<Image> images;
+    // One frozen FrameState seen from `frames` camera positions: nothing to simulate, so every
+    // orbit position goes straight to the worker pool.
     nlohmann::json paths = nlohmann::json::array();
-    nlohmann::json last_statistics;
+    render::FrameRenderPool pool(runtime.compiled().resources, settings);
     for (int i = 0; i < frames; ++i) {
         const double angle = 2.0 * static_cast<double>(kPi) * i / frames;
         CameraDesc camera = base;
         camera.target = centre;
         camera.position = Vec3{centre.x + static_cast<float>(std::cos(angle) * distance), static_cast<float>(height),
                                centre.z + static_cast<float>(std::sin(angle) * distance)};
-        Image image = session.renderer().render(runtime.state(), runtime.compiled().resources, camera, settings);
-        last_statistics = session.renderer().last_statistics().to_json();
         const std::filesystem::path path = out_dir / frame_name(static_cast<size_t>(i));
-        write_frame(path, image, "png");
         paths.push_back(path.string());
-        images.push_back(std::move(image));
+        pool.submit(runtime.state(), camera, path);
     }
+    std::vector<render::FrameRenderResult> rendered = pool.finish();
+    const nlohmann::json last_statistics = sequence_statistics(rendered, pool.threads());
+    std::vector<Image> images;
+    images.reserve(rendered.size());
+    for (render::FrameRenderResult& frame : rendered) images.push_back(std::move(frame.image));
     doc.last_render_statistics = last_statistics;
 
     return {{"frames", std::move(paths)},
@@ -179,22 +204,28 @@ PreviewResult render_sequence(Session& session, Document& doc, const nlohmann::j
     const RenderSettings settings = render_settings_for(session, args);
     if (write_files) ensure_dir(out_dir);
 
+    // The simulation is sequential - it walks forward reusing the state - but rendering a frame
+    // only reads the FrameState it is handed, so each frame is copied out and rendered on a
+    // worker. The pool bounds how many copies are alive at once, so submit() throttles the loop
+    // instead of letting a long sequence pile up in memory.
     PreviewResult result;
     result.images.reserve(static_cast<size_t>(count));
+    render::FrameRenderPool pool(runtime.compiled().resources, settings);
     for (int i = 0; i < count; ++i) {
         const double time = start + static_cast<double>(i) / fps;
-        runtime.simulate_to(time);  // the sequence walks forward, reusing the state
+        runtime.simulate_to(time);
         const CameraDesc camera = camera_for(session, args, runtime.state().camera);
-        Image image = session.renderer().render(runtime.state(), runtime.compiled().resources, camera, settings);
-        result.render_statistics = session.renderer().last_statistics().to_json();
-        result.times.push_back(runtime.time());
+        std::filesystem::path path;
         if (write_files) {
-            const std::filesystem::path path = out_dir / frame_name(static_cast<size_t>(i));
-            write_frame(path, image, "png");
+            path = out_dir / frame_name(static_cast<size_t>(i));
             result.paths.push_back(path);
         }
-        result.images.push_back(std::move(image));
+        result.times.push_back(runtime.time());
+        pool.submit(runtime.state(), camera, std::move(path));
     }
+    std::vector<render::FrameRenderResult> frames = pool.finish();
+    result.render_statistics = sequence_statistics(frames, pool.threads());
+    for (render::FrameRenderResult& frame : frames) result.images.push_back(std::move(frame.image));
     result.simulation_statistics = runtime.statistics().to_json();
     doc.last_simulation_statistics = result.simulation_statistics;
     doc.last_render_statistics = result.render_statistics;

@@ -13,24 +13,25 @@
 // pass a background with alpha 0 to get a pure coverage matte for compositing the effect over
 // something else. Tonemapping happens only in image_io.
 //
-// Determinism: no threads, no wall-clock reads except RenderStatistics::render_ms,
-// fixed summation order everywhere, and a total order on the transparent sort key
-// (view depth descending, submission index ascending).
+// Determinism: no threads inside a render() call, no wall-clock reads except
+// RenderStatistics::render_ms, fixed summation order everywhere, and a total order on the
+// transparent sort key (view depth descending, submission index ascending). Rendering a whole
+// *sequence* on several workers (frame_render_pool.cpp) gives each worker its own renderer, so
+// that is deterministic too.
 //
 // Known V1 gaps (all deliberate; the primitive is still counted and, where it makes sense, still
 // drawn without the effect):
 //   * material.distortion    - refracting primitives are drawn normally, no screen-space warp.
 //   * VolumeState            - the sim backend is a stub with no field data, so nothing is drawn.
 //   * RenderSettings::motion_blur - ignored.
-//   * material uv_scroll / uv_rotate / dissolve / erosion / fresnel_power / noise_texture /
-//     gradient_texture - ignored; base_color, opacity, emissive, blend, shading, soft_particle,
-//     depth_fade and temperature_gradient are honoured.
+//   * material uv_scroll / uv_rotate / gradient_texture - ignored; base_color, opacity,
+//     emissive, blend, shading, soft_particle, depth_fade, fresnel_power, dissolve, erosion,
+//     noise_texture and temperature_gradient are honoured.
 //   * DecalState::normal     - decals project onto the y = 0 plane only.
 //   * TrailState::twist_deg  - ignored (ribbons stay camera facing).
 //   * Meshes are not clipped against the near plane: a triangle with a vertex behind it is
 //     dropped rather than split.
-//   * An animated TextureResource (frames > 1) is sampled at frame 0; sprite_columns/rows index
-//     a sheet *inside* that frame.
+//   * material dissolve / erosion apply to billboards only; mesh particles are not eroded.
 
 #include "aether/render/renderer.hpp"
 
@@ -39,6 +40,8 @@
 #include <cmath>
 #include <cstdint>
 #include <vector>
+
+#include "aether/core/image.hpp"
 
 namespace aether::render {
 namespace {
@@ -50,7 +53,14 @@ namespace {
 constexpr float kBackgroundDepth = 1.0e30f;  // finite sentinel; keeps soft-particle math NaN-free
 constexpr float kGroundAmbient = 0.15f;
 constexpr float kMeshAmbient = 0.15f;
-constexpr float kParticleAmbient = 0.30f;
+// Shaded ("lit") billboard model, see shade_volumetric().
+constexpr float kBillboardAmbient = 0.25f;
+constexpr float kBillboardWrap = 0.35f;          // wrapped-Lambert softness of the terminator
+constexpr float kBillboardTranslucency = 0.35f;  // back-lit bleed through the puff
+// Fresnel rim, see fresnel_rim(): a low emissive_intensity still gives a visible edge.
+constexpr float kFresnelMinEmissive = 0.35f;
+constexpr float kFresnelScale = 2.0f;
+constexpr int kNoiseSize = 64;  // built-in dissolve/erosion noise, generated once
 constexpr float kBranchWidthScale = 0.6f;  // beam branch polylines are thinner than the main beam
 constexpr float kGridSpacing = 1.0f;       // metres
 constexpr int kMaxBlurRadius = 96;
@@ -98,8 +108,14 @@ struct Projector {
     float near_plane = 0.05f;
     float far_plane = 200.0f;
     Vec3 eye;
+    // World-space camera basis (the rows of the orthonormal view matrix): +X right, +Y up,
+    // +Z back (the camera looks down -Z), used to rotate view-space normals into world space.
+    Vec3 cam_right{1, 0, 0};
+    Vec3 cam_up{0, 1, 0};
+    Vec3 cam_back{0, 0, 1};
 
     Vec3 to_view(Vec3 world) const { return view.transform_point(world); }
+    Vec3 view_dir_to_world(Vec3 v) const { return cam_right * v.x + cam_up * v.y + cam_back * v.z; }
     Vec3 dir_to_view(Vec3 world_dir) const { return view.transform_vector(world_dir); }
 
     // Projects a view-space point. Returns false at/behind the near plane.
@@ -233,24 +249,143 @@ inline float light_cone(const LightState& l, Vec3 light_to_point) {
     return smoothstep(ca, lerp(ca, 1.0f, 0.35f), c);
 }
 
-// `wrapped` selects the half-Lambert term used for camera-facing billboards; area lights are
-// treated as point lights in V1.
-inline Vec3 light_shade(const LightState& l, Vec3 p, Vec3 n, bool wrapped) {
+// Surface lighting for the ground plane and for meshes; area lights are treated as point lights
+// in V1. Billboards use shade_volumetric() instead, which has its own wrapped Lambert term.
+inline Vec3 light_shade(const LightState& l, Vec3 p, Vec3 n) {
     const Vec3 to_light = l.position - p;
     const float d = length(to_light);
     const Vec3 dir = d > kEpsilon ? to_light / d : Vec3{0.0f, 1.0f, 0.0f};
-    const float ndl = dot(n, dir);
-    const float lambert = wrapped ? saturate(ndl * 0.5f + 0.5f) : std::max(0.0f, ndl);
+    const float lambert = std::max(0.0f, dot(n, dir));
     if (lambert <= 0.0f) return {};
     const float f = light_falloff(l, d) * light_cone(l, -dir);
     if (f <= 0.0f) return {};
     return l.color.rgb() * (l.intensity * lambert * f);
 }
 
-inline Vec3 gather_lights(const std::vector<LightState>& lights, Vec3 p, Vec3 n, float ambient, bool wrapped) {
+inline Vec3 gather_lights(const std::vector<LightState>& lights, Vec3 p, Vec3 n, float ambient) {
     Vec3 acc{ambient, ambient, ambient};
-    for (const LightState& l : lights) acc += light_shade(l, p, n, wrapped);
+    for (const LightState& l : lights) acc += light_shade(l, p, n);
     return acc;
+}
+
+// One light reduced to what a shaded billboard needs per fragment. Everything that only depends
+// on the particle centre (direction, distance falloff, spot cone) is computed once per particle;
+// only the dot product with the per-fragment normal is left.
+struct BillboardLight {
+    Vec3 dir;       // unit direction from the particle towards the light
+    Vec3 radiance;  // light colour * intensity * falloff * cone
+};
+
+inline void resolve_billboard_lights(const std::vector<LightState>& lights, Vec3 p,
+                                     std::vector<BillboardLight>& out) {
+    out.clear();
+    for (const LightState& l : lights) {
+        const Vec3 to_light = l.position - p;
+        const float d = length(to_light);
+        const Vec3 dir = d > kEpsilon ? to_light / d : Vec3{0.0f, 1.0f, 0.0f};
+        const float f = light_falloff(l, d) * light_cone(l, -dir);
+        if (f <= 0.0f) continue;
+        out.push_back(BillboardLight{dir, l.color.rgb() * (l.intensity * f)});
+    }
+}
+
+// Shaded ("lit") billboard model - upgrade 1. A camera-facing quad is treated as the sphere it
+// stands in for, so a smoke puff gets a lit side and a dark side instead of reading as a decal:
+//
+//   n_view = (dx, dy, sqrt(max(0, 1 - dx*dx - dy*dy)))    (dx, dy) = fragment position in [-1,1]
+//   n      = camera basis (right, up, back) * n_view      -> world space
+//   wrap   = saturate((dot(n, L) + 0.35) / 1.35)          soft terminator: a puff has no hard edge
+//   trans  = 0.35 * max(0, dot(-n, L))                    light behind the puff bleeds through it
+//   shade  = 0.25 + sum over lights of radiance * (wrap + trans)
+//
+// The caller multiplies `shade` by the particle/material colour and adds emission on top, so an
+// unlit particle (Shading::Unlit) is untouched by any of this.
+inline Vec3 shade_volumetric(const std::vector<BillboardLight>& lights, Vec3 n) {
+    Vec3 acc{kBillboardAmbient, kBillboardAmbient, kBillboardAmbient};
+    for (const BillboardLight& l : lights) {
+        const float nd = dot(n, l.dir);
+        const float wrap = saturate((nd + kBillboardWrap) / (1.0f + kBillboardWrap));
+        const float trans = kBillboardTranslucency * std::max(0.0f, -nd);
+        const float term = wrap + trans;
+        if (term > 0.0f) acc += l.radiance * term;
+    }
+    return acc;
+}
+
+// Fresnel rim - upgrade 2. `v` is the unit direction from the surface to the camera; the caller
+// scales this by material.emissive_color * max(emissive_intensity, 0.35) * 2, so a crystal with a
+// low emissive intensity still gets a glowing silhouette. Added to the shaded colour before the
+// post chain, hence before bloom.
+inline float fresnel_rim(Vec3 n, Vec3 v, float power) {
+    return std::pow(1.0f - saturate(dot(n, v)), power);
+}
+
+// The per-material rim colour: material.emissive_color * max(emissive_intensity, 0.35) * 2.
+inline Vec3 fresnel_color_of(const MaterialDesc& m) {
+    return m.emissive_color.rgb() * (std::max(m.emissive_intensity, kFresnelMinEmissive) * kFresnelScale);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Built-in dissolve / erosion noise - upgrade 3.
+//
+// A self-contained hash-based value noise (3 octaves, lacunarity 2, gain 0.5) baked once into a
+// 64x64 image. The lattice wraps at each octave's period, so the image tiles seamlessly and a
+// per-particle UV offset never shows a seam. Deliberately independent of aether::procedural: the
+// renderer must not depend on the texture compiler to shade a fragment.
+// ---------------------------------------------------------------------------------------------
+inline uint32_t noise_hash(uint32_t x, uint32_t y, uint32_t seed) {
+    uint32_t h = x * 374761393u + y * 668265263u + seed * 2246822519u;
+    h = (h ^ (h >> 13)) * 1274126177u;
+    return h ^ (h >> 16);
+}
+
+inline float hash_unit(uint32_t x, uint32_t y, uint32_t seed) {
+    return static_cast<float>(noise_hash(x, y, seed) >> 8) / 16777216.0f;  // [0,1)
+}
+
+inline float lattice(int x, int y, int period, uint32_t seed) {
+    const uint32_t ux = static_cast<uint32_t>(((x % period) + period) % period);
+    const uint32_t uy = static_cast<uint32_t>(((y % period) + period) % period);
+    return hash_unit(ux, uy, seed);
+}
+
+inline float value_noise(float x, float y, int period, uint32_t seed) {
+    const int x0 = static_cast<int>(std::floor(x));
+    const int y0 = static_cast<int>(std::floor(y));
+    const float tx = smootherstep(x - static_cast<float>(x0));
+    const float ty = smootherstep(y - static_cast<float>(y0));
+    const float a = lattice(x0, y0, period, seed);
+    const float b = lattice(x0 + 1, y0, period, seed);
+    const float c = lattice(x0, y0 + 1, period, seed);
+    const float d = lattice(x0 + 1, y0 + 1, period, seed);
+    return lerp(lerp(a, b, tx), lerp(c, d, tx), ty);
+}
+
+const Image& built_in_noise() {
+    static const Image image = [] {
+        Image n(kNoiseSize, kNoiseSize, Color::black());
+        for (int y = 0; y < kNoiseSize; ++y) {
+            for (int x = 0; x < kNoiseSize; ++x) {
+                const float u = (static_cast<float>(x) + 0.5f) / static_cast<float>(kNoiseSize);
+                const float v = (static_cast<float>(y) + 0.5f) / static_cast<float>(kNoiseSize);
+                float sum = 0.0f;
+                float norm = 0.0f;
+                float amp = 1.0f;
+                int period = 4;
+                for (int octave = 0; octave < 3; ++octave) {
+                    sum += amp * value_noise(u * static_cast<float>(period), v * static_cast<float>(period), period,
+                                             1013u + static_cast<uint32_t>(octave) * 7919u);
+                    norm += amp;
+                    amp *= 0.5f;
+                    period *= 2;
+                }
+                const float value = saturate(norm > 0.0f ? sum / norm : 0.0f);
+                n.set(x, y, Color{value, value, value, 1.0f});
+            }
+        }
+        return n;
+    }();
+    return image;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -269,6 +404,7 @@ inline float default_sprite_alpha(float u, float v) {
 struct ResolvedParticles {
     const ParticleBuffer* buf = nullptr;
     const TextureResource* sprite = nullptr;
+    const Image* noise = nullptr;  // dissolve/erosion mask source (material or built-in)
     const MeshData* mesh = nullptr;
     const Gradient* temperature = nullptr;
     BlendMode blend = BlendMode::Additive;
@@ -280,10 +416,15 @@ struct ResolvedParticles {
     Vec3 emissive_color{1.0f, 1.0f, 1.0f};
     float material_opacity = 1.0f;
     float emissive_intensity = 0.0f;
+    float fresnel_power = 0.0f;
+    Vec3 fresnel_color{};
+    float dissolve = 0.0f;
+    float erosion = 0.0f;
     int sprite_columns = 1;
     int sprite_rows = 1;
     int sprite_cells = 1;
     int texture_frames = 1;
+    bool eroded() const { return dissolve > 0.0f || erosion > 0.0f; }
 };
 
 struct ResolvedSimple {  // beams / trails
@@ -489,6 +630,9 @@ public:
         proj.near_plane = std::max(1e-4f, camera.near_plane);
         proj.far_plane = std::max(proj.near_plane * 2.0f, camera.far_plane);
         proj.eye = camera.position;
+        proj.cam_right = Vec3{proj.view.at(0, 0), proj.view.at(0, 1), proj.view.at(0, 2)};
+        proj.cam_up = Vec3{proj.view.at(1, 0), proj.view.at(1, 1), proj.view.at(1, 2)};
+        proj.cam_back = Vec3{proj.view.at(2, 0), proj.view.at(2, 1), proj.view.at(2, 2)};
 
         Framebuffer fb(w, h, settings.background.rgb(), saturate(settings.background.a));
 
@@ -534,6 +678,11 @@ private:
             Vec3 color{1.0f, 1.0f, 1.0f};
             float cos_r = 1.0f, sin_r = 0.0f;
             float inv_sx = 1.0f, inv_sy = 1.0f;
+            // Animated texture frame (upgrade 4), selected by the effect time.
+            float frame = 0.0f;
+            float inv_frames = 1.0f;
+            float frame_u0 = 0.0f, frame_u1 = 1.0f;
+            bool clamp_frame = false;
         };
         std::vector<ResolvedDecal> decals;
         decals.reserve(state.decals.size());
@@ -549,6 +698,21 @@ private:
             rd.sin_r = std::sin(r);
             rd.inv_sx = std::fabs(d.size.x) > kEpsilon ? 1.0f / d.size.x : 0.0f;
             rd.inv_sy = std::fabs(d.size.y) > kEpsilon ? 1.0f / d.size.y : 0.0f;
+            const int frames = rd.tex ? std::max(1, rd.tex->frames) : 1;
+            rd.inv_frames = 1.0f / static_cast<float>(frames);
+            if (frames > 1) {
+                // A baked animated decal texture plays at a fixed 8 fps off the effect time:
+                // frame = floor(time * 8) mod frames. Deliberately simple; decals are backdrops.
+                const double ff = std::floor(state.time * 8.0);
+                const double wrapped = ff - std::floor(ff / frames) * frames;
+                rd.frame = static_cast<float>(clamp(static_cast<int>(wrapped), 0, frames - 1));
+                rd.clamp_frame = true;
+                const float half_texel =
+                    rd.tex->image.width > 0 ? 0.5f / static_cast<float>(rd.tex->image.width) : 0.0f;
+                rd.frame_u0 = rd.frame * rd.inv_frames + half_texel;
+                rd.frame_u1 = (rd.frame + 1.0f) * rd.inv_frames - half_texel;
+                if (rd.frame_u1 < rd.frame_u0) rd.frame_u0 = rd.frame_u1 = (rd.frame_u0 + rd.frame_u1) * 0.5f;
+            }
             decals.push_back(rd);
         }
 
@@ -563,7 +727,7 @@ private:
                 if (t <= proj.near_plane || t >= proj.far_plane) continue;
                 const Vec3 hit = proj.eye + dir * t;
 
-                Vec3 lit = gather_lights(state.lights, hit, Vec3::up(), kGroundAmbient, false);
+                Vec3 lit = gather_lights(state.lights, hit, Vec3::up(), kGroundAmbient);
                 Vec3 col = lit * settings.ground_albedo;
 
                 if (settings.grid) col = apply_grid(col, hit, t, proj);
@@ -612,7 +776,8 @@ private:
         Vec3 src = rd.color;
         float a = d.opacity;
         if (rd.tex && !rd.tex->image.empty()) {
-            const float fu = u / static_cast<float>(std::max(1, rd.tex->frames));  // frame 0
+            float fu = (rd.frame + u) * rd.inv_frames;
+            if (rd.clamp_frame) fu = clamp(fu, rd.frame_u0, rd.frame_u1);
             const Color c = rd.tex->image.sample(fu, v, WrapMode::Clamp);
             src = src * c.rgb();
             a *= c.a;
@@ -648,6 +813,8 @@ private:
             // emissive = colour * instance emissive * material emissive_color * (1 + intensity)
             sh.emissive = sh.albedo * mi.emissive *
                           (mat ? mat->emissive_color.rgb() * (1.0f + mat->emissive_intensity) : Vec3::one());
+            sh.fresnel_power = mat ? std::max(0.0f, mat->fresnel_power) : 0.0f;
+            if (sh.fresnel_power > 0.0f) sh.fresnel_color = fresnel_color_of(*mat);
             sh.alpha = 1.0f;
             sh.blend = BlendMode::Alpha;
             sh.opaque = true;
@@ -659,6 +826,8 @@ private:
     struct MeshShading {
         Vec3 albedo{1.0f, 1.0f, 1.0f};
         Vec3 emissive{};
+        Vec3 fresnel_color{};
+        float fresnel_power = 0.0f;
         float alpha = 1.0f;
         bool lit = false;
         bool opaque = true;
@@ -674,6 +843,7 @@ private:
         if (vcount == 0) return;
         const Mat4 normal_mat = transform.inverse().transposed();
         const bool have_normals = mesh.normals.size() == vcount;
+        const bool need_normal = sh.lit || sh.fresnel_power > 0.0f;
 
         // Transform + project once per vertex.
         scratch_pos_.assign(vcount, Vec3{});
@@ -711,12 +881,15 @@ private:
                                 if (depth >= fb.depth[idx]) return;
                                 const float w0 = b0 * iw0 * depth, w1 = b1 * iw1 * depth, w2 = b2 * iw2 * depth;
                                 Vec3 rgb = sh.albedo;
-                                if (sh.lit) {
+                                if (need_normal) {
                                     const Vec3 wp = p0 * w0 + p1 * w1 + p2 * w2;
                                     Vec3 nn = have_normals ? normalize(n0 * w0 + n1 * w1 + n2 * w2) : flat_n;
+                                    const Vec3 to_eye = proj.eye - wp;
                                     // double_sided: always shade the side facing the camera
-                                    if (dot(nn, proj.eye - wp) < 0.0f) nn = -nn;
-                                    rgb = rgb * gather_lights(state.lights, wp, nn, kMeshAmbient, false);
+                                    if (dot(nn, to_eye) < 0.0f) nn = -nn;
+                                    if (sh.lit) rgb = rgb * gather_lights(state.lights, wp, nn, kMeshAmbient);
+                                    if (sh.fresnel_power > 0.0f)
+                                        rgb += sh.fresnel_color * fresnel_rim(nn, normalize(to_eye), sh.fresnel_power);
                                 }
                                 rgb += sh.emissive;
                                 if (sh.opaque) {
@@ -924,6 +1097,14 @@ private:
             rp.lit = m->shading == Shading::Lit;
             rp.soft = m->soft_particle;
             rp.distortion = m->distortion > 0.0f;
+            rp.fresnel_power = std::max(0.0f, m->fresnel_power);
+            if (rp.fresnel_power > 0.0f) rp.fresnel_color = fresnel_color_of(*m);
+            rp.dissolve = saturate(m->dissolve);
+            rp.erosion = saturate(m->erosion);
+            if (rp.eroded()) {
+                const TextureResource* noise = m->noise_texture.empty() ? nullptr : resources.texture(m->noise_texture);
+                rp.noise = (noise && !noise->image.empty()) ? &noise->image : &built_in_noise();
+            }
             if (!m->temperature_gradient.empty()) rp.temperature = &m->temperature_gradient;
             if (rp.sprite == nullptr && !m->base_texture.empty()) rp.sprite = resources.texture(m->base_texture);
         } else {
@@ -935,9 +1116,11 @@ private:
     // Colour / alpha / emission shared by billboard and mesh particles.
     //
     //   colour   = particle.color * material.base_color [* temperature_gradient(1 - age/lifetime)]
-    //   shaded   = unlit ? colour : colour * (0.30 + sum of wrapped Lambert over the lights)
+    //   shaded   = unlit ? colour
+    //                    : colour * (billboards: shade_volumetric(), meshes: gather_lights())
     //   emission = colour * material.emissive_color * (particle.emissive + material.emissive_intensity)
-    //   src      = shaded + emission,  alpha = sprite.a * particle.opacity * material.opacity
+    //   src      = shaded + emission [+ fresnel rim],  alpha = sprite.a * particle.opacity *
+    //              material.opacity [* dissolve/erosion mask]
     //
     // So emissive == 0 and emissive_intensity == 0 gives a plain (lit or unlit) particle.
     struct ParticleShade {
@@ -979,6 +1162,32 @@ private:
         frame = ((frame % rp.sprite_cells) + rp.sprite_cells) % rp.sprite_cells;
         col = frame % rp.sprite_columns;
         row = frame / rp.sprite_columns;
+    }
+
+    // Normalised age. The runtime writes it into custom0 (docs/RUNTIME.md section 6); buffers
+    // built by hand without it fall back to age / lifetime.
+    static float particle_age_norm(const ResolvedParticles& rp, size_t i, float life01) {
+        const ParticleBuffer& pb = *rp.buf;
+        return i < pb.custom0.size() ? saturate(pb.custom0[i]) : life01;
+    }
+
+    // Animated texture frame - upgrade 4. TextureResource::frames bakes frames side by side, so
+    // this selects the frame *rectangle* that the sprite_columns/rows sheet is then indexed
+    // inside:
+    //   sprite_fps > 0 : frame = floor(age * sprite_fps) mod frames  (a fixed playback rate)
+    //   otherwise      : frame = floor(age_norm * frames) clamped    (one pass over the life)
+    static int sprite_frame(const ResolvedParticles& rp, const ParticleBuffer& pb, size_t i, float age_norm) {
+        if (rp.texture_frames <= 1) return 0;
+        const float frames = static_cast<float>(rp.texture_frames);
+        float frame;
+        if (pb.sprite_fps > 0.0f) {
+            const float age = i < pb.age.size() ? pb.age[i] : 0.0f;
+            frame = std::floor(age * pb.sprite_fps);
+            frame -= std::floor(frame / frames) * frames;  // positive modulo, overflow-free
+        } else {
+            frame = std::floor(age_norm * frames);
+        }
+        return clamp(static_cast<int>(frame), 0, rp.texture_frames - 1);
     }
 
     void draw_particle_quad(Framebuffer& fb, const Projector& proj, const FrameState& state,
@@ -1027,20 +1236,68 @@ private:
         if (sh.alpha <= 0.0f) return;
         int cell_col = 0, cell_row = 0;
         sprite_cell(rp, pb, i, sh.life01, cell_col, cell_row);
+        const float age_norm = particle_age_norm(rp, i, sh.life01);
 
-        Vec3 shaded = sh.color;
-        if (rp.lit) {
-            // Camera-facing normal, wrapped Lambert so a flat billboard still reads as volumetric.
-            const Vec3 n = normalize(proj.eye - pb.position[i]);
-            shaded = shaded * gather_lights(state.lights, pb.position[i], n, kParticleAmbient, true);
+        // --- shading ---------------------------------------------------------------------
+        // Unlit billboards keep a single colour for the whole quad. Lit ones are shaded per
+        // fragment against a volumetric normal (upgrade 1) and pick up the fresnel rim when the
+        // material asks for one (upgrade 2); both are added before post, hence before bloom.
+        const bool volumetric = rp.lit;
+        const bool rim = volumetric && rp.fresnel_power > 0.0f;
+        Vec3 src_base{};
+        Vec3 to_eye{};
+        float long_scale = 1.0f;
+        if (volumetric) {
+            resolve_billboard_lights(state.lights, pb.position[i], scratch_lights_);
+            if (rim) to_eye = normalize(proj.eye - pb.position[i]);
+            // axis_a / axis_b are orthonormal in the view plane, so a round billboard's unit disc
+            // maps straight onto the sphere it stands in for. A stretched billboard is a capsule
+            // instead: its long (velocity) axis is compressed to the short axis' scale, so the
+            // normal bends across the width and stays nearly flat along the streak.
+            if (half_b > half_a && half_b > kEpsilon) long_scale = half_a / half_b;
+        } else {
+            src_base = sh.color + sh.emission;
         }
-        const Vec3 src_base = shaded + sh.emission;
+
+        // --- erosion / dissolve (upgrade 3) ----------------------------------------------
+        // threshold = dissolve > 0 ? dissolve * (0.25 + 0.75 * age_norm)
+        //                          : 0.5 * erosion * age_norm      (pure erosion eats the edges)
+        // edge      = max(0.02, erosion)
+        // alpha    *= smoothstep(threshold - edge, threshold + edge, noise)
+        // The noise UV is offset by a hash of the particle seed, so no two puffs of a system
+        // break up the same way.
+        float threshold = 0.0f;
+        float edge = 0.0f;
+        float noise_u = 0.0f;
+        float noise_v = 0.0f;
+        if (rp.noise) {
+            threshold = rp.dissolve > 0.0f ? rp.dissolve * (0.25f + 0.75f * age_norm)
+                                           : 0.5f * rp.erosion * age_norm;
+            edge = std::max(0.02f, rp.erosion);
+            const uint32_t particle_seed = i < pb.seed.size() ? pb.seed[i] : 0u;
+            noise_u = hash_unit(particle_seed, 0x9e37u, 17u);
+            noise_v = hash_unit(particle_seed, 0x85ebu, 29u);
+        }
+
+        // --- animated frame rectangle (upgrade 4) ----------------------------------------
+        // The sheet cell is indexed inside the frame, and the UV is kept half a texel away from
+        // the frame border so a bilinear tap never bleeds in from the neighbouring frame.
+        const float inv_frames = 1.0f / static_cast<float>(rp.texture_frames);
+        const float frame = static_cast<float>(sprite_frame(rp, pb, i, age_norm));
+        float frame_u0 = 0.0f;
+        float frame_u1 = 1.0f;
+        if (rp.texture_frames > 1 && rp.sprite && rp.sprite->image.width > 0) {
+            const float half_texel = 0.5f / static_cast<float>(rp.sprite->image.width);
+            frame_u0 = frame * inv_frames + half_texel;
+            frame_u1 = (frame + 1.0f) * inv_frames - half_texel;
+            if (frame_u1 < frame_u0) frame_u0 = frame_u1 = (frame_u0 + frame_u1) * 0.5f;
+        }
+        const bool clamp_frame = rp.texture_frames > 1;
 
         const bool soft = settings.soft_particles && rp.soft && rp.soft_distance > 0.0f;
         const float inv_soft = soft ? 1.0f / rp.soft_distance : 0.0f;
         const float inv_cols = 1.0f / static_cast<float>(rp.sprite_columns);
         const float inv_rows = 1.0f / static_cast<float>(rp.sprite_rows);
-        const float inv_frames = 1.0f / static_cast<float>(rp.texture_frames);
         const BlendMode blend = rp.blend;
 
         raster_parallelogram(fb.w, fb.h, center, ax, ay, [&](int x, int y, float u, float v) {
@@ -1048,8 +1305,26 @@ private:
             if (depth > fb.depth[idx]) return;  // behind opaque geometry
             float a = sh.alpha;
             Vec3 src = src_base;
+            if (volumetric) {
+                // Sprite-local position in [-1,1], rotated out of the quad's frame back into the
+                // view plane so the normal follows the screen position, not the sprite's roll.
+                const float ds = u * 2.0f - 1.0f;
+                const float dt = (v * 2.0f - 1.0f) * long_scale;
+                const float dx = axis_a.x * ds + axis_b.x * dt;
+                const float dy = axis_a.y * ds + axis_b.y * dt;
+                const Vec3 n = proj.view_dir_to_world(
+                    Vec3{dx, dy, std::sqrt(std::max(0.0f, 1.0f - dx * dx - dy * dy))});
+                src = sh.color * shade_volumetric(scratch_lights_, n) + sh.emission;
+                if (rim) src += rp.fresnel_color * fresnel_rim(n, to_eye, rp.fresnel_power);
+            }
+            if (rp.noise) {
+                const float mask = rp.noise->sample(u + noise_u, v + noise_v, WrapMode::Repeat).r;
+                a *= smoothstep(threshold - edge, threshold + edge, mask);
+                if (a <= 0.0f) return;
+            }
             if (rp.sprite && !rp.sprite->image.empty()) {
-                const float su = (static_cast<float>(cell_col) + u) * inv_cols * inv_frames;
+                float su = (frame + (static_cast<float>(cell_col) + u) * inv_cols) * inv_frames;
+                if (clamp_frame) su = clamp(su, frame_u0, frame_u1);
                 const float sv = (static_cast<float>(cell_row) + v) * inv_rows;
                 const Color c = rp.sprite->image.sample(su, sv, WrapMode::Clamp);
                 a *= c.a;
@@ -1078,6 +1353,8 @@ private:
         MeshShading ms;
         ms.albedo = sh.color;
         ms.emissive = sh.emission;
+        ms.fresnel_color = rp.fresnel_color;
+        ms.fresnel_power = rp.fresnel_power;
         ms.alpha = saturate(sh.alpha);
         ms.lit = rp.lit;
         ms.opaque = false;
@@ -1248,7 +1525,8 @@ private:
         }
     }
 
-    // Reused per-mesh scratch so rasterisation never allocates per triangle or per fragment.
+    // Reused per-primitive scratch so rasterisation never allocates per triangle or per fragment.
+    std::vector<BillboardLight> scratch_lights_;
     std::vector<Vec3> scratch_pos_;
     std::vector<Vec3> scratch_nrm_;
     std::vector<Vec2> scratch_px_;
