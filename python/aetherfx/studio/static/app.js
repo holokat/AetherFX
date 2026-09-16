@@ -164,7 +164,8 @@ var S = {
   frameAbort: null,
   frameUrl: null,
 
-  job: null,             /* {id, since, timer, rendered} */
+  paramMessage: null,    /* inline result of the last parameter commit */
+  job: null,             /* {id, since, timer} */
   statusTimer: null
 };
 
@@ -181,3 +182,1139 @@ var WINDOW_PARAMS = ['start_time', 'duration', 'phase'];
 var JSON_TYPES = { curve: 1, gradient: 1, float_list: 1, vec3_list: 1, json: 1 };
 var VEC_SIZES = { vec2: 2, vec3: 3, vec4: 4 };
 var COMPONENT_LABELS = ['x', 'y', 'z', 'w'];
+
+/* ====================================================================== *
+ * status header
+ * ====================================================================== */
+
+function refreshStatus() {
+  return api('/api/status').then(function (status) {
+    S.status = status;
+    var engine = status.engine || {};
+    var dot = $('engine-dot');
+    dot.className = 'dot ' + (engine.ok ? 'ok' : 'bad');
+    $('engine-text').textContent = engine.ok ? 'engine ready' : 'engine offline';
+    $('engine-status').title = engine.ok
+      ? 'engine binary: ' + (engine.binary || 'unknown')
+      : (engine.error || 'the engine is not answering') + '\nbinary: ' + (engine.binary || 'not found');
+
+    var gen = status.generator || {};
+    var genText = $('generator-status');
+    genText.textContent = 'generator: ' + (gen.name || 'none') + (gen.available ? '' : ' (unavailable)');
+    genText.title = gen.available ? 'ready' : (gen.reason || 'no generator backend configured');
+
+    var button = $('btn-generate');
+    var busy = !!S.job;
+    button.disabled = !gen.available || busy;
+    button.title = gen.available ? 'Generate an effect from the prompt' : (gen.reason || 'no generator backend configured');
+    setEffectName(status.active_effect);
+    return status;
+  }, function (err) {
+    $('engine-dot').className = 'dot bad';
+    $('engine-text').textContent = 'studio offline';
+    $('engine-status').title = err && err.message ? err.message : 'cannot reach the studio server';
+    return null;
+  });
+}
+
+function setEffectName(active) {
+  var node = $('effect-name');
+  if (!active) { node.textContent = 'no effect'; node.title = 'no effect is open'; return; }
+  node.textContent = (active.name || 'untitled') + (active.dirty ? ' *' : '');
+  node.title = (active.effect_id || '') + (active.path ? '\n' + active.path : '');
+}
+
+/* ====================================================================== *
+ * effect lists (left column)
+ * ====================================================================== */
+
+function refreshEffects() {
+  return api('/api/effects').then(function (lists) {
+    S.lists = lists;
+    renderFileList($('list-examples'), lists.examples, 'no examples found', function (item) {
+      return { label: item.name, meta: '', onclick: function () { loadEffect(item.path); } };
+    });
+    renderFileList($('list-saved'), lists.saved, 'nothing saved yet', function (item) {
+      return { label: item.name, meta: ago(item.modified), onclick: function () { loadEffect(item.path); } };
+    });
+    renderFileList($('list-open'), lists.open, 'nothing open', function (item) {
+      return {
+        label: item.name || item.effect_id,
+        meta: (item.dirty ? 'modified' : ''),
+        active: item.active,
+        onclick: function () { activateEffect(item.effect_id); }
+      };
+    });
+    fillTemplateSelect(lists.examples);
+    return lists;
+  });
+}
+
+function renderFileList(list, items, emptyText, make) {
+  clear(list);
+  if (!items || !items.length) { list.appendChild(el('li', { class: 'empty', text: emptyText })); return; }
+  items.forEach(function (item) {
+    var spec = make(item);
+    var row = el('li', { class: spec.active ? 'active' : '', title: item.path || '', onclick: spec.onclick },
+      el('span', { text: spec.label }),
+      spec.meta ? el('span', { class: 'meta' + (spec.meta === 'modified' ? ' badge-dirty' : ''), text: spec.meta }) : null);
+    list.appendChild(row);
+  });
+}
+
+function fillTemplateSelect(examples) {
+  var select = $('new-template');
+  var current = select.value;
+  clear(select);
+  select.appendChild(el('option', { value: 'empty', text: 'empty' }));
+  (examples || []).forEach(function (item) {
+    select.appendChild(el('option', { value: item.name, text: item.name }));
+  });
+  select.value = current || 'empty';
+  if (!select.value) select.value = 'empty';
+}
+
+function loadEffect(path) {
+  S.paramMessage = null;
+  return guard(api('/api/effects/load', { body: { path: path } }).then(function (result) {
+    toast('loaded ' + (result.name || path), 'ok');
+    resetPreview();
+    return afterEffectChange();
+  }), 'load');
+}
+
+function activateEffect(effectId) {
+  S.paramMessage = null;
+  return guard(api('/api/effects/activate', { body: { effect_id: effectId } }).then(function () {
+    resetPreview();
+    return afterEffectChange();
+  }), 'activate');
+}
+
+function createEffect() {
+  S.paramMessage = null;
+  var body = {
+    name: $('new-name').value || 'Untitled',
+    duration: parseFloat($('new-duration').value) || 2.0,
+    template: $('new-template').value || 'empty'
+  };
+  return guard(api('/api/effects/new', { body: body }).then(function (result) {
+    toast('created ' + (result.name || body.name), 'ok');
+    $('new-effect-form').open = false;
+    resetPreview();
+    return afterEffectChange();
+  }), 'create');
+}
+
+function saveEffect() {
+  return guard(api('/api/effects/save', { body: {} }).then(function (result) {
+    toast('saved to ' + result.path, 'ok');
+    return refreshEffects();
+  }), 'save');
+}
+
+function runHistory(which) {
+  S.paramMessage = null;
+  return guard(api('/api/' + which, { body: {} }).then(function () {
+    invalidatePreview();
+    return afterEffectChange();
+  }), which);
+}
+
+/* Refresh everything that depends on the active effect. */
+function afterEffectChange() {
+  return Promise.all([refreshStatus(), refreshEffects(), refreshEffect()]);
+}
+
+/* ====================================================================== *
+ * the effect: graph, timeline, statistics, diagnostics
+ * ====================================================================== */
+
+function refreshEffect() {
+  return apiRaw('/api/effect').then(function (res) { return res.json(); }).then(function (data) {
+    S.data = data;
+    renderPhases(data.timeline);
+    renderGraph(data.graph);
+    renderStatistics(data.statistics);
+    renderDiagnostics(data.graph && data.graph.diagnostics);
+    syncTransportRange();
+    if (S.selected) {
+      var nodes = (data.graph && data.graph.nodes) || [];
+      var stillThere = nodes.some(function (n) { return n.id === S.selected; });
+      if (stillThere) { selectNode(S.selected, true); } else { S.selected = null; S.node = null; renderParams(); }
+    }
+    if (!S.preview && !S.playing) showCurrentFrame();
+    return data;
+  }, function (err) {
+    if (err && err.status === 404) {
+      S.data = null; S.selected = null; S.node = null;
+      renderPhases(null); renderGraph(null); renderStatistics(null); renderDiagnostics(null); renderParams();
+      clearViewport();
+      return null;
+    }
+    throw err;
+  });
+}
+
+function renderPhases(timeline) {
+  var box = clear($('timeline-phases'));
+  var phases = (timeline && timeline.phases) || [];
+  if (!phases.length) return;
+  phases.forEach(function (phase) {
+    box.appendChild(el('div', { class: 'phase', title: 'timeline phase' },
+      el('span', { text: phase.name }),
+      el('span', { class: 'span', text: num(phase.start, 2) + ' – ' + num(phase.end, 2) + ' s' })));
+  });
+}
+
+function renderGraph(graph) {
+  var tree = clear($('graph-tree'));
+  if (!graph || !graph.nodes) { tree.appendChild(el('p', { class: 'dim small', text: 'no effect loaded' })); return; }
+
+  var errorNodes = {};
+  var items = (graph.diagnostics && graph.diagnostics.items) || [];
+  items.forEach(function (item) { if (item.node && item.severity === 'error') errorNodes[item.node] = true; });
+
+  var layers = (graph.layers || []).slice();
+  var byLayer = {};
+  layers.forEach(function (layer) { byLayer[layer.id] = []; });
+  var ungrouped = [];
+  graph.nodes.forEach(function (node) {
+    if (node.layer && byLayer[node.layer]) byLayer[node.layer].push(node);
+    else ungrouped.push(node);
+  });
+
+  layers.forEach(function (layer) {
+    tree.appendChild(layerGroup(layer.name || layer.id, layer.role || '', byLayer[layer.id], errorNodes, layer.id));
+  });
+  if (ungrouped.length) tree.appendChild(layerGroup('Ungrouped', '', ungrouped, errorNodes, '_ungrouped'));
+}
+
+var collapsedLayers = {};
+
+function layerGroup(title, role, nodes, errorNodes, key) {
+  var body = el('div', {});
+  (nodes || []).forEach(function (node) { body.appendChild(nodeRow(node, errorNodes)); });
+  if (!nodes || !nodes.length) body.appendChild(el('p', { class: 'dim small', text: 'empty' }));
+  var details = el('details', {},
+    el('summary', {},
+      el('span', { text: title }),
+      role ? el('span', { class: 'role', text: '  · ' + role }) : null,
+      el('span', { class: 'count', text: String((nodes || []).length) })),
+    body);
+  details.open = !collapsedLayers[key];
+  details.addEventListener('toggle', function () { collapsedLayers[key] = !details.open; });
+  return details;
+}
+
+function nodeRow(node, errorNodes) {
+  var classes = ['node-row'];
+  if (node.id === S.selected) classes.push('selected');
+  if (node.enabled === false) classes.push('disabled');
+  if (errorNodes && errorNodes[node.id]) classes.push('has-error');
+
+  var toggle = el('input', {
+    type: 'checkbox', checked: node.enabled !== false, title: 'enabled',
+    onclick: function (ev) { ev.stopPropagation(); }
+  });
+  toggle.addEventListener('change', function () {
+    setNodeProperty(node.id, { enabled: toggle.checked });
+  });
+
+  return el('div', {
+    class: classes.join(' '),
+    title: node.type + ' · ' + node.id + (node.parent ? '\nparent: ' + node.parent : ''),
+    data: { node: node.id },
+    onclick: function () { selectNode(node.id); }
+  },
+    el('span', { class: 'glyph', text: NODE_GLYPH[node.type] || '●' }),
+    el('span', { class: 'node-id', text: node.id }),
+    el('span', { class: 'node-type', text: node.type }),
+    toggle);
+}
+
+function renderStatistics(statistics) {
+  var line = $('statline');
+  if (!statistics) { line.textContent = 'no statistics yet'; return; }
+  var sim = statistics.simulation || {};
+  var render = statistics.render || {};
+  clear(line);
+  function stat(label, value) {
+    return [document.createTextNode(label + ' '), el('b', { text: String(value) }), document.createTextNode('   ')];
+  }
+  [
+    stat('alive', num(sim.total_alive, 0)),
+    stat('spawned', num(sim.total_spawned, 0)),
+    stat('sim ms', num(sim.total_step_ms, 2)),
+    stat('render ms', num(render.render_ms, 2)),
+    stat('drawn', num(render.particles_drawn, 0)),
+    stat('overdraw', num(render.overdraw, 2))
+  ].forEach(function (parts) { parts.forEach(function (p) { line.appendChild(p); }); });
+}
+
+function renderDiagnostics(diagnostics) {
+  var box = clear($('diagnostics'));
+  var items = (diagnostics && diagnostics.items) || [];
+  items.forEach(function (item) {
+    var severity = item.severity || 'info';
+    var where = item.node ? item.node + (item.param ? '.' + item.param : '') : '';
+    var row = el('div', {
+      class: 'diag ' + severity,
+      title: item.node ? 'select ' + item.node : '',
+      onclick: function () { if (item.node) selectNode(item.node); }
+    },
+      el('span', { class: 'code', text: item.code || severity }),
+      where ? el('span', { class: 'where', text: '[' + where + ']' }) : null,
+      el('span', { text: item.message || '' }));
+    box.appendChild(row);
+  });
+}
+
+/* ====================================================================== *
+ * node selection + parameter editor
+ * ====================================================================== */
+
+function selectNode(nodeId, quiet) {
+  if (!nodeId) return Promise.resolve(null);
+  if (!quiet) S.paramMessage = null;
+  S.selected = nodeId;
+  markSelectedRow(nodeId, !quiet);
+  return guard(api('/api/node/' + encodeURIComponent(nodeId)).then(function (node) {
+    S.node = node;
+    renderParams();
+    return node;
+  }), 'inspect node');
+}
+
+function markSelectedRow(nodeId, scroll) {
+  var rows = document.querySelectorAll('.node-row');
+  for (var i = 0; i < rows.length; i++) {
+    var isIt = rows[i].dataset.node === nodeId;
+    rows[i].classList.toggle('selected', isIt);
+    if (isIt && scroll) {
+      var group = rows[i].closest('details');
+      if (group && !group.open) group.open = true;
+      rows[i].scrollIntoView({ block: 'nearest' });
+    }
+  }
+}
+
+function setNodeProperty(nodeId, props) {
+  var body = { node_id: nodeId };
+  for (var key in props) body[key] = props[key];
+  return guard(api('/api/node/property', { body: body }).then(function () {
+    invalidatePreview();
+    return refreshEffect().then(showCurrentFrame);
+  }), 'set node property');
+}
+
+function deleteNode(nodeId) {
+  if (!window.confirm('Delete node "' + nodeId + '"?  References to it are removed.')) return Promise.resolve(null);
+  return guard(api('/api/node/delete', { body: { node_id: nodeId } }).then(function (result) {
+    var dangling = (result && result.dangling) || [];
+    toast('deleted ' + nodeId + (dangling.length ? ' (' + dangling.length + ' reference(s) cleared)' : ''), 'ok');
+    S.selected = null; S.node = null;
+    invalidatePreview();
+    return refreshEffect().then(showCurrentFrame);
+  }), 'delete node');
+}
+
+/* -- focus preservation across re-renders ------------------------------ */
+
+function captureFocus() {
+  var active = document.activeElement;
+  var body = $('params-body');
+  if (!active || !body || !body.contains(active) || !active.dataset || !active.dataset.param) return null;
+  return { param: active.dataset.param, comp: active.dataset.comp || '' };
+}
+
+function restoreFocus(saved) {
+  if (!saved || !/^[A-Za-z0-9_]+$/.test(saved.param)) return;
+  var selector = '[data-param="' + saved.param + '"]' + (saved.comp ? '[data-comp="' + saved.comp + '"]' : '');
+  var target = $('params-body').querySelector(selector);
+  if (target && typeof target.focus === 'function') target.focus();
+}
+
+/* -- the panel --------------------------------------------------------- */
+
+function renderParams() {
+  var saved = captureFocus();
+  var body = clear($('params-body'));
+  var title = $('param-node-title');
+  if (!S.node || !S.node.node) {
+    title.textContent = '';
+    body.appendChild(el('p', { class: 'dim small', text: 'Select a node in the graph.' }));
+    return;
+  }
+
+  var node = S.node.node;
+  var spec = S.node.spec || {};
+  var specParams = spec.parameters || {};
+  var effective = S.node.effective_parameters || {};
+  var raw = node.parameters || {};
+  title.textContent = node.type || '';
+
+  var enabled = el('input', { type: 'checkbox', checked: node.enabled !== false, title: 'node enabled' });
+  enabled.addEventListener('change', function () { setNodeProperty(node.id, { enabled: enabled.checked }); });
+
+  body.appendChild(el('div', { class: 'node-head' },
+    el('span', { class: 'glyph', text: NODE_GLYPH[node.type] || '●' }),
+    el('span', { class: 'id', text: node.id }),
+    el('span', { class: 'type', text: node.type }),
+    S.node.tier ? el('span', { class: 'tier', text: String(S.node.tier) }) : null,
+    el('label', { class: 'check' }, enabled, 'enabled'),
+    el('span', { class: 'grow' }),
+    el('button', { type: 'button', class: 'danger', title: 'Delete this node', onclick: function () { deleteNode(node.id); } }, 'Delete')));
+
+  if (spec.description) body.appendChild(el('p', { class: 'dim small', text: spec.description }));
+
+  var names = Object.keys(specParams);
+  Object.keys(effective).forEach(function (name) { if (names.indexOf(name) < 0) names.push(name); });
+  names.sort();
+
+  var main = names.filter(function (n) { return TRANSFORM_PARAMS.indexOf(n) < 0 && WINDOW_PARAMS.indexOf(n) < 0; });
+  var transform = TRANSFORM_PARAMS.filter(function (n) { return names.indexOf(n) >= 0; });
+  var window_ = WINDOW_PARAMS.filter(function (n) { return names.indexOf(n) >= 0; });
+
+  function rows(into, list) {
+    list.forEach(function (name) {
+      into.appendChild(paramRow(node, name, specParams[name] || {}, effective[name], raw[name]));
+    });
+  }
+
+  var mainBox = el('div', {});
+  rows(mainBox, main);
+  body.appendChild(mainBox);
+
+  if (transform.length) {
+    var tBox = el('div', {});
+    rows(tBox, transform);
+    body.appendChild(el('details', { class: 'param-group' }, el('summary', { text: 'transform' }), tBox));
+  }
+  if (window_.length) {
+    var wBox = el('div', {});
+    rows(wBox, window_);
+    body.appendChild(el('details', { class: 'param-group' }, el('summary', { text: 'time window' }), wBox));
+  }
+
+  body.appendChild(renderPorts());
+  restoreFocus(saved);
+}
+
+function renderPorts() {
+  var box = el('div', { class: 'ports' });
+  var resolved = S.node.resolved_inputs || {};
+  var portNames = Object.keys(resolved);
+  box.appendChild(el('h3', { text: 'inputs' }));
+  if (!portNames.length) box.appendChild(el('p', { class: 'dim small', text: 'none' }));
+  portNames.sort().forEach(function (port) {
+    var refs = resolved[port];
+    if (!Array.isArray(refs)) refs = [refs];
+    var chips = refs.map(function (ref) {
+      var target = (ref && (ref.node || ref.ref)) || String(ref);
+      var missing = ref && ref.exists === false;
+      return el('span', {
+        class: 'chip' + (missing ? ' missing' : ''),
+        title: missing ? 'unresolved reference' : (ref && ref.type ? ref.type : ''),
+        onclick: function () { if (!missing) selectNode(target); }
+      }, target);
+    });
+    box.appendChild(el('div', { class: 'port' }, el('span', { class: 'name', text: port }), el('span', {}, chips)));
+  });
+
+  var consumers = S.node.consumers || [];
+  box.appendChild(el('h3', { text: 'consumers' }));
+  if (!consumers.length) box.appendChild(el('p', { class: 'dim small', text: 'none' }));
+  else {
+    var wrap = el('div', {});
+    consumers.forEach(function (id) {
+      wrap.appendChild(el('span', { class: 'chip', onclick: function () { selectNode(id); } }, String(id)));
+    });
+    box.appendChild(wrap);
+  }
+  return box;
+}
+
+function paramRow(node, name, spec, value, rawValue) {
+  var units = spec.units ? ' ' + spec.units : '';
+  var track = (rawValue && typeof rawValue === 'object' && !Array.isArray(rawValue) && Array.isArray(rawValue.track))
+    ? rawValue.track : null;
+  var isSet = Object.prototype.hasOwnProperty.call(node.parameters || {}, name);
+
+  var label = el('span', {
+    class: 'param-name' + (isSet ? ' changed' : ''),
+    title: (spec.description || name) + '\ntype: ' + (spec.type || '?') +
+      (spec.min !== null && spec.min !== undefined ? '\nmin: ' + spec.min : '') +
+      (spec.max !== null && spec.max !== undefined ? '\nmax: ' + spec.max : '') +
+      (spec.default !== undefined ? '\ndefault: ' + JSON.stringify(spec.default) : '')
+  }, name, units ? el('em', { class: 'units', text: units }) : null,
+    track ? el('span', { class: 'badge', title: 'keyframed; editing replaces the track with a constant', text: 'animated (' + track.length + ' keys)' }) : null);
+
+  var msg = el('div', { class: 'param-msg' });
+  if (S.paramMessage && S.paramMessage.name === name) {
+    msg.textContent = S.paramMessage.text;
+    msg.className = 'param-msg' + (S.paramMessage.ok ? ' ok' : '');
+  }
+
+  function commit(newValue) { commitParam(name, newValue); }
+  var widget = buildWidget(name, spec, value === undefined ? spec.default : value, commit, msg);
+  var row = el('div', { class: 'param-row' }, label, widget, msg);
+  return row;
+}
+
+function commitParam(name, value) {
+  if (!S.selected) return Promise.resolve(null);
+  var nodeId = S.selected;
+  return api('/api/param', { body: { node_id: nodeId, name: name, value: value } }).then(function (result) {
+    var diagnostics = result.diagnostics || {};
+    var items = diagnostics.items || [];
+    var bad = items.filter(function (item) { return item.severity === 'error' || item.severity === 'warning'; });
+    S.paramMessage = bad.length
+      ? { name: name, text: bad.map(function (i) { return (i.code || '') + ' ' + i.message; }).join('; '), ok: false }
+      : { name: name, text: 'ok', ok: true };
+    invalidatePreview();
+    return refreshEffect().then(showCurrentFrame);
+  }, function (err) {
+    S.paramMessage = { name: name, text: err && err.message ? err.message : 'failed', ok: false };
+    toast('set ' + nodeId + '.' + name + ': ' + (err && err.message ? err.message : 'failed'), 'error');
+    renderParams();
+    return null;
+  });
+}
+
+/* -- widgets ----------------------------------------------------------- */
+
+function buildWidget(name, spec, value, commit, msg) {
+  var box = el('span', { class: 'param-widget' });
+  var type = spec.type || inferType(value);
+
+  if (type === 'bool') { box.appendChild(boolWidget(name, value, commit)); return box; }
+  if (type === 'enum' && spec.enum && spec.enum.length) { box.appendChild(enumWidget(name, spec, value, commit)); return box; }
+  if (type === 'color') { colorWidget(name, value, commit).forEach(function (n) { box.appendChild(n); }); return box; }
+  if (VEC_SIZES[type]) { vecWidget(name, VEC_SIZES[type], value, commit).forEach(function (n) { box.appendChild(n); }); return box; }
+  if (JSON_TYPES[type]) { box.appendChild(jsonWidget(name, value, commit, msg)); return box; }
+  if (type === 'float' || type === 'int') { numberWidget(name, spec, value, commit).forEach(function (n) { box.appendChild(n); }); return box; }
+  box.appendChild(textWidget(name, value, commit));
+  return box;
+}
+
+function inferType(value) {
+  if (typeof value === 'boolean') return 'bool';
+  if (typeof value === 'number') return 'float';
+  if (Array.isArray(value)) return value.length === 3 ? 'vec3' : 'json';
+  if (value && typeof value === 'object') return 'json';
+  return 'string';
+}
+
+function boolWidget(name, value, commit) {
+  var input = el('input', { type: 'checkbox', checked: !!value, data: { param: name } });
+  input.addEventListener('change', function () { commit(input.checked); });
+  return input;
+}
+
+function enumWidget(name, spec, value, commit) {
+  var select = el('select', { data: { param: name } });
+  spec.enum.forEach(function (option) { select.appendChild(el('option', { value: option, text: option })); });
+  select.value = value === undefined || value === null ? spec.enum[0] : String(value);
+  select.addEventListener('change', function () { commit(select.value); });
+  return select;
+}
+
+function textWidget(name, value, commit) {
+  var input = el('input', { type: 'text', value: value === null || value === undefined ? '' : String(value), data: { param: name } });
+  input.addEventListener('change', function () { commit(input.value); });
+  return input;
+}
+
+function niceStep(spec) {
+  if (spec.type === 'int') return 1;
+  var min = spec.min, max = spec.max;
+  if (min !== null && min !== undefined && max !== null && max !== undefined && isFinite(max - min)) {
+    var raw = (max - min) / 200;
+    var magnitude = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+    return Math.max(0.001, magnitude);
+  }
+  return 0.01;
+}
+
+function numberWidget(name, spec, value, commit) {
+  var isInt = spec.type === 'int';
+  var step = niceStep(spec);
+  var current = Number(value);
+  if (isNaN(current)) current = 0;
+
+  var input = el('input', { type: 'number', value: String(current), step: String(step), data: { param: name, comp: '0' } });
+  if (spec.min !== null && spec.min !== undefined) input.min = String(spec.min);
+  if (spec.max !== null && spec.max !== undefined) input.max = String(spec.max);
+
+  var nodes = [input];
+  var slider = null;
+  var bounded = spec.min !== null && spec.min !== undefined && spec.max !== null && spec.max !== undefined;
+  if (bounded && isFinite(spec.max - spec.min)) {
+    slider = el('input', {
+      type: 'range', min: String(spec.min), max: String(spec.max),
+      step: String(isInt ? 1 : (spec.max - spec.min) / 200), value: String(current),
+      title: spec.min + ' .. ' + spec.max
+    });
+    slider.addEventListener('input', function () { input.value = slider.value; });
+    slider.addEventListener('change', function () { commit(read()); });
+    nodes.push(slider);
+  }
+
+  function read() {
+    var parsed = isInt ? parseInt(input.value, 10) : parseFloat(input.value);
+    if (isNaN(parsed)) parsed = current;
+    return parsed;
+  }
+  input.addEventListener('change', function () {
+    if (slider) slider.value = String(read());
+    commit(read());
+  });
+  return nodes;
+}
+
+function vecWidget(name, size, value, commit) {
+  var values = Array.isArray(value) ? value.slice(0, size) : [];
+  while (values.length < size) values.push(0);
+  var inputs = [];
+  var nodes = [];
+  for (var i = 0; i < size; i++) {
+    (function (index) {
+      var input = el('input', {
+        type: 'number', step: '0.01', value: String(Number(values[index]) || 0),
+        data: { param: name, comp: String(index) }, title: COMPONENT_LABELS[index]
+      });
+      input.addEventListener('change', function () { commit(readVec(inputs)); });
+      inputs.push(input);
+      nodes.push(el('span', { class: 'comp' }, el('label', { text: COMPONENT_LABELS[index] || String(index) }), input));
+    })(i);
+  }
+  return nodes;
+}
+
+function readVec(inputs) {
+  return inputs.map(function (input) {
+    var parsed = parseFloat(input.value);
+    return isNaN(parsed) ? 0 : parsed;
+  });
+}
+
+function linearToHex(component) {
+  var clamped = Math.max(0, Math.min(1, Number(component) || 0));
+  var byte = Math.round(Math.pow(clamped, 1 / 2.2) * 255);
+  return ('0' + byte.toString(16)).slice(-2);
+}
+
+function hexToLinear(hex, offset) {
+  var byte = parseInt(hex.substr(1 + offset * 2, 2), 16) / 255;
+  return Math.round(Math.pow(byte, 2.2) * 10000) / 10000;
+}
+
+function colorWidget(name, value, commit) {
+  var comps = Array.isArray(value) ? value.slice() : [1, 1, 1];
+  while (comps.length < 3) comps.push(0);
+  var size = comps.length >= 4 ? 4 : 3;
+  comps = comps.slice(0, size);
+
+  var inputs = [];
+  var nodes = [];
+  var swatch = el('input', {
+    type: 'color', value: '#' + linearToHex(comps[0]) + linearToHex(comps[1]) + linearToHex(comps[2]),
+    title: 'linear RGB; the swatch clamps to 0..1, the numbers may exceed it'
+  });
+  nodes.push(swatch);
+
+  var labels = ['r', 'g', 'b', 'a'];
+  for (var i = 0; i < size; i++) {
+    (function (index) {
+      var input = el('input', {
+        type: 'number', step: '0.01', value: String(Number(comps[index]) || 0),
+        data: { param: name, comp: String(index) }, title: labels[index]
+      });
+      input.addEventListener('change', function () {
+        var next = readVec(inputs);
+        swatch.value = '#' + linearToHex(next[0]) + linearToHex(next[1]) + linearToHex(next[2]);
+        commit(next);
+      });
+      inputs.push(input);
+      nodes.push(el('span', { class: 'comp' }, el('label', { text: labels[index] }), input));
+    })(i);
+  }
+
+  swatch.addEventListener('change', function () {
+    for (var c = 0; c < 3; c++) inputs[c].value = String(hexToLinear(swatch.value, c));
+    commit(readVec(inputs));
+  });
+  return nodes;
+}
+
+function prettyJson(value) {
+  if (Array.isArray(value) && value.length && value.every(function (item) { return Array.isArray(item); })) {
+    return '[\n  ' + value.map(function (item) { return JSON.stringify(item); }).join(',\n  ') + '\n]';
+  }
+  return JSON.stringify(value === undefined ? null : value, null, 2);
+}
+
+function jsonWidget(name, value, commit, msg) {
+  var area = el('textarea', { rows: 3, spellcheck: 'false', data: { param: name } });
+  area.value = prettyJson(value);
+  area.addEventListener('change', function () {
+    var parsed;
+    try {
+      parsed = JSON.parse(area.value);
+    } catch (err) {
+      area.classList.add('invalid');
+      if (msg) { msg.textContent = 'invalid JSON: ' + err.message; msg.className = 'param-msg'; }
+      return;
+    }
+    area.classList.remove('invalid');
+    commit(parsed);
+  });
+  area.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Enter' && (ev.metaKey || ev.ctrlKey)) { ev.preventDefault(); area.blur(); }
+  });
+  return area;
+}
+
+/* ====================================================================== *
+ * viewport + transport
+ * ====================================================================== */
+
+function duration() {
+  if (!S.data) return 0;
+  var graph = S.data.graph || {};
+  if (typeof graph.duration === 'number') return graph.duration;
+  var effect = S.data.effect || {};
+  return typeof effect.duration === 'number' ? effect.duration : 0;
+}
+
+function timelineMax() {
+  if (S.preview && S.preview.count > 0) return S.preview.count - 1;
+  return Math.max(0, Math.round(duration() * S.fps));
+}
+
+function timeAt(index) {
+  if (S.preview && S.preview.count > 0) return (S.preview.start || 0) + index / S.preview.fps;
+  return index / S.fps;
+}
+
+function usingPreview() { return !!(S.preview && S.preview.count && !S.previewStale); }
+
+function syncTransportRange() {
+  var slider = $('frame-slider');
+  var max = timelineMax();
+  slider.max = String(Math.max(1, max));
+  if (S.index > max) S.index = max;
+  slider.value = String(S.index);
+  slider.disabled = !S.data;
+  updateReadout();
+}
+
+function updateReadout() {
+  var total = timelineMax() + 1;
+  $('time-readout').textContent =
+    num(timeAt(S.index), 2) + ' s / ' + num(duration(), 2) + ' s  frame ' + (S.index + 1) + '/' + total;
+}
+
+function setIndex(index, fromPlayback) {
+  var max = timelineMax();
+  S.index = Math.max(0, Math.min(Math.round(index), max));
+  $('frame-slider').value = String(S.index);
+  updateReadout();
+  if (fromPlayback || usingPreview()) showPreviewFrame(S.index);
+  else requestFrame(timeAt(S.index), false);
+}
+
+function step(delta) {
+  pause();
+  var max = timelineMax();
+  var next = S.index + delta;
+  if (next < 0) next = S.loop ? max : 0;
+  if (next > max) next = S.loop ? 0 : max;
+  setIndex(next);
+}
+
+function showCurrentFrame() {
+  if (!S.data) { clearViewport(); return; }
+  if (usingPreview()) showPreviewFrame(S.index);
+  else requestFrame(timeAt(S.index), true);
+}
+
+function showPreviewFrame(index) {
+  if (!S.preview || !S.preview.frames.length) return;
+  var url = S.preview.frames[Math.max(0, Math.min(index, S.preview.frames.length - 1))];
+  if (url) showImage(url);
+}
+
+function showImage(url) {
+  var img = $('viewport-img');
+  img.src = url;
+  img.hidden = false;
+  $('viewport-empty').hidden = true;
+}
+
+function clearViewport() {
+  var img = $('viewport-img');
+  img.hidden = true;
+  img.removeAttribute('src');
+  $('viewport-empty').hidden = false;
+  setBusy(false);
+}
+
+function setBusy(on, text) {
+  var box = $('viewport-busy');
+  box.hidden = !on;
+  if (on && text) $('viewport-busy-text').textContent = text;
+}
+
+/* Debounced, latest-wins single-frame render. */
+function requestFrame(time, immediate) {
+  if (!S.data) return;
+  if (S.frameTimer) { clearTimeout(S.frameTimer); S.frameTimer = null; }
+  var run = function () {
+    S.frameTimer = null;
+    var token = ++S.frameToken;
+    if (S.frameAbort) { try { S.frameAbort.abort(); } catch (e) { /* ignore */ } }
+    var controller = (typeof AbortController === 'function') ? new AbortController() : null;
+    S.frameAbort = controller;
+    var url = '/api/frame?time=' + encodeURIComponent(time.toFixed(3)) +
+      '&width=' + S.size + '&height=' + S.size;
+    setBusy(true, 'rendering frame');
+    apiRaw(url, controller ? { signal: controller.signal } : {}).then(function (res) {
+      var stats = res.headers.get('X-Aether-Render');
+      return res.blob().then(function (blob) {
+        if (token !== S.frameToken) return;
+        var objectUrl = URL.createObjectURL(blob);
+        var previous = S.frameUrl;
+        S.frameUrl = objectUrl;
+        showImage(objectUrl);
+        if (previous) URL.revokeObjectURL(previous);
+        if (stats) applyRenderStats(stats);
+      });
+    }).catch(function (err) {
+      if (err && err.name === 'AbortError') return;
+      if (token === S.frameToken) toast('render: ' + (err && err.message ? err.message : 'failed'), 'error');
+    }).then(function () {
+      if (token === S.frameToken) setBusy(false);
+    });
+  };
+  if (immediate) run(); else S.frameTimer = setTimeout(run, 120);
+}
+
+function applyRenderStats(raw) {
+  try {
+    var stats = JSON.parse(raw);
+    if (S.data && S.data.statistics) {
+      S.data.statistics.render = stats;
+      renderStatistics(S.data.statistics);
+    }
+  } catch (err) { /* header is a nicety, never fatal */ }
+}
+
+/* -- preview ----------------------------------------------------------- */
+
+function invalidatePreview() {
+  if (S.preview) S.previewStale = true;
+  updatePreviewHint();
+}
+
+function resetPreview() {
+  pause();
+  if (S.preview) S.preview.frames.forEach(function (url) { URL.revokeObjectURL(url); });
+  S.preview = null;
+  S.previewStale = true;
+  S.index = 0;
+  updatePreviewHint();
+}
+
+function updatePreviewHint() {
+  var hint = $('preview-hint');
+  if (S.previewBusy) { hint.textContent = 'rendering…'; return; }
+  hint.textContent = (S.preview && S.previewStale) ? 'preview outdated – re-render' : '';
+}
+
+function renderPreview(autoplay) {
+  if (!S.data) { toast('load or create an effect first', 'warn'); return Promise.resolve(null); }
+  if (S.previewBusy) return Promise.resolve(null);
+  pause();
+  S.previewBusy = true;
+  updatePreviewHint();
+  setBusy(true, 'rendering preview');
+  $('btn-preview').disabled = true;
+
+  var body = { fps: S.fps, width: S.size, height: S.size, start: 0, end: duration() };
+  return api('/api/preview', { body: body }).then(function (result) {
+    if (!result.frames || !result.frames.length) throw new ApiError('the engine returned no frames', 0, null);
+    setBusy(true, 'loading ' + result.frames.length + ' frames');
+    return Promise.all(result.frames.map(function (url) {
+      return apiRaw(url).then(function (res) { return res.blob(); }).then(function (blob) { return URL.createObjectURL(blob); });
+    })).then(function (objectUrls) {
+      resetPreview();
+      S.preview = {
+        frames: objectUrls, fps: result.fps || S.fps, count: objectUrls.length,
+        start: result.start || 0, duration: result.duration || 0
+      };
+      S.previewStale = false;
+      if (result.statistics) { S.data.statistics = result.statistics; renderStatistics(result.statistics); }
+      syncTransportRange();
+      setIndex(0, true);
+      if (autoplay !== false) play();
+      toast(objectUrls.length + ' frames at ' + num(result.fps, 0) + ' fps', 'ok');
+      return S.preview;
+    });
+  }).catch(function (err) {
+    if (err && err.name === 'AbortError') return null;
+    toast('preview: ' + (err && err.message ? err.message : 'failed'), 'error');
+    return null;
+  }).then(function (value) {
+    S.previewBusy = false;
+    $('btn-preview').disabled = false;
+    setBusy(false);
+    updatePreviewHint();
+    return value;
+  });
+}
+
+/* -- playback ---------------------------------------------------------- */
+
+function play() {
+  if (S.playing) return;
+  if (!S.preview || !S.preview.count) { renderPreview(true); return; }
+  S.playing = true;
+  S.lastTick = 0;
+  $('btn-play').innerHTML = '&#10073;&#10073;';
+  $('btn-play').title = 'Pause (Space)';
+  S.raf = requestAnimationFrame(tick);
+}
+
+function pause() {
+  if (!S.playing) return;
+  S.playing = false;
+  if (S.raf) cancelAnimationFrame(S.raf);
+  S.raf = null;
+  $('btn-play').innerHTML = '&#9654;';
+  $('btn-play').title = 'Play (Space)';
+}
+
+function togglePlay() { if (S.playing) pause(); else play(); }
+
+function tick(now) {
+  if (!S.playing) return;
+  var fps = (S.preview && S.preview.fps) || S.fps;
+  var interval = 1000 / Math.max(1, fps);
+  if (!S.lastTick || now - S.lastTick >= interval) {
+    S.lastTick = now;
+    var max = timelineMax();
+    var next = S.index + 1;
+    if (next > max) {
+      if (!S.loop) { pause(); return; }
+      next = 0;
+    }
+    setIndex(next, true);
+  }
+  S.raf = requestAnimationFrame(tick);
+}
+
+/* ====================================================================== *
+ * generation jobs
+ * ====================================================================== */
+
+function startGeneration() {
+  var prompt = $('gen-prompt').value.trim();
+  if (!prompt) { toast('describe the effect first', 'warn'); $('gen-prompt').focus(); return; }
+  var checked = document.querySelector('input[name="gen-mode"]:checked');
+  var mode = checked ? checked.value : 'new';
+  guard(api('/api/generate', { body: { prompt: prompt, mode: mode } }).then(function (result) {
+    S.job = { id: result.job_id, since: 0, timer: null };
+    clear($('job-log'));
+    $('job-log').classList.add('active');
+    setGenerating(true, 'starting');
+    pollJob();
+  }), 'generate');
+}
+
+function setGenerating(on, stateText) {
+  $('btn-generate').disabled = on || !(S.status && S.status.generator && S.status.generator.available);
+  $('btn-cancel-job').hidden = !on;
+  $('gen-spinner').hidden = !on;
+  $('gen-state').textContent = stateText || '';
+}
+
+function pollJob() {
+  if (!S.job) return;
+  var jobId = S.job.id;
+  api('/api/jobs/' + encodeURIComponent(jobId) + '?since=' + S.job.since).then(function (snapshot) {
+    if (!S.job || S.job.id !== jobId) return;
+    S.job.since = snapshot.next || 0;
+    appendJobEvents(snapshot.events || []);
+    if (snapshot.status === 'running') {
+      setGenerating(true, 'running · ' + snapshot.total + ' events');
+      S.job.timer = setTimeout(pollJob, 700);
+    } else {
+      finishJob(snapshot);
+    }
+  }, function (err) {
+    if (!S.job || S.job.id !== jobId) return;
+    toast('job: ' + (err && err.message ? err.message : 'poll failed'), 'error');
+    S.job.timer = setTimeout(pollJob, 2000);
+  });
+}
+
+function finishJob(snapshot) {
+  S.job = null;
+  setGenerating(false, snapshot.status);
+  var summary = snapshot.summary || snapshot.status;
+  toast('generation ' + snapshot.status + (summary ? ': ' + shorten(summary, 160) : ''),
+    snapshot.status === 'done' ? 'ok' : 'warn');
+  var after = snapshot.effect_id
+    ? guard(api('/api/effects/activate', { body: { effect_id: snapshot.effect_id } }), 'activate')
+    : Promise.resolve(null);
+  after.then(function () {
+    resetPreview();
+    return afterEffectChange();
+  }).then(function () {
+    if (S.data && snapshot.status === 'done') renderPreview(true);
+  });
+}
+
+function cancelJob() {
+  if (!S.job) return;
+  guard(api('/api/jobs/' + encodeURIComponent(S.job.id) + '/cancel', { body: {} }), 'cancel');
+}
+
+function appendJobEvents(events) {
+  var log = $('job-log');
+  var atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 40;
+  events.forEach(function (event) {
+    var node = jobEventNode(event);
+    if (node) log.appendChild(node);
+  });
+  if (atBottom) log.scrollTop = log.scrollHeight;
+}
+
+function jobEventNode(event) {
+  var kind = event.kind || 'text';
+  if (kind === 'status') return el('div', { class: 'ev-status', text: event.text || '' });
+  if (kind === 'text') return el('div', { class: 'ev-text', text: event.text || '' });
+  if (kind === 'error') return el('div', { class: 'ev-error', text: '✗ ' + (event.text || 'error') });
+  if (kind === 'done') return el('div', { class: 'ev-done', text: '✔ ' + (event.summary || 'done') });
+  if (kind === 'tool_call') return el('div', { class: 'ev-call', text: formatToolCall(event) });
+  if (kind === 'tool_result') {
+    return el('div', { class: 'ev-result ' + (event.ok === false ? 'bad' : 'ok') },
+      (event.ok === false ? '✗ ' : '✓ ') + (event.name || '') + (event.summary ? ' — ' + shorten(event.summary, 180) : ''));
+  }
+  if (kind === 'image') {
+    var url = event.url || event.path;
+    var img = el('img', { src: url, alt: event.caption || 'render', title: 'click to show in the viewport' });
+    img.addEventListener('click', function () { pause(); showImage(url); });
+    return el('div', { class: 'ev-image' }, img, el('span', { text: event.caption || '' }));
+  }
+  return el('div', { class: 'ev-text', text: JSON.stringify(event) });
+}
+
+function formatToolCall(event) {
+  var args = event.args || {};
+  var parts = [];
+  Object.keys(args).forEach(function (key) {
+    var value = args[key];
+    var text = typeof value === 'string' ? value : JSON.stringify(value);
+    parts.push(key + '=' + shorten(text, 46));
+  });
+  if (parts.length > 6) parts = parts.slice(0, 6).concat(['…']);
+  return (event.name || 'tool') + '(' + parts.join(', ') + ')';
+}
+
+/* ====================================================================== *
+ * wiring
+ * ====================================================================== */
+
+function wire() {
+  $('btn-new').addEventListener('click', function () {
+    var form = $('new-effect-form');
+    form.open = true;
+    form.scrollIntoView({ block: 'nearest' });
+    $('new-name').focus();
+    $('new-name').select();
+  });
+  $('btn-create').addEventListener('click', createEffect);
+  $('btn-save').addEventListener('click', saveEffect);
+  $('btn-undo').addEventListener('click', function () { runHistory('undo'); });
+  $('btn-redo').addEventListener('click', function () { runHistory('redo'); });
+  $('btn-refresh-effects').addEventListener('click', function () { guard(refreshEffects(), 'effects'); });
+
+  $('btn-generate').addEventListener('click', startGeneration);
+  $('btn-cancel-job').addEventListener('click', cancelJob);
+  $('gen-prompt').addEventListener('keydown', function (ev) {
+    if (ev.key === 'Enter' && (ev.metaKey || ev.ctrlKey)) { ev.preventDefault(); startGeneration(); }
+  });
+
+  $('btn-play').addEventListener('click', togglePlay);
+  $('btn-preview').addEventListener('click', function () { renderPreview(true); });
+  $('chk-loop').addEventListener('change', function () { S.loop = $('chk-loop').checked; });
+
+  var slider = $('frame-slider');
+  slider.addEventListener('input', function () { pause(); setIndex(parseInt(slider.value, 10) || 0); });
+
+  $('sel-fps').addEventListener('change', function () {
+    S.fps = parseInt($('sel-fps').value, 10) || 24;
+    if (S.preview) invalidatePreview();
+    syncTransportRange();
+    showCurrentFrame();
+  });
+  $('sel-size').addEventListener('change', function () {
+    S.size = parseInt($('sel-size').value, 10) || 384;
+    if (S.preview) invalidatePreview();
+    showCurrentFrame();
+  });
+
+  document.addEventListener('keydown', function (ev) {
+    var key = ev.key;
+    if (ev.metaKey || ev.ctrlKey) {
+      if (key === 's' || key === 'S') { ev.preventDefault(); saveEffect(); return; }
+      if (key === 'z' || key === 'Z') { ev.preventDefault(); runHistory(ev.shiftKey ? 'redo' : 'undo'); return; }
+      return;
+    }
+    var target = ev.target;
+    if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' ||
+      target.tagName === 'SELECT' || target.isContentEditable)) return;
+    if (key === ' ' || key === 'Spacebar') { ev.preventDefault(); togglePlay(); }
+    else if (key === 'ArrowLeft') { ev.preventDefault(); step(-1); }
+    else if (key === 'ArrowRight') { ev.preventDefault(); step(1); }
+    else if (key === 'Home') { ev.preventDefault(); pause(); setIndex(0); }
+    else if (key === 'End') { ev.preventDefault(); pause(); setIndex(timelineMax()); }
+  });
+
+  window.addEventListener('beforeunload', function () { resetPreview(); });
+}
+
+var statusPending = false;
+function pollStatus() {
+  if (statusPending) return;
+  statusPending = true;
+  refreshStatus().then(function () { statusPending = false; }, function () { statusPending = false; });
+}
+
+function init() {
+  wire();
+  S.fps = parseInt($('sel-fps').value, 10) || 24;
+  S.size = parseInt($('sel-size').value, 10) || 384;
+  S.loop = $('chk-loop').checked;
+
+  refreshStatus().then(function () {
+    return refreshEffects();
+  }).then(function (lists) {
+    var hasOpen = lists && lists.open && lists.open.length;
+    if (hasOpen) return refreshEffect().then(function () { showCurrentFrame(); });
+    if (lists && lists.examples && lists.examples.length) {
+      return loadEffect(lists.examples[0].path).then(function () { if (S.data) renderPreview(true); });
+    }
+    return null;
+  }).catch(function (err) {
+    toast('startup: ' + (err && err.message ? err.message : 'failed'), 'error');
+  });
+
+  S.statusTimer = setInterval(pollStatus, 4000);
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+else init();

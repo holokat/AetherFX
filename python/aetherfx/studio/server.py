@@ -31,6 +31,8 @@ import re
 import sys
 import threading
 import webbrowser
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Sequence
@@ -86,6 +88,8 @@ class StudioConfig:
     port: int = 8770
     #: Inject a ready-made client (a real or fake engine) instead of spawning one.
     client: Client | None = None
+    #: Serve the MCP endpoint at /mcp on the same engine session (Claude Code / Desktop attach by URL).
+    mcp: bool = True
 
     def __post_init__(self) -> None:
         self.output_dir = Path(self.output_dir).expanduser()
@@ -636,7 +640,7 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
             "fps": fps,
             "count": count,
             "start": start,
-            "duration": (count / fps) if fps else 0.0,
+            "duration": ((count - 1) / fps) if (fps and count > 1) else 0.0,
             "width": width,
             "height": height,
             "contact_sheet": studio.file_url(result.get("contact_sheet")),
@@ -772,7 +776,28 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
         Mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static"),
     ]
 
-    async def on_startup() -> None:
+    mcp_manager = None
+    if studio.config.mcp:
+        try:
+            from mcp.server.streamable_http_manager import StreamableHTTPSessionManager  # noqa: PLC0415
+
+            from ..mcp_server import AetherMCPServer  # noqa: PLC0415
+            from .locked_client import LockedClient  # noqa: PLC0415
+
+            mcp_server = AetherMCPServer(LockedClient(studio.client, studio.engine_lock))  # type: ignore[arg-type]
+            mcp_manager = StreamableHTTPSessionManager(app=mcp_server.build_server())
+
+            class _McpEndpoint:
+                async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
+                    await mcp_manager.handle_request(scope, receive, send)
+
+            routes.insert(0, Route("/mcp", _McpEndpoint(), methods=["GET", "POST", "DELETE"]))
+        except Exception as exc:  # noqa: BLE001 - the studio still works without MCP
+            LOGGER.warning("MCP endpoint disabled: %s", exc)
+            mcp_manager = None
+
+    @asynccontextmanager
+    async def lifespan(_app: Starlette) -> AsyncIterator[None]:
         LOGGER.info("output dir: %s", studio.output_dir)
         LOGGER.info("examples dir: %s", studio.examples_dir)
         status = await run_in_threadpool(studio.engine_status)
@@ -785,11 +810,18 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
             LOGGER.info("generator: %s", generator.get("name"))
         else:
             LOGGER.warning("generator unavailable: %s", generator.get("reason"))
+        try:
+            if mcp_manager is not None:
+                LOGGER.info("MCP endpoint: http://%s:%s/mcp", studio.config.host, studio.config.port)
+                async with mcp_manager.run():
+                    yield
+            else:
+                yield
+        finally:
+            await run_in_threadpool(studio.close)
 
-    async def on_shutdown() -> None:
-        await run_in_threadpool(studio.close)
-
-    app = Starlette(routes=routes, on_startup=[on_startup], on_shutdown=[on_shutdown])
+    app = Starlette(routes=routes, lifespan=lifespan)
+    app.router.redirect_slashes = False
     app.state.studio = studio
     app.state.config = studio.config
     return app
@@ -826,7 +858,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--generator",
         default=None,
-        choices=["auto", "api", "claude-code", "none"],
+        choices=["auto", "api", "claude-code", "session", "none"],
         help="generator backend (default: auto, or $AETHERFX_GENERATOR).",
     )
     parser.add_argument("--no-open", action="store_true", help="do not open a browser window at startup.")

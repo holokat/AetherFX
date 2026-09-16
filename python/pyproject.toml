@@ -25,14 +25,19 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+studio = ["starlette>=0.40", "uvicorn>=0.30"]
 claude = ["anthropic>=0.40"]
 dev = ["pytest>=8.0"]
 
 [project.scripts]
 aetherfx-mcp = "aetherfx.mcp_server:main"
+aetherfx-studio = "aetherfx.studio.server:main"
 
 [tool.setuptools]
-packages = ["aetherfx", "aetherfx.ai"]
+packages = ["aetherfx", "aetherfx.ai", "aetherfx.studio"]
+
+[tool.setuptools.package-data]
+"aetherfx.studio" = ["static/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
