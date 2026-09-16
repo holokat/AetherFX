@@ -458,8 +458,23 @@ class AetherMCPServer:
 
         # An exact Route (not a Mount) so clients are never redirected between
         # "/mcp" and "/mcp/"; several MCP clients do not follow redirects on POST.
+        async def index(_request: Any) -> Any:
+            from starlette.responses import PlainTextResponse  # noqa: PLC0415
+
+            return PlainTextResponse(
+                "AetherFX MCP server is running.\n\n"
+                f"MCP endpoint (streamable HTTP): http://{host}:{port}{path}\n"
+                "This endpoint speaks the Model Context Protocol; open it from an MCP client, not a browser.\n\n"
+                f"Claude Code:    claude mcp add --transport http aetherfx http://{host}:{port}{path}\n"
+                f'Claude Desktop: {{"mcpServers": {{"aetherfx": {{"url": "http://{host}:{port}{path}"}}}}}}\n'
+                f"Python:         aetherfx.Client / mcp.client.streamable_http.streamable_http_client(\"http://{host}:{port}{path}\")\n"
+            )
+
         app = Starlette(
-            routes=[Route(path, _McpEndpoint(), methods=["GET", "POST", "DELETE"])],
+            routes=[
+                Route("/", index, methods=["GET"]),
+                Route(path, _McpEndpoint(), methods=["GET", "POST", "DELETE"]),
+            ],
             lifespan=lifespan,
         )
         app.router.redirect_slashes = False
