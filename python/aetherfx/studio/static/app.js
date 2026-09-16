@@ -1488,18 +1488,29 @@ function init() {
   S.size = parseSize($('sel-size').value);
   S.loop = $('chk-loop').checked;
 
-  refreshStatus().then(function () {
-    return refreshEffects();
-  }).then(function (lists) {
-    var hasOpen = lists && lists.open && lists.open.length;
-    if (hasOpen) return refreshEffect().then(function () { showCurrentFrame(); });
-    if (lists && lists.examples && lists.examples.length) {
-      return loadEffect(lists.examples[0].path).then(function () { if (S.data) renderPreview(true); });
-    }
-    return null;
-  }).catch(function (err) {
-    toast('startup: ' + (err && err.message ? err.message : 'failed'), 'error');
-  });
+  /* Open something as soon as the engine answers: an already-open effect, else the first example.
+   * If the page loads while the studio is still starting, retry on the next status polls. */
+  var attempts = 0;
+  function startup() {
+    return refreshStatus().then(function (status) {
+      var ready = status && status.engine && status.engine.ok;
+      if (!ready) {
+        if (++attempts < 30) setTimeout(startup, 2000);
+        return null;
+      }
+      return refreshEffects().then(function (lists) {
+        var hasOpen = lists && lists.open && lists.open.length;
+        if (hasOpen) return refreshEffect().then(function () { if (S.data && !S.preview) renderPreview(true); });
+        if (lists && lists.examples && lists.examples.length) {
+          return loadEffect(lists.examples[0].path).then(function () { if (S.data) renderPreview(true); });
+        }
+        return null;
+      });
+    }).catch(function (err) {
+      toast('startup: ' + (err && err.message ? err.message : 'failed'), 'error');
+    });
+  }
+  startup();
 
   S.statusTimer = setInterval(pollStatus, 4000);
 }
