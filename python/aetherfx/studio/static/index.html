@@ -48,6 +48,17 @@
     <button id="btn-save" type="button" class="ghost" title="Save the working copy into your library under a name (Ctrl+S)">
       <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4.6A1.6 1.6 0 0 1 4.6 3h5.2L13 6.2v5.2A1.6 1.6 0 0 1 11.4 13H4.6A1.6 1.6 0 0 1 3 11.4z"/><path d="M5.6 3v3.2h4.2M5.6 13v-3.4h4.8V13"/></svg><span>Save as</span>
     </button>
+
+    <details id="export-pop" class="export-pop">
+      <summary id="btn-export" class="btn-like" role="button" aria-haspopup="dialog"
+        title="Export this effect into Unreal, Unity, Godot, a package or a flipbook">
+        <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10.2V2.6"/><path d="M5.2 5.4 8 2.6l2.8 2.8"/><path d="M2.8 9.6v2.2a1.6 1.6 0 0 0 1.6 1.6h7.2a1.6 1.6 0 0 0 1.6-1.6V9.6"/></svg><span>Export</span>
+      </summary>
+      <div class="export-panel" role="dialog" aria-label="Export effect">
+        <div class="stage-head">Export effect</div>
+        <div id="export-targets" class="export-targets"><p class="dim small">loading targets…</p></div>
+      </div>
+    </details>
   </div>
 </header>
 
@@ -60,17 +71,24 @@
       <h2 class="panel-title"><span class="t">Generate</span></h2>
       <div class="panel-body">
 
-        <div class="prompt-box">
+        <div class="prompt-box" id="prompt-box">
           <textarea id="gen-prompt" rows="3" spellcheck="false"
-            placeholder="Describe an effect — a blue magic missile with a glowing core, trailing sparks and a soft smoke trail"></textarea>
+            placeholder="Describe an effect — a blue magic missile with a glowing core and trailing sparks — or attach a reference image"></textarea>
+          <div id="attach-list" class="attach-list" aria-label="reference images"></div>
           <div class="prompt-foot">
             <div class="segmented" role="group" aria-label="generation mode">
               <label class="seg"><input type="radio" name="gen-mode" value="new" checked><span>New</span></label>
               <label class="seg"><input type="radio" name="gen-mode" value="modify"><span>Modify</span></label>
             </div>
             <span class="grow"></span>
+            <button id="btn-attach" type="button" class="ghost icon-btn attach-btn"
+              title="Attach a reference image — click, drop one on the box, or paste from the clipboard" aria-label="Attach a reference image">
+              <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M10.4 7.1 6.2 11.3a2.1 2.1 0 0 1-3-3l5.2-5.2a1.45 1.45 0 0 1 2.05 2.05l-5.2 5.2a.8.8 0 0 1-1.15-1.1l4.4-4.4"/></svg>
+            </button>
+            <input id="attach-input" type="file" accept="image/*" multiple hidden>
             <kbd class="kbd" title="Ctrl/Cmd + Enter to generate">&#8984;&#8629;</kbd>
           </div>
+          <div id="prompt-drop" class="prompt-drop" aria-hidden="true"><span>drop a reference image</span></div>
         </div>
 
         <div class="row gen-actions">

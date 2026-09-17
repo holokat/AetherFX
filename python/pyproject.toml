@@ -25,7 +25,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-studio = ["starlette>=0.40", "uvicorn>=0.30", "websockets>=12.0"]
+studio = ["starlette>=0.40", "uvicorn>=0.30", "websockets>=12.0", "python-multipart>=0.0.9"]
 claude = ["anthropic>=0.40"]
 dev = ["pytest>=8.0"]
 

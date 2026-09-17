@@ -41,6 +41,7 @@ from typing import Any, Callable, Sequence
 
 from starlette.applications import Starlette
 from starlette.concurrency import run_in_threadpool
+from starlette.datastructures import UploadFile
 from starlette.requests import Request
 from starlette.responses import FileResponse, JSONResponse, Response
 from starlette.routing import Mount, Route
@@ -48,6 +49,9 @@ from starlette.staticfiles import StaticFiles
 
 from ..client import BINARY_ENV_VAR, Client
 from ..jsonrpc import ERROR_METHOD_NOT_FOUND, AetherError, JsonDict, TransportError
+from .attachments import MAX_BYTES as ATTACHMENT_MAX_BYTES
+from .attachments import AttachmentError, AttachmentStore
+from .export_targets import ExportError, describe_targets, export_to_target, read_settings, write_settings
 from .generator import Generator, get_generator
 from .jobs import CANCELLED, DONE, ERROR, JobBusy, JobManager
 from .stream_server import stream_routes
@@ -60,7 +64,10 @@ STATIC_DIR = Path(__file__).resolve().parent / "static"
 NO_STORE = {"Cache-Control": "no-store"}
 
 #: Files the studio is willing to hand to the browser out of the output dir.
-SERVABLE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".json", ".mp4", ".webm", ".txt"}
+SERVABLE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".json", ".mp4", ".webm", ".txt", ".zip"}
+
+#: Suffixes the browser should download rather than display, with their media type.
+DOWNLOAD_SUFFIXES = {".zip": "application/zip"}
 
 
 def _repo_root() -> Path:
@@ -170,6 +177,11 @@ class Studio:
         self.jobs_dir = self.output_dir / "jobs"
         for directory in (self.effects_dir, self.frames_dir, self.preview_dir, self.jobs_dir):
             directory.mkdir(parents=True, exist_ok=True)
+
+        #: Reference images uploaded from the Generate box.
+        self.attachments = AttachmentStore(self.output_dir / "attachments")
+        #: Remembered export destinations, per target id.
+        self.export_settings_path = self.output_dir / "export_settings.json"
 
         #: The one lock every engine call goes through, jobs included.
         self.engine_lock = threading.Lock()
@@ -431,6 +443,27 @@ class Studio:
         from urllib.parse import quote  # noqa: PLC0415
 
         return "/api/file?path=" + quote(str(resolved), safe="")
+
+    # -- export ------------------------------------------------------------
+
+    def export_destinations(self) -> JsonDict:
+        """The remembered ``{target: destination}`` map (never raises)."""
+        settings = read_settings(self.export_settings_path)
+        destinations = settings.get("destinations")
+        return {str(k): str(v) for k, v in destinations.items()} if isinstance(destinations, dict) else {}
+
+    def remember_destination(self, target: str, destination: str | None) -> None:
+        """Store (or forget, when ``destination`` is empty) one export destination."""
+        settings = read_settings(self.export_settings_path)
+        destinations = settings.get("destinations")
+        if not isinstance(destinations, dict):
+            destinations = {}
+        if destination:
+            destinations[target] = destination
+        else:
+            destinations.pop(target, None)
+        settings["destinations"] = destinations
+        write_settings(self.export_settings_path, settings)
 
     def close(self) -> None:
         try:
@@ -943,8 +976,13 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
         path = studio.resolve_inside_output(raw)
         if not path.is_file():
             raise StudioError(404, "not_found", f"no file at {path}")
-        if path.suffix.lower() not in SERVABLE_SUFFIXES:
+        suffix = path.suffix.lower()
+        if suffix not in SERVABLE_SUFFIXES:
             raise StudioError(403, "forbidden", f"refusing to serve {path.suffix or 'extension-less'} files")
+        if suffix in DOWNLOAD_SUFFIXES:
+            headers = dict(NO_STORE)
+            headers["Content-Disposition"] = f'attachment; filename="{path.name}"'
+            return FileResponse(path, media_type=DOWNLOAD_SUFFIXES[suffix], headers=headers)
         media_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
         return FileResponse(path, media_type=media_type, headers=NO_STORE)
 
@@ -968,6 +1006,97 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
             raise StudioError(400, "bad_request", "args must be a JSON object")
         LOGGER.info("tool %s(%s)", name, ", ".join(sorted(args)))
         return await run_in_threadpool(lambda: studio.call_with_args(name, args))
+
+    # -- reference images -----------------------------------------------
+
+    def attachment_urls(att_id: str) -> JsonDict:
+        return {"url": f"/api/attachments/{att_id}", "thumb_url": f"/api/attachments/{att_id}/thumb"}
+
+    @endpoint
+    async def api_attachment_upload(request: Request) -> JsonDict:
+        """Store one reference image (multipart form field ``file``)."""
+        if "multipart/form-data" not in (request.headers.get("content-type") or ""):
+            raise StudioError(400, "bad_request", "expected a multipart/form-data upload with a 'file' field")
+        try:
+            async with request.form(max_files=1, max_fields=4, max_part_size=ATTACHMENT_MAX_BYTES + 65536) as form:
+                upload = form.get("file")
+                if not isinstance(upload, UploadFile):
+                    raise StudioError(400, "bad_request", "the upload needs a 'file' part holding one image")
+                filename = upload.filename or "reference.png"
+                data = await upload.read()
+        except StudioError:
+            raise
+        except Exception as exc:  # noqa: BLE001 - a malformed upload is a client error
+            raise StudioError(400, "bad_request", f"could not read the upload: {exc}") from exc
+        if not data:
+            raise StudioError(400, "bad_request", "the uploaded file is empty")
+        try:
+            info = await run_in_threadpool(studio.attachments.save, filename, data)
+        except AttachmentError as exc:
+            raise StudioError(400, "bad_request", str(exc)) from exc
+        LOGGER.info("attachment %s (%s, %d bytes)", info["id"], info["name"], info["bytes"])
+        payload: JsonDict = {key: info[key] for key in ("id", "name", "width", "height", "bytes")}
+        payload.update(attachment_urls(info["id"]))
+        return payload
+
+    @endpoint
+    async def api_attachment(request: Request) -> Response:
+        """``GET`` the image bytes, ``DELETE`` the attachment."""
+        att_id = request.path_params["att_id"]
+        path = studio.attachments.path_for(att_id)
+        if path is None or not path.is_file():
+            raise StudioError(404, "not_found", f"unknown attachment {att_id}")
+        if request.method == "DELETE":
+            await run_in_threadpool(studio.attachments.delete, att_id)
+            return JSONResponse({"ok": True, "id": att_id}, headers=NO_STORE)
+        media_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+        return FileResponse(path, media_type=media_type, headers=NO_STORE)
+
+    @endpoint
+    async def api_attachment_thumb(request: Request) -> Response:
+        att_id = request.path_params["att_id"]
+        thumb = studio.attachments.thumb_for(att_id)
+        if thumb is None or not thumb.is_file():
+            raise StudioError(404, "not_found", f"unknown attachment {att_id}")
+        return FileResponse(thumb, media_type="image/png", headers=NO_STORE)
+
+    # -- export ----------------------------------------------------------
+
+    @endpoint
+    async def api_export_targets(_request: Request) -> JsonDict:
+        destinations = await run_in_threadpool(studio.export_destinations)
+        targets = describe_targets()
+        for target in targets:
+            target["destination"] = destinations.get(target["id"], "")
+        return {"targets": targets, "destinations": destinations}
+
+    @endpoint
+    async def api_export(request: Request) -> JsonDict:
+        data = await read_json(request)
+        target = _string(data, "target", required=True)
+        destination = _string(data, "destination", "").strip() or None
+        remember = bool(data.get("remember"))
+        options = data.get("options") or {}
+        if not isinstance(options, dict):
+            raise StudioError(400, "bad_request", "options must be a JSON object")
+        active = await studio.require_active_effect()
+        name = active.get("name") or "effect"
+
+        def run() -> JsonDict:
+            return export_to_target(studio.call, name, target, destination, studio.output_dir,
+                                    repo_root=_repo_root(), options=options)
+
+        try:
+            info = await run_in_threadpool(run)
+        except ExportError as exc:
+            raise StudioError(400, "bad_request", str(exc)) from exc
+        if info.get("download"):
+            info["download"] = studio.file_url(info.get("path")) or info["download"]
+        if remember:
+            await run_in_threadpool(studio.remember_destination, target, destination)
+        info["remembered"] = remember and bool(destination)
+        LOGGER.info("export %s -> %s", target, info.get("path"))
+        return info
 
     # -- generation jobs ------------------------------------------------
 
@@ -1018,6 +1147,14 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
         mode = _string(data, "mode", "new")
         if mode not in ("new", "modify"):
             raise StudioError(400, "bad_request", "mode must be 'new' or 'modify'")
+        raw_ids = data.get("attachments") or []
+        if not isinstance(raw_ids, list) or any(not isinstance(item, str) for item in raw_ids):
+            raise StudioError(400, "bad_request", "attachments must be a list of attachment ids")
+        try:
+            attachment_paths = studio.attachments.resolve(raw_ids)
+        except AttachmentError as exc:
+            raise StudioError(400, "bad_request", str(exc)) from exc
+        attachments = [dict({"id": att_id}, **attachment_urls(att_id)) for att_id in raw_ids]
         status = studio.generator_status()
         if not status.get("available"):
             raise StudioError(503, "generator_unavailable", status.get("reason") or "no generator backend configured")
@@ -1035,9 +1172,14 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
                         item["url"] = url
                 job.add_event(item)
 
-            job.add_event({"kind": "status", "text": f"{generator.name}: {mode} - {prompt}"})
+            references = ""
+            if attachment_paths:
+                count = len(attachment_paths)
+                references = f" · {count} reference image" + ("s" if count != 1 else "")
+            job.add_event({"kind": "status", "text": f"{generator.name}: {mode} - {prompt}{references}"})
             try:
-                result = generator.generate(prompt, mode=mode, on_event=sink, cancel=job.cancel)
+                result = generator.generate(prompt, mode=mode, on_event=sink, cancel=job.cancel,
+                                            attachments=attachment_paths or None)
             except Exception as exc:  # noqa: BLE001 - reported to the browser, not fatal
                 LOGGER.exception("generation job %s failed", job.job_id)
                 job.add_event({"kind": "error", "text": f"{type(exc).__name__}: {exc}"})
@@ -1051,9 +1193,11 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
                 job.finish(DONE, effect_id, summary)
             LOGGER.info("generation job %s finished: %s (%s)", job.job_id, job.status, effect_id)
 
-        job = studio.jobs.start(prompt, mode, target)
-        LOGGER.info("generation job %s started (%s, %s)", job.job_id, generator.name, mode)
-        return {"job_id": job.job_id, "status": job.status, "generator": generator.name}
+        job = studio.jobs.start(prompt, mode, target, attachments=attachments)
+        LOGGER.info("generation job %s started (%s, %s, %d reference images)",
+                    job.job_id, generator.name, mode, len(attachment_paths))
+        return {"job_id": job.job_id, "status": job.status, "generator": generator.name,
+                "attachments": attachments}
 
     @endpoint
     async def api_job(request: Request) -> JsonDict:
@@ -1098,6 +1242,11 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
         Route("/api/tools", api_tools),
         Route("/api/tool", api_tool, methods=["POST"]),
         Route("/api/randomize", api_randomize, methods=["POST"]),
+        Route("/api/attachments", api_attachment_upload, methods=["POST"]),
+        Route("/api/attachments/{att_id}/thumb", api_attachment_thumb),
+        Route("/api/attachments/{att_id}", api_attachment, methods=["GET", "DELETE"]),
+        Route("/api/export/targets", api_export_targets),
+        Route("/api/export", api_export, methods=["POST"]),
         Route("/api/generate", api_generate, methods=["POST"]),
         Route("/api/jobs/{job_id}", api_job),
         Route("/api/jobs/{job_id}/cancel", api_job_cancel, methods=["POST"]),

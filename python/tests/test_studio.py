@@ -289,3 +289,135 @@ def test_generate_is_unavailable_without_a_backend(client: TestClient) -> None:
 def test_unknown_job_is_a_404(client: TestClient) -> None:
     assert client.get("/api/jobs/nope").status_code == 404
     assert client.post("/api/jobs/nope/cancel", json={}).status_code == 404
+
+
+# =====================================================================
+# reference-image attachments
+# =====================================================================
+
+
+def make_png(size: tuple[int, int] = (24, 18), color: str = "#c0392b") -> bytes:
+    """A tiny in-memory PNG; the store only accepts real images."""
+    from io import BytesIO
+
+    from PIL import Image
+
+    buffer = BytesIO()
+    Image.new("RGB", size, color).save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
+@pytest.fixture()
+def attachment(client: TestClient) -> dict:
+    response = client.post("/api/attachments", files={"file": ("reference.png", make_png(), "image/png")})
+    assert response.status_code == 200, response.text
+    return response.json()
+
+
+def test_attachment_upload_returns_an_id_and_urls(attachment: dict) -> None:
+    assert attachment["id"]
+    assert attachment["name"] == "reference.png"
+    assert (attachment["width"], attachment["height"]) == (24, 18)
+    assert attachment["url"] == "/api/attachments/" + attachment["id"]
+    assert attachment["thumb_url"] == attachment["url"] + "/thumb"
+
+
+def test_attachment_serves_the_image_and_a_png_thumbnail(client: TestClient, attachment: dict) -> None:
+    full = client.get(attachment["url"])
+    assert full.status_code == 200
+    assert full.headers["content-type"].startswith("image/png")
+    assert full.content.startswith(PNG_MAGIC)
+
+    thumb = client.get(attachment["thumb_url"])
+    assert thumb.status_code == 200
+    assert thumb.headers["content-type"].startswith("image/png")
+    assert thumb.content.startswith(PNG_MAGIC)
+
+
+def test_attachment_rejects_a_file_that_is_not_an_image(client: TestClient) -> None:
+    response = client.post("/api/attachments", files={"file": ("notes.txt", b"not an image", "text/plain")})
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "bad_request"
+
+
+def test_unknown_attachment_is_a_404(client: TestClient) -> None:
+    for path in ("/api/attachments/nope", "/api/attachments/19990101-000000-deadbeef/thumb"):
+        assert client.get(path).status_code == 404, path
+
+
+def test_attachment_delete_removes_it(client: TestClient, attachment: dict) -> None:
+    assert client.delete(attachment["url"]).status_code == 200
+    assert client.get(attachment["url"]).status_code == 404
+    assert client.get(attachment["thumb_url"]).status_code == 404
+
+
+def test_generate_validates_attachments_before_the_generator(client: TestClient, attachment: dict) -> None:
+    unknown = client.post("/api/generate", json={"prompt": "like this", "attachments": ["19990101-000000-deadbeef"]})
+    assert unknown.status_code == 400
+    assert "unknown attachment" in unknown.json()["error"]["message"]
+
+    not_a_list = client.post("/api/generate", json={"prompt": "like this", "attachments": "abc"})
+    assert not_a_list.status_code == 400
+
+    # a resolvable attachment gets past validation and stops at the missing backend
+    accepted = client.post("/api/generate", json={"prompt": "like this", "attachments": [attachment["id"]]})
+    assert accepted.status_code == 503
+    assert accepted.json()["error"]["code"] == "generator_unavailable"
+
+
+# =====================================================================
+# export
+# =====================================================================
+
+
+def test_export_targets_lists_every_engine(client: TestClient) -> None:
+    targets = client.get("/api/export/targets").json()["targets"]
+    assert {target["id"] for target in targets} == {"unreal", "unity", "godot", "package", "flipbook"}
+    for target in targets:
+        assert target["label"] and target["hint"]
+        assert "destination" in target
+
+
+def test_export_package_without_a_destination_downloads_a_zip(client: TestClient, loaded: dict) -> None:
+    info = client.post("/api/export", json={"target": "package"})
+    assert info.status_code == 200, info.text
+    payload = info.json()
+    assert payload["download"].startswith("/api/file?path=")
+    assert payload["path"].endswith(".zip")
+
+    download = client.get(payload["download"])
+    assert download.status_code == 200
+    assert download.content.startswith(b"PK")
+    assert download.headers["content-type"] == "application/zip"
+    assert "attachment" in download.headers["content-disposition"]
+
+
+def test_export_into_a_unity_project(client: TestClient, tmp_path: Path, loaded: dict) -> None:
+    project = tmp_path / "UnityProject"
+    (project / "Assets").mkdir(parents=True)
+    response = client.post("/api/export", json={"target": "unity", "destination": str(project), "remember": True})
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    slug = slugify(client.get("/api/status").json()["active_effect"]["name"])
+    package = project / "Assets" / "AetherFX" / "Effects" / f"{slug}.aetherfx"
+    assert Path(payload["path"]) == package
+    assert (package / "runtime.json").is_file()
+    assert payload["download"] is None
+    assert payload["remembered"] is True
+
+    remembered = client.get("/api/export/targets").json()
+    assert remembered["destinations"]["unity"] == str(project)
+
+
+def test_export_refuses_a_destination_that_is_not_a_project(client: TestClient, tmp_path: Path, loaded: dict) -> None:
+    empty = tmp_path / "not-a-project"
+    empty.mkdir()
+    response = client.post("/api/export", json={"target": "godot", "destination": str(empty)})
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "bad_request"
+
+    missing = client.post("/api/export", json={"target": "unity", "destination": str(tmp_path / "gone")})
+    assert missing.status_code == 400
+
+    unknown = client.post("/api/export", json={"target": "nope"})
+    assert unknown.status_code == 400

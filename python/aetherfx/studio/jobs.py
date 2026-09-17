@@ -41,10 +41,12 @@ class JobBusy(RuntimeError):
 class Job:
     """One generation run: its events, its status and its cancel flag."""
 
-    def __init__(self, job_id: str, prompt: str, mode: str) -> None:
+    def __init__(self, job_id: str, prompt: str, mode: str, attachments: list[JsonDict] | None = None) -> None:
         self.job_id = job_id
         self.prompt = prompt
         self.mode = mode
+        #: Reference images this job was started with: ``[{"id", "thumb_url"}]``.
+        self.attachments = [dict(item) for item in (attachments or [])]
         self.created = time.time()
         self.finished: float | None = None
         self.status = RUNNING
@@ -112,6 +114,7 @@ class Job:
                 "summary": self.summary,
                 "prompt": self.prompt,
                 "mode": self.mode,
+                "attachments": [dict(item) for item in self.attachments],
                 "created": self.created,
                 "finished": self.finished,
                 "cancel_requested": self.cancel.is_set(),
@@ -140,8 +143,13 @@ class JobManager:
                     return job
         return None
 
-    def start(self, prompt: str, mode: str, target: Callable[[Job], None]) -> Job:
+    def start(self, prompt: str, mode: str, target: Callable[[Job], None],
+              attachments: list[JsonDict] | None = None) -> Job:
         """Register a job and run ``target(job)`` on a daemon thread.
+
+        ``attachments`` are the reference images the prompt was sent with
+        (``[{"id", "thumb_url"}]``); they ride along so the browser can show
+        them in the log of a job it did not start itself.
 
         Raises :class:`JobBusy` when another job is still running.
         """
@@ -149,7 +157,7 @@ class JobManager:
             for job_id in reversed(self._order):
                 if self._jobs[job_id].running:
                     raise JobBusy(job_id)
-            job = Job(uuid.uuid4().hex[:12], prompt, mode)
+            job = Job(uuid.uuid4().hex[:12], prompt, mode, attachments)
             self._jobs[job.job_id] = job
             self._order.append(job.job_id)
             self._prune_locked()

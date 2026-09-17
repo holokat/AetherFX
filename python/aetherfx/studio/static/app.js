@@ -84,9 +84,13 @@ function apiRaw(path, options) {
   for (var key in options) opts[key] = options[key];
   opts.headers = opts.headers || {};
   if (opts.body !== undefined && typeof opts.body !== 'string') {
-    opts.body = JSON.stringify(opts.body);
-    opts.headers['Content-Type'] = 'application/json';
-    opts.method = opts.method || 'POST';
+    if (typeof FormData !== 'undefined' && opts.body instanceof FormData) {
+      opts.method = opts.method || 'POST';        /* the browser writes the multipart boundary */
+    } else {
+      opts.body = JSON.stringify(opts.body);
+      opts.headers['Content-Type'] = 'application/json';
+      opts.method = opts.method || 'POST';
+    }
   }
   return fetch(path, opts).then(function (res) {
     if (res.ok) return res;
@@ -165,8 +169,12 @@ var S = {
   frameUrl: null,
 
   paramMessage: null,    /* inline result of the last parameter commit */
-  job: null,             /* {id, since, timer} */
+  job: null,             /* {id, since, timer, refsShown} */
   statusTimer: null,
+
+  attachments: [],       /* reference images: {key, id, name, thumb_url, url, uploading, localUrl} */
+  exportTargets: null,   /* the last GET /api/export/targets payload */
+  exportBusy: false,
 
   gl: null,              /* window.aetherViewer facade when WebGL2 is available */
   glTime: 0,             /* the time of the last frame the GPU viewer drew */
@@ -308,6 +316,7 @@ function refreshStatus() {
     button.disabled = !gen.available || busy;
     button.title = gen.available ? 'Generate an effect from the prompt' : (gen.reason || 'no generator backend configured');
     setEffectName(status.active_effect);
+    syncExportButton();
     followExternalChanges(status);
     return status;
   }, function (err) {
@@ -1530,16 +1539,338 @@ function tick(now) {
 }
 
 /* ====================================================================== *
+ * reference images
+ *
+ * Every pill is one upload: the file lives under <output_dir>/attachments on
+ * the server and only its id travels with POST /api/generate.  Pills survive
+ * the running job (the log shows the same thumbnails) and clear when it ends.
+ * ====================================================================== */
+
+var MAX_ATTACHMENTS = 4;
+var ICON_CLOSE = '<svg class="ic" viewBox="0 0 16 16" aria-hidden="true">' +
+  '<path d="M4.9 4.9l6.2 6.2M11.1 4.9l-6.2 6.2"/></svg>';
+var attachSeq = 0;
+
+function attachmentIds() {
+  var ids = [];
+  S.attachments.forEach(function (item) { if (item.id) ids.push(item.id); });
+  return ids;
+}
+
+function attachmentsUploading() {
+  return S.attachments.some(function (item) { return item.uploading; });
+}
+
+function findAttachment(key) {
+  for (var i = 0; i < S.attachments.length; i++) if (S.attachments[i].key === key) return S.attachments[i];
+  return null;
+}
+
+function renderAttachments() {
+  var list = $('attach-list');
+  if (!list) return;
+  clear(list);
+  S.attachments.forEach(function (item) { list.appendChild(attachmentPill(item)); });
+  var button = $('btn-attach');
+  if (!button) return;
+  var full = S.attachments.length >= MAX_ATTACHMENTS;
+  button.classList.toggle('on', S.attachments.length > 0);
+  button.disabled = full;
+  button.title = full
+    ? 'up to ' + MAX_ATTACHMENTS + ' reference images'
+    : 'Attach a reference image — click, drop one on the box, or paste from the clipboard';
+}
+
+function attachmentPill(item) {
+  var close = el('button', {
+    type: 'button', class: 'drop', title: 'Remove ' + item.name, 'aria-label': 'Remove ' + item.name,
+    disabled: !!item.uploading,
+    onclick: function () { removeAttachment(item.key); }
+  });
+  close.innerHTML = ICON_CLOSE;
+  return el('div', { class: 'attach-pill' + (item.uploading ? ' uploading' : ''), title: item.name },
+    el('img', { class: 'thumb', src: item.thumb_url || item.localUrl || '', alt: '' }),
+    item.uploading ? el('span', { class: 'spinner' }) : null,
+    el('span', { class: 'name', text: item.name }),
+    close);
+}
+
+/* Accept a FileList / array of File, dropping non-images and anything over the cap. */
+function addAttachmentFiles(files) {
+  var wanted = [];
+  for (var i = 0; i < files.length; i++) {
+    var file = files[i];
+    if (!file) continue;
+    if (file.type && file.type.indexOf('image/') !== 0) {
+      toast((file.name || 'that file') + ' is not an image', 'warn');
+      continue;
+    }
+    wanted.push(file);
+  }
+  if (!wanted.length) return;
+  var room = MAX_ATTACHMENTS - S.attachments.length;
+  if (room <= 0) { toast('up to ' + MAX_ATTACHMENTS + ' reference images', 'warn'); return; }
+  if (wanted.length > room) {
+    toast('only ' + room + ' more reference image' + (room === 1 ? '' : 's') + ' fit', 'warn');
+    wanted = wanted.slice(0, room);
+  }
+  wanted.forEach(uploadAttachment);
+}
+
+function uploadAttachment(file) {
+  var item = {
+    key: 'att' + (++attachSeq),
+    id: null,
+    name: file.name || 'reference.png',
+    uploading: true,
+    localUrl: null,
+    thumb_url: null,
+    url: null
+  };
+  try { item.localUrl = URL.createObjectURL(file); } catch (err) { item.localUrl = null; }
+  S.attachments.push(item);
+  renderAttachments();
+
+  var form = new FormData();
+  form.append('file', file, item.name);
+  api('/api/attachments', { method: 'POST', body: form }).then(function (result) {
+    if (!findAttachment(item.key)) { dropLocalUrl(item); return; }   /* removed while uploading */
+    item.id = result.id;
+    item.name = result.name || item.name;
+    item.url = result.url;
+    item.thumb_url = result.thumb_url;
+    item.width = result.width;
+    item.height = result.height;
+    item.uploading = false;
+    renderAttachments();
+    setTimeout(function () { dropLocalUrl(item); }, 0);
+  }, function (err) {
+    forgetAttachment(item.key);
+    toast('attach: ' + (err && err.message ? err.message : 'upload failed'), 'error');
+  });
+}
+
+function dropLocalUrl(item) {
+  if (!item.localUrl) return;
+  try { URL.revokeObjectURL(item.localUrl); } catch (err) { /* nothing to release */ }
+  item.localUrl = null;
+}
+
+/* Take the pill out of the list; the server copy is untouched. */
+function forgetAttachment(key) {
+  S.attachments = S.attachments.filter(function (item) {
+    if (item.key !== key) return true;
+    dropLocalUrl(item);
+    return false;
+  });
+  renderAttachments();
+}
+
+function removeAttachment(key) {
+  var item = findAttachment(key);
+  if (!item) return;
+  var id = item.id;
+  forgetAttachment(key);
+  if (id) guard(api('/api/attachments/' + encodeURIComponent(id), { method: 'DELETE' }), 'attachment');
+}
+
+/* Clear the box without deleting the files: the job log still shows them. */
+function clearAttachments() {
+  S.attachments.forEach(dropLocalUrl);
+  S.attachments = [];
+  renderAttachments();
+}
+
+function wireAttachments() {
+  var box = $('prompt-box');
+  var input = $('attach-input');
+  if (!box || !input) return;
+
+  $('btn-attach').addEventListener('click', function () { input.value = ''; input.click(); });
+  input.addEventListener('change', function () {
+    addAttachmentFiles(input.files || []);
+    input.value = '';
+  });
+
+  function carriesFiles(ev) {
+    var types = (ev.dataTransfer && ev.dataTransfer.types) || [];
+    for (var i = 0; i < types.length; i++) if (types[i] === 'Files') return true;
+    return false;
+  }
+  var depth = 0;
+  box.addEventListener('dragenter', function (ev) {
+    if (!carriesFiles(ev)) return;
+    ev.preventDefault();
+    depth++;
+    box.classList.add('dragging');
+  });
+  box.addEventListener('dragover', function (ev) {
+    if (!carriesFiles(ev)) return;
+    ev.preventDefault();
+    try { ev.dataTransfer.dropEffect = 'copy'; } catch (err) { /* Safari */ }
+    box.classList.add('dragging');
+  });
+  box.addEventListener('dragleave', function () {
+    if (--depth <= 0) { depth = 0; box.classList.remove('dragging'); }
+  });
+  box.addEventListener('drop', function (ev) {
+    if (!carriesFiles(ev)) return;
+    ev.preventDefault();
+    depth = 0;
+    box.classList.remove('dragging');
+    addAttachmentFiles((ev.dataTransfer && ev.dataTransfer.files) || []);
+  });
+
+  $('gen-prompt').addEventListener('paste', function (ev) {
+    var data = ev.clipboardData;
+    if (!data) return;
+    var items = data.items || [];
+    var files = [];
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].kind !== 'file') continue;
+      var file = items[i].getAsFile();
+      if (file && (!file.type || file.type.indexOf('image/') === 0)) files.push(file);
+    }
+    if (!files.length) return;
+    ev.preventDefault();
+    addAttachmentFiles(files);
+  });
+}
+
+/* ====================================================================== *
+ * export
+ *
+ * GET /api/export/targets describes the five targets and the destinations the
+ * server remembered; POST /api/export runs one.  An empty destination means
+ * "build a zip and hand it to the browser".
+ * ====================================================================== */
+
+function exportEnabled() { return !!(S.status && S.status.active_effect); }
+
+function syncExportButton() {
+  var summary = $('btn-export');
+  var pop = $('export-pop');
+  if (!summary || !pop) return;
+  var off = !exportEnabled();
+  summary.classList.toggle('is-disabled', off);
+  summary.setAttribute('aria-disabled', off ? 'true' : 'false');
+  summary.title = off ? 'Load or generate an effect first'
+    : 'Export this effect into Unreal, Unity, Godot, a package or a flipbook';
+  if (off && pop.open) pop.open = false;
+}
+
+function loadExportTargets() {
+  return guard(api('/api/export/targets').then(function (payload) {
+    S.exportTargets = payload;
+    renderExportTargets(payload.targets || []);
+    return payload;
+  }), 'export targets');
+}
+
+function renderExportTargets(targets) {
+  var box = clear($('export-targets'));
+  if (!targets.length) { box.appendChild(el('p', { class: 'dim small', text: 'no export targets' })); return; }
+  targets.forEach(function (target) { box.appendChild(exportRow(target)); });
+}
+
+function exportRow(target) {
+  var dest = el('input', {
+    type: 'text', class: 'export-dest', spellcheck: 'false',
+    placeholder: target.hint || 'destination folder',
+    value: target.destination || ''
+  });
+  var remember = el('input', { type: 'checkbox', checked: !!target.destination });
+  var go = el('button', { type: 'button', class: 'sm primary export-go' });
+
+  function syncLabel() {
+    var path = dest.value.trim();
+    go.textContent = path ? 'Export' : 'Download';
+    go.title = path ? 'Copy the package into ' + path : 'Build the package and download it';
+  }
+  function fire() { runExport(target, dest.value, remember.checked, go); }
+
+  dest.addEventListener('input', syncLabel);
+  dest.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Enter') { ev.preventDefault(); fire(); }
+  });
+  go.addEventListener('click', fire);
+  syncLabel();
+
+  return el('div', { class: 'export-row' },
+    el('div', { class: 'export-label', text: target.label || target.id }),
+    dest,
+    el('div', { class: 'export-foot' },
+      el('label', { class: 'check', title: 'Remember this destination for next time' },
+        remember, el('span', { text: 'remember' })),
+      el('span', { class: 'grow' }),
+      go));
+}
+
+function runExport(target, destination, remember, button) {
+  if (S.exportBusy) return;
+  if (!exportEnabled()) { toast('load or generate an effect first', 'warn'); return; }
+  var path = (destination || '').trim();
+  var label = button.textContent;
+  S.exportBusy = true;
+  button.disabled = true;
+  button.textContent = 'working…';
+
+  function done() {
+    S.exportBusy = false;
+    button.disabled = false;
+    button.textContent = label;
+  }
+
+  var body = { target: target.id, remember: !!remember };
+  if (path) body.destination = path;
+  api('/api/export', { body: body }).then(function (info) {
+    done();
+    var name = target.label || target.id;
+    if (info.download) {
+      downloadFile(info.download, info.path);
+      toast(name + ': downloading ' + (fileName(info.path) || 'package'), 'ok');
+    } else {
+      var parts = [];
+      if (info.path) parts.push(info.path);
+      if (info.installed) parts.push('plugin installed');
+      if (info.note) parts.push(shorten(info.note, 200));
+      toast(name + ' → ' + parts.join(' · '), 'ok');
+    }
+    if (remember) loadExportTargets();
+  }, function (err) {
+    done();
+    toast('export: ' + (err && err.message ? err.message : 'failed'), 'error');
+  });
+}
+
+function fileName(path) {
+  if (!path) return '';
+  var parts = String(path).split(/[\\/]/);
+  return parts[parts.length - 1] || '';
+}
+
+function downloadFile(url, path) {
+  var link = el('a', { href: url, download: fileName(path) || '' });
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+/* ====================================================================== *
  * generation jobs
  * ====================================================================== */
 
 function startGeneration() {
   var prompt = $('gen-prompt').value.trim();
   if (!prompt) { toast('describe the effect first', 'warn'); $('gen-prompt').focus(); return; }
+  if (attachmentsUploading()) { toast('a reference image is still uploading', 'warn'); return; }
   var checked = document.querySelector('input[name="gen-mode"]:checked');
   var mode = checked ? checked.value : 'new';
-  guard(api('/api/generate', { body: { prompt: prompt, mode: mode } }).then(function (result) {
-    S.job = { id: result.job_id, since: 0, timer: null };
+  var body = { prompt: prompt, mode: mode };
+  var ids = attachmentIds();
+  if (ids.length) body.attachments = ids;
+  guard(api('/api/generate', { body: body }).then(function (result) {
+    S.job = { id: result.job_id, since: 0, timer: null, refsShown: false };
     clear($('job-log'));
     $('job-log').classList.add('active');
     setGenerating(true, 'starting');
@@ -1560,6 +1891,7 @@ function pollJob() {
   api('/api/jobs/' + encodeURIComponent(jobId) + '?since=' + S.job.since).then(function (snapshot) {
     if (!S.job || S.job.id !== jobId) return;
     S.job.since = snapshot.next || 0;
+    if (!S.job.refsShown) { S.job.refsShown = true; showJobReferences(snapshot.attachments); }
     appendJobEvents(snapshot.events || []);
     if (snapshot.status === 'running') {
       setGenerating(true, 'running · ' + snapshot.total + ' events');
@@ -1577,6 +1909,7 @@ function pollJob() {
 function finishJob(snapshot) {
   S.job = null;
   setGenerating(false, snapshot.status);
+  clearAttachments();
   var summary = snapshot.summary || snapshot.status;
   toast('generation ' + snapshot.status + (summary ? ': ' + shorten(summary, 160) : ''),
     snapshot.status === 'done' ? 'ok' : 'warn');
@@ -1594,6 +1927,23 @@ function finishJob(snapshot) {
 function cancelJob() {
   if (!S.job) return;
   guard(api('/api/jobs/' + encodeURIComponent(S.job.id) + '/cancel', { body: {} }), 'cancel');
+}
+
+/* The first row of a job log: the reference images it was started with. */
+function showJobReferences(list) {
+  if (!list || !list.length) return;
+  var log = $('job-log');
+  var row = el('div', { class: 'ev-refs', title: 'reference images sent with the prompt' });
+  list.forEach(function (item) {
+    var url = item.thumb_url || item.url;
+    if (!url) return;
+    var img = el('img', { src: url, alt: 'reference image', title: 'click to show in the viewport' });
+    img.addEventListener('click', function () { pause(); showImage(item.url || url); });
+    row.appendChild(img);
+  });
+  if (!row.firstChild) return;
+  row.appendChild(el('span', { text: list.length + ' reference image' + (list.length === 1 ? '' : 's') }));
+  log.insertBefore(row, log.firstChild);
 }
 
 function appendJobEvents(events) {
@@ -1641,6 +1991,18 @@ function formatToolCall(event) {
 /* ====================================================================== *
  * wiring
  * ====================================================================== */
+
+/* Escape and a click outside close a <details> popover; onOpen refreshes it. */
+function wirePopover(details, onOpen) {
+  if (!details) return;
+  document.addEventListener('mousedown', function (ev) {
+    if (details.open && !details.contains(ev.target)) details.open = false;
+  });
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && details.open) details.open = false;
+  });
+  if (onOpen) details.addEventListener('toggle', function () { if (details.open) onOpen(); });
+}
 
 function wire() {
   $('btn-new').addEventListener('click', function () {
@@ -1715,16 +2077,17 @@ function wire() {
     else if (key === 'End') { ev.preventDefault(); pause(); setIndex(timelineMax()); }
   });
 
-  /* The stage popover is a <details>; close it like a real popover. */
-  var stagePop = $('stage-pop');
-  if (stagePop) {
-    document.addEventListener('mousedown', function (ev) {
-      if (stagePop.open && !stagePop.contains(ev.target)) stagePop.open = false;
-    });
-    document.addEventListener('keydown', function (ev) {
-      if (ev.key === 'Escape' && stagePop.open) { stagePop.open = false; }
-    });
-  }
+  wireAttachments();
+
+  /* Stage and Export are <details>; make them behave like real popovers. */
+  wirePopover($('stage-pop'));
+  wirePopover($('export-pop'), loadExportTargets);
+  $('btn-export').addEventListener('click', function (ev) {
+    if (exportEnabled()) return;
+    ev.preventDefault();
+    toast('load or generate an effect first', 'warn');
+  });
+  syncExportButton();
 
   window.addEventListener('beforeunload', function () { resetPreview(); });
 }

@@ -369,6 +369,48 @@ label.check, label.field, label.toggle-chip {
 #topbar .actions button { font-size: 12px; }
 .hdr-sep { width: 1px; height: 18px; background: var(--line); margin: 0 6px; flex: none; }
 
+/* -- export popover ----------------------------------------------- */
+
+.export-pop { position: relative; display: inline-flex; }
+.export-pop > summary.btn-like {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: var(--h); padding: 0 10px;
+  font: 500 12px/1 var(--sans); color: var(--text-2);
+  background: transparent; border: 1px solid transparent; border-radius: var(--r);
+  transition: background var(--t), color var(--t), border-color var(--t), opacity var(--t);
+}
+.export-pop > summary.btn-like:hover { background: var(--hover); color: var(--text); border-color: var(--line); }
+.export-pop[open] > summary.btn-like { background: var(--accent-soft); color: var(--accent-hover); border-color: var(--accent-line); }
+.export-pop > summary.btn-like.is-disabled { opacity: .45; cursor: not-allowed; }
+.export-pop > summary.btn-like.is-disabled:hover { background: transparent; color: var(--text-2); border-color: transparent; }
+
+.export-panel {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 60;
+  width: 296px; max-height: min(70vh, 560px); overflow-y: auto;
+  padding: 12px;
+  display: flex; flex-direction: column; gap: 10px;
+  background: rgba(16,16,18,.94);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid var(--line-strong); border-radius: var(--r-lg);
+  box-shadow: 0 24px 60px -20px rgba(0,0,0,.95), inset 0 1px 0 rgba(255,255,255,.05);
+  animation: pop .12s cubic-bezier(.22,.61,.36,1);
+}
+.export-targets { display: flex; flex-direction: column; gap: 4px; }
+
+.export-row {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 9px 2px 11px;
+}
+.export-row + .export-row { border-top: 1px solid var(--line-soft); }
+.export-row .export-label { font-size: 12px; font-weight: 550; color: var(--text); }
+.export-row .export-dest { height: 26px; font-size: 11.5px; font-family: var(--mono); width: 100%; }
+.export-row .export-foot { display: flex; align-items: center; gap: 8px; }
+.export-row .export-foot label.check { font-size: 11px; color: var(--text-3); cursor: pointer; }
+.export-row .export-foot label.check input[type=checkbox] { width: 22px; height: 14px; background-image: radial-gradient(circle 4px at 7px 7px, #a0a0aa 98%, rgba(0,0,0,0) 100%); }
+.export-row .export-foot label.check input[type=checkbox]:checked { background-image: radial-gradient(circle 4px at 7px 7px, #fff 98%, rgba(0,0,0,0) 100%); background-position: 8px 0; }
+.export-row .export-go { min-width: 78px; }
+
 /* -- layout ------------------------------------------------------- */
 
 #layout {
@@ -429,6 +471,7 @@ label.check, label.field, label.toggle-chip {
 /* -- prompt ------------------------------------------------------- */
 
 .prompt-box {
+  position: relative;
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
@@ -440,6 +483,10 @@ label.check, label.field, label.toggle-chip {
   border-color: var(--accent-line);
   box-shadow: 0 0 0 3px var(--accent-soft), inset 0 1px 0 rgba(255,255,255,.03);
 }
+.prompt-box.dragging {
+  border-color: var(--accent-line);
+  box-shadow: 0 0 0 3px var(--accent-soft), 0 0 22px -8px var(--accent-glow);
+}
 .prompt-box textarea {
   background: transparent; border: none; border-radius: 8px;
   padding: 6px 7px; min-height: 66px; font-size: 12.5px; resize: none;
@@ -447,7 +494,73 @@ label.check, label.field, label.toggle-chip {
 .prompt-box textarea:hover { border: none; }
 .prompt-box textarea:focus { outline: none; border: none; box-shadow: none; }
 
-.prompt-foot { display: flex; align-items: center; gap: 8px; padding: 0 3px 0 4px; }
+.prompt-foot { display: flex; align-items: center; gap: 6px; padding: 0 3px 0 4px; }
+
+/* -- reference images --------------------------------------------- */
+
+.attach-btn { width: 24px; height: 24px; padding: 0; border-radius: 6px; }
+.attach-btn .ic { width: 13px; height: 13px; }
+.attach-btn.on { color: var(--accent-hover); background: var(--accent-soft); border-color: var(--accent-line); }
+
+.attach-list { display: flex; flex-wrap: wrap; gap: 5px; padding: 2px 4px 6px; }
+.attach-list:empty { display: none; }
+
+.attach-pill {
+  position: relative; overflow: hidden;
+  display: inline-flex; align-items: center; gap: 7px;
+  max-width: 100%; height: 34px; padding: 0 4px 0 3px;
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  transition: border-color var(--t), background var(--t);
+}
+.attach-pill:hover, .attach-pill:focus-within { border-color: var(--line-strong); background: #1c1c21; }
+
+.attach-pill .thumb {
+  width: 28px; height: 28px; flex: none;
+  border-radius: 50%; object-fit: cover;
+  background: var(--sunken); box-shadow: inset 0 0 0 1px var(--line);
+}
+.attach-pill .name {
+  max-width: 140px; font-size: 11.5px; color: var(--text-2);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.attach-pill:hover .name { color: var(--text); }
+
+.attach-pill .drop {
+  width: 20px; height: 20px; flex: none; padding: 0;
+  border: none; border-radius: 50%; background: transparent; color: var(--text-3);
+}
+.attach-pill .drop .ic { width: 10px; height: 10px; stroke-width: 1.7; }
+.attach-pill .drop:hover:not(:disabled) { background: var(--danger-soft); color: #fca5a5; }
+.attach-pill .drop:focus-visible { box-shadow: 0 0 0 2px var(--accent-soft); }
+
+/* uploading: the local preview is dimmed and a hairline sweeps the pill */
+.attach-pill.uploading .thumb { opacity: .4; }
+.attach-pill.uploading .name  { color: var(--text-3); }
+.attach-pill.uploading .spinner { position: absolute; left: 11px; top: 11px; }
+.attach-pill.uploading::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+  background: linear-gradient(90deg, rgba(0,0,0,0), var(--accent), rgba(0,0,0,0));
+  animation: attach-sweep 1.1s ease-in-out infinite;
+}
+@keyframes attach-sweep { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+
+/* drop target overlay */
+.prompt-drop {
+  position: absolute; inset: 0; z-index: 3;
+  display: none; align-items: center; justify-content: center;
+  border-radius: var(--r-lg);
+  background: rgba(139,92,246,.08);
+  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  pointer-events: none;
+}
+.prompt-box.dragging .prompt-drop { display: flex; }
+.prompt-drop span {
+  font-size: 11.5px; font-weight: 500; letter-spacing: .02em; color: var(--accent-hover);
+  padding: 5px 11px; border-radius: 999px;
+  background: rgba(10,10,11,.8); border: 1px dashed var(--accent-line);
+}
 
 /* -- segmented control -------------------------------------------- */
 
@@ -530,6 +643,15 @@ label.check, label.field, label.toggle-chip {
   box-shadow: 0 6px 20px -8px rgba(0,0,0,.9), 0 0 14px -6px var(--accent-glow);
 }
 .job-log .ev-image span { color: var(--text-3); font-size: 10.5px; }
+.job-log .ev-refs { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.job-log .ev-refs::before { content: "\25E7"; color: var(--text-3); }
+.job-log .ev-refs img {
+  width: 34px; height: 34px; flex: none; object-fit: cover;
+  border-radius: 7px; border: 1px solid var(--line); background: #000;
+  transition: transform var(--t), border-color var(--t);
+}
+.job-log .ev-refs img:hover { transform: scale(1.08); border-color: var(--accent-line); }
+.job-log .ev-refs span { color: var(--text-3); font-size: 10.5px; }
 
 /* -- library ------------------------------------------------------ */
 
@@ -1142,6 +1264,8 @@ body.gl-active #viewport { cursor: default; }
   .param-row { grid-template-columns: 106px minmax(0, 1fr); }
   #topbar .actions button > span { display: none; }
   #topbar .actions button { width: var(--h); padding: 0; }
+  .export-pop > summary.btn-like > span { display: none; }
+  .export-pop > summary.btn-like { width: var(--h); padding: 0; justify-content: center; }
   .effect-name { max-width: 180px; }
 }
 
