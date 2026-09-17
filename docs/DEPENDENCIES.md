@@ -5,7 +5,7 @@ upstream project is alive, verify and record the license, pin a version or
 commit, confirm redistribution terms, and avoid anything that blocks future
 commercial use. Update this table in the same commit that adds the dependency.
 
-Verified 2026-09-17 against GitHub / Homebrew.
+Verified 2026-09-17 against GitHub / Homebrew / npm.
 
 | Dependency | Use | Version pinned | License | Redistribution notes | Status |
 |---|---|---|---|---|---|
@@ -27,6 +27,8 @@ Verified 2026-09-17 against GitHub / Homebrew.
 | Python `numpy`, `pillow` | evaluation metrics, image handling | current | BSD / MIT-CMU | python only | in use |
 | Python `anthropic` | Claude vision adapter | current | MIT | optional extra `[claude]` | optional |
 | Python `anyio` | async runtime for the MCP stdio server | >=4.0 (4.15.1 installed) | MIT | python only; also a `mcp` transitive dep | in use |
+| three.js | studio GPU viewer (WebGL2 renderer, OrbitControls, EffectComposer/UnrealBloom/SMAA) | r186 (0.186.0), vendored in `python/aetherfx/studio/static/vendor/three/` | MIT | keep `static/vendor/three/LICENSE`; served locally, never from a CDN; no build step | in use (studio) |
+| Python `websockets` | WebSocket transport for uvicorn (`/ws/stream`) | >=12.0 (17.1 installed) | BSD-3-Clause | python only; studio extra | in use (studio) |
 | Python `pytest` | python test suite | >=8.0 (9.1.1 installed) | MIT | python only; dev extra `[dev]` | in use (tests) |
 
 Tooling: CMake >= 3.28, Ninja, Apple clang 21 / GCC 13+ / MSVC 2022, Python >= 3.10.

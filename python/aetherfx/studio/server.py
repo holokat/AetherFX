@@ -50,6 +50,7 @@ from ..client import BINARY_ENV_VAR, Client
 from ..jsonrpc import ERROR_METHOD_NOT_FOUND, AetherError, JsonDict, TransportError
 from .generator import Generator, get_generator
 from .jobs import CANCELLED, DONE, ERROR, JobBusy, JobManager
+from .stream_server import stream_routes
 
 __all__ = ["StudioConfig", "StudioError", "Studio", "create_app", "build_parser", "main"]
 
@@ -1102,6 +1103,9 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
         Route("/api/jobs/{job_id}/cancel", api_job_cancel, methods=["POST"]),
         Mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static"),
     ]
+
+    # The GPU viewer: one live frame source per WebSocket, plus its resource GETs.
+    routes[-1:-1] = stream_routes(studio)
 
     mcp_manager = None
     if studio.config.mcp:

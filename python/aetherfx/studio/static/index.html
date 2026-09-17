@@ -6,6 +6,14 @@
 <title>AetherFX Studio</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10 1.4l2.2 5.3 5.3 2.2-5.3 2.2L10 16.4l-2.2-5.3L2.5 8.9l5.3-2.2z' fill='%238b5cf6'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="/static/style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "/static/vendor/three/build/three.module.js",
+    "three/addons/": "/static/vendor/three/addons/"
+  }
+}
+</script>
 </head>
 <body>
 
@@ -111,7 +119,15 @@
 
     <div class="stage-wrap">
       <div id="viewport">
+        <canvas id="gl-viewport"></canvas>
         <img id="viewport-img" alt="rendered frame" hidden>
+        <figure id="gl-reference" hidden>
+          <img id="gl-reference-img" alt="CPU reference render">
+          <figcaption>reference<button id="btn-reference-close" type="button" class="ghost icon-btn xs" title="Hide the reference render" aria-label="Hide reference">
+            <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.6 4.6l6.8 6.8M11.4 4.6l-6.8 6.8"/></svg>
+          </button></figcaption>
+        </figure>
+        <div id="gl-stats" class="gl-stats mono"></div>
         <div id="viewport-empty">
           <svg class="empty-mark" viewBox="0 0 48 48" aria-hidden="true">
             <circle cx="24" cy="24" r="15" stroke-dasharray="3 5"/>
@@ -143,6 +159,8 @@
           <label class="field" title="Render resolution: fit = the viewport's own size"><span class="fl">size</span>
             <select id="sel-size">
               <option value="fit" selected>fit</option>
+              <option value="1x">1x</option>
+              <option value="0.5x">0.5x</option>
               <option value="256">256</option>
               <option value="384">384</option>
               <option value="512">512</option>
@@ -167,6 +185,7 @@
                 <label><span class="sl">bloom</span><input id="stage-bloom" type="range" min="0" max="1.2" step="0.05" value="0.35"></label>
                 <label><span class="sl">glow</span><input id="stage-bloom-radius" type="range" min="0.01" max="0.16" step="0.005" value="0.04"></label>
                 <label><span class="sl">exposure</span><input id="stage-exposure" type="range" min="0.2" max="2.5" step="0.05" value="1"></label>
+                <label><span class="sl">light scale</span><input id="stage-light-scale" type="range" min="0.2" max="20" step="0.1" value="3.2" title="Engine light intensity -> three.js candela (GPU viewer only)"></label>
                 <label><span class="sl">grid</span><input id="stage-grid" type="checkbox" checked></label>
               </div>
               <button id="btn-stage-save" type="button" class="sm" title="Store these stage settings in the effect (metadata.render_settings)">Save stage</button>
@@ -176,6 +195,9 @@
           <button id="btn-preview" type="button" class="ghost" title="Render the whole sequence and play it">
             <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><rect x="2.4" y="3.4" width="11.2" height="9.2" rx="2.2"/><path d="M6.6 6.5v3l2.8-1.5z" fill="currentColor" stroke="none"/></svg>
             <span class="lb">Preview</span>
+          </button>
+          <button id="btn-snapshot" type="button" class="ghost icon-btn" title="Save the viewport as a PNG" aria-label="Snapshot">
+            <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.6 5.6A1.4 1.4 0 0 1 4 4.2h1.6L6.5 2.8h3l.9 1.4H12a1.4 1.4 0 0 1 1.4 1.4v5.4A1.4 1.4 0 0 1 12 12.4H4a1.4 1.4 0 0 1-1.4-1.4z"/><circle cx="8" cy="8.2" r="2.1"/></svg>
           </button>
           <button id="btn-view-reset" type="button" class="ghost icon-btn" title="Reset the camera to the effect's camera (wheel: zoom, drag: orbit, shift-drag: pan)" aria-label="Reset view">
             <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3.1"/><path d="M8 1.9v2.2M8 11.9v2.2M1.9 8h2.2M11.9 8h2.2"/></svg>
@@ -228,5 +250,6 @@
 <div id="toasts" aria-live="assertive"></div>
 
 <script src="/static/app.js"></script>
+<script type="module" src="/static/viewer/bootstrap.js"></script>
 </body>
 </html>

@@ -166,7 +166,12 @@ var S = {
 
   paramMessage: null,    /* inline result of the last parameter commit */
   job: null,             /* {id, since, timer} */
-  statusTimer: null
+  statusTimer: null,
+
+  gl: null,              /* window.aetherViewer facade when WebGL2 is available */
+  glTime: 0,             /* the time of the last frame the GPU viewer drew */
+  seekGuardUntil: 0,     /* ignore viewer time updates right after a manual seek */
+  referenceUrl: null     /* object URL of the CPU reference thumbnail */
 };
 
 /* Inline icons (visual only; the transport button swaps between them). */
@@ -175,6 +180,93 @@ var ICON_PLAY = '<svg class="ic" viewBox="0 0 16 16" aria-hidden="true">' +
 var ICON_PAUSE = '<svg class="ic" viewBox="0 0 16 16" aria-hidden="true">' +
   '<rect x="4.6" y="3.4" width="2.5" height="9.2" rx="1.1" fill="currentColor" stroke="none"/>' +
   '<rect x="8.9" y="3.4" width="2.5" height="9.2" rx="1.1" fill="currentColor" stroke="none"/></svg>';
+
+/* ====================================================================== *
+ * GPU viewer bridge
+ *
+ * static/viewer/bootstrap.js publishes window.aetherViewer.  When WebGL2 is
+ * available the viewport is a live three.js canvas fed by /ws/stream and the
+ * CPU image path is used only for the side-by-side reference render; when it
+ * is not, every call below short-circuits and the studio behaves as before.
+ * ====================================================================== */
+
+function glActive() { return !!(S.gl && S.gl.available); }
+
+/* Show the active effect: the live stream when the GPU viewer is up, the CPU
+ * preview sequence otherwise. */
+function startViewing() {
+  if (!S.data) return;
+  if (glActive()) { S.gl.reloadAndFrame(); play(); return; }
+  renderPreview(true);
+}
+
+function attachViewer(api) {
+  if (!api || !api.available || S.gl) return;
+  S.gl = api;
+  document.body.classList.add('gl-active');
+
+  api.onTime = function (time) {
+    S.glTime = time;
+    if (Date.now() < S.seekGuardUntil) return;
+    var max = timelineMax();
+    S.index = Math.max(0, Math.min(Math.round(time * S.fps), max));
+    $('frame-slider').value = String(S.index);
+    paintSlider();
+    updateReadout();
+  };
+  api.onStatus = function (status) {
+    if (status.kind === 'error' && status.error && status.error.code !== 'no_effect') {
+      toast('viewer: ' + (status.error.message || status.error.code), 'warn');
+    } else if (status.kind === 'state' && S.playing && status.state && !status.state.playing) {
+      /* playback ran off the end with loop off */
+      S.playing = false;
+      setPlayIcon(false);
+    } else if (status.kind === 'connected' && S.playing) {
+      /* the socket came back (server restart): pick playback up where it was */
+      api.play(S.fps, S.loop, S.glTime || 0);
+    }
+  };
+
+  api.setStage(stageParam());
+  api.setResolution($('sel-size').value);
+
+  /* the old "Preview" button becomes the CPU reference comparison */
+  var preview = $('btn-preview');
+  preview.title = 'Render this frame with the CPU reference renderer and compare';
+  var label = preview.querySelector('.lb');
+  if (label) label.textContent = 'Reference';
+  if (S.data) $('viewport-empty').hidden = true;
+}
+
+/* Camera for the CPU reference render: whatever OrbitControls is looking at. */
+function glCameraParam() { return glActive() ? S.gl.camera() : cameraParam(); }
+function glCameraQuery() { return '&camera=' + encodeURIComponent(JSON.stringify(glCameraParam())); }
+
+function currentTime() { return glActive() ? (S.glTime || 0) : timeAt(S.index); }
+
+/* Render the current time on the CPU and show it in the corner for comparison. */
+function renderReference() {
+  if (!S.data) { toast('load or create an effect first', 'warn'); return; }
+  var vp = $('viewport');
+  var width = 368;
+  var height = Math.max(120, Math.round(width * (vp.clientHeight || 1) / (vp.clientWidth || 1)));
+  var url = '/api/frame?time=' + encodeURIComponent(currentTime().toFixed(3)) +
+    '&width=' + width + '&height=' + height + glCameraQuery() + stageQuery();
+  $('btn-preview').disabled = true;
+  setBusy(true, 'reference render');
+  apiRaw(url).then(function (res) { return res.blob(); }).then(function (blob) {
+    var objectUrl = URL.createObjectURL(blob);
+    if (S.referenceUrl) URL.revokeObjectURL(S.referenceUrl);
+    S.referenceUrl = objectUrl;
+    $('gl-reference-img').src = objectUrl;
+    $('gl-reference').hidden = false;
+  }).catch(function (err) {
+    toast('reference: ' + (err && err.message ? err.message : 'failed'), 'error');
+  }).then(function () {
+    $('btn-preview').disabled = false;
+    setBusy(false);
+  });
+}
 
 var NODE_GLYPH = {
   emitter: '✳', particle_system: '∷', force: '↯', field: '▦',
@@ -245,7 +337,12 @@ function followExternalChanges(status) {
   if (idChanged) work = work.then(function () { return refreshEffects(); });
   work.then(function () {
     externalSyncPending = false;
-    if (idChanged && S.data && !S.job) { toast('effect changed externally: ' + (status.active_effect && status.active_effect.name), 'ok'); renderPreview(true); }
+    if (idChanged && S.data && !S.job) {
+      toast('effect changed externally: ' + (status.active_effect && status.active_effect.name), 'ok');
+      if (glActive()) S.gl.reloadAndFrame(); else renderPreview(true);
+    } else if (glActive()) {
+      S.gl.reload();
+    }
   }, function () { externalSyncPending = false; });
 }
 
@@ -323,7 +420,7 @@ function loadEffect(path) {
   return guard(api('/api/effects/load', { body: { path: path } }).then(function (result) {
     toast('loaded ' + (result.name || path), 'ok');
     resetPreview();
-    return afterEffectChange().then(function (r) { if (S.data) renderPreview(true); return r; });
+    return afterEffectChange().then(function (r) { if (S.data) startViewing(); return r; });
   }), 'load');
 }
 
@@ -332,7 +429,7 @@ function activateEffect(effectId) {
   S.activeId = undefined;
   return guard(api('/api/effects/activate', { body: { effect_id: effectId } }).then(function () {
     resetPreview();
-    return afterEffectChange().then(function (r) { if (S.data) renderPreview(true); return r; });
+    return afterEffectChange().then(function (r) { if (S.data) startViewing(); return r; });
   }), 'activate');
 }
 
@@ -387,6 +484,7 @@ function refreshEffect() {
   return apiRaw('/api/effect').then(function (res) { return res.json(); }).then(function (data) {
     S.data = data;
     if (!S.camera || S.cameraEffectId !== S.activeId) { resetCamera(); applyStage(data.stage_defaults); }
+    if (glActive()) $('viewport-empty').hidden = true;
     renderPhases(data.timeline);
     renderGraph(data.graph);
     renderStatistics(data.statistics);
@@ -397,7 +495,7 @@ function refreshEffect() {
       var stillThere = nodes.some(function (n) { return n.id === S.selected; });
       if (stillThere) { selectNode(S.selected, true); } else { S.selected = null; S.node = null; renderParams(); }
     }
-    if (!S.preview && !S.playing) showCurrentFrame();
+    if (!glActive() && !S.preview && !S.playing) showCurrentFrame();
     return data;
   }, function (err) {
     if (err && err.status === 404) {
@@ -985,6 +1083,10 @@ function setIndex(index, fromPlayback) {
   $('frame-slider').value = String(S.index);
   paintSlider();
   updateReadout();
+  if (glActive()) {
+    if (!fromPlayback) { S.seekGuardUntil = Date.now() + 250; S.gl.seek(timeAt(S.index)); }
+    return;
+  }
   if (fromPlayback || usingPreview()) showPreviewFrame(S.index);
   else requestFrame(timeAt(S.index), false);
 }
@@ -1011,6 +1113,7 @@ function renderSize() {
 }
 var resizeTimer = null;
 function onViewportResize() {
+  if (glActive()) return;                 /* the viewer watches its own container */
   if (S.size !== 'fit' || !S.data) return;
   if (resizeTimer) clearTimeout(resizeTimer);
   resizeTimer = setTimeout(function () {
@@ -1024,6 +1127,7 @@ function onViewportResize() {
 /* Auto re-render: after edits the preview is re-rendered (debounced) and keeps playing. */
 var previewRefreshTimer = null;
 function schedulePreviewRefresh() {
+  if (glActive()) return;                 /* the stream is already live */
   if (previewRefreshTimer) clearTimeout(previewRefreshTimer);
   previewRefreshTimer = setTimeout(function () {
     previewRefreshTimer = null;
@@ -1037,7 +1141,7 @@ function schedulePreviewRefresh() {
  * stage: render settings for the preview (ground, background, bloom, exposure)
  * ====================================================================== */
 
-var STAGE_DEFAULTS = { ground_albedo: 0.18, background: [0.02, 0.02, 0.025, 1], bloom_intensity: 0.35, bloom_radius: 0.04, exposure: 1.0, grid: true };
+var STAGE_DEFAULTS = { ground_albedo: 0.18, background: [0.02, 0.02, 0.025, 1], bloom_intensity: 0.35, bloom_radius: 0.04, exposure: 1.0, grid: true, light_scale: 3.2 };
 function hexToLinear(hex) {
   var n = parseInt(hex.slice(1), 16); var c = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
   return c.map(function (v) { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }).concat([1]);
@@ -1058,7 +1162,8 @@ function stageFromControls() {
     bloom_intensity: parseFloat($('stage-bloom').value),
     bloom_radius: parseFloat($('stage-bloom-radius').value),
     exposure: parseFloat($('stage-exposure').value),
-    grid: $('stage-grid').checked
+    grid: $('stage-grid').checked,
+    light_scale: parseFloat($('stage-light-scale').value)
   };
 }
 function applyStage(stage) {
@@ -1069,18 +1174,22 @@ function applyStage(stage) {
   $('stage-bloom-radius').value = s.bloom_radius;
   $('stage-exposure').value = s.exposure;
   $('stage-grid').checked = s.grid !== false;
+  $('stage-light-scale').value = typeof s.light_scale === 'number' ? s.light_scale : STAGE_DEFAULTS.light_scale;
   S.stage = stageFromControls();
+  if (glActive()) S.gl.setStage(S.stage);
 }
 function stageParam() { if (!S.stage) S.stage = stageFromControls(); return S.stage; }
 function stageQuery() { return '&settings=' + encodeURIComponent(JSON.stringify(stageParam())); }
 function stageChanged() {
   S.stage = stageFromControls();
+  if (glActive()) { S.gl.setStage(S.stage); return; }
   if (usingPreview()) { S.previewStale = true; updatePreviewHint(); }
   requestFrame(timeAt(S.index), false);
   if (S.preview) schedulePreviewRefresh();
 }
 function wireStage() {
-  ['stage-ground', 'stage-bg', 'stage-bloom', 'stage-bloom-radius', 'stage-exposure', 'stage-grid'].forEach(function (id) {
+  ['stage-ground', 'stage-bg', 'stage-bloom', 'stage-bloom-radius', 'stage-exposure', 'stage-grid',
+   'stage-light-scale'].forEach(function (id) {
     $(id).addEventListener('input', stageChanged);
     $(id).addEventListener('change', stageChanged);
   });
@@ -1173,6 +1282,11 @@ function pan(dx, dy) {
   cameraChanged();
 }
 function wireCamera() {
+  /* With the GPU viewer up, OrbitControls owns the pointer on the canvas. */
+  if (glActive()) {
+    $('btn-view-reset').addEventListener('click', function () { S.gl.resetView(); });
+    return;
+  }
   var vp = $('viewport');
   vp.addEventListener('wheel', function (ev) {
     if (!S.data) return;
@@ -1215,6 +1329,7 @@ function randomizeEffect() {
 
 function showCurrentFrame() {
   if (!S.data) { clearViewport(); return; }
+  if (glActive()) { S.seekGuardUntil = Date.now() + 250; S.gl.seek(timeAt(S.index)); return; }
   if (usingPreview()) showPreviewFrame(S.index);
   else requestFrame(timeAt(S.index), true);
 }
@@ -1234,6 +1349,7 @@ function showImage(url) {
 
 function clearViewport() {
   var img = $('viewport-img');
+  $('gl-reference').hidden = true;
   img.hidden = true;
   img.removeAttribute('src');
   $('viewport-empty').hidden = false;
@@ -1248,7 +1364,7 @@ function setBusy(on, text) {
 
 /* Debounced, latest-wins single-frame render. */
 function requestFrame(time, immediate) {
-  if (!S.data) return;
+  if (!S.data || glActive()) return;      /* the GPU viewer draws the live stream */
   if (S.frameTimer) { clearTimeout(S.frameTimer); S.frameTimer = null; }
   var run = function () {
     S.frameTimer = null;
@@ -1294,6 +1410,8 @@ function applyRenderStats(raw) {
 /* -- preview ----------------------------------------------------------- */
 
 function invalidatePreview() {
+  /* Live path: re-open the effect on the stream so edits show within a frame. */
+  if (glActive()) { S.gl.reload(); return; }
   if (S.preview) S.previewStale = true;
   updatePreviewHint();
   schedulePreviewRefresh();
@@ -1361,25 +1479,35 @@ function renderPreview(autoplay) {
 
 /* -- playback ---------------------------------------------------------- */
 
+function setPlayIcon(playing) {
+  $('btn-play').innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
+  $('btn-play').title = playing ? 'Pause (Space)' : 'Play (Space)';
+  $('btn-play').setAttribute('aria-label', playing ? 'Pause' : 'Play');
+}
+
 function play() {
   if (S.playing) return;
+  if (glActive()) {
+    if (!S.data) { toast('load or create an effect first', 'warn'); return; }
+    S.playing = true;
+    setPlayIcon(true);
+    S.gl.play(S.fps, S.loop, timeAt(S.index));
+    return;
+  }
   if (!S.preview || !S.preview.count) { renderPreview(true); return; }
   S.playing = true;
   S.lastTick = 0;
-  $('btn-play').innerHTML = ICON_PAUSE;
-  $('btn-play').title = 'Pause (Space)';
-  $('btn-play').setAttribute('aria-label', 'Pause');
+  setPlayIcon(true);
   S.raf = requestAnimationFrame(tick);
 }
 
 function pause() {
   if (!S.playing) return;
   S.playing = false;
+  setPlayIcon(false);
+  if (glActive()) { S.gl.pause(); return; }
   if (S.raf) cancelAnimationFrame(S.raf);
   S.raf = null;
-  $('btn-play').innerHTML = ICON_PLAY;
-  $('btn-play').title = 'Play (Space)';
-  $('btn-play').setAttribute('aria-label', 'Play');
 }
 
 function togglePlay() { if (S.playing) pause(); else play(); }
@@ -1459,7 +1587,7 @@ function finishJob(snapshot) {
     resetPreview();
     return afterEffectChange();
   }).then(function () {
-    if (S.data && snapshot.status === 'done') renderPreview(true);
+    if (S.data && snapshot.status === 'done') { if (glActive()) S.gl.reloadAndFrame(); else renderPreview(true); }
   });
 }
 
@@ -1535,22 +1663,36 @@ function wire() {
   });
 
   $('btn-play').addEventListener('click', togglePlay);
-  $('btn-preview').addEventListener('click', function () { renderPreview(true); });
+  $('btn-preview').addEventListener('click', function () { glActive() ? renderReference() : renderPreview(true); });
+  $('btn-reference-close').addEventListener('click', function () { $('gl-reference').hidden = true; });
+  $('btn-snapshot').addEventListener('click', function () {
+    if (!glActive()) { toast('snapshot needs the GPU viewer', 'warn'); return; }
+    var name = ((S.status && S.status.active_effect && S.status.active_effect.name) || 'aetherfx');
+    S.gl.snapshot(name.replace(/[^A-Za-z0-9_-]+/g, '_').toLowerCase() + '_' + currentTime().toFixed(2) + 's.png');
+  });
   $('btn-random').addEventListener('click', randomizeEffect);
   wireCamera();
   wireStage();
-  $('chk-loop').addEventListener('change', function () { S.loop = $('chk-loop').checked; });
+  $('chk-loop').addEventListener('change', function () {
+    S.loop = $('chk-loop').checked;
+    if (glActive() && S.playing) S.gl.play(S.fps, S.loop, currentTime());
+  });
 
   var slider = $('frame-slider');
   slider.addEventListener('input', function () { pause(); setIndex(parseInt(slider.value, 10) || 0); });
 
   $('sel-fps').addEventListener('change', function () {
     S.fps = parseInt($('sel-fps').value, 10) || 24;
-    if (S.preview) invalidatePreview();
     syncTransportRange();
+    if (glActive()) {
+      if (S.playing) S.gl.play(S.fps, S.loop, currentTime());
+      return;
+    }
+    if (S.preview) invalidatePreview();
     showCurrentFrame();
   });
   $('sel-size').addEventListener('change', function () {
+    if (glActive()) { S.gl.setResolution($('sel-size').value); return; }
     S.size = parseSize($('sel-size').value);
     if (S.preview) invalidatePreview(); else showCurrentFrame();
   });
@@ -1595,6 +1737,10 @@ function pollStatus() {
 }
 
 function init() {
+  /* The viewer module is deferred, so it is usually already there; if not,
+   * its ready event attaches it and the studio upgrades in place. */
+  attachViewer(window.aetherViewer);
+  window.addEventListener('aether-viewer-ready', function (event) { attachViewer(event.detail); });
   wire();
   S.fps = parseInt($('sel-fps').value, 10) || 24;
   S.size = parseSize($('sel-size').value);
@@ -1612,9 +1758,9 @@ function init() {
       }
       return refreshEffects().then(function (lists) {
         var hasOpen = lists && lists.open && lists.open.length;
-        if (hasOpen) return refreshEffect().then(function () { if (S.data && !S.preview) renderPreview(true); });
+        if (hasOpen) return refreshEffect().then(function () { if (!S.preview) startViewing(); });
         if (lists && lists.examples && lists.examples.length) {
-          return loadEffect(lists.examples[0].path).then(function () { if (S.data) renderPreview(true); });
+          return loadEffect(lists.examples[0].path);   /* loadEffect already starts the view */
         }
         return null;
       });

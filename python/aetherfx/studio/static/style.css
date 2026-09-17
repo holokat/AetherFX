@@ -605,6 +605,58 @@ label.check, label.field, label.toggle-chip {
 #viewport.dragging { cursor: grabbing; }
 #viewport-img { width: 100%; height: 100%; object-fit: contain; display: block; }
 
+/* -- GPU viewer --------------------------------------------------- */
+
+#gl-viewport {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  display: block;
+  touch-action: none;                 /* OrbitControls owns the pointer */
+}
+#gl-viewport[hidden] { display: none; }
+body.gl-active #viewport-img { display: none; }
+body.gl-active #viewport { cursor: default; }
+
+.gl-stats {
+  position: absolute; left: 12px; top: 12px; z-index: 6;
+  padding: 3px 9px;
+  font-size: 10.5px; color: var(--text-3);
+  background: rgba(16,16,18,.6);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  border: 1px solid var(--line); border-radius: 999px;
+  pointer-events: none; white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.gl-stats:empty { display: none; }
+
+.gl-note {
+  position: absolute; left: 12px; bottom: 96px; z-index: 6;
+  max-width: 340px; padding: 6px 10px;
+  font-size: 11px; color: var(--warn);
+  background: rgba(16,16,18,.72);
+  border: 1px solid var(--line); border-radius: var(--r-sm, 8px);
+}
+
+#gl-reference {
+  position: absolute; right: 14px; top: 14px; z-index: 7;
+  margin: 0; width: 184px;
+  background: rgba(16,16,18,.78);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  border: 1px solid var(--line-strong); border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px -18px rgba(0,0,0,.95);
+}
+#gl-reference[hidden] { display: none; }
+#gl-reference img { display: block; width: 100%; height: auto; }
+#gl-reference figcaption {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  padding: 3px 4px 3px 9px;
+  font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3);
+  border-top: 1px solid var(--line);
+}
+#gl-reference figcaption button { width: 20px; height: 20px; }
+#gl-reference figcaption button .ic { width: 11px; height: 11px; }
+
 #viewport-empty {
   display: flex; flex-direction: column; align-items: center; gap: 4px;
   text-align: center; color: var(--text-3); padding: 24px;

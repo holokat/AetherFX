@@ -155,6 +155,10 @@ def encode_frame(frame: Frame, fps: float = 60.0) -> bytes:
         "camera": frame.camera, "post_effects": frame.post_effects,
     }
     head = json.dumps(header, separators=(",", ":")).encode("utf-8")
+    # Pad the header with JSON-insignificant spaces so the blob starts on a
+    # 4-byte boundary: typed-array views need it, and the whole point of the
+    # byte offsets is that the client does not have to copy.
+    head += b" " * (-len(head) % 4)
     return struct.pack("<I", len(head)) + head + b"".join(chunks)
 
 
