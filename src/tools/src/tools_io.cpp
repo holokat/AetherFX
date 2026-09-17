@@ -74,8 +74,12 @@ nlohmann::json export_frames(Session& session, Document& doc, const nlohmann::js
 
     nlohmann::json files = nlohmann::json::array();
     for (const std::filesystem::path& file : sequence.paths) files.push_back(file.string());
+    // `duration` stays the effect's own seconds; `wall_duration` is what
+    // `frames / fps` actually plays back as (docs/RUNTIME.md 11).
     nlohmann::json manifest{{"effect", doc.effect.name},
                             {"duration", doc.effect.duration},
+                            {"time_scale", doc.effect.time_scale},
+                            {"wall_duration", doc.effect.wall_duration()},
                             {"fps", request.fps},
                             {"frames", sequence.paths.size()},
                             {"loop", false},
@@ -106,6 +110,8 @@ nlohmann::json export_flipbook(Session& session, Document& doc, const nlohmann::
 
     nlohmann::json manifest{{"effect", doc.effect.name},
                             {"duration", doc.effect.duration},
+                            {"time_scale", doc.effect.time_scale},
+                            {"wall_duration", doc.effect.wall_duration()},
                             {"fps", request.fps},
                             {"frames", sequence.images.size()},
                             {"columns", columns},

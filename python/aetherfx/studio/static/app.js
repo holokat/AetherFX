@@ -186,6 +186,7 @@ var S = {
 
   gl: null,              /* window.aetherViewer facade when WebGL2 is available */
   glTime: 0,             /* the time of the last frame the GPU viewer drew */
+  timeScale: 1,          /* the EFFECT's own speed (its time_scale, controls folded in) */
   seekGuardUntil: 0,     /* ignore viewer time updates right after a manual seek */
   referenceUrl: null     /* object URL of the CPU reference thumbnail */
 };
@@ -305,6 +306,15 @@ function attachViewer(api) {
     updateReadout();
   };
   api.onStatus = function (status) {
+    /* Two speeds, and they are not the same thing: `S.speed` is the play bar,
+       a viewing preference; `time_scale` is part of the effect and is what a
+       game will play it at.  Both the resources message (sent on every open,
+       so a Speed slider re-paces live) and the state message carry it. */
+    if (status.kind === 'resources' && status.resources && status.resources.effect) {
+      setTimeScale(status.resources.effect.time_scale);
+    } else if (status.kind === 'state' && status.state) {
+      setTimeScale(status.state.time_scale);
+    }
     if (status.kind === 'error' && status.error && status.error.code !== 'no_effect') {
       toast('viewer: ' + (status.error.message || status.error.code), 'warn');
     } else if (status.kind === 'state' && S.playing && status.state && !status.state.playing) {
@@ -853,6 +863,9 @@ function afterEffectChange() {
 function refreshEffect() {
   return apiRaw('/api/effect').then(function (res) { return res.json(); }).then(function (data) {
     S.data = data;
+    /* get_timeline reports the resolved speed, so the readout is right on the
+       CPU preview path too; the GPU stream confirms it on the next open. */
+    setTimeScale(data.timeline && data.timeline.time_scale);
     if (!S.camera || S.cameraEffectId !== S.activeId) { resetCamera(); applyStage(data.stage_defaults); }
     if (glActive()) $('viewport-empty').hidden = true;
     renderPhases(data.timeline);
@@ -1679,10 +1692,30 @@ function syncTransportRange() {
   updateReadout();
 }
 
+/* The effect's own speed, as the stream resolved it (its time_scale with the
+   Speed control folded in).  1 when nothing has said otherwise. */
+function setTimeScale(value) {
+  var scale = parseFloat(value);
+  if (!(scale > 0)) scale = 1;
+  if (scale === S.timeScale) return;
+  S.timeScale = scale;
+  updateReadout();
+}
+
+/* Wall-clock seconds the effect lasts at its own speed. */
+function wallDuration() { return S.timeScale > 0 ? duration() / S.timeScale : duration(); }
+
 function updateReadout() {
   var total = timelineMax() + 1;
-  $('time-readout').textContent =
-    num(timeAt(S.index), 2) + ' s / ' + num(duration(), 2) + ' s  frame ' + (S.index + 1) + '/' + total;
+  /* The timeline stays in EFFECT seconds - that is where the keyframes and the
+     phases live - so an effect that is not at 1x says how long it takes to
+     play rather than renumbering the scrubber under the user. */
+  var text = num(timeAt(S.index), 2) + ' s / ' + num(duration(), 2) + ' s  frame ' +
+    (S.index + 1) + '/' + total;
+  if (Math.abs(S.timeScale - 1) > 1e-6) {
+    text += ' \u00b7 plays in ' + num(wallDuration(), 2) + ' s at ' + num(S.timeScale, 2) + 'x';
+  }
+  $('time-readout').textContent = text;
 }
 
 function setIndex(index, fromPlayback) {
@@ -1749,7 +1782,7 @@ function schedulePreviewRefresh() {
  * stage: render settings for the preview (ground, background, bloom, exposure)
  * ====================================================================== */
 
-var STAGE_DEFAULTS = { ground_albedo: 0.18, background: [0.02, 0.02, 0.025, 1], bloom_intensity: 0.35, bloom_radius: 0.04, exposure: 1.0, grid: true, light_scale: 3.2 };
+var STAGE_DEFAULTS = { ground_albedo: 0.18, background: [0, 0, 0, 1], bloom_intensity: 0.35, bloom_radius: 0.04, exposure: 1.0, grid: true, light_scale: 3.2 };
 function hexToLinear(hex) {
   var n = parseInt(hex.slice(1), 16); var c = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
   return c.map(function (v) { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }).concat([1]);

@@ -294,7 +294,49 @@ from fresh runtimes; the sequence of `FrameState::hash()` must be identical.
 Changing `effect.seed` must change the hash. Simulating to `t` in one
 `simulate_to` call must equal stepping manually.
 
-## 11. Beam cross-section (shared by every renderer)
+## 11. Host time: `time_scale`
+
+Everything above is in **effect time**. The runtime has no wall clock: it steps
+a fixed `dt` and `simulate_to(t)` means "reach effect time `t`". How fast effect
+time runs is the *host's* job, and `time_scale` is the effect telling it how:
+
+```
+effect_time  = wall_time * time_scale
+wall_duration = duration / time_scale
+```
+
+`time_scale` is a top-level effect property, default 1.0, valid in [0.1, 8.0]
+(E015 outside it). A host advances its own clock and hands the result to the
+runtime:
+
+```c
+play_time += delta_seconds * aetherfx_compiled_time_scale(compiled);
+aetherfx_runtime_simulate_to(runtime, play_time);
+```
+
+**It is not a simulation parameter.** The fixed timestep, the seeds, the spawn
+order, the force integration and every buffer at a given effect time are
+identical at every `time_scale`; only *when* the host asks for them changes. So
+an effect at 2x costs nothing extra, stays deterministic, and hashes the same
+frames as the same effect at 1x sampled at the same effect times. That is what
+`tests/sim/controls_test.cpp` asserts.
+
+Consequences for the things that already speak in seconds:
+
+* The **timeline**, keyframe tracks, node windows and `phase` bindings are all
+  effect time and do not move. An effect at 2x still peaks at the same fraction
+  of itself.
+* Anything that samples frames over **wall** time - a rendered sequence, a
+  flipbook, a video - steps `time_scale / fps` effect seconds per frame and
+  therefore produces `duration / time_scale * fps` frames (plus the endpoint).
+  Rendering one frame at an explicit effect time is unaffected.
+* A **control** may drive it, by binding to the reserved node `$effect` with
+  parameter `time_scale` (docs/CONTROLS.md 2.1). The compiler folds it in, so
+  hosts read `aetherfx_compiled_time_scale`, never the raw document.
+* The studio's play-bar speed is a *separate*, viewer-only multiplier. The two
+  compose: the stream paces at `playback_speed * time_scale`.
+
+## 12. Beam cross-section (shared by every renderer)
 
 A beam is not a tube. Both renderers extrude one camera-facing ribbon per path,
 of half-width `0.5 * vertex width * s` where `s = max(glow_width, 3 *

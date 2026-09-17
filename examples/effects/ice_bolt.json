@@ -74,9 +74,9 @@
     "analysis": "The head is a rigid cluster of 29 seeded crystal meshes parented to an invisible anchor whose local +X is the direction of travel; every blade has its own seed, facet count, irregularity, flatten scale, tint and emissive, and keyframed local position/rotation/scale so the cluster assembles during `form` and explodes during `impact`. Sprites carry the streaks, mist, snowflakes and sparkles; two procedural volumes carry the frost orb and the frozen mist column.",
     "render_settings": {
       "background": [
-        0.004,
-        0.007,
-        0.018,
+        0.0,
+        0.0,
+        0.0,
         1.0
       ],
       "ground_albedo": 0.05,

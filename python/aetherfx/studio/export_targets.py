@@ -29,15 +29,28 @@ from typing import Any, Callable
 
 ToolCall = Callable[..., Any]  # call(tool_name, **args) -> dict
 
+#: ``maturity`` says what the export gives you TODAY, so the UI never oversells a target:
+#: "runtime" = plays in that engine through an AetherFX runtime; "data" = the files arrive but
+#: nothing plays them yet; "universal" = works anywhere.
 TARGETS: dict[str, dict[str, Any]] = {
     "unreal": {"label": "Unreal Engine", "marker": "*.uproject", "content": "Content/AetherFX/Effects",
-               "hint": "the folder containing your .uproject"},
+               "hint": "the folder containing your .uproject", "maturity": "runtime", "badge": "UE",
+               "summary": "Package plus the AetherFX plugin (UE 5.8): import the package and cast it from an actor."},
     "unity": {"label": "Unity", "marker": "Assets", "content": "Assets/AetherFX/Effects",
-              "hint": "the Unity project root (contains Assets/)"},
+              "hint": "the Unity project root (contains Assets/)", "maturity": "data", "badge": "U",
+              "summary": "Data package only for now (textures, meshes, runtime.json). The Unity runtime is not "
+                         "built yet: use the Flipbook export to play the effect in Unity today."},
     "godot": {"label": "Godot", "marker": "project.godot", "content": "aetherfx/effects",
-              "hint": "the folder containing project.godot"},
-    "package": {"label": "Package (.aetherfx)", "marker": None, "content": "", "hint": "any folder, or download a zip"},
-    "flipbook": {"label": "Flipbook sprite sheet", "marker": None, "content": "", "hint": "any folder, or download"},
+              "hint": "the folder containing project.godot", "maturity": "data", "badge": "G",
+              "summary": "Data package only for now (textures, meshes, runtime.json). The Godot runtime is not "
+                         "built yet: use the Flipbook export to play the effect in Godot today."},
+    "package": {"label": "Package (.aetherfx)", "marker": None, "content": "", "hint": "any folder, or download a zip",
+                "maturity": "universal", "badge": "PKG",
+                "summary": "The engine-agnostic interchange package: resolved runtime data, baked textures, mesh "
+                           "variants and previews (docs/PACKAGE_FORMAT.md)."},
+    "flipbook": {"label": "Flipbook sprite sheet", "marker": None, "content": "", "hint": "any folder, or download",
+                 "maturity": "universal", "badge": "2D",
+                 "summary": "A sprite sheet plus a JSON manifest: plays in any engine or 2D framework."},
 }
 
 
@@ -74,13 +87,29 @@ def _zip_dir(src: Path, zip_path: Path) -> Path:
     return zip_path
 
 
+_UNREAL_LIB_DIR = Path("Source") / "ThirdParty" / "AetherFXLib" / "lib"
+
+
+def unreal_plugin_has_libs(plugin_root: Path) -> bool:
+    """True when the plugin carries the prebuilt engine libraries it links against."""
+    lib_dir = plugin_root / _UNREAL_LIB_DIR
+    if not lib_dir.is_dir():
+        return False
+    return any(lib_dir.rglob("*.a")) or any(lib_dir.rglob("*.lib"))
+
+
 def install_unreal_plugin(project_root: Path, repo_root: Path) -> bool:
-    """Copy engines/unreal/AetherFX into <Project>/Plugins if missing. Returns True when installed."""
+    """Copy engines/unreal/AetherFX into <Project>/Plugins if missing. Returns True when installed.
+
+    The prebuilt engine libraries under ``Source/ThirdParty/AetherFXLib/lib`` are copied with it: the
+    plugin links them statically and does not compile without them (they are produced by
+    ``engines/unreal/scripts/sync_libs.sh`` and are not stored in git).
+    """
     src = repo_root / "engines" / "unreal" / "AetherFX"
     dst = project_root / "Plugins" / "AetherFX"
     if not src.is_dir() or dst.exists():
         return False
-    shutil.copytree(src, dst, ignore=shutil.ignore_patterns("Binaries", "Intermediate", "lib", "*.bak"))
+    shutil.copytree(src, dst, ignore=shutil.ignore_patterns("Binaries", "Intermediate", "*.bak"))
     return True
 
 
@@ -127,20 +156,26 @@ def export_to_target(call: ToolCall, effect_name: str, target: str, destination:
             shutil.rmtree(final)
         shutil.copytree(package_dir, final)
         info.update({"path": str(final), "download": None, "installed": False})
+        info["maturity"] = TARGETS[target]["maturity"]
         if target == "unreal" and repo_root is not None:
             info["installed"] = install_unreal_plugin(root, repo_root)
+            plugin = root / "Plugins" / "AetherFX"
+            info["plugin_ready"] = plugin.is_dir() and unreal_plugin_has_libs(plugin)
             info["note"] = ("Unreal imports the package through the AetherFX plugin importer (Content Browser: "
                             "right-click > Import, or reimport). " + ("Plugin installed into Plugins/AetherFX; "
-                            "restart the editor once." if info["installed"] else ""))
-        elif target == "unity":
-            info["note"] = "Unity imports the PNG textures and OBJ meshes natively; runtime.json is available as a TextAsset for the AetherFX Unity runtime."
-        elif target == "godot":
-            info["note"] = "Godot imports the PNG/OBJ natively; runtime.json is read by the AetherFX Godot runtime."
+                            "restart the editor once. " if info["installed"] else ""))
+            if plugin.is_dir() and not info["plugin_ready"]:
+                info["note"] += ("The plugin has no prebuilt engine libraries yet: run "
+                                 "engines/unreal/scripts/sync_libs.sh in the AetherFX repository, then copy "
+                                 "Source/ThirdParty/AetherFXLib/lib into the installed plugin.")
+        elif target in ("unity", "godot"):
+            info["note"] = TARGETS[target]["summary"]
         return info
 
 
 def describe_targets() -> list[dict[str, Any]]:
-    return [{"id": k, "label": v["label"], "hint": v["hint"]} for k, v in TARGETS.items()]
+    return [{"id": k, "label": v["label"], "hint": v["hint"], "maturity": v["maturity"], "badge": v["badge"],
+             "summary": v["summary"]} for k, v in TARGETS.items()]
 
 
 def write_settings(path: Path, settings: dict[str, Any]) -> None:

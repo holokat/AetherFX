@@ -24,6 +24,14 @@
       "hidden": true,
       "reason": "first-milestone test fixture; superseded by Fire Bolt and Lesser Fireball"
     },
+    "render_settings": {
+      "background": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
     "tags": [
       "fire",
       "projectile",

@@ -251,22 +251,30 @@ class FrameSource(Protocol):
     def frame_at(self, time: float) -> Frame: ...
     def close(self) -> None: ...
 
+    # Optional: the effect's own playback speed, i.e. effect seconds per
+    # wall-clock second (docs/RUNTIME.md 11).  A source that does not implement
+    # it plays at 1x - stream_server treats a missing method as 1.0.
+    def time_scale(self) -> float: ...
+
 
 class MockFrameSource:
     """Synthetic swirling particle cloud for developing the viewer without the engine."""
 
     def __init__(self, count: int = 4000) -> None:
         self.count = count
-        self._effect: dict[str, Any] = {"name": "Mock", "duration": 3.0}
+        self._effect: dict[str, Any] = {"name": "Mock", "duration": 3.0, "time_scale": 1.0}
         self._rng = np.random.default_rng(7)
         self._seeds = self._rng.random((count, 4)).astype(np.float32)
         self.lock = threading.Lock()
 
     def open(self, effect_json: dict[str, Any]) -> None:
-        self._effect = {"name": effect_json.get("name", "Mock"), "duration": float(effect_json.get("duration", 3.0))}
+        self._effect = {"name": effect_json.get("name", "Mock"), "duration": float(effect_json.get("duration", 3.0)),
+                        "time_scale": float(effect_json.get("time_scale") or 1.0)}
 
     def resources(self) -> dict[str, Any]:
         return {"type": "resources", "effect": {"name": self._effect["name"], "duration": self.duration(),
+                                                "time_scale": self.time_scale(),
+                                                "wall_duration": self.duration() / self.time_scale(),
                                                 "fixed_dt": self.fixed_dt(), "seed": 1},
                 "textures": {}, "meshes": {}, "materials": {"mock": {"blend": "additive", "shading": "unlit",
                                                                     "emissive_intensity": 2.0}},
@@ -275,6 +283,10 @@ class MockFrameSource:
 
     def duration(self) -> float:
         return self._effect["duration"]
+
+    def time_scale(self) -> float:
+        scale = float(self._effect.get("time_scale") or 1.0)
+        return scale if scale > 0.0 else 1.0
 
     def fixed_dt(self) -> float:
         return 1.0 / 60.0

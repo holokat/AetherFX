@@ -353,6 +353,21 @@ int apply_controls(Effect& effect) {
         const double amount = control_effective_value(control);
         for (const ControlBinding& binding : control.bindings) {
             if (control_binding_is_identity(binding.op, amount)) continue;
+            // `$effect` is the document itself. Only `time_scale` is exposed,
+            // only multiply and set fit it, and the result is clamped into the
+            // range validate() enforces - exactly like a node parameter is
+            // clamped into its spec range (docs/CONTROLS.md).
+            if (binding.node == kEffectBindingNode) {
+                if (binding.parameter != kTimeScaleParameter) continue;
+                if (binding.op != ControlOp::Multiply && binding.op != ControlOp::Set) continue;
+                const double combined = combine(effect.time_scale, binding.op, amount);
+                if (!std::isfinite(combined)) continue;
+                const double next = clamp(combined, kMinTimeScale, kMaxTimeScale);
+                if (next == effect.time_scale) continue;
+                effect.time_scale = next;
+                ++applied;
+                continue;
+            }
             Node* node = effect.find_node(binding.node);
             if (node == nullptr) continue;
             const ParamSpec* spec = SpecRegistry::instance().get(node->type).find_param(binding.parameter);
@@ -403,6 +418,19 @@ std::vector<Control> generate_default_controls(const Effect& effect) {
         controls.push_back(make_multiplier(std::string("global_") + knob.suffix, knob.label, "Global",
                                            std::move(bindings)));
     }
+    // Speed drives the document's own `time_scale`, so it needs no node to bind
+    // to and is offered on every effect. Its range is tighter than the other
+    // multipliers: past 4x an effect is a flicker, below 0.25x it stops reading.
+    {
+        Control speed = make_multiplier("global_speed", "Speed", "Global",
+                                        {ControlBinding{std::string(kEffectBindingNode),
+                                                        std::string(kTimeScaleParameter), ControlOp::Multiply}});
+        speed.min = 0.25;
+        speed.max = 4.0;
+        speed.step = 0.05;
+        controls.push_back(std::move(speed));
+    }
+
     std::vector<ControlBinding> hue = collect(all, "hue");
     if (!hue.empty()) {
         Control control = make_multiplier("global_hue", "Hue", "Global", std::move(hue));

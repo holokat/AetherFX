@@ -196,10 +196,18 @@ PreviewResult render_sequence(Session& session, Document& doc, const nlohmann::j
     const double end = request.end >= 0.0 ? request.end : doc.effect.duration;
     if (end < start) throw Error("bad_argument", "render: \"end\" must not be before \"start\"");
 
-    int count = static_cast<int>(std::floor((end - start) * fps + 1e-9)) + 1;
+    sim::IRuntime& runtime = session.runtime(doc, compile_options_for(doc, args));
+    // `fps` counts frames of *wall* time, `start`/`end` are effect seconds, and
+    // the effect runs at the resolved `time_scale` - so a frame is
+    // `time_scale / fps` effect seconds apart and the sequence covers
+    // `(end - start) / time_scale` seconds of wall clock (docs/RUNTIME.md 11).
+    // At time_scale 1 this is exactly what it has always been.
+    const double time_scale = runtime.compiled().time_scale() > 0.0 ? runtime.compiled().time_scale() : 1.0;
+    const double step = time_scale / fps;
+
+    int count = static_cast<int>(std::floor(((end - start) / time_scale) * fps + 1e-9)) + 1;
     count = std::max(1, std::min(count, request.max_frames));
 
-    sim::IRuntime& runtime = session.runtime(doc, compile_options_for(doc, args));
     if (start < runtime.time()) runtime.reset();
     const RenderSettings settings = render_settings_for(session, args);
     if (write_files) ensure_dir(out_dir);
@@ -212,7 +220,7 @@ PreviewResult render_sequence(Session& session, Document& doc, const nlohmann::j
     result.images.reserve(static_cast<size_t>(count));
     render::FrameRenderPool pool(runtime.compiled().resources, settings);
     for (int i = 0; i < count; ++i) {
-        const double time = start + static_cast<double>(i) / fps;
+        const double time = start + static_cast<double>(i) * step;
         runtime.simulate_to(time);
         const CameraDesc camera = camera_for(session, args, runtime.state().camera);
         std::filesystem::path path;

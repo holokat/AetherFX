@@ -1192,9 +1192,9 @@
     "prompt": "Lightning bolt striking the ground with debris, a shockwave ring and sparks.",
     "render_settings": {
       "background": [
-        0.006,
-        0.009,
-        0.021,
+        0.0,
+        0.0,
+        0.0,
         1.0
       ],
       "ground_albedo": 0.13,

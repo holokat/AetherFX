@@ -92,3 +92,61 @@ TEST_CASE("a control folds into keyframe tracks before windows are resolved", "[
     REQUIRE(node != nullptr);
     CHECK(node->start_time == Approx(start + 0.5));
 }
+
+// ---------------------------------------------------------------------------
+// time_scale
+// ---------------------------------------------------------------------------
+
+TEST_CASE("time_scale reaches the plan and defaults to an unscaled effect", "[compiler][controls]") {
+    const Effect effect = load_example("fire_aoe.json");
+    const compiler::CompiledEffect compiled = compiler::compile(effect, no_textures());
+    REQUIRE(compiled.diagnostics.error_count() == 0);
+    CHECK(compiled.time_scale() == Approx(1.0));
+    CHECK(compiled.wall_duration() == Approx(effect.duration));
+    CHECK(compiled.plan_json().at("time_scale").get<double>() == Approx(1.0));
+    CHECK(compiled.plan_json().at("wall_duration").get<double>() == Approx(effect.duration));
+}
+
+TEST_CASE("a Speed control folds into the compiled time_scale", "[compiler][controls]") {
+    Effect effect = load_example("fire_aoe.json");
+    const double duration = effect.duration;
+    effect.controls.push_back(
+        multiplier("speed", {{std::string(kEffectBindingNode), std::string(kTimeScaleParameter),
+                              ControlOp::Multiply}}, 2.0));
+
+    const compiler::CompiledEffect compiled = compiler::compile(effect, no_textures());
+    REQUIRE(compiled.diagnostics.error_count() == 0);
+    CHECK(compiled.controls_applied == 1);
+    CHECK(compiled.time_scale() == Approx(2.0));
+    CHECK(compiled.wall_duration() == Approx(duration / 2.0));
+    CHECK(compiled.plan_json().at("time_scale").get<double>() == Approx(2.0));
+
+    // The authored document is untouched, as always.
+    CHECK(effect.time_scale == Approx(1.0));
+
+    SECTION("at its default it is an identity") {
+        effect.controls[0].value = 1.0;
+        const compiler::CompiledEffect same = compiler::compile(effect, no_textures());
+        CHECK(same.controls_applied == 0);
+        CHECK(same.time_scale() == Approx(1.0));
+    }
+
+    SECTION("set replaces an authored time_scale instead of scaling it") {
+        effect.time_scale = 4.0;
+        effect.controls[0].bindings[0].op = ControlOp::Set;
+        effect.controls[0].value = 0.5;
+        const compiler::CompiledEffect replaced = compiler::compile(effect, no_textures());
+        REQUIRE(replaced.diagnostics.error_count() == 0);
+        CHECK(replaced.controls_applied == 1);
+        CHECK(replaced.time_scale() == Approx(0.5));
+    }
+
+    SECTION("an authored time_scale survives compilation on its own") {
+        effect.controls.clear();
+        effect.time_scale = 0.5;
+        const compiler::CompiledEffect slow = compiler::compile(effect, no_textures());
+        REQUIRE(slow.diagnostics.error_count() == 0);
+        CHECK(slow.time_scale() == Approx(0.5));
+        CHECK(slow.wall_duration() == Approx(duration * 2.0));
+    }
+}

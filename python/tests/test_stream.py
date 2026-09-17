@@ -147,6 +147,29 @@ class TestStreamEndpoint:
             assert header["type"] == "frame"
             assert header["time"] == pytest.approx(0.0)
 
+    def test_the_state_message_carries_both_speeds(self, studio_client: TestClient) -> None:
+        with studio_client.websocket_connect("/ws/stream") as socket:
+            socket.receive_text()   # resources
+            socket.receive_bytes()  # the frame that follows open
+
+            socket.send_json({"type": "pause"})
+            state = json.loads(socket.receive_text())
+            assert state["type"] == "state"
+            # The play bar's speed and the effect's own, side by side.
+            assert state["speed"] == pytest.approx(1.0)
+            assert state["time_scale"] == pytest.approx(1.0)
+            assert state["wall_duration"] == pytest.approx(state["duration"])
+
+    def test_the_resources_message_carries_the_effects_speed(self, studio_client: TestClient) -> None:
+        # The frontend re-opens after every control change, so this is how a
+        # Speed slider re-paces playback without restarting it.
+        with studio_client.websocket_connect("/ws/stream") as socket:
+            resources = json.loads(socket.receive_text())
+            assert resources["type"] == "resources"
+            effect = resources["effect"]
+            assert effect["time_scale"] == pytest.approx(1.0)
+            assert effect["wall_duration"] == pytest.approx(effect["duration"])
+
     def test_seek_answers_with_exactly_one_frame_at_that_time(self, studio_client: TestClient) -> None:
         with studio_client.websocket_connect("/ws/stream") as socket:
             socket.receive_text()          # resources

@@ -1806,9 +1806,9 @@
     "render_settings": {
       "ground_albedo": 0.05,
       "background": [
-        0.006,
-        0.005,
-        0.01,
+        0.0,
+        0.0,
+        0.0,
         1.0
       ],
       "bloom_intensity": 0.6,

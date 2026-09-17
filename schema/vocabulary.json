@@ -3841,7 +3841,7 @@
     "E012": "cycle in the parent chain",
     "E013": "cycle in the input graph",
     "E014": "unknown layer",
-    "E015": "effect duration invalid",
+    "E015": "effect duration or time_scale invalid",
     "E016": "timeline phase invalid (end<=start or outside duration)",
     "E017": "unknown port",
     "E018": "keyframe time invalid",

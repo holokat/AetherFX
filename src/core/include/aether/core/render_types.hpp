@@ -25,7 +25,7 @@ struct CameraDesc {
 struct RenderSettings {
     int width = 512;
     int height = 512;
-    Color background{0.02f, 0.02f, 0.025f, 1.0f};
+    Color background{0.0f, 0.0f, 0.0f, 1.0f};   // pure black stage by default
     bool ground_plane = true;     // shaded plane at y=0 receiving light
     bool grid = true;             // 1 m grid lines on the ground plane
     float ground_albedo = 0.18f;

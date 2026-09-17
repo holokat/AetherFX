@@ -209,6 +209,23 @@ AETHERFX_API const char* aetherfx_effect_name(const aetherfx_effect* effect);
 AETHERFX_API double aetherfx_effect_duration(const aetherfx_effect* effect);
 
 /*
+ * Authored playback speed, or a negative status on failure. Default 1.0,
+ * always within [0.1, 8.0] for a valid effect.
+ *
+ * It is the mapping the HOST owes the effect: advance the runtime by
+ * `delta_seconds * time_scale` effect seconds per wall-clock second, so the
+ * instance finishes after `duration / time_scale` seconds. The simulation is
+ * untouched by it -- same fixed timestep, same seeds, same buffers at the same
+ * effect time -- so playing an effect faster costs nothing and stays
+ * deterministic.
+ *
+ * This is the value the author typed. A control bound to the effect's speed
+ * only folds in at compile time, so read aetherfx_compiled_time_scale() for the
+ * number to actually drive the clock with.
+ */
+AETHERFX_API double aetherfx_effect_time_scale(const aetherfx_effect* effect);
+
+/*
  * Validates the effect and writes the diagnostics as JSON into `buf`:
  *   {"ok":bool,"errors":n,"warnings":n,"items":[{severity,code,message,node,param}]}
  *
@@ -325,6 +342,21 @@ AETHERFX_API int aetherfx_compiled_ok(const aetherfx_compiled* compiled);
 
 /* The timestep this effect was compiled with, in seconds. Negative on failure. */
 AETHERFX_API double aetherfx_compiled_fixed_dt(const aetherfx_compiled* compiled);
+
+/*
+ * The resolved playback speed: the authored `time_scale` with the document's
+ * controls folded in. This is what a host drives its clock with:
+ *
+ *     play_time += delta_seconds * aetherfx_compiled_time_scale(compiled);
+ *     aetherfx_runtime_simulate_to(runtime, play_time);
+ *
+ * Negative on failure. See aetherfx_effect_time_scale().
+ */
+AETHERFX_API double aetherfx_compiled_time_scale(const aetherfx_compiled* compiled);
+
+/* Wall-clock seconds this compiled effect lasts: duration / time_scale.
+ * Negative on failure. */
+AETHERFX_API double aetherfx_compiled_wall_duration(const aetherfx_compiled* compiled);
 
 /* Compile diagnostics, same JSON shape as aetherfx_effect_validate(). Release
  * with aetherfx_free_string(). NULL on failure. */

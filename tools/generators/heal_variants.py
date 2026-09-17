@@ -1011,7 +1011,7 @@ BASE: dict[str, Any] = {
     "streak_core": 0.07,
     "wave": {"count": 0, "t0": 0.5, "gap": 0.45, "rise": 0.55},
     "burst": {"on": False, "t": 1.05, "size": 8.0, "opacity": 0.3},
-    "render": {"ground_albedo": 0.05, "background": [0.005, 0.009, 0.007, 1.0],
+    "render": {"ground_albedo": 0.05, "background": [0.0, 0.0, 0.0, 1.0],
                "bloom_intensity": 0.26, "bloom_radius": 0.05, "exposure": 0.72, "grid": False},
 }
 
@@ -1063,7 +1063,7 @@ VARIANTS: dict[str, dict[str, Any]] = {
         "haze_size": 0.8,
         "swirl": 0.9,
         "light": 2.2,
-        "render": {"ground_albedo": 0.048, "background": [0.005, 0.009, 0.007, 1.0],
+        "render": {"ground_albedo": 0.048, "background": [0.0, 0.0, 0.0, 1.0],
                    "bloom_intensity": 0.22, "bloom_radius": 0.048, "exposure": 0.74, "grid": False},
     },
     # ---- big heal ----------------------------------------------------------
@@ -1094,7 +1094,7 @@ VARIANTS: dict[str, dict[str, Any]] = {
         "haze_size": 1.15,
         "swirl": 2.1,
         "light": 5.6,
-        "render": {"ground_albedo": 0.055, "background": [0.005, 0.009, 0.007, 1.0],
+        "render": {"ground_albedo": 0.055, "background": [0.0, 0.0, 0.0, 1.0],
                    "bloom_intensity": 0.3, "bloom_radius": 0.054, "exposure": 0.7, "grid": False},
     },
     # ---- cleanse -----------------------------------------------------------
@@ -1136,7 +1136,7 @@ VARIANTS: dict[str, dict[str, Any]] = {
         "swirl": 1.8,
         "light": 4.4,
         "wave": {"count": 2, "t0": 0.42, "gap": 0.5, "rise": 0.5},
-        "render": {"ground_albedo": 0.05, "background": [0.004, 0.006, 0.013, 1.0],
+        "render": {"ground_albedo": 0.05, "background": [0.0, 0.0, 0.0, 1.0],
                    "bloom_intensity": 0.28, "bloom_radius": 0.05, "exposure": 0.72, "grid": False},
     },
     # ---- heal over time ----------------------------------------------------
@@ -1177,7 +1177,7 @@ VARIANTS: dict[str, dict[str, Any]] = {
         "swirl": 2.4,
         "light": 3.0,
         "wave": {"count": 1, "t0": 0.0, "gap": 0.0, "rise": 0.8},
-        "render": {"ground_albedo": 0.05, "background": [0.004, 0.01, 0.006, 1.0],
+        "render": {"ground_albedo": 0.05, "background": [0.0, 0.0, 0.0, 1.0],
                    "bloom_intensity": 0.25, "bloom_radius": 0.05, "exposure": 0.74, "grid": False},
     },
     # ---- critical ----------------------------------------------------------
@@ -1216,7 +1216,7 @@ VARIANTS: dict[str, dict[str, Any]] = {
         "light": 7.0,
         "wave": {"count": 1, "t0": 0.62, "gap": 0.4, "rise": 0.42},
         "burst": {"on": True, "t": 0.98, "size": 9.0, "opacity": 0.1},
-        "render": {"ground_albedo": 0.058, "background": [0.006, 0.009, 0.007, 1.0],
+        "render": {"ground_albedo": 0.058, "background": [0.0, 0.0, 0.0, 1.0],
                    "bloom_intensity": 0.32, "bloom_radius": 0.056, "exposure": 0.66, "grid": False},
     },
 }

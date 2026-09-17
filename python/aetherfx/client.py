@@ -247,13 +247,17 @@ class Client:
         duration: float = 2.0,
         seed: int = 1,
         template: str | None = None,
+        time_scale: float | None = None,
     ) -> JsonDict:
         """Create an effect and make it active.
 
         ``template`` is ``"empty"`` or the name of an example in
         ``examples/effects``.  Returns ``{effect_id, effect}``.
         """
-        return self.call("create_effect", **self._args(name=name, duration=duration, seed=seed, template=template))
+        return self.call(
+            "create_effect",
+            **self._args(name=name, duration=duration, seed=seed, template=template, time_scale=time_scale),
+        )
 
     def delete_effect(self, effect_id: str) -> JsonDict:
         """Delete a loaded effect.  Returns ``{ok}``."""
@@ -273,10 +277,20 @@ class Client:
         duration: float | None = None,
         seed: int | None = None,
         metadata: JsonDict | None = None,
+        time_scale: float | None = None,
     ) -> JsonDict:
-        """Update effect-level properties.  Returns ``{effect}``."""
+        """Update effect-level properties.  Returns ``{effect}``.
+
+        ``time_scale`` is the effect's own playback speed in ``[0.1, 8]``: a
+        host maps wall time to effect time as ``wall * time_scale``, so the
+        effect plays over ``duration / time_scale`` seconds.  The simulation is
+        unchanged by it.
+        """
         return self.call(
-            "set_effect_property", **self._args(name=name, duration=duration, seed=seed, metadata=metadata)
+            "set_effect_property",
+            **self._args(
+                name=name, duration=duration, seed=seed, metadata=metadata, time_scale=time_scale
+            ),
         )
 
     def describe_vocabulary(self, node_type: str | None = None) -> JsonDict:

@@ -506,4 +506,135 @@ bool FAetherFXTrailsAndBeamsTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+//-----------------------------------------------------------------------------
+// The effect's own speed.
+//
+// `time_scale` is a mapping from wall time to effect time and nothing more: the
+// component advances by `DeltaTime * PlaybackRate * TimeScale`, so the same 60
+// ticks of 1/60 reach twice as far into a 2x effect. The simulation is
+// untouched -- the timestep, the seeds and the frame at any given effect time
+// are the same as at 1x -- which is what keeps Unreal agreeing with the studio.
+//-----------------------------------------------------------------------------
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FAetherFXTimeScaleTest,
+	"AetherFX.Bridge.TimeScale",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext |
+	EAutomationTestFlags::CommandletContext | EAutomationTestFlags::ProductFilter)
+
+bool FAetherFXTimeScaleTest::RunTest(const FString& Parameters)
+{
+	using namespace AetherFXSmoke;
+
+	const FString Document = DocumentPath();
+	FString Json;
+	if (!TestTrue(TEXT("document is readable"), FFileHelper::LoadFileToString(Json, *Document)))
+	{
+		return false;
+	}
+
+	FScopedWorld Scope;
+	if (!TestNotNull(TEXT("test world"), Scope.World))
+	{
+		return false;
+	}
+
+	// One second of wall clock at a given speed -> the effect time reached.
+	const auto PlayOneSecondAt = [&](double TimeScale, float PlaybackRate, float& OutSimulationTime) -> bool
+	{
+		UAetherFXEffect* Effect = NewObject<UAetherFXEffect>(
+			GetTransientPackage(),
+			MakeUniqueObjectName(GetTransientPackage(), UAetherFXEffect::StaticClass(), TEXT("FX_time_scale")),
+			RF_Transient);
+		Effect->EffectJson = Json;
+		Effect->AddToRoot();
+		ON_SCOPE_EXIT{ Effect->RemoveFromRoot(); };
+
+		if (!TestTrue(TEXT("document compiles"), Effect->Compile()))
+		{
+			AddError(FString::Printf(TEXT("compile diagnostics: %s"), *Effect->GetCompileDiagnostics()));
+			return false;
+		}
+		// Compile() resolves it from the plan, so set it afterwards to play the
+		// same effect faster without touching the document.
+		Effect->TimeScale = TimeScale;
+
+		AAetherFXActor* Actor = Scope.World->SpawnActor<AAetherFXActor>(FVector::ZeroVector, FRotator::ZeroRotator);
+		if (!TestNotNull(TEXT("actor"), Actor))
+		{
+			return false;
+		}
+		Actor->Effect = Effect;
+		Actor->bAutoPlay = false;
+		Actor->Play();
+
+		UAetherFXComponent* Component = Actor->AetherFXComponent;
+		if (!TestNotNull(TEXT("component"), Component))
+		{
+			return false;
+		}
+		Component->bLoop = false;
+		Component->PlaybackRate = PlaybackRate;
+		TestEqual(TEXT("the component reports the effect's speed"),
+			Component->GetTimeScale(), static_cast<float>(TimeScale));
+
+		for (int32 Frame = 0; Frame < 60; ++Frame)
+		{
+			Component->AdvanceAndRender(1.0f / 60.0f);
+		}
+		OutSimulationTime = Component->GetSimulationTime();
+		AddInfo(FString::Printf(TEXT("time_scale=%.2f rate=%.2f -> t=%.3fs sim=%.3fs"),
+			TimeScale, PlaybackRate, Component->GetPlaybackTime(), OutSimulationTime));
+
+		Component->Stop();
+		Actor->Destroy();
+		return true;
+	};
+
+	// A compiled effect reports the document's speed, which is 1 here.
+	{
+		UAetherFXEffect* Effect = NewObject<UAetherFXEffect>(GetTransientPackage(), NAME_None, RF_Transient);
+		Effect->EffectJson = Json;
+		Effect->AddToRoot();
+		ON_SCOPE_EXIT{ Effect->RemoveFromRoot(); };
+		if (!TestTrue(TEXT("document compiles"), Effect->Compile()))
+		{
+			return false;
+		}
+		TestEqual(TEXT("an unscaled effect resolves to 1x"), Effect->TimeScale, 1.0);
+		TestTrue(TEXT("its wall duration is its duration"),
+			FMath::IsNearlyEqual(Effect->GetWallDuration(), Effect->Duration, 0.001f));
+
+		Effect->TimeScale = 2.0;
+		TestTrue(TEXT("at 2x it plays in half the time"),
+			FMath::IsNearlyEqual(Effect->GetWallDuration(), Effect->Duration * 0.5f, 0.001f));
+	}
+
+	// Same 60 ticks of 1/60, three speeds. The fixed step is exactly 1/60, so
+	// these land on whole step counts and the tolerance is a fraction of one.
+	float AtOne = 0.0f;
+	float AtTwo = 0.0f;
+	float AtHalf = 0.0f;
+	float WithRate = 0.0f;
+	if (!PlayOneSecondAt(1.0, 1.0f, AtOne) ||
+		!PlayOneSecondAt(2.0, 1.0f, AtTwo) ||
+		!PlayOneSecondAt(0.5, 1.0f, AtHalf) ||
+		!PlayOneSecondAt(2.0, 0.5f, WithRate))
+	{
+		return false;
+	}
+
+	TestTrue(TEXT("1x reaches one effect second in one wall second"),
+		FMath::IsNearlyEqual(AtOne, 1.0f, 0.02f));
+	TestTrue(TEXT("2x reaches two effect seconds in one wall second"),
+		FMath::IsNearlyEqual(AtTwo, 2.0f, 0.02f));
+	TestTrue(TEXT("0.5x reaches half an effect second in one wall second"),
+		FMath::IsNearlyEqual(AtHalf, 0.5f, 0.02f));
+	// PlaybackRate is a per-instance override on top of the effect's speed.
+	TestTrue(TEXT("PlaybackRate multiplies the effect's speed"),
+		FMath::IsNearlyEqual(WithRate, 1.0f, 0.02f));
+
+	return true;
+}
+
 #endif // WITH_DEV_AUTOMATION_TESTS

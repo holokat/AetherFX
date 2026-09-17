@@ -522,3 +522,71 @@ def test_a_freshly_loaded_effect_is_not_dirty(client: TestClient, loaded: dict) 
     # and again, back to the first
     assert client.post("/api/effects/load", json={"path": loaded["path"]}).status_code == 200
     assert client.get("/api/status").json()["active_effect"]["dirty"] is False
+
+
+def test_the_generated_controls_include_a_speed_that_changes_the_wall_duration(
+    client: TestClient, loaded: dict
+) -> None:
+    """Speed is a control like any other, except that what it drives is the
+    document itself: how long the effect takes to play (docs/CONTROLS.md)."""
+    listed = client.get("/api/controls").json()
+    by_id = {control["id"]: control for control in listed["controls"]}
+    assert "global_speed" in by_id
+    speed = by_id["global_speed"]
+    assert speed["group"] == "Global"
+    assert speed["label"] == "Speed"
+    assert speed["unit"] == "x"
+    assert (speed["min"], speed["max"], speed["default"]) == (
+        pytest.approx(0.25), pytest.approx(4.0), pytest.approx(1.0)
+    )
+
+    timeline = client.get("/api/effect").json()["timeline"]
+    duration = timeline["duration"]
+    assert timeline["time_scale"] == pytest.approx(1.0)
+    assert timeline["wall_duration"] == pytest.approx(duration)
+
+    assert client.post("/api/controls/global_speed", json={"value": 2.0}).status_code == 200
+    timeline = client.get("/api/effect").json()["timeline"]
+    # Twice as fast: the same effect seconds over half the wall clock. The
+    # timeline itself does not move - that is where the keyframes live.
+    assert timeline["duration"] == pytest.approx(duration)
+    assert timeline["time_scale"] == pytest.approx(2.0)
+    assert timeline["wall_duration"] == pytest.approx(duration / 2.0)
+
+    assert client.post("/api/controls/global_speed", json={"value": 0.5}).status_code == 200
+    assert client.get("/api/effect").json()["timeline"]["wall_duration"] == pytest.approx(duration * 2.0)
+
+    # Out of its range is a client error, like every other control.
+    assert client.post("/api/controls/global_speed", json={"value": 9.0}).status_code == 400
+
+    # And the value rides along in the document, which is what "Save as" writes.
+    saved = {c["id"]: c for c in client.get("/api/effect").json()["effect"]["controls"]}
+    assert saved["global_speed"]["value"] == pytest.approx(0.5)
+
+
+def test_a_speed_control_never_rewrites_the_authored_document(client: TestClient, loaded: dict) -> None:
+    before = client.get("/api/effect").json()["timeline"]["time_scale"]
+    client.post("/api/controls/global_speed", json={"value": 3.0})
+    document = client.get("/api/effect").json()["effect"]
+    # The authored time_scale is untouched: only the compiler folds the control
+    # in, and only into its own copy.
+    assert document.get("time_scale", 1.0) == pytest.approx(1.0)
+    assert client.get("/api/effect").json()["timeline"]["time_scale"] == pytest.approx(3.0)
+
+    # ... so moving it is an ordinary, undoable document edit.
+    assert client.post("/api/undo", json={}).json()["ok"] is True
+    assert client.get("/api/effect").json()["timeline"]["time_scale"] == pytest.approx(before)
+
+
+def test_an_edit_that_is_undone_is_not_a_change(client: TestClient, loaded: dict) -> None:
+    # Dragging a style slider and resetting it leaves the document exactly as loaded: that must not
+    # report unsaved changes (the revision counter alone said "dirty" and toasted a discard warning).
+    assert client.post("/api/effects/load", json={"path": loaded["path"]}).status_code == 200
+    assert client.get("/api/status").json()["active_effect"]["dirty"] is False
+    controls = client.get("/api/controls").json()
+    controls = controls.get("controls", controls)
+    target = next(c for c in controls if c["id"] == "global_intensity")
+    assert client.post(f"/api/controls/{target['id']}", json={"value": 1.5}).status_code == 200
+    assert client.get("/api/status").json()["active_effect"]["dirty"] is True
+    assert client.post("/api/controls/reset", json={}).status_code == 200
+    assert client.get("/api/status").json()["active_effect"]["dirty"] is False

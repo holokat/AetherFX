@@ -53,6 +53,8 @@ package directory and always use `/`.
   "version": 1,
   "effect": "Fire AOE",
   "duration": 3.0,
+  "time_scale": 1.0,
+  "wall_duration": 3.0,
   "seed": 7,
   "fixed_dt": 0.016666666666666666,
   "generator": "aetherfx 0.1.0",
@@ -99,6 +101,8 @@ export. Its grammar is docs/VOCABULARY.md.
   "version": 1,
   "effect": "Fire AOE",
   "duration": 3.0,
+  "time_scale": 1.0,
+  "wall_duration": 3.0,
   "seed": 7,
   "fixed_dt": 0.016666666666666666,
   "source_hash": "9c15f997cf355341",
@@ -115,9 +119,22 @@ export. Its grammar is docs/VOCABULARY.md.
 }
 ```
 
-`format`, `version`, `effect`, `duration`, `seed`, `fixed_dt` and `source_hash`
-repeat the manifest so `runtime.json` stands alone. `sampling` records the
-options the sample tables below were produced with.
+`format`, `version`, `effect`, `duration`, `time_scale`, `wall_duration`,
+`seed`, `fixed_dt` and `source_hash` repeat the manifest so `runtime.json`
+stands alone. `sampling` records the options the sample tables below were
+produced with.
+
+**Times in this file are effect seconds.** `duration`, the timeline phases, the
+node windows and every `samples` table are all on the effect's own clock.
+`time_scale` is how an importer maps a wall clock onto it - `effect_time =
+wall_time * time_scale` - and `wall_duration` is `duration / time_scale`, how
+long an instance actually lasts. It is already *resolved*: a Speed control on
+the document is folded in before the package is written, so an importer uses
+the number as it stands (docs/RUNTIME.md 11).
+
+```
+play_time += delta_seconds * runtime.time_scale;   // then simulate_to(play_time)
+```
 
 ### 5.1 `timeline`
 

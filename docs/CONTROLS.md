@@ -47,6 +47,25 @@ A binding is `{node, parameter, op}`.
 | `set` | the same | replaces it |
 | `hue_shift` | colour, gradient | rotates the hue by `value` degrees, keeping saturation, value and alpha |
 
+### 2.1 Binding to the effect itself
+
+A binding's `node` is normally a node id. The one reserved name is `$effect`,
+which addresses the **document**, and the one property it exposes is
+`time_scale` - how fast the effect plays (docs/RUNTIME.md 11):
+
+```json
+{"node": "$effect", "parameter": "time_scale", "op": "multiply"}
+```
+
+`multiply` scales the authored speed, `set` replaces it; `add` and `hue_shift`
+are E023. The result is clamped into [0.1, 8.0], the range the validator
+enforces, exactly as a node parameter is clamped into its spec range. Any other
+parameter name is E022.
+
+Moving it changes nothing about the simulation - the same effect time still
+produces the same frame - only how much wall clock the effect takes. Hosts read
+the folded value (`aetherfx_compiled_time_scale`), never the raw document.
+
 Rules that hold for every op:
 
 * **Keyframe tracks are transformed key by key**, and so is the constant. A
@@ -110,13 +129,16 @@ docs/AGENT_API.md "controls": `list_controls`, `set_control`,
 
 `generate_default_controls {replace?}` builds a sensible set for any effect:
 
-* a **Global** group - Intensity, Size, Density, Opacity, Hue - over every node;
+* a **Global** group - Intensity, Size, Density, Opacity, Speed, Hue - over
+  every node (Speed needs none: it drives the document's own `time_scale`);
 * one group **per layer** - Intensity, Size, Density, Opacity - over the nodes
   in that layer, named after the layer (Fire AOE gets "Telegraph", "Eruption",
   "Flames", "Debris, sparks, smoke", "Light", "Aftermath").
 
 Multipliers run 0..3 with default 1 and unit `x`; Hue runs -180..180 with
-default 0 and unit `deg`. A knob with no bindings is left out. With
+default 0 and unit `deg`; Speed runs 0.25..4 with default 1, step 0.05 and unit
+`x` - tighter than the rest because past 4x an effect is a flicker and below
+0.25x it stops reading. A knob with no bindings is left out. With
 `replace: false` (the default) it only fills in what is missing, so a set an
 author trimmed by hand survives.
 
@@ -129,6 +151,7 @@ The binding heuristics, by node type:
 | Density | emitter `rate` and `burst_count` |
 | Opacity | particle/decal/material `opacity`, volume `density` |
 | Hue | every colour and every gradient the node type declares |
+| Speed | `$effect.time_scale` - the document, not a node |
 
 Two deliberate departures from the obvious list:
 
@@ -156,6 +179,14 @@ slider, numeric input and its own reset, plus "Reset all". Dragging updates the
 viewport live (debounced to ~100 ms) without restarting playback; arrow keys
 step by `step` and shift by ten of them.
 
+**Speed** is in that panel like any other control, and moving it re-paces the
+live stream immediately. It is not the play bar's speed selector: that one is a
+viewing preference that is never saved, while Speed is part of the effect, is
+written by "Save as", is exported, and is what a game will play it at. When the
+effect is not at 1x the play bar says so - `1.20 s / 3.00 s frame 73/181 ·
+plays in 2.00 s at 1.5x` - and the scrubber stays in effect seconds, because
+that is where the keyframes and the phases are.
+
 Loading a library effect that ships no controls generates a default set **on
 the working copy only** - the file on disk is untouched, the document does not
 count as modified, and "Save as" keeps the controls and the values they were
@@ -174,7 +205,12 @@ struct aetherfx_control_info info;
 aetherfx_control_info(effect, 0, &info);          /* id, label, group, min, max, default, value, step */
 
 aetherfx_effect_set_control(effect, "flames_intensity", 0.4);  /* a weaker instance */
+aetherfx_effect_set_control(effect, "global_speed", 2.0);      /* ... and a faster one */
 aetherfx_compiled* compiled = aetherfx_compile(effect, 1.0 / 60.0);
+
+/* Speed folds into the compiled effect's time_scale, which is the number the
+   host advances its clock by (docs/RUNTIME.md 11). */
+play_time += delta_seconds * aetherfx_compiled_time_scale(compiled);
 ```
 
 Set the controls, then compile: the change applies to the next

@@ -380,6 +380,9 @@ namespace AetherFX
 		Manifest->TryGetStringField(TEXT("source_hash"), Effect->SourceHash);
 		Effect->Duration = ReadNumber(Manifest, TEXT("duration"), 0.0f);
 		Effect->FixedTimeStep = ReadDouble(Manifest, TEXT("fixed_dt"), 0.0);
+		// The package already carries the resolved speed, so the asset is right
+		// even for a document that does not compile; Compile() confirms it.
+		Effect->TimeScale = ReadDouble(Manifest, TEXT("time_scale"), 1.0);
 #if WITH_EDITORONLY_DATA
 		Effect->SourceFilePath = Source.PickedFile;
 #endif
@@ -523,10 +526,11 @@ namespace AetherFX
 		const bool bCompiled = Effect->Compile();
 
 		UE_LOG(LogAetherFX, Log,
-			TEXT("Imported '%s': %d textures, %d meshes, %d materials, duration %.2fs, dt %.6f (%s)."),
+			TEXT("Imported '%s': %d textures, %d meshes, %d materials, duration %.2fs (plays in %.2fs at %.2fx), "
+				 "dt %.6f (%s)."),
 			*Effect->EffectName,
 			Effect->Textures.Num(), Effect->Meshes.Num(), Effect->Materials.Num(),
-			Effect->Duration, Effect->FixedTimeStep,
+			Effect->Duration, Effect->GetWallDuration(), Effect->TimeScale, Effect->FixedTimeStep,
 			bCompiled ? TEXT("compiles") : TEXT("does NOT compile"));
 
 		return true;

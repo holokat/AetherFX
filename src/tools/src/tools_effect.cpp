@@ -56,6 +56,7 @@ nlohmann::json create_effect(Session& session, const nlohmann::json& args) {
     else if (template_name.empty() || template_name == "empty") effect.name = "untitled";
     if (has_arg(args, "duration")) effect.duration = arg_number(args, "duration", effect.duration);
     else if (template_name.empty() || template_name == "empty") effect.duration = 2.0;
+    if (has_arg(args, "time_scale")) effect.time_scale = arg_number(args, "time_scale", effect.time_scale);
     if (has_arg(args, "seed")) effect.seed = static_cast<uint32_t>(arg_int(args, "seed", 1));
     else if (template_name.empty() || template_name == "empty") effect.seed = 1;
 
@@ -99,6 +100,8 @@ nlohmann::json set_effect_property(Session& session, const nlohmann::json& args)
     Mutation mutation(session, doc);
     if (has_arg(args, "name")) doc.effect.name = require_string(args, "name", "set_effect_property");
     if (has_arg(args, "duration")) doc.effect.duration = require_number(args, "duration", "set_effect_property");
+    if (has_arg(args, "time_scale"))
+        doc.effect.time_scale = require_number(args, "time_scale", "set_effect_property");
     if (has_arg(args, "seed")) doc.effect.seed = static_cast<uint32_t>(arg_int(args, "seed", static_cast<int>(doc.effect.seed)));
     if (has_arg(args, "metadata")) {
         const nlohmann::json& metadata = arg(args, "metadata");
@@ -144,6 +147,9 @@ void register_effect_tools(ToolRegistry& registry) {
                   "\"empty\" (the default) starts from nothing. Returns {effect_id, effect, diagnostics}.",
                   make_schema({{"name", prop("string", "Effect name, e.g. \"Fire AOE\" (default \"untitled\").")},
                                {"duration", prop("number", "Effect duration in seconds (default 2).")},
+                               {"time_scale", prop("number", "Playback speed (default 1, range 0.1..8): a host maps "
+                                                             "wall time to effect time as wall * time_scale, so the "
+                                                             "effect lasts duration / time_scale seconds.")},
                                {"seed", prop("integer", "Master random seed (default 1).")},
                                {"template", prop("string", "\"empty\" (default), an example name, or a file path.")}},
                               {}),
@@ -169,10 +175,14 @@ void register_effect_tools(ToolRegistry& registry) {
                  set_active_effect);
 
     registry.add({"set_effect_property",
-                  "Change document level properties: name, duration (seconds), master seed and free-form metadata "
+                  "Change document level properties: name, duration (seconds), time_scale (playback speed), master "
+                  "seed and free-form metadata "
                   "(record the source prompt or reference here). Returns {ok, effect, diagnostics}.",
                   make_schema({{"name", prop("string", "New effect name.")},
                                {"duration", prop("number", "New duration in seconds (> 0).")},
+                               {"time_scale", prop("number", "New playback speed in [0.1, 8]. The simulation is "
+                                                             "unchanged; the effect simply plays back over "
+                                                             "duration / time_scale seconds of wall clock.")},
                                {"seed", prop("integer", "New master seed; changes every derived random stream.")},
                                {"metadata", prop("object", "Free-form metadata object, replaces the current one.")}}),
                   true, "effect"},

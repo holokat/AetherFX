@@ -15,7 +15,7 @@ import { LAYER_OPAQUE, LAYER_TRANSPARENT, colorOf } from './particles.js';
 
 export const STAGE_DEFAULTS = {
   ground_albedo: 0.18,
-  background: [0.02, 0.02, 0.025, 1],
+  background: [0, 0, 0, 1],            // pure black stage by default
   bloom_intensity: 0.35,
   bloom_radius: 0.04,
   exposure: 1.0,

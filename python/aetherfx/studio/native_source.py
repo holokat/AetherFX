@@ -127,6 +127,7 @@ class NativeFrameSource:
         self._runtime: Runtime | None = None
         self._resources: dict[str, Any] | None = None
         self._duration = 0.0
+        self._time_scale = 1.0
         self._fixed_dt = self._requested_dt
 
     # -- lifecycle --------------------------------------------------------
@@ -161,6 +162,10 @@ class NativeFrameSource:
             self._compiled = compiled
             self._runtime = runtime
             self._duration = max(0.0, effect.duration)
+            # The resolved speed, i.e. with a Speed control already folded in -
+            # the studio must pace playback by what compiled, not by what the
+            # document happens to say (docs/CONTROLS.md).
+            self._time_scale = compiled.time_scale or 1.0
             self._fixed_dt = runtime.fixed_dt or self._requested_dt
             self._resources = self._build_resources()
 
@@ -179,6 +184,16 @@ class NativeFrameSource:
     def duration(self) -> float:
         with self.lock:
             return self._duration
+
+    def time_scale(self) -> float:
+        """Resolved playback speed: effect seconds per wall-clock second."""
+        with self.lock:
+            return self._time_scale
+
+    def wall_duration(self) -> float:
+        """Wall-clock seconds this effect lasts: ``duration / time_scale``."""
+        with self.lock:
+            return self._duration / self._time_scale if self._time_scale > 0.0 else self._duration
 
     def fixed_dt(self) -> float:
         with self.lock:
@@ -249,6 +264,10 @@ class NativeFrameSource:
             "effect": {
                 "name": effect.name,
                 "duration": self._duration,
+                # Effect seconds, the resolved speed, and the wall-clock
+                # seconds the two imply (docs/RUNTIME.md 11).
+                "time_scale": self._time_scale,
+                "wall_duration": self.wall_duration(),
                 "fixed_dt": self._fixed_dt,
                 "seed": int(self._effect_json.get("seed") or 0),
             },
