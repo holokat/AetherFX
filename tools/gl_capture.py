@@ -36,9 +36,42 @@ SELECT_SCRIPT = """
   const wanted = %(effect)s;
   const viewer = window.aetherViewer;
   if (!viewer || !viewer.available) return 'NO_GPU:' + (viewer ? (viewer.reason || 'unavailable') : 'viewer module not loaded (check /static/vendor/three/build/three.module.js)');
-  const rows = [...document.querySelectorAll('#list-library li')];
-  const row = rows.find(li => li.textContent.trim().toLowerCase().startsWith(wanted.toLowerCase()));
-  if (!row) return 'NO_ROW:' + rows.map(li => li.textContent.trim()).join('|');
+  // The Library is split into collapsible sections (Core / Mine) and the row label may
+  // carry <mark> highlights from the live search: open every section, clear the filter,
+  // and match on the label span's text.
+  const studioTab = document.getElementById('nav-studio');
+  if (studioTab) studioTab.click();
+  const search = document.getElementById('lib-search');
+  if (search && search.value) { search.value = ''; search.dispatchEvent(new Event('input', {bubbles: true})); }
+  document.querySelectorAll('#library-sections details').forEach(d => { d.open = true; });
+  await new Promise(r => setTimeout(r, 120));
+  const rows = [...document.querySelectorAll('#library-sections li, #list-library li')];
+  const label = li => ((li.querySelector('.row-label') || li).textContent || '').trim();
+  const row = rows.find(li => label(li).toLowerCase().startsWith(wanted.toLowerCase()));
+  if (!row) {
+    // Contributed effects live in the Community view, not the Library: open the card there.
+    const communityTab = document.getElementById('nav-community');
+    if (communityTab) {
+      communityTab.click();
+      await new Promise(r => setTimeout(r, 1200));
+      const comSearch = document.getElementById('com-search');
+      if (comSearch && comSearch.value) { comSearch.value = ''; comSearch.dispatchEvent(new Event('input', {bubbles: true})); }
+      await new Promise(r => setTimeout(r, 200));
+      const cards = [...document.querySelectorAll('.community-card')];
+      const card = cards.find(c => ((c.querySelector('.card-title') || {}).textContent || '')
+        .trim().toLowerCase().startsWith(wanted.toLowerCase()));
+      if (card) {
+        card.querySelector('button').click();
+        await new Promise(r => setTimeout(r, %(load_ms)d));
+        if (typeof S !== 'undefined' && S.playing) document.getElementById('btn-play').click();
+        await new Promise(r => setTimeout(r, 400));
+        return 'OK ' + document.getElementById('time-readout').textContent;
+      }
+      if (studioTab) studioTab.click();
+      return 'NO_ROW:' + rows.map(label).concat(cards.map(c => c.textContent.trim().split('\\n')[0])).join('|');
+    }
+    return 'NO_ROW:' + rows.map(label).join('|');
+  }
   // Always click: loading a row re-reads the JSON from disk, otherwise the
   // studio keeps serving its in-memory working copy of an earlier version.
   row.click();

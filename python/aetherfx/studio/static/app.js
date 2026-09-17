@@ -149,7 +149,11 @@ var S = {
   data: null,            /* the last GET /api/effect payload */
   selected: null,        /* selected node id */
   node: null,            /* the last GET /api/node/<id> payload */
-  lists: { examples: [], saved: [], open: [] },
+  lists: { examples: [], saved: [], community: [], open: [] },
+  view: 'studio',        /* which top-nav view is showing: 'studio' or 'community' */
+  community: null,       /* the last GET /api/community payload */
+  librarySearch: '',     /* live filters, kept per view in sessionStorage */
+  communitySearch: '',
 
   fps: 24,
   speed: 1,              /* playback speed multiplier (1 = real time) */
@@ -445,40 +449,301 @@ function followExternalChanges(status) {
   }, function () { externalSyncPending = false; });
 }
 
+/* The loaded effect's name lives at the top of the right column, above the graph:
+ * `#effect-name` holds exactly the name (tools/gl_capture.py and the tests read it),
+ * the dot next to it carries the unsaved-changes state. */
 function setEffectName(active) {
   var node = $('effect-name');
+  var bar = $('effect-bar');
   if (!active) {
     node.textContent = 'no effect';
-    node.title = 'no effect is open';
+    bar.title = 'no effect is open';
     node.classList.remove('dirty');
+    bar.classList.remove('dirty', 'loaded');
     return;
   }
   node.textContent = active.name || 'untitled';
-  node.classList.toggle('dirty', !!active.dirty);   /* styled as the modified dot */
-  node.title = (active.effect_id || '') + (active.path ? '\n' + active.path : '') +
+  node.classList.toggle('dirty', !!active.dirty);   /* styling hook kept for the tests */
+  bar.classList.toggle('dirty', !!active.dirty);
+  bar.classList.add('loaded');
+  bar.title = (active.effect_id || '') + (active.path ? '\n' + active.path : '') +
     (active.dirty ? '\nunsaved changes' : '');
+}
+
+/* A community effect keeps its credit next to the name: "by <github name>", linking
+ * to the profile.  The author block has already been validated server side. */
+function setEffectCredit(source) {
+  var chip = $('effect-credit');
+  var author = source && source.author;
+  if (!author || !author.url) { chip.hidden = true; chip.textContent = ''; return; }
+  chip.hidden = false;
+  chip.textContent = 'by ' + (author.display || author.github);
+  chip.href = author.url;
+  chip.title = 'Contributed by ' + (author.display || author.github) + '\n' + author.url;
 }
 
 /* ====================================================================== *
  * effect lists (left column)
  * ====================================================================== */
 
-function refreshEffects() {
-  return api('/api/effects').then(function (lists) {
-    S.lists = lists;
-    var source = (lists.working && lists.working.source) || null;
-    var items = lists.library || [];
-    renderFileList($('list-library'), items, 'the library is empty', function (item) {
-      var isCurrent = !!(source && source.path === item.path);
+/* ---------------------------------------------------------------------- *
+ * live search: filters the already-loaded list, no server round trip
+ * ---------------------------------------------------------------------- */
+
+/* Lower case, accents folded, so "teleporté" matches "teleporte". */
+function fold(text) {
+  text = String(text === null || text === undefined ? '' : text).toLowerCase();
+  return text.normalize ? text.normalize('NFD').replace(/[̀-ͯ]/g, '') : text;
+}
+
+function searchTerms(query) {
+  return fold(query).split(/\s+/).filter(function (term) { return term.length > 0; });
+}
+
+/* Everything a query may match: name, file slug, tags, description, author. */
+function searchHaystack(item) {
+  var author = item.author || {};
+  var slug = (item.path || '').split(/[\\/]/).pop().replace(/\.json$/, '');
+  return fold([item.name, slug, (item.tags || []).join(' '), item.description,
+    author.github, author.name].filter(Boolean).join(' '));
+}
+
+/* AND over the terms: every word has to appear somewhere. */
+function matchesSearch(item, terms) {
+  if (!terms.length) return true;
+  var hay = item._hay || (item._hay = searchHaystack(item));
+  for (var i = 0; i < terms.length; i++) if (hay.indexOf(terms[i]) === -1) return false;
+  return true;
+}
+
+/* The name with matched substrings wrapped in <mark>, built as nodes (never innerHTML). */
+function highlightName(name, terms) {
+  var text = String(name || '');
+  if (!terms.length) return [document.createTextNode(text)];
+  var folded = fold(text);
+  var hits = [];
+  terms.forEach(function (term) {
+    var at = folded.indexOf(term);
+    while (at !== -1) { hits.push([at, at + term.length]); at = folded.indexOf(term, at + 1); }
+  });
+  if (!hits.length) return [document.createTextNode(text)];
+  hits.sort(function (a, b) { return a[0] - b[0]; });
+  var merged = [hits[0]];
+  hits.slice(1).forEach(function (span) {
+    var last = merged[merged.length - 1];
+    if (span[0] <= last[1]) last[1] = Math.max(last[1], span[1]);
+    else merged.push(span);
+  });
+  var out = [];
+  var cursor = 0;
+  merged.forEach(function (span) {
+    if (span[0] > cursor) out.push(document.createTextNode(text.slice(cursor, span[0])));
+    out.push(el('mark', { text: text.slice(span[0], span[1]) }));
+    cursor = span[1];
+  });
+  if (cursor < text.length) out.push(document.createTextNode(text.slice(cursor)));
+  return out;
+}
+
+/* One search field: input, clear button, "/" to focus, Esc to clear, remembered per view. */
+function wireSearch(inputId, clearId, storageKey, onChange) {
+  var input = $(inputId);
+  var clear = $(clearId);
+  if (!input) return function () { return ''; };
+  var saved = '';
+  try { saved = window.sessionStorage.getItem(storageKey) || ''; } catch (err) { saved = ''; }
+  input.value = saved;
+
+  function apply() {
+    var query = input.value;
+    clear.hidden = !query;
+    try { window.sessionStorage.setItem(storageKey, query); } catch (err) { /* private mode */ }
+    onChange(query);
+  }
+  input.addEventListener('input', apply);
+  input.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape') { ev.stopPropagation(); input.value = ''; apply(); input.blur(); }
+  });
+  clear.addEventListener('click', function () { input.value = ''; apply(); input.focus(); });
+  clear.hidden = !input.value;
+  return function () { return input.value; };
+}
+
+/* ---------------------------------------------------------------------- *
+ * the Library: Core and Mine, each collapsible with an "n of m" count
+ * ---------------------------------------------------------------------- */
+
+var LIB_SECTIONS = [
+  { id: 'core', list: 'list-core', count: 'count-core', empty: 'no built-in effects' },
+  { id: 'mine', list: 'list-mine', count: 'count-mine', empty: 'nothing saved yet - press Save as' }
+];
+
+function renderLibrary() {
+  var lists = S.lists || {};
+  var source = (lists.working && lists.working.source) || null;
+  var items = lists.library || [];
+  var terms = searchTerms(S.librarySearch || '');
+  var shown = 0;
+
+  LIB_SECTIONS.forEach(function (section) {
+    var all = items.filter(function (item) { return (item.section || 'core') === section.id; });
+    var visible = all.filter(function (item) { return matchesSearch(item, terms); });
+    shown += visible.length;
+    $(section.count).textContent = visible.length === all.length
+      ? String(all.length) : visible.length + ' of ' + all.length;
+    renderFileList($(section.list), visible, terms.length ? 'no match' : section.empty, function (item) {
       return {
         label: item.name,
-        meta: item.builtin ? 'built-in' : ago(item.modified),
-        active: isCurrent,
+        labelNodes: highlightName(item.name, terms),
+        meta: item.section === 'mine' ? ago(item.modified) : 'built-in',
+        active: !!(source && source.path === item.path),
         onclick: function () { openLibraryItem(item); }
       };
     });
-    fillTemplateSelect(items.filter(function (i) { return i.builtin; }));
+  });
+
+  var empty = $('lib-empty');
+  if (terms.length && !shown) {
+    clear(empty);
+    empty.hidden = false;
+    empty.appendChild(document.createTextNode('No effects match "' + S.librarySearch + '" '));
+    empty.appendChild(el('button', {
+      class: 'linkish', type: 'button', text: 'clear',
+      onclick: function () { $('lib-search').value = ''; $('lib-search').dispatchEvent(new Event('input')); }
+    }));
+  } else {
+    empty.hidden = true;
+  }
+}
+
+function refreshEffects() {
+  return api('/api/effects').then(function (lists) {
+    S.lists = lists;
+    setEffectCredit((lists.working && lists.working.source) || null);
+    renderLibrary();
+    fillTemplateSelect((lists.library || []).filter(function (i) { return i.section === 'core'; }));
     return lists;
+  });
+}
+
+/* ---------------------------------------------------------------------- *
+ * the Community view: contributed effects, credit, open a working copy
+ * ---------------------------------------------------------------------- */
+
+var REPO_URL = 'https://github.com/holokat/AetherFX';
+
+function showView(view) {
+  var community = view === 'community';
+  S.view = community ? 'community' : 'studio';
+  $('layout').hidden = community;
+  $('community-view').hidden = !community;
+  document.body.classList.toggle('community-open', community);
+  $('nav-studio').classList.toggle('is-active', !community);
+  $('nav-community').classList.toggle('is-active', community);
+  $('nav-studio').setAttribute('aria-current', community ? 'false' : 'page');
+  $('nav-community').setAttribute('aria-current', community ? 'page' : 'false');
+  if (community) {
+    refreshCommunity();
+    setTimeout(function () { $('com-search').focus(); }, 0);
+  } else {
+    onViewportResize();
+  }
+}
+
+function refreshCommunity() {
+  return api('/api/community').then(function (data) {
+    S.community = data;
+    renderCommunity();
+    return data;
+  }, function (err) {
+    S.community = { local: [], remote: [], error: err && err.message };
+    renderCommunity();
+  });
+}
+
+function communityEntries() {
+  var data = S.community || {};
+  return (data.local || []).concat(data.remote || []);
+}
+
+function renderCommunity() {
+  var list = $('community-list');
+  var entries = communityEntries();
+  var terms = searchTerms(S.communitySearch || '');
+  var visible = entries.filter(function (item) { return matchesSearch(item, terms); });
+  clear(list);
+  visible.forEach(function (item) { list.appendChild(communityCard(item, terms)); });
+
+  $('com-count').textContent = entries.length
+    ? (visible.length === entries.length
+        ? entries.length + ' effect' + (entries.length === 1 ? '' : 's')
+        : visible.length + ' of ' + entries.length + ' effects')
+    : '';
+
+  var empty = $('community-empty');
+  clear(empty);
+  if (!entries.length) {
+    empty.hidden = false;
+    empty.appendChild(document.createTextNode('No community effects yet. '));
+    empty.appendChild(el('a', { href: REPO_URL + '/blob/main/CONTRIBUTING.md', target: '_blank',
+      rel: 'noopener noreferrer', text: 'Contribute the first one' }));
+    empty.appendChild(document.createTextNode('.'));
+  } else if (!visible.length) {
+    empty.hidden = false;
+    empty.appendChild(document.createTextNode('No effects match "' + S.communitySearch + '" '));
+    empty.appendChild(el('button', {
+      class: 'linkish', type: 'button', text: 'clear',
+      onclick: function () { $('com-search').value = ''; $('com-search').dispatchEvent(new Event('input')); }
+    }));
+  } else {
+    empty.hidden = true;
+  }
+}
+
+function communityCard(item, terms) {
+  var author = item.author || null;
+  var title = el('h3', { class: 'card-title' });
+  highlightName(item.name, terms).forEach(function (node) { title.appendChild(node); });
+
+  var meta = el('div', { class: 'card-meta' },
+    author ? el('a', {
+      class: 'card-by', href: author.url, target: '_blank', rel: 'noopener noreferrer',
+      title: 'github.com/' + author.github, text: 'by ' + (author.display || author.github)
+    }) : el('span', { class: 'card-by dim', text: 'no credit' }),
+    typeof item.duration === 'number' ? el('span', { class: 'card-dur', text: num(item.duration, 1) + ' s' }) : null,
+    item.remote ? el('span', { class: 'card-remote', text: 'remote' }) : null);
+
+  var tags = el('div', { class: 'card-tags' },
+    (item.tags || []).slice(0, 6).map(function (tag) { return el('span', { class: 'tag', text: tag }); }));
+
+  var open = el('button', {
+    class: 'primary sm', type: 'button',
+    text: item.remote ? 'Download' : 'Open',
+    onclick: function () { item.remote ? downloadCommunity(item) : openCommunity(item); }
+  });
+
+  return el('article', { class: 'community-card' },
+    title,
+    el('p', { class: 'card-desc', text: item.description || 'No description.' }),
+    (item.tags || []).length ? tags : null,
+    el('div', { class: 'card-foot' }, meta, open));
+}
+
+function openCommunity(item) {
+  showView('studio');
+  loadEffect(item.path);
+}
+
+function downloadCommunity(item) {
+  toast('downloading "' + item.name + '" and running the contribution check…', 'ok');
+  api('/api/community/download', { body: { slug: item.slug } }).then(function (result) {
+    toast('downloaded "' + item.name + '"', 'ok');
+    return refreshCommunity().then(function () { return refreshEffects(); }).then(function () {
+      showView('studio');
+      return loadEffect(result.path);
+    });
+  }).catch(function (err) {
+    toast(err && err.message ? err.message : 'download failed', 'error');
   });
 }
 
@@ -494,8 +759,14 @@ function renderFileList(list, items, emptyText, make) {
   if (!items || !items.length) { list.appendChild(el('li', { class: 'empty', text: emptyText })); return; }
   items.forEach(function (item) {
     var spec = make(item);
+    /* The label span keeps the plain effect name as its text even when the search
+     * highlights part of it, so a "row starting with <name>" selector still works. */
+    var label = el('span', { class: 'row-label' });
+    (spec.labelNodes || [document.createTextNode(String(spec.label))]).forEach(function (node) {
+      label.appendChild(node);
+    });
     var row = el('li', { class: spec.active ? 'active' : '', title: item.path || '', onclick: spec.onclick },
-      el('span', { text: spec.label }),
+      label,
       spec.meta ? el('span', { class: 'meta' + (spec.meta === 'modified' ? ' badge-dirty' : ''), text: spec.meta }) : null);
     list.appendChild(row);
   });
@@ -2415,6 +2686,13 @@ function wire() {
     var target = ev.target;
     if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' ||
       target.tagName === 'SELECT' || target.isContentEditable)) return;
+    if (key === '/') {   /* focus the search field of the view that is open */
+      ev.preventDefault();
+      var field = $(S.view === 'community' ? 'com-search' : 'lib-search');
+      if (field) { field.focus(); field.select(); }
+      return;
+    }
+    if (S.view === 'community') return;   /* transport keys belong to the studio view */
     if (key === ' ' || key === 'Spacebar') { ev.preventDefault(); togglePlay(); }
     else if (key === 'ArrowLeft') { ev.preventDefault(); step(-1); }
     else if (key === 'ArrowRight') { ev.preventDefault(); step(1); }
@@ -2423,6 +2701,36 @@ function wire() {
   });
 
   wireAttachments();
+
+  /* -- top navigation and the two live search fields ---------------- */
+  $('nav-studio').addEventListener('click', function () { showView('studio'); });
+  $('nav-community').addEventListener('click', function () { showView('community'); });
+
+  S.librarySearch = '';
+  S.communitySearch = '';
+  var readLibrary = wireSearch('lib-search', 'lib-search-clear', 'aetherfx.search.library', function (query) {
+    S.librarySearch = query;
+    renderLibrary();
+  });
+  var readCommunity = wireSearch('com-search', 'com-search-clear', 'aetherfx.search.community', function (query) {
+    S.communitySearch = query;
+    renderCommunity();
+  });
+  S.librarySearch = readLibrary();
+  S.communitySearch = readCommunity();
+
+  /* Remember which sections the user collapsed. */
+  ['sec-core', 'sec-mine'].forEach(function (id) {
+    var node = $(id);
+    if (!node) return;
+    try {
+      var saved = window.sessionStorage.getItem('aetherfx.' + id);
+      if (saved !== null) node.open = saved === '1';
+    } catch (err) { /* private mode */ }
+    node.addEventListener('toggle', function () {
+      try { window.sessionStorage.setItem('aetherfx.' + id, node.open ? '1' : '0'); } catch (err) { /* ignore */ }
+    });
+  });
 
   /* Stage and Export are <details>; make them behave like real popovers. */
   wirePopover($('stage-pop'));
