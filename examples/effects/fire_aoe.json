@@ -1,6 +1,7 @@
 {
   "schema_version": "0.1.0",
   "name": "Fire AOE",
+  "description": "A 3.5 m disk of ground erupts into a sea of licking flames with burning rocks, embers and rolling smoke.",
   "duration": 3.0,
   "seed": 7,
   "timeline": {
@@ -72,7 +73,7 @@
         "position": [
           0.0,
           3.6,
-          9.0
+          8.8
         ],
         "target": [
           0.0,
@@ -95,7 +96,7 @@
               "op": "ring",
               "params": {
                 "radius": 0.47,
-                "thickness": 0.014,
+                "thickness": 0.012,
                 "softness": 0.005
               }
             },
@@ -104,7 +105,7 @@
               "op": "ring",
               "params": {
                 "radius": 0.4,
-                "thickness": 0.008,
+                "thickness": 0.007,
                 "softness": 0.004
               }
             },
@@ -113,7 +114,7 @@
               "op": "ring",
               "params": {
                 "radius": 0.3,
-                "thickness": 0.006,
+                "thickness": 0.005,
                 "softness": 0.004
               }
             },
@@ -122,7 +123,7 @@
               "op": "ring",
               "params": {
                 "radius": 0.18,
-                "thickness": 0.008,
+                "thickness": 0.007,
                 "softness": 0.004
               }
             },
@@ -131,7 +132,7 @@
               "op": "ring",
               "params": {
                 "radius": 0.1,
-                "thickness": 0.006,
+                "thickness": 0.005,
                 "softness": 0.004
               }
             },
@@ -140,7 +141,7 @@
               "op": "spokes",
               "params": {
                 "count": 16,
-                "width": 0.005,
+                "width": 0.004,
                 "softness": 0.003,
                 "inner_radius": 0.06,
                 "outer_radius": 0.47
@@ -151,7 +152,7 @@
               "op": "spokes",
               "params": {
                 "count": 8,
-                "width": 0.011,
+                "width": 0.009,
                 "softness": 0.004,
                 "inner_radius": 0.1,
                 "outer_radius": 0.42,
@@ -163,9 +164,9 @@
               "op": "star",
               "params": {
                 "points": 4,
-                "width": 0.07,
+                "width": 0.06,
                 "outer_radius": 0.24,
-                "core_radius": 0.05,
+                "core_radius": 0.04,
                 "softness": 0.006
               }
             },
@@ -182,7 +183,7 @@
               "id": "glow_lv",
               "op": "levels",
               "params": {
-                "out_high": 0.18
+                "out_high": 0.05
               },
               "inputs": {
                 "a": "glow"
@@ -302,7 +303,7 @@
               "id": "n",
               "op": "fbm",
               "params": {
-                "frequency": 4.0,
+                "frequency": 3.0,
                 "octaves": 4,
                 "seed": 3,
                 "animate": 1.0
@@ -323,8 +324,8 @@
               "id": "l",
               "op": "levels",
               "params": {
-                "in_low": 0.05,
-                "in_high": 0.6
+                "in_low": 0.04,
+                "in_high": 0.55
               },
               "inputs": {
                 "a": "m"
@@ -339,37 +340,222 @@
       "id": "tex_flame",
       "type": "texture",
       "parameters": {
-        "width": 96,
-        "height": 160,
+        "width": 128,
+        "height": 256,
         "frames": 24,
         "graph": {
           "nodes": [
             {
-              "id": "f",
-              "op": "flame",
+              "id": "wp",
+              "op": "curl",
               "params": {
-                "frequency": 3.0,
-                "speed": 1.0,
-                "warp": 0.35,
-                "width": 0.9,
-                "sharpness": 1.6,
-                "licks": 0.4,
-                "seed": 11
+                "frequency": 1.8,
+                "octaves": 2,
+                "animate": 0.5,
+                "seed": 44
               }
             },
             {
-              "id": "l",
-              "op": "levels",
+              "id": "nz",
+              "op": "fbm",
               "params": {
-                "in_low": 0.28,
-                "in_high": 0.8
+                "frequency": 4.4,
+                "octaves": 4,
+                "lacunarity": 2.2,
+                "gain": 0.55,
+                "animate": 0.55,
+                "seed": 21
+              }
+            },
+            {
+              "id": "wn",
+              "op": "distort",
+              "params": {
+                "amount": 0.22
               },
               "inputs": {
-                "a": "f"
+                "a": "nz",
+                "by": "wp"
+              }
+            },
+            {
+              "id": "h",
+              "op": "gradient_linear",
+              "params": {
+                "angle": 90,
+                "start": 0.0,
+                "end": 1.08
+              }
+            },
+            {
+              "id": "s",
+              "op": "math",
+              "params": {
+                "mode": "subtract"
+              },
+              "inputs": {
+                "a": "wn",
+                "b": "h"
+              }
+            },
+            {
+              "id": "gu",
+              "op": "gradient_linear",
+              "params": {
+                "angle": 0,
+                "start": 0.0,
+                "end": 1.0
+              }
+            },
+            {
+              "id": "gi",
+              "op": "invert",
+              "inputs": {
+                "a": "gu"
+              }
+            },
+            {
+              "id": "par",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "gu",
+                "b": "gi"
+              }
+            },
+            {
+              "id": "hm",
+              "op": "levels",
+              "params": {
+                "in_low": 0.0,
+                "in_high": 0.25
+              },
+              "inputs": {
+                "a": "par"
+              }
+            },
+            {
+              "id": "vg",
+              "op": "gradient_linear",
+              "params": {
+                "angle": 90,
+                "start": 0.0,
+                "end": 1.0
+              }
+            },
+            {
+              "id": "vf",
+              "op": "levels",
+              "params": {
+                "in_low": 0.0,
+                "in_high": 0.18
+              },
+              "inputs": {
+                "a": "vg"
+              }
+            },
+            {
+              "id": "m1",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "s",
+                "b": "hm"
+              }
+            },
+            {
+              "id": "m2",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "m1",
+                "b": "vf"
+              }
+            },
+            {
+              "id": "lv",
+              "op": "levels",
+              "params": {
+                "in_low": 0.0,
+                "in_high": 0.58
+              },
+              "inputs": {
+                "a": "m2"
+              }
+            },
+            {
+              "id": "cz",
+              "op": "colorize",
+              "params": {
+                "gradient": [
+                  [
+                    0.0,
+                    [
+                      0.02,
+                      0.0,
+                      0.0,
+                      1.0
+                    ]
+                  ],
+                  [
+                    0.2,
+                    [
+                      0.5,
+                      0.03,
+                      0.0,
+                      1.0
+                    ]
+                  ],
+                  [
+                    0.42,
+                    [
+                      1.0,
+                      0.18,
+                      0.01,
+                      1.0
+                    ]
+                  ],
+                  [
+                    0.62,
+                    [
+                      1.0,
+                      0.45,
+                      0.05,
+                      1.0
+                    ]
+                  ],
+                  [
+                    0.8,
+                    [
+                      1.0,
+                      0.74,
+                      0.22,
+                      1.0
+                    ]
+                  ],
+                  [
+                    1.0,
+                    [
+                      1.0,
+                      0.98,
+                      0.8,
+                      1.0
+                    ]
+                  ]
+                ]
+              },
+              "inputs": {
+                "a": "lv"
               }
             }
           ],
-          "output": "l"
+          "output": "cz"
         }
       }
     },
@@ -407,7 +593,7 @@
               "op": "gradient_radial",
               "params": {
                 "radius": 0.5,
-                "inner_radius": 0.2,
+                "inner_radius": 0.15,
                 "falloff": "smooth"
               }
             },
@@ -456,54 +642,7 @@
         "soft_particle": true,
         "depth_fade": 0.15,
         "dissolve": 0.55,
-        "erosion": 0.3,
-        "temperature_gradient": [
-          [
-            0.0,
-            [
-              0.05,
-              0.0,
-              0.0,
-              1.0
-            ]
-          ],
-          [
-            0.25,
-            [
-              0.8,
-              0.1,
-              0.0,
-              1.0
-            ]
-          ],
-          [
-            0.5,
-            [
-              1.0,
-              0.45,
-              0.05,
-              1.0
-            ]
-          ],
-          [
-            0.75,
-            [
-              1.0,
-              0.85,
-              0.35,
-              1.0
-            ]
-          ],
-          [
-            1.0,
-            [
-              1.0,
-              1.0,
-              0.85,
-              1.0
-            ]
-          ]
-        ]
+        "erosion": 0.3
       }
     },
     {
@@ -513,9 +652,9 @@
         "blend": "alpha",
         "shading": "lit",
         "base_color": [
-          0.16,
           0.13,
-          0.12,
+          0.105,
+          0.098,
           1.0
         ],
         "soft_particle": true,
@@ -532,17 +671,17 @@
         "shading": "lit",
         "base_color": [
           0.09,
-          0.05,
-          0.03,
+          0.055,
+          0.045,
           1.0
         ],
         "emissive_color": [
           1.0,
-          0.35,
-          0.05,
+          0.26,
+          0.04,
           1.0
         ],
-        "emissive_intensity": 0.25,
+        "emissive_intensity": 0.1,
         "fresnel_power": 2.5
       }
     },
@@ -553,8 +692,8 @@
         "primitive": "rock",
         "visible": false,
         "radius": 0.5,
-        "segments": 12,
-        "irregularity": 0.6,
+        "segments": 8,
+        "irregularity": 0.75,
         "variants": 8
       }
     },
@@ -571,10 +710,41 @@
       "type": "force",
       "parameters": {
         "force_type": "curl_noise",
-        "strength": 2.6,
-        "frequency": 1.0,
+        "strength": 2.2,
+        "frequency": 1.15,
+        "octaves": 3,
+        "speed": 1.6
+      }
+    },
+    {
+      "id": "base_curl",
+      "type": "force",
+      "parameters": {
+        "force_type": "curl_noise",
+        "strength": 1.9,
+        "frequency": 2.3,
         "octaves": 2,
-        "speed": 1.2
+        "speed": 2.4
+      }
+    },
+    {
+      "id": "hot_swirl",
+      "type": "force",
+      "parameters": {
+        "force_type": "vortex",
+        "strength": 1.3,
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "position": [
+          0.0,
+          0.8,
+          0.0
+        ],
+        "radius": 4.2,
+        "falloff": "smooth"
       }
     },
     {
@@ -582,7 +752,7 @@
       "type": "force",
       "parameters": {
         "force_type": "buoyancy",
-        "strength": 3.0
+        "strength": 1.9
       }
     },
     {
@@ -598,7 +768,7 @@
       "type": "force",
       "parameters": {
         "force_type": "turbulence",
-        "strength": 1.0,
+        "strength": 1.1,
         "frequency": 0.6,
         "octaves": 2
       }
@@ -642,8 +812,13 @@
       "id": "lift",
       "type": "force",
       "parameters": {
-        "force_type": "buoyancy",
-        "strength": 1.1
+        "force_type": "gravity",
+        "strength": 5.5,
+        "direction": [
+          0,
+          -1,
+          0
+        ]
       }
     },
     {
@@ -671,11 +846,11 @@
         ],
         "color": [
           1.0,
-          0.5,
-          0.12,
+          0.42,
+          0.1,
           1.0
         ],
-        "emissive": 2.0,
+        "emissive": 0.55,
         "blend": "additive",
         "opacity": {
           "value": 0.0,
@@ -711,9 +886,9 @@
       "type": "particle_system",
       "parameters": {
         "max_particles": 900,
-        "lifetime": 0.9,
-        "size": 0.04,
-        "size_variance": 0.02,
+        "lifetime": 0.8,
+        "size": 0.055,
+        "size_variance": 0.025,
         "color": [
           1.0,
           0.6,
@@ -736,7 +911,9 @@
             0.0
           ]
         ],
-        "blend": "additive"
+        "blend": "additive",
+        "render_mode": "stretched_billboard",
+        "velocity_stretch": 0.1
       },
       "inputs": {
         "forces": [
@@ -752,20 +929,21 @@
       "parameters": {
         "shape": "ring",
         "radius": 3.7,
-        "inner_radius": 3.2,
+        "inner_radius": 3.0,
         "position": [
           0.0,
           0.3,
           0.0
         ],
-        "rate": 380,
-        "velocity": 0.2,
+        "rate": 620,
+        "velocity": 0.35,
         "direction": [
           0,
           1,
           0
         ],
         "spread": 20,
+        "radial_velocity": -1.6,
         "phase": "anticipation"
       },
       "inputs": {
@@ -799,7 +977,7 @@
             },
             {
               "time": 0.5,
-              "value": 26.0
+              "value": 24.0
             },
             {
               "time": 0.75,
@@ -816,28 +994,29 @@
       "type": "particle_system",
       "parameters": {
         "max_particles": 1600,
-        "lifetime": 0.55,
-        "lifetime_variance": 0.2,
-        "size": 0.5,
-        "size_variance": 0.2,
+        "lifetime": 0.5,
+        "lifetime_variance": 0.22,
+        "size": 1.4,
+        "size_variance": 0.48,
+        "rotation_variance": 12.0,
         "size_over_life": [
           [
             0.0,
-            0.35
+            0.3
           ],
           [
-            0.4,
-            1.0
+            0.3,
+            1.05
           ],
           [
             1.0,
-            1.3
+            0.5
           ]
         ],
         "color": [
           1.0,
-          0.5,
-          0.1,
+          0.55,
+          0.15,
           1.0
         ],
         "color_over_life": [
@@ -845,8 +1024,8 @@
             0.0,
             [
               1.0,
-              0.85,
-              0.4,
+              0.98,
+              0.9,
               1.0
             ]
           ],
@@ -854,25 +1033,25 @@
             0.3,
             [
               1.0,
-              0.4,
-              0.05,
+              0.72,
+              0.35,
               1.0
             ]
           ],
           [
-            0.65,
+            0.68,
             [
-              0.65,
-              0.1,
-              0.0,
+              0.95,
+              0.28,
+              0.06,
               1.0
             ]
           ],
           [
             1.0,
             [
-              0.18,
-              0.015,
+              0.3,
+              0.03,
               0.0,
               1.0
             ]
@@ -884,23 +1063,23 @@
             0.0
           ],
           [
-            0.12,
-            0.85
+            0.1,
+            0.42
           ],
           [
-            0.6,
-            0.55
+            0.55,
+            0.28
           ],
           [
             1.0,
             0.0
           ]
         ],
-        "emissive": 1.5,
-        "drag": 2.5,
+        "emissive": 0.18,
+        "drag": 2.4,
         "blend": "additive",
         "render_mode": "stretched_billboard",
-        "velocity_stretch": 0.1,
+        "velocity_stretch": 0.3,
         "sprite_fps": 0.0
       },
       "inputs": {
@@ -919,19 +1098,24 @@
       "parameters": {
         "shape": "disc",
         "radius": 3.4,
+        "position": [
+          0.0,
+          0.45,
+          0.0
+        ],
         "rate": 0,
-        "burst_count": 450,
+        "burst_count": 520,
         "burst_times": [
           0.0
         ],
-        "velocity": 6.0,
-        "velocity_variance": 2.0,
+        "velocity": 5.5,
+        "velocity_variance": 2.2,
         "direction": [
           0,
           1,
           0
         ],
-        "spread": 25,
+        "spread": 28,
         "phase": "activation"
       },
       "inputs": {
@@ -943,29 +1127,30 @@
       "id": "flame_ps",
       "type": "particle_system",
       "parameters": {
-        "max_particles": 8000,
-        "lifetime": 0.6,
-        "lifetime_variance": 0.25,
-        "size": 0.5,
-        "size_variance": 0.22,
+        "max_particles": 6000,
+        "lifetime": 0.4,
+        "lifetime_variance": 0.15,
+        "size": 1.3,
+        "size_variance": 0.46,
+        "rotation_variance": 12.0,
         "size_over_life": [
           [
             0.0,
-            0.35
+            0.42
           ],
           [
-            0.25,
-            1.0
+            0.3,
+            1.05
           ],
           [
             1.0,
-            0.25
+            0.45
           ]
         ],
         "color": [
           1.0,
-          0.42,
-          0.06,
+          0.55,
+          0.15,
           1.0
         ],
         "color_over_life": [
@@ -973,8 +1158,8 @@
             0.0,
             [
               1.0,
+              0.95,
               0.85,
-              0.4,
               1.0
             ]
           ],
@@ -982,24 +1167,24 @@
             0.3,
             [
               1.0,
-              0.4,
-              0.05,
+              0.55,
+              0.16,
               1.0
             ]
           ],
           [
-            0.65,
+            0.62,
             [
-              0.65,
-              0.1,
-              0.0,
+              0.75,
+              0.12,
+              0.02,
               1.0
             ]
           ],
           [
             1.0,
             [
-              0.18,
+              0.16,
               0.015,
               0.0,
               1.0
@@ -1012,23 +1197,24 @@
             0.0
           ],
           [
-            0.12,
-            0.85
+            0.1,
+            0.25
           ],
           [
-            0.6,
-            0.55
+            0.55,
+            0.15
           ],
           [
             1.0,
             0.0
           ]
         ],
-        "emissive": 1.5,
-        "drag": 1.8,
+        "emissive": 0.12,
+        "drag": 2.5,
         "blend": "additive",
+        "soft_particle_distance": 0.05,
         "render_mode": "stretched_billboard",
-        "velocity_stretch": 0.1,
+        "velocity_stretch": 0.34,
         "sprite_fps": 0.0
       },
       "inputs": {
@@ -1036,7 +1222,8 @@
         "material": "mat_fire",
         "forces": [
           "flame_curl",
-          "buoyancy_fire"
+          "buoyancy_fire",
+          "hot_swirl"
         ]
       },
       "layer": "primary"
@@ -1047,7 +1234,12 @@
       "parameters": {
         "shape": "ring",
         "radius": 3.5,
-        "inner_radius": 3.15,
+        "inner_radius": 1.6,
+        "position": [
+          0.0,
+          0.55,
+          0.0
+        ],
         "rate": {
           "value": 0.0,
           "track": [
@@ -1057,24 +1249,24 @@
             },
             {
               "time": 0.7,
-              "value": 900.0
+              "value": 1000.0
             },
             {
               "time": 1.0,
               "value": 1300.0
             },
             {
-              "time": 2.4,
-              "value": 1050.0
+              "time": 2.0,
+              "value": 900.0
             },
             {
-              "time": 2.75,
+              "time": 2.6,
               "value": 0.0
             }
           ]
         },
-        "velocity": 3.2,
-        "velocity_variance": 1.2,
+        "velocity": 2.3,
+        "velocity_variance": 0.9,
         "direction": [
           0,
           1,
@@ -1089,32 +1281,33 @@
       "layer": "primary"
     },
     {
-      "id": "column_ps",
+      "id": "base_ps",
       "type": "particle_system",
       "parameters": {
         "max_particles": 3000,
-        "lifetime": 0.75,
-        "lifetime_variance": 0.2,
-        "size": 0.7,
-        "size_variance": 0.25,
+        "lifetime": 0.38,
+        "lifetime_variance": 0.14,
+        "size": 1.3,
+        "size_variance": 0.46,
+        "rotation_variance": 12.0,
         "size_over_life": [
           [
             0.0,
-            0.3
+            0.5
           ],
           [
             0.3,
-            1.0
+            1.05
           ],
           [
             1.0,
-            0.3
+            0.55
           ]
         ],
         "color": [
           1.0,
-          0.45,
-          0.08,
+          0.75,
+          0.35,
           1.0
         ],
         "color_over_life": [
@@ -1122,34 +1315,34 @@
             0.0,
             [
               1.0,
-              0.85,
-              0.4,
+              1.0,
+              0.95,
               1.0
             ]
           ],
           [
-            0.3,
+            0.35,
             [
               1.0,
-              0.4,
-              0.05,
+              0.82,
+              0.45,
               1.0
             ]
           ],
           [
-            0.65,
+            0.75,
             [
-              0.65,
-              0.1,
-              0.0,
+              1.0,
+              0.38,
+              0.08,
               1.0
             ]
           ],
           [
             1.0,
             [
-              0.18,
-              0.015,
+              0.45,
+              0.06,
               0.0,
               1.0
             ]
@@ -1162,22 +1355,178 @@
           ],
           [
             0.12,
-            0.85
+            0.2
           ],
           [
             0.6,
-            0.55
+            0.15
           ],
           [
             1.0,
             0.0
           ]
         ],
-        "emissive": 1.5,
-        "drag": 1.2,
+        "emissive": 0.05,
+        "drag": 2.4,
         "blend": "additive",
+        "soft_particle_distance": 0.05,
+        "render_mode": "billboard",
+        "sprite_fps": 0.0
+      },
+      "inputs": {
+        "sprite": "tex_flame",
+        "material": "mat_fire",
+        "forces": [
+          "base_curl",
+          "buoyancy_fire"
+        ]
+      },
+      "layer": "primary"
+    },
+    {
+      "id": "base_bed",
+      "type": "emitter",
+      "parameters": {
+        "shape": "ring",
+        "radius": 3.7,
+        "inner_radius": 1.0,
+        "position": [
+          0.0,
+          0.4,
+          0.0
+        ],
+        "rate": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.4,
+              "value": 0.0
+            },
+            {
+              "time": 0.65,
+              "value": 620.0
+            },
+            {
+              "time": 1.0,
+              "value": 780.0
+            },
+            {
+              "time": 2.0,
+              "value": 560.0
+            },
+            {
+              "time": 2.6,
+              "value": 0.0
+            }
+          ]
+        },
+        "velocity": 1.7,
+        "velocity_variance": 0.9,
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 42,
+        "start_time": 0.4
+      },
+      "inputs": {
+        "particle": "base_ps"
+      },
+      "layer": "primary"
+    },
+    {
+      "id": "lick_ps",
+      "type": "particle_system",
+      "parameters": {
+        "max_particles": 2000,
+        "lifetime": 0.72,
+        "lifetime_variance": 0.24,
+        "size": 1.7,
+        "size_variance": 0.58,
+        "rotation_variance": 12.0,
+        "size_over_life": [
+          [
+            0.0,
+            0.35
+          ],
+          [
+            0.28,
+            1.1
+          ],
+          [
+            1.0,
+            0.4
+          ]
+        ],
+        "color": [
+          1.0,
+          0.5,
+          0.12,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              0.95,
+              0.8,
+              1.0
+            ]
+          ],
+          [
+            0.3,
+            [
+              1.0,
+              0.68,
+              0.28,
+              1.0
+            ]
+          ],
+          [
+            0.66,
+            [
+              0.9,
+              0.22,
+              0.04,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.25,
+              0.02,
+              0.0,
+              1.0
+            ]
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.1,
+            0.36
+          ],
+          [
+            0.5,
+            0.24
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.1,
+        "drag": 1.5,
+        "blend": "additive",
+        "soft_particle_distance": 0.05,
         "render_mode": "stretched_billboard",
-        "velocity_stretch": 0.1,
+        "velocity_stretch": 0.42,
         "sprite_fps": 0.0
       },
       "inputs": {
@@ -1185,7 +1534,164 @@
         "material": "mat_fire",
         "forces": [
           "flame_curl",
-          "buoyancy_fire"
+          "buoyancy_fire",
+          "hot_swirl"
+        ]
+      },
+      "layer": "primary"
+    },
+    {
+      "id": "licks",
+      "type": "emitter",
+      "parameters": {
+        "shape": "ring",
+        "radius": 3.6,
+        "inner_radius": 2.2,
+        "position": [
+          0.0,
+          0.75,
+          0.0
+        ],
+        "rate": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.5,
+              "value": 0.0
+            },
+            {
+              "time": 0.8,
+              "value": 330.0
+            },
+            {
+              "time": 1.1,
+              "value": 400.0
+            },
+            {
+              "time": 1.9,
+              "value": 280.0
+            },
+            {
+              "time": 2.5,
+              "value": 0.0
+            }
+          ]
+        },
+        "velocity": 4.3,
+        "velocity_variance": 1.5,
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 18,
+        "start_time": 0.5
+      },
+      "inputs": {
+        "particle": "lick_ps"
+      },
+      "layer": "primary"
+    },
+    {
+      "id": "column_ps",
+      "type": "particle_system",
+      "parameters": {
+        "max_particles": 1200,
+        "lifetime": 0.42,
+        "lifetime_variance": 0.15,
+        "size": 1.3,
+        "size_variance": 0.45,
+        "rotation_variance": 12.0,
+        "size_over_life": [
+          [
+            0.0,
+            0.4
+          ],
+          [
+            0.3,
+            1.0
+          ],
+          [
+            1.0,
+            0.5
+          ]
+        ],
+        "color": [
+          1.0,
+          0.6,
+          0.2,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              0.98,
+              0.88,
+              1.0
+            ]
+          ],
+          [
+            0.35,
+            [
+              1.0,
+              0.75,
+              0.38,
+              1.0
+            ]
+          ],
+          [
+            0.7,
+            [
+              0.92,
+              0.28,
+              0.06,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.3,
+              0.03,
+              0.0,
+              1.0
+            ]
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.12,
+            0.2
+          ],
+          [
+            0.6,
+            0.14
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.05,
+        "drag": 2.6,
+        "blend": "additive",
+        "render_mode": "stretched_billboard",
+        "velocity_stretch": 0.24,
+        "sprite_fps": 0.0
+      },
+      "inputs": {
+        "sprite": "tex_flame",
+        "material": "mat_fire",
+        "forces": [
+          "base_curl",
+          "buoyancy_fire",
+          "hot_swirl"
         ]
       },
       "layer": "primary"
@@ -1195,7 +1701,12 @@
       "type": "emitter",
       "parameters": {
         "shape": "disc",
-        "radius": 0.45,
+        "radius": 2.2,
+        "position": [
+          0.0,
+          0.35,
+          0.0
+        ],
         "rate": {
           "value": 0.0,
           "track": [
@@ -1205,26 +1716,26 @@
             },
             {
               "time": 0.95,
-              "value": 900.0
+              "value": 320.0
             },
             {
               "time": 1.6,
-              "value": 700.0
+              "value": 280.0
             },
             {
-              "time": 2.0,
+              "time": 2.3,
               "value": 0.0
             }
           ]
         },
-        "velocity": 9.0,
-        "velocity_variance": 2.0,
+        "velocity": 2.6,
+        "velocity_variance": 1.0,
         "direction": [
           0,
           1,
           0
         ],
-        "spread": 8,
+        "spread": 40,
         "start_time": 0.7
       },
       "inputs": {
@@ -1239,8 +1750,8 @@
         "max_particles": 220,
         "lifetime": 2.4,
         "lifetime_variance": 0.4,
-        "size": 0.5,
-        "size_variance": 0.25,
+        "size": 0.42,
+        "size_variance": 0.18,
         "opacity_over_life": [
           [
             0.0,
@@ -1259,22 +1770,22 @@
             0.0
           ]
         ],
-        "angular_velocity": 80.0,
-        "angular_velocity_variance": 60.0,
+        "angular_velocity": 90.0,
+        "angular_velocity_variance": 70.0,
         "render_mode": "mesh",
         "blend": "alpha",
-        "drag": 1.3,
+        "drag": 0.35,
         "mass": 2.5,
         "orientation": "tumble",
         "mesh_scale": [
-          1.0,
-          0.75,
-          1.05
+          1.05,
+          0.7,
+          1.0
         ],
         "mesh_scale_variance": [
+          0.35,
           0.3,
-          0.25,
-          0.3
+          0.35
         ],
         "physics": "rigid",
         "bounce": 0.25,
@@ -1298,8 +1809,8 @@
       "type": "emitter",
       "parameters": {
         "shape": "ring",
-        "radius": 3.4,
-        "inner_radius": 2.6,
+        "radius": 3.6,
+        "inner_radius": 1.4,
         "position": [
           0.0,
           0.15,
@@ -1314,11 +1825,11 @@
             },
             {
               "time": 1.0,
-              "value": 6.0
+              "value": 8.0
             },
             {
               "time": 2.2,
-              "value": 5.0
+              "value": 6.0
             },
             {
               "time": 2.4,
@@ -1326,18 +1837,18 @@
             }
           ]
         },
-        "burst_count": 30,
+        "burst_count": 26,
         "burst_times": [
           0.0
         ],
-        "velocity": 2.2,
-        "velocity_variance": 0.8,
+        "velocity": 4.2,
+        "velocity_variance": 1.6,
         "direction": [
           0,
           1,
           0
         ],
-        "spread": 20,
+        "spread": 26,
         "phase": "activation"
       },
       "inputs": {
@@ -1349,7 +1860,7 @@
       "id": "spark_ps",
       "type": "particle_system",
       "parameters": {
-        "max_particles": 3500,
+        "max_particles": 2600,
         "lifetime": 1.0,
         "lifetime_variance": 0.5,
         "size": 0.03,
@@ -1417,8 +1928,13 @@
       "type": "emitter",
       "parameters": {
         "shape": "ring",
-        "radius": 3.3,
-        "inner_radius": 2.8,
+        "radius": 3.4,
+        "inner_radius": 0.0,
+        "position": [
+          0.0,
+          0.35,
+          0.0
+        ],
         "rate": {
           "value": 0.0,
           "track": [
@@ -1428,11 +1944,11 @@
             },
             {
               "time": 0.8,
-              "value": 700.0
+              "value": 420.0
             },
             {
               "time": 2.4,
-              "value": 400.0
+              "value": 250.0
             },
             {
               "time": 2.8,
@@ -1440,7 +1956,7 @@
             }
           ]
         },
-        "burst_count": 500,
+        "burst_count": 320,
         "burst_times": [
           0.0
         ],
@@ -1463,28 +1979,28 @@
       "id": "smoke_ps",
       "type": "particle_system",
       "parameters": {
-        "max_particles": 2500,
-        "lifetime": 1.6,
+        "max_particles": 2200,
+        "lifetime": 1.7,
         "lifetime_variance": 0.5,
-        "size": 0.7,
-        "size_variance": 0.25,
+        "size": 0.95,
+        "size_variance": 0.32,
         "size_over_life": [
           [
             0.0,
-            0.4
+            0.45
           ],
           [
             1.0,
-            2.2
+            1.7
           ]
         ],
         "color": [
-          0.14,
           0.11,
-          0.1,
+          0.088,
+          0.082,
           1.0
         ],
-        "opacity": 0.55,
+        "opacity": 0.52,
         "opacity_over_life": [
           [
             0.0,
@@ -1520,11 +2036,11 @@
       "type": "emitter",
       "parameters": {
         "shape": "ring",
-        "radius": 3.4,
-        "inner_radius": 2.8,
+        "radius": 3.0,
+        "inner_radius": 0.0,
         "position": [
           0.0,
-          0.6,
+          3.2,
           0.0
         ],
         "rate": {
@@ -1536,26 +2052,26 @@
             },
             {
               "time": 1.2,
-              "value": 340.0
+              "value": 150.0
             },
             {
               "time": 2.4,
-              "value": 300.0
+              "value": 160.0
             },
             {
-              "time": 2.85,
+              "time": 2.95,
               "value": 0.0
             }
           ]
         },
-        "velocity": 1.2,
+        "velocity": 1.3,
         "velocity_variance": 0.5,
         "direction": [
           0,
           1,
           0
         ],
-        "spread": 25,
+        "spread": 28,
         "start_time": 0.6
       },
       "inputs": {
@@ -1568,10 +2084,10 @@
       "type": "emitter",
       "parameters": {
         "shape": "disc",
-        "radius": 0.6,
+        "radius": 2.0,
         "position": [
           0.0,
-          2.5,
+          4.3,
           0.0
         ],
         "rate": {
@@ -1582,27 +2098,27 @@
               "value": 0.0
             },
             {
-              "time": 1.2,
-              "value": 120.0
-            },
-            {
-              "time": 1.9,
-              "value": 80.0
+              "time": 1.3,
+              "value": 110.0
             },
             {
               "time": 2.2,
+              "value": 90.0
+            },
+            {
+              "time": 2.6,
               "value": 0.0
             }
           ]
         },
-        "velocity": 2.0,
+        "velocity": 1.6,
         "velocity_variance": 0.6,
         "direction": [
           0,
           1,
           0
         ],
-        "spread": 15,
+        "spread": 25,
         "start_time": 0.9
       },
       "inputs": {
@@ -1617,7 +2133,7 @@
         "light_type": "point",
         "position": [
           0.0,
-          1.3,
+          1.1,
           0.0
         ],
         "color": [
@@ -1640,11 +2156,11 @@
             },
             {
               "time": 0.9,
-              "value": 12.0
+              "value": 7.5
             },
             {
               "time": 2.4,
-              "value": 10.0
+              "value": 6.5
             },
             {
               "time": 3.0,
@@ -1652,7 +2168,7 @@
             }
           ]
         },
-        "flicker_amplitude": 0.2,
+        "flicker_amplitude": 0.22,
         "flicker_frequency": 11.0,
         "start_time": 0.3
       },
@@ -1722,6 +2238,11 @@
       "parameters": {
         "shape": "disc",
         "radius": 3.4,
+        "position": [
+          0.0,
+          0.4,
+          0.0
+        ],
         "rate": {
           "value": 0.0,
           "track": [
@@ -1731,7 +2252,7 @@
             },
             {
               "time": 2.5,
-              "value": 320.0
+              "value": 340.0
             },
             {
               "time": 2.95,
@@ -1792,7 +2313,8 @@
     }
   ],
   "metadata": {
-    "reference": "Fire Area of Effect concept sheet: telegraph 0-0.4 (rune, embers gather), eruption 0.4-0.8 (flames burst, debris lifts), peak 0.8-1.6 (full intensity, central column), sustain 1.6-2.4, fade 2.4-3.0 (embers dissipate)",
+    "reference": "Fire Area of Effect concept sheet: telegraph 0-0.4 (rune, embers gather), eruption 0.4-0.8 (flames burst across the whole disk, debris lifts), peak 0.8-1.6 (full AoE intensity, uniform sea of flames), sustain 1.6-2.4, fade 2.4-3.0 (flames recede, embers dissipate)",
+    "camera_note": "The studio GPU viewer frames from the `cam` node and pulls the eye back by 1.45x, so cam [0, 3.6, 8.8] target [0, 1.4, 0] fov 42 puts the eye at about [0, 4.6, 12.8] - the 3/4 angle of the concept sheet with the whole burning disk in frame. cam.position.y, cam.target.y and fov are pinned by tests/sim/analytic_test.cpp, so distance is the only free framing knob.",
     "render_settings": {
       "ground_albedo": 0.07,
       "background": [
@@ -1801,10 +2323,22 @@
         0.006,
         1.0
       ],
-      "bloom_intensity": 0.35,
+      "bloom_intensity": 0.2,
       "bloom_radius": 0.05,
       "exposure": 0.95,
-      "grid": false
+      "grid": false,
+      "camera": {
+        "position": [
+          0.0,
+          4.5,
+          9.5
+        ],
+        "target": [
+          0.0,
+          1.2,
+          0.0
+        ]
+      }
     }
   }
 }
