@@ -30,6 +30,8 @@ CHROME = os.environ.get("AETHERFX_CHROME", "/Applications/Google Chrome.app/Cont
 SELECT_SCRIPT = """
 (async () => {
   const wanted = %(effect)s;
+  const viewer = window.aetherViewer;
+  if (!viewer || !viewer.available) return 'NO_GPU:' + (viewer ? (viewer.reason || 'unavailable') : 'viewer module not loaded (check /static/vendor/three/build/three.module.js)');
   const rows = [...document.querySelectorAll('#list-library li')];
   const row = rows.find(li => li.textContent.trim().toLowerCase().startsWith(wanted.toLowerCase()));
   if (!row) return 'NO_ROW:' + rows.map(li => li.textContent.trim()).join('|');
@@ -114,6 +116,9 @@ async def run(args: argparse.Namespace) -> int:
             print("select:", status)
             if status.startswith("NO_ROW"):
                 return 3
+            if status.startswith("NO_GPU"):
+                print("GPU viewer is not active in this page; refusing to capture the CPU fallback:", status, file=sys.stderr)
+                return 4
             if args.camera:
                 cam = json.loads(args.camera)
                 expr = """(() => { const a = window.aetherViewer; const v = a && a.gl; if (!v || !v.camera) return 'no viewer';
