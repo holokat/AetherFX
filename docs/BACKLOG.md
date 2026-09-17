@@ -24,7 +24,13 @@ simplified once the feature lands.
 - Procedural `disc` volume cost ~10 fps in Lightning AOE for little visual gain at `march_steps`
   10-48; volumes draw before all particles (coarse ordering).
 
+- Mesh `fresnel_power` lights whole flat facets at grazing angles (no edge-only rim); the orb's
+  mesh-instance fresnel is not implemented at all. Workaround: additive halo + cross-flare sprite.
+- Trails have no animatable opacity; fade with `width` / `emissive` tracks.
+
 ## Runtime / vocabulary
+- No tangential initial velocity on emitters (`direction` is a fixed local vector, zero = radial),
+  so orbiting particles need parent chains with keyframed rotation. Wanted: `tangential_velocity`.
 - `emitter.inherit_velocity` clamped to [0, 1]: no backward inheritance for trailing flames.
   Workaround: backward emitter `direction` + a windowed directional force.
 - `mesh.radius` not animatable; animate `scale` on a child of a motion rig instead.
