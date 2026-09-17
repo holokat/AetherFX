@@ -67,9 +67,17 @@ simplified once the feature lands.
   `tests/compiler/compile_test.cpp` pins `mat_rock.base_color.r`; both should assert on tracks and
   structure, not on art values.
 - Studio: one shared active effect per server; a second client creating/loading an effect
-  redirects a worker's `create_node` into the wrong document. Wanted: `effect_id` on /api/tool.
+  redirects a worker's `create_node` into the wrong document. Mitigation in use: every tool already
+  accepts an explicit `effect_id`; the worker passes it on every call. Wanted: make it mandatory for
+  worker sessions.
 - Studio: after a stream reconnect the viewport is empty unless playback was running (no `open`
   is re-sent).
 - `app.js` declares `hexToLinear` twice with different signatures; the later wins.
 - The studio viewport is roughly square in the default layout; briefs assuming 16:10 framing put
   the action outside the frame.
+
+## CPU reference renderer
+- Big sprites drawn from an animated flipbook show hard straight-edged triangles
+  (`draw_particle_quad` animated-frame path; reproduces with `flame` and `fire_sim`, disappears with
+  `frames: 1`). Likely part of the "fake triangles" complaint on CPU renders and flipbook exports.
+- `rotation_variance` appears to have no effect on billboard particles (renders byte-identical).
