@@ -576,3 +576,17 @@ def test_a_speed_control_never_rewrites_the_authored_document(client: TestClient
     # ... so moving it is an ordinary, undoable document edit.
     assert client.post("/api/undo", json={}).json()["ok"] is True
     assert client.get("/api/effect").json()["timeline"]["time_scale"] == pytest.approx(before)
+
+
+def test_an_edit_that_is_undone_is_not_a_change(client: TestClient, loaded: dict) -> None:
+    # Dragging a style slider and resetting it leaves the document exactly as loaded: that must not
+    # report unsaved changes (the revision counter alone said "dirty" and toasted a discard warning).
+    assert client.post("/api/effects/load", json={"path": loaded["path"]}).status_code == 200
+    assert client.get("/api/status").json()["active_effect"]["dirty"] is False
+    controls = client.get("/api/controls").json()
+    controls = controls.get("controls", controls)
+    target = next(c for c in controls if c["id"] == "global_intensity")
+    assert client.post(f"/api/controls/{target['id']}", json={"value": 1.5}).status_code == 200
+    assert client.get("/api/status").json()["active_effect"]["dirty"] is True
+    assert client.post("/api/controls/reset", json={}).status_code == 200
+    assert client.get("/api/status").json()["active_effect"]["dirty"] is False

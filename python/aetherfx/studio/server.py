@@ -23,6 +23,7 @@ Run it with ``aetherfx-studio`` (see :func:`main`).
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import math
@@ -258,9 +259,39 @@ class Studio:
     working_source: JsonDict | None = None
     #: studio.revision when the working document was loaded/created/saved; dirty = revision differs
     working_revision: int = 0
+    #: content fingerprint of the working document at its last clean point (load / save)
+    working_fingerprint: str | None = None
+    _fingerprint_cache: tuple[int, str] | None = None
 
     def working_dirty(self) -> bool:
         return self.working_id is not None and self.revision != self.working_revision
+
+    async def _fingerprint(self) -> str | None:
+        """sha1 of the working document's canonical JSON, cached per revision."""
+        if self._fingerprint_cache is not None and self._fingerprint_cache[0] == self.revision:
+            return self._fingerprint_cache[1]
+        try:
+            doc = await self.acall("get_effect_json")
+        except Exception:  # noqa: BLE001 - no document, or the engine is busy going away
+            return None
+        digest = hashlib.sha1(json.dumps(doc, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+        self._fingerprint_cache = (self.revision, digest)
+        return digest
+
+    async def mark_clean(self) -> None:
+        """The working document is now the saved/loaded truth."""
+        self.working_revision = self.revision
+        self.working_fingerprint = await self._fingerprint() if self.working_id else None
+
+    async def refresh_dirty(self) -> None:
+        """Edits that were undone (a slider dragged and reset, undo after a change) are not changes.
+
+        The revision counter only says something mutated; compare content before calling it dirty.
+        """
+        if self.working_id is None or self.revision == self.working_revision or self.working_fingerprint is None:
+            return
+        if await self._fingerprint() == self.working_fingerprint:
+            self.working_revision = self.revision
 
     def decorate_active(self, active: JsonDict | None) -> JsonDict | None:
         """Replace the engine's 'dirty' flag (true for any new document) with the studio's."""
@@ -350,9 +381,9 @@ class Studio:
                 await self.acall("delete_effect", effect_id=previous)
             except Exception:  # noqa: BLE001 - already gone
                 pass
-        # Record the clean revision LAST: discarding the previous working copy is itself a mutating
+        # Record the clean point LAST: discarding the previous working copy is itself a mutating
         # call, and counting it made every freshly loaded effect look edited.
-        self.working_revision = self.revision
+        await self.mark_clean()
 
     def guard_tool(self, name: str, args: JsonDict | None) -> None:
         """Refuse tool calls that would overwrite a built-in library file."""
@@ -730,6 +761,8 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
     @endpoint
     async def api_status(_request: Request) -> JsonDict:
         engine = await run_in_threadpool(studio.engine_status)
+        if engine.get("ok"):
+            await studio.refresh_dirty()
         active = studio.decorate_active(await studio.active_effect()) if engine.get("ok") else None
         job = studio.jobs.active()
         return {
@@ -775,6 +808,7 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
             }
             for entry in (listed.get("effects") or [])
         ]
+        await studio.refresh_dirty()
         active = studio.decorate_active(await studio.active_effect())
         working = dict(active) if active else None
         if working is not None:
@@ -848,7 +882,7 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
         result = await studio.acall("save_effect", path=str(path))
         saved = result.get("path") or str(path)
         studio.working_source = {"path": saved, "builtin": False, "name": name}
-        studio.working_revision = studio.revision
+        await studio.mark_clean()
         LOGGER.info("saved effect %s as %s (%s)", active.get("effect_id"), name, saved)
         return {"path": saved, "effect_id": active.get("effect_id"), "name": name}
 
