@@ -327,10 +327,12 @@ TEST_CASE("post effects appear inside their window", "[sim][analytic]") {
     CHECK(rt->state().post_effects.empty());  // duration 3.0 -> ends at 3.9
 }
 
-TEST_CASE("volume nodes report a stub state", "[sim][analytic]") {
+TEST_CASE("volume nodes in simulation mode report a stub state", "[sim][analytic]") {
     Effect e;
     e.duration = 1.0;
     Node volume = node_of(NodeType::Volume, "smoke");
+    // `mode` defaults to procedural now; the fluid stub is the other branch.
+    volume.parameters["mode"] = Parameter{std::string("simulation")};
     volume.parameters["volume_type"] = Parameter{std::string("smoke")};
     volume.parameters["bounds"] = Parameter{Vec3{4, 2, 4}};
     volume.parameters["density"] = Parameter{0.7f};

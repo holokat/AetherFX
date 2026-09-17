@@ -216,17 +216,39 @@ NodeSpec spec_field() {
 NodeSpec spec_volume() {
     NodeSpec n;
     n.type = NodeType::Volume;
-    n.description = "Volumetric simulation (Tier 3; the V1 backend is a stub that reports statistics).";
+    n.description =
+        "A bounded volume: a procedural raymarched density field (mode: procedural) or, later, a fluid "
+        "simulation (mode: simulation, a V1 stub that reports statistics). See docs/VOLUMES.md.";
     n.default_tier = 3;
     n.spatial = true;
     n.time_bound = true;
     add_transform(n.params);
     add_window(n.params);
+    n.params.push_back(pb_enum("mode", "procedural", {"procedural", "simulation"})
+                           .doc("procedural = raymarched closed-form density; simulation = the future fluid solver (W104)"));
     n.params.push_back(pb_enum("volume_type", "smoke", {"smoke", "fire", "fog", "dust", "magic", "generic_density"})
                            .doc("volume model"));
+    n.params.push_back(pb_enum("shape", "sphere", {"sphere", "column", "disc", "ring", "nebula", "cone"})
+                           .doc("bounding shape of the procedural field"));
+    n.params.push_back(pb_float("radius", 1.5f).min_of(0.0).animated().doc("shape radius").unit("m"));
+    n.params.push_back(pb_float("height", 2.0f).min_of(0.0).animated().doc("column/cone height, disc/ring thickness").unit("m"));
     n.params.push_back(pb_vec3("bounds", Vec3{2, 2, 2}).doc("simulation domain extents").unit("m"));
     n.params.push_back(pb_float("voxel_size", 0.05f).range_of(0.005, 1.0).doc("voxel edge length").unit("m"));
-    n.params.push_back(pb_float("density", 1.0f).min_of(0.0).animated().doc("injected density"));
+    n.params.push_back(pb_float("density", 1.0f).min_of(0.0).animated().doc("overall opacity per metre (injected density in simulation mode)"));
+    n.params.push_back(pb_float("emission", 1.0f).min_of(0.0).animated().doc("HDR emission multiplier (bloom feeds on it)"));
+    n.params.push_back(pb_color("color", Color{0.6f, 0.3f, 1.0f, 1.0f}).animated().doc("base tint"));
+    n.params.push_back(pb_color("color_hot", Color{1, 1, 1, 1}).doc("tint at the densest core"));
+    n.params.push_back(pb_float("filament_scale", 2.0f).min_of(0.1).doc("noise frequency").unit("1/m"));
+    n.params.push_back(pb_float("strands", 0.5f).range_of(0.0, 1.0).doc("0 = soft clouds, 1 = stringy filaments (ridged noise blend)"));
+    n.params.push_back(pb_float("carve", 0.45f).range_of(0.0, 1.0).doc("density threshold: higher carves more holes"));
+    n.params.push_back(pb_float("softness", 0.6f).range_of(0.0, 1.0).doc("edge falloff of the bounding shape"));
+    n.params.push_back(pb_int("spiral_arms", 0).range_of(0.0, 8.0).doc("azimuthal arm count (nebula/disc)"));
+    n.params.push_back(pb_float("arm_sharpness", 1.5f).min_of(0.1).doc("spiral arm contrast and winding"));
+    n.params.push_back(pb_float("twist", 0.0f).animated().doc("twist per metre of height").unit("rad/m"));
+    n.params.push_back(pb_float("spin", 0.0f).animated().doc("rotation around the up axis").unit("1/s"));
+    n.params.push_back(pb_float("climb", 0.0f).animated().doc("upward advection of the noise field").unit("m/s"));
+    n.params.push_back(pb_float("scatter", 0.3f).range_of(0.0, 1.0).doc("single-scatter lighting weight from scene lights"));
+    n.params.push_back(pb_int("march_steps", 48).range_of(8.0, 192.0).doc("quality/speed knob (a backend may clamp it)"));
     n.params.push_back(pb_float("temperature", 0.0f).min_of(0.0).animated().doc("injected temperature"));
     n.params.push_back(pb_float("fuel", 0.0f).min_of(0.0).doc("injected fuel (combustion)"));
     n.params.push_back(pb_float("dissipation", 0.1f).min_of(0.0).doc("density decay").unit("1/s"));

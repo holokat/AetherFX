@@ -598,6 +598,60 @@ AETHERFX_API int aetherfx_mesh_instance_info(const aetherfx_runtime* runtime, in
                                              struct aetherfx_mesh_instance_info* out);
 
 /* -------------------------------------------------------------------------
+ * Frame state: volumes
+ * -------------------------------------------------------------------------
+ * A `volume` node. `mode` is "procedural" -- a raymarched closed-form density
+ * field a host can draw on its own -- or "simulation", the V1 fluid stub that
+ * fills only id/bounds/density/temperature (and compiles with warning W104).
+ *
+ * The density function every backend must agree on, the meaning of `shape` and
+ * of `height` per shape, and the marching recipe are in docs/VOLUMES.md. The
+ * field is exactly zero outside the local box, so march
+ * `transform * [-extent, extent]` and nothing else.
+ *
+ * Added after ABI 1 shipped: purely additive (new struct, new functions), so
+ * AETHERFX_ABI_VERSION is unchanged. A host built against the older header
+ * simply never calls these.
+ */
+struct aetherfx_volume_info {
+    const char* id;
+    const char* mode;          /* "procedural" | "simulation" */
+    const char* shape;         /* sphere | column | disc | ring | nebula | cone */
+    const char* volume_type;   /* smoke | fire | fog | dust | magic | generic_density */
+    const char* backend;       /* "procedural_volume" | "volume_stub" */
+    float transform[16];       /* local -> world, column-major, meters */
+    float bounds_min[3];       /* world-space AABB of the shape */
+    float bounds_max[3];
+    float radius;              /* meters */
+    float height;              /* meters */
+    float density;             /* extinction per meter */
+    float emission;            /* HDR emission multiplier */
+    float color[4];            /* linear rgba, the shell tint */
+    float color_hot[4];        /* linear rgba, the core tint */
+    float filament_scale;      /* noise frequency, 1/m */
+    float strands;             /* 0 = soft clouds, 1 = ridged filaments */
+    float carve;               /* density threshold */
+    float softness;            /* shape edge falloff */
+    int spiral_arms;
+    float arm_sharpness;
+    float twist;               /* rad per meter of height */
+    float spin;                /* revolutions per second about local +Y */
+    float climb;               /* m/s of upward noise advection */
+    float scatter;             /* single-scatter weight from scene lights */
+    int march_steps;           /* quality hint; a backend may clamp it */
+    uint32_t seed;             /* noise seed */
+    float time;                /* effect time the fields above were evaluated at */
+    float temperature;         /* simulation mode */
+};
+
+/* Number of volumes this frame, or a negative status. */
+AETHERFX_API int aetherfx_runtime_volume_count(const aetherfx_runtime* runtime);
+
+/* Fills `out` for volume `index`. Returns AETHERFX_OK or a negative status. */
+AETHERFX_API int aetherfx_volume_info(const aetherfx_runtime* runtime, int index,
+                                      struct aetherfx_volume_info* out);
+
+/* -------------------------------------------------------------------------
  * Frame state: beams
  * -------------------------------------------------------------------------
  * A beam is one or more polylines: polyline 0 is the main bolt, the rest are

@@ -3,6 +3,7 @@
 // Pipeline, entirely in linear HDR float RGB:
 //
 //   background -> ground plane (+ grid, + decals) -> opaque mesh instances
+//     -> procedural volumes (raymarched, composited premultiplied)
 //     -> depth-sorted transparent pass (billboards, mesh particles, beams, trails)
 //     -> box downsample from the supersampled buffer
 //     -> post effects (bloom, warp, chromatic aberration, exposure pulse) -> exposure
@@ -22,7 +23,8 @@
 // Known V1 gaps (all deliberate; the primitive is still counted and, where it makes sense, still
 // drawn without the effect):
 //   * material.distortion    - refracting primitives are drawn normally, no screen-space warp.
-//   * VolumeState            - the sim backend is a stub with no field data, so nothing is drawn.
+//   * VolumeState with mode "simulation" - the fluid backend is a stub with no field data, so
+//     nothing is drawn. `mode: procedural` volumes are raymarched (see draw_volumes).
 //   * RenderSettings::motion_blur - ignored.
 //   * material uv_scroll / uv_rotate / gradient_texture - ignored; base_color, opacity,
 //     emissive, blend, shading, soft_particle, depth_fade, fresnel_power, dissolve, erosion,
@@ -42,6 +44,7 @@
 #include <vector>
 
 #include "aether/core/image.hpp"
+#include "volume_field.hpp"
 
 namespace aether::render {
 namespace {
@@ -79,6 +82,32 @@ constexpr int kNoiseSize = 64;  // built-in dissolve/erosion noise, generated on
 constexpr float kBranchWidthScale = 0.6f;  // beam branch polylines are thinner than the main beam
 constexpr float kGridSpacing = 1.0f;       // metres
 constexpr int kMaxBlurRadius = 96;
+// Volumes: the reference renderer is the *reference*, not the fast path, so it caps the authored
+// march_steps hard and gives up on a ray once it is 98% opaque (docs/VOLUMES.md).
+constexpr int kVolumeCpuSteps = 32;
+constexpr float kVolumeMinTransmittance = 0.02f;
+
+// Slab test of the ray `o + t * d` against the box [-extent, extent], narrowing an existing
+// [t0, t1] window (the near plane and whatever the opaque depth buffer already holds).
+inline bool ray_box(Vec3 o, Vec3 d, Vec3 extent, float& t0, float& t1) {
+    const float origin[3]{o.x, o.y, o.z};
+    const float direction[3]{d.x, d.y, d.z};
+    const float half[3]{extent.x, extent.y, extent.z};
+    for (int axis = 0; axis < 3; ++axis) {
+        if (std::fabs(direction[axis]) < 1e-12f) {
+            if (std::fabs(origin[axis]) > half[axis]) return false;  // parallel and outside
+            continue;
+        }
+        const float inv = 1.0f / direction[axis];
+        float near_t = (-half[axis] - origin[axis]) * inv;
+        float far_t = (half[axis] - origin[axis]) * inv;
+        if (near_t > far_t) std::swap(near_t, far_t);
+        t0 = std::max(t0, near_t);
+        t1 = std::min(t1, far_t);
+        if (t1 <= t0) return false;
+    }
+    return t1 > t0;
+}
 
 // ---------------------------------------------------------------------------------------------
 // Framebuffer
@@ -655,8 +684,8 @@ public:
 
         draw_ground(fb, proj, state, resources, settings);
         draw_opaque_meshes(fb, proj, state, resources, settings);
+        draw_volumes(fb, proj, state);
         draw_transparent(fb, proj, state, resources, settings);
-        // Volumes are a V1 stub: VolumeState carries no field data, so nothing is drawn.
         volumes_ = state.volumes.size();
 
         Image img = downsample(fb, out_w, out_h, ss);
@@ -925,6 +954,108 @@ private:
     // -----------------------------------------------------------------------------------------
     // Transparent pass
     // -----------------------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------------------
+    // Volumes (docs/VOLUMES.md)
+    // -----------------------------------------------------------------------------------------
+    // One raymarch per covered pixel, between the opaque pass and the transparents: a volume is a
+    // participating medium, so it reads the opaque depth buffer (a sample past it is dropped) but
+    // writes neither depth nor a sort key of its own.
+    //
+    // Front-to-back emission/absorption. Each of the `march_steps` samples (capped at 32 here -
+    // this is the reference renderer, not the GPU one) turns the field's extinction `d` into
+    // `a = 1 - exp(-d * segment)`, so halving the step count changes the noise the march resolves
+    // but not the overall opacity, which is what lets a 32-step CPU frame and a 48-step viewer
+    // frame agree. Radiance per sample is `tint(d) * (emission + scatter * sum of lights)` with
+    // the same falloff and cone terms the particle passes use. The accumulated colour is already
+    // premultiplied, so it composites as Premultiplied over whatever the opaque passes left.
+    void draw_volumes(Framebuffer& fb, const Projector& proj, const FrameState& state) {
+        for (const VolumeState& vs : state.volumes) {
+            if (vs.mode == "simulation") continue;  // the fluid stub carries no field to march
+            const VolumeField field(vs, vs.time);
+            if (field.empty()) continue;
+            const Vec3 extent = field.extent();
+
+            // Screen extent of the eight box corners. A corner at or behind the near plane cannot
+            // be projected, so the rect falls back to the whole frame rather than clipping wrong.
+            int x0 = fb.w, x1 = -1, y0 = fb.h, y1 = -1;
+            bool clipped = false;
+            for (int corner = 0; corner < 8 && !clipped; ++corner) {
+                const Vec3 local{(corner & 1) ? extent.x : -extent.x, (corner & 2) ? extent.y : -extent.y,
+                                 (corner & 4) ? extent.z : -extent.z};
+                Vec2 px;
+                float depth = 0.0f;
+                if (!proj.project(vs.transform.transform_point(local), px, depth)) {
+                    clipped = true;
+                    break;
+                }
+                x0 = std::min(x0, static_cast<int>(std::floor(px.x)));
+                x1 = std::max(x1, static_cast<int>(std::ceil(px.x)));
+                y0 = std::min(y0, static_cast<int>(std::floor(px.y)));
+                y1 = std::max(y1, static_cast<int>(std::ceil(px.y)));
+            }
+            if (clipped) { x0 = 0; y0 = 0; x1 = fb.w - 1; y1 = fb.h - 1; }
+            x0 = std::max(x0, 0); y0 = std::max(y0, 0);
+            x1 = std::min(x1, fb.w - 1); y1 = std::min(y1, fb.h - 1);
+            if (x1 < x0 || y1 < y0) continue;
+
+            const int steps = clamp(vs.march_steps, 1, kVolumeCpuSteps);
+            const Mat4& to_local = field.world_to_local();
+            const Vec3 local_eye = to_local.transform_point(proj.eye);
+            const float scatter = saturate(vs.scatter);
+            const float emission = std::max(0.0f, vs.emission);
+
+            for (int y = y0; y <= y1; ++y) {
+                for (int x = x0; x <= x1; ++x) {
+                    const size_t i = fb.index(x, y);
+                    // `ray_dir` has a view-space z of -1, so `t` along it *is* the view depth and
+                    // the opaque depth buffer clamps the exit point directly.
+                    const Vec3 dir = proj.ray_dir(x, y);
+                    const Vec3 local_dir = to_local.transform_vector(dir);
+                    float enter = proj.near_plane;
+                    float exit = std::min(proj.far_plane, fb.depth[i]);
+                    if (!ray_box(local_eye, local_dir, extent, enter, exit)) continue;
+
+                    const float span = exit - enter;
+                    if (!(span > 0.0f)) continue;
+                    const float step_t = span / static_cast<float>(steps);
+                    const float segment = step_t * length(dir);  // metres between samples
+
+                    float transmittance = 1.0f;
+                    Vec3 accumulated{};
+                    for (int s = 0; s < steps; ++s) {
+                        const float t = enter + (static_cast<float>(s) + 0.5f) * step_t;
+                        const float d = field.density_local(local_eye + local_dir * t);
+                        if (!(d > 0.0f)) continue;
+                        const float a = 1.0f - std::exp(-d * segment);
+                        if (!(a > 0.0f)) continue;
+                        const Vec3 tint = field.tint(d);
+                        Vec3 radiance = tint * emission;
+                        if (scatter > 0.0f && !state.lights.empty()) {
+                            const Vec3 world_p = proj.eye + dir * t;
+                            Vec3 gathered{};
+                            for (const LightState& l : state.lights) {
+                                const Vec3 to_light = l.position - world_p;
+                                const float distance = length(to_light);
+                                const Vec3 unit = distance > kEpsilon ? to_light / distance : Vec3{0.0f, 1.0f, 0.0f};
+                                const float f = light_falloff(l, distance) * light_cone(l, -unit);
+                                if (f > 0.0f) gathered += l.color.rgb() * (l.intensity * f);
+                            }
+                            radiance += tint * gathered * scatter;
+                        }
+                        accumulated += radiance * (transmittance * a);
+                        transmittance *= 1.0f - a;
+                        if (transmittance < kVolumeMinTransmittance) break;
+                    }
+
+                    const float alpha = 1.0f - transmittance;
+                    if (!(alpha > 0.0f)) continue;
+                    ++fragments_;
+                    blend_pixel(fb, i, accumulated, alpha, BlendMode::Premultiplied);
+                }
+            }
+        }
+    }
+
     void draw_transparent(Framebuffer& fb, const Projector& proj, const FrameState& state,
                           const ResourceSet& resources, const RenderSettings& settings) {
         std::vector<ResolvedParticles> buffers;

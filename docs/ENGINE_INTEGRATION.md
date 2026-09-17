@@ -251,6 +251,7 @@ for (int s = 0; s < systems; ++s) {
 | trail | a camera-facing strip per ribbon, oldest vertex first | per-vertex position, width, u, color, opacity, emissive, normalized_age |
 | decal | a projected decal, or a quad on the ground | position, normal, size, rotation_deg, circle, texture_id |
 | mesh instance | a static mesh | mesh_id, transform (column-major), color, emissive, visible |
+| volume (`mode` "procedural") | a translucent box raymarching the density field of docs/VOLUMES.md | transform (column-major), shape, radius, height, density, emission, color, color_hot, filament_scale, strands, carve, softness, spiral_arms, arm_sharpness, twist, spin, climb, scatter, march_steps, seed, time |
 
 Notes that save an afternoon:
 
@@ -270,6 +271,11 @@ Notes that save an afternoon:
   particle is not stable across steps (dead particles are compacted out).
 * Beams and trails are rebuilt from scratch every step - do not cache their
   vertex counts.
+* A volume is not geometry: draw a box over `transform * [-extent, extent]`
+  (the extents are in the shape table in docs/VOLUMES.md), march the density
+  function in the fragment shader and composite the premultiplied result. The
+  field is exactly zero outside that box, and a volume whose `mode` is
+  `"simulation"` carries no field at all - skip it.
 
 ## 5. Material mapping
 
@@ -443,11 +449,14 @@ mismatch into a clear message.
 
 * One backend: the CPU runtime (`aetherfx_runtime_backend()` returns `"cpu"`).
   A GPU runtime will appear behind the same API and must match it.
-* Volumes are a stub (Tier 3) and rigid-body physics falls back to the particle
-  path (Tier 2); both report a compile warning and neither is exposed here.
-* Post-effect state (bloom pushes, heat haze, chromatic aberration) and volume
-  state are in the C++ `FrameState` but not yet in the C API; an engine drives
-  its own post chain today.
+* Volumes in `mode: procedural` are implemented and exposed
+  (`aetherfx_runtime_volume_count` / `aetherfx_volume_info`, added additively
+  after ABI 1 - the version is unchanged, so an older host simply never calls
+  them). `mode: simulation` is still a stub, as is rigid-body physics, which
+  falls back to the particle path (Tier 2); both report a compile warning.
+* Post-effect state (bloom pushes, heat haze, chromatic aberration) is in the
+  C++ `FrameState` but not yet in the C API; an engine drives its own post
+  chain today.
 * `aetherfx_effect_set_parameter()` sets constants only: it clears any keyframe
   track on the parameter it touches, and it needs a recompile to take effect.
   It is for instance tuning, not for animating a value per frame.

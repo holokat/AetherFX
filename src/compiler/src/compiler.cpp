@@ -520,9 +520,15 @@ CompiledEffect compile(const Effect& effect, const CompileOptions& options) {
             }
             case NodeType::Volume:
                 cn.tier = Tier::Volumetric;
-                cn.backend = "volume_stub";
-                diag.warning("W104", "volume \"" + n.id + "\" uses the V1 stub backend: it reports statistics only",
-                             n.id);
+                // mode: procedural is a fully implemented raymarched density field
+                // (docs/VOLUMES.md); only the fluid path is still a stub.
+                if (param_string(n, "mode") == "simulation") {
+                    cn.backend = "volume_stub";
+                    diag.warning("W104", "volume \"" + n.id + "\" uses the V1 stub backend: it reports statistics only",
+                                 n.id, "mode");
+                } else {
+                    cn.backend = "procedural_volume";
+                }
                 break;
             default:
                 cn.tier = Tier::Analytic;

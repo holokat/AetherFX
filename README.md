@@ -27,14 +27,18 @@ collisions, events, analytic beams/trails/decals/lights), software HDR
 renderer (soft particles, bloom, post), procedural textures, 65-tool agent
 API over JSON-RPC, CLI, Python client, MCP server, metric-based reference
 comparison, flipbook/frames/video export. GPU (wgpu-native) is bootstrapped
-but not yet used for simulation or rendering. Volumes (Tier 3) and rigid
-physics (Tier 2) are stubs with compile warnings. See docs/ROADMAP.md.
+but not yet used for simulation or rendering. Volumes (Tier 3) are procedural
+raymarched density fields on both the CPU renderer and the GPU viewer
+(docs/VOLUMES.md); the fluid-solver mode and rigid physics (Tier 2) are stubs
+with compile warnings. See docs/ROADMAP.md.
 
 ## Studio
 
 `aetherfx-studio` is a local web app (default http://127.0.0.1:8770) that
 spawns the engine itself. It is a library and a generator: the Library lists
-the built-in effects (protected, never overwritten) and your own; clicking one
+the built-in effects (protected, never overwritten) and your own - Fireball,
+Fire AOE, Ice AOE, Shadow AOE, Lightning Strike and Void Nebula (a procedural
+raymarched volume, see docs/VOLUMES.md), in `examples/effects/`; clicking one
 opens a working copy that auto-plays, every parameter is editable live, the
 camera orbits/zooms with the mouse, stage controls set ground/background/bloom,
 Random mutates values for exploration, and "Save as" adds a new library entry.

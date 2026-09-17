@@ -1,5 +1,6 @@
 #include "aether/core/frame_state.hpp"
 
+#include <algorithm>
 #include <cstring>
 
 namespace aether {
@@ -49,6 +50,23 @@ void ParticleBuffer::swap_remove(size_t i) {
 }
 void ParticleBuffer::push_default() { resize(count() + 1); }
 
+// docs/VOLUMES.md "Shapes": the half-extents each shape occupies in local space.
+// `height` means different things per shape (column/cone: full height; disc: full
+// thickness; ring/nebula: minor radius / vertical diameter), so the mapping is
+// written out once here and mirrored by every backend.
+Vec3 volume_shape_extent(std::string_view shape, float radius, float height) {
+    const float r = std::max(0.0f, radius);
+    const float h = std::max(0.0f, height);
+    if (shape == "column" || shape == "cone") return Vec3{r, h * 0.5f, r};
+    if (shape == "disc") return Vec3{r, h * kVolumeDiscThickness * 0.5f, r};
+    if (shape == "ring") {
+        const float minor = h * kVolumeRingThickness;
+        return Vec3{r + minor, minor, r + minor};
+    }
+    if (shape == "nebula") return Vec3{r, h * 0.5f, r};
+    return Vec3{r, r, r};  // sphere
+}
+
 size_t FrameState::total_particles() const {
     size_t n = 0;
     for (const auto& p : particles) n += p.count();
@@ -76,7 +94,22 @@ uint64_t FrameState::hash() const {
     for (const auto& t : trails) { hash_str(h, t.id); for (const auto& r : t.ribbons) hash_vec(h, r); }
     for (const auto& d : decals) { hash_str(h, d.id); hash_bytes(h, &d.position, sizeof d.position); hash_bytes(h, &d.size, sizeof d.size); hash_bytes(h, &d.opacity, sizeof d.opacity); }
     for (const auto& m : meshes) { hash_str(h, m.id); hash_bytes(h, m.transform.m.data(), sizeof(float) * 16); hash_bytes(h, &m.emissive, sizeof m.emissive); }
-    for (const auto& v : volumes) { hash_str(h, v.id); hash_bytes(h, &v.density, sizeof v.density); }
+    for (const auto& v : volumes) {
+        hash_str(h, v.id); hash_str(h, v.mode); hash_str(h, v.shape); hash_str(h, v.backend);
+        hash_bytes(h, &v.bounds_min, sizeof v.bounds_min); hash_bytes(h, &v.bounds_max, sizeof v.bounds_max);
+        hash_bytes(h, &v.density, sizeof v.density); hash_bytes(h, &v.temperature, sizeof v.temperature);
+        hash_bytes(h, &v.radius, sizeof v.radius); hash_bytes(h, &v.height, sizeof v.height);
+        hash_bytes(h, &v.emission, sizeof v.emission);
+        hash_bytes(h, &v.color, sizeof v.color); hash_bytes(h, &v.color_hot, sizeof v.color_hot);
+        hash_bytes(h, &v.filament_scale, sizeof v.filament_scale); hash_bytes(h, &v.strands, sizeof v.strands);
+        hash_bytes(h, &v.carve, sizeof v.carve); hash_bytes(h, &v.softness, sizeof v.softness);
+        hash_bytes(h, &v.spiral_arms, sizeof v.spiral_arms); hash_bytes(h, &v.arm_sharpness, sizeof v.arm_sharpness);
+        hash_bytes(h, &v.twist, sizeof v.twist); hash_bytes(h, &v.spin, sizeof v.spin);
+        hash_bytes(h, &v.climb, sizeof v.climb); hash_bytes(h, &v.scatter, sizeof v.scatter);
+        hash_bytes(h, &v.march_steps, sizeof v.march_steps);
+        hash_bytes(h, v.transform.m.data(), sizeof(float) * 16);
+        hash_bytes(h, &v.seed, sizeof v.seed); hash_bytes(h, &v.time, sizeof v.time);
+    }
     return h;
 }
 

@@ -20,7 +20,7 @@ StreamClient / decodeFrame       static/viewer/protocol.js
   |  typed-array views over the received ArrayBuffer (no copy)
   v
 GLViewer                         static/viewer/viewer.js
-  |  particles.js  ribbons.js  scene.js  resources.js  shaders.js
+  |  particles.js  ribbons.js  volumes.js  scene.js  resources.js  shaders.js
   v
 <canvas id="gl-viewport">        inside #viewport, next to the fallback <img>
 ```
@@ -138,6 +138,35 @@ colour4, opacity, emissive) and honour `twist_deg`; beams draw twice, a wide
 soft halo and a thin bright core, with `pulse_phase` brightening a gaussian
 travelling along the polyline. All the ribbons of one node share one geometry
 and one draw call.
+
+**Volumes** (`volumes.js`) - one box mesh per procedural `volume` in the frame,
+scaled to the shape's local half-extents and raymarched in the fragment shader.
+The GLSL is a translation of `src/render/src/volume_field.hpp`: same shape SDFs,
+same spin/twist/climb warp, same soft/ridged fbm blend by `strands`, same
+`carve` threshold and the same `alpha = 1 - exp(-d * dt)` accumulation, so the
+viewer's 48 steps and the CPU renderer's 32 land on the same image. Only the
+noise basis differs - hash-based value noise here, simplex there, with the same
+octave count (4), lacunarity (2) and gain (0.5).
+
+* the box uses `THREE.BackSide` so a camera inside the volume still gets a
+  fragment; entry and exit come from a slab test in the volume's local space, so
+  a rotated or non-uniformly scaled node is handled by the transform alone;
+* it neither writes nor tests depth. Occlusion is per sample: the exit point is
+  clamped against the same opaque depth texture the soft particles read, which
+  is why a volume behind a mesh is cut by that mesh at the right distance
+  instead of popping in front of it;
+* `march_steps` is clamped to 8..96 and the first sample is jittered by a
+  per-pixel hash - without the jitter a 48-step march bands visibly;
+* single scattering reuses the particle light uniforms (view-space positions,
+  pre-scaled colours, `1/(d^2+1)` windowed by `radius`), weighted by `scatter`;
+* rays stop at 98% opacity, and the premultiplied result blends
+  `CustomBlending(ONE, ONE_MINUS_SRC_ALPHA)` at `renderOrder` 5 - after the
+  opaque pass, before the particle systems (10/20).
+
+Volumes arrive as **plain JSON in the frame header**, not in the binary blob: a
+procedural volume is about twenty-five scalars, so there is nothing worth
+packing. `volumeExtent()` in `volumes.js` mirrors `aether::volume_shape_extent()`;
+the two have to agree or the box would clip the field.
 
 **Decals** - a quad on the ground at y + 0.005, rotated by `rotation_deg`,
 textured or masked to a circle.

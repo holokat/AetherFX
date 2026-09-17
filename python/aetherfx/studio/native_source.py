@@ -24,6 +24,10 @@ C / :mod:`aetherfx.native`   stream / viewer
 ``custom0``                  ``age_norm``
 ===========================  ==========================================
 
+Volumes are the one place the adapter drops something: a ``mode: simulation``
+volume is the V1 fluid stub and carries no field, so it never reaches the wire
+(docs/VOLUMES.md). Procedural volumes pass through as plain JSON.
+
 One source owns one runtime, and a runtime must be driven by one thread at a
 time, so every public method takes the source's lock: the server simulates in a
 threadpool while the event loop keeps answering commands.
@@ -391,6 +395,39 @@ def _to_frame(snapshot: Any) -> Frame:
         }
         for instance in snapshot.mesh_instances
     ]
+    # Volumes travel as plain JSON: a procedural volume is ~25 scalars, so there is
+    # nothing worth putting in the binary blob (docs/VOLUMES.md).
+    volumes = [
+        {
+            "id": volume["id"],
+            "mode": volume["mode"],
+            "shape": volume["shape"],
+            "transform": volume["transform"],
+            "bounds_min": volume["bounds_min"],
+            "bounds_max": volume["bounds_max"],
+            "radius": volume["radius"],
+            "height": volume["height"],
+            "density": volume["density"],
+            "emission": volume["emission"],
+            "color": volume["color"],
+            "color_hot": volume["color_hot"],
+            "filament_scale": volume["filament_scale"],
+            "strands": volume["strands"],
+            "carve": volume["carve"],
+            "softness": volume["softness"],
+            "spiral_arms": volume["spiral_arms"],
+            "arm_sharpness": volume["arm_sharpness"],
+            "twist": volume["twist"],
+            "spin": volume["spin"],
+            "climb": volume["climb"],
+            "scatter": volume["scatter"],
+            "march_steps": volume["march_steps"],
+            "seed": volume["seed"],
+            "time": volume["time"],
+        }
+        for volume in snapshot.volumes
+        if volume["mode"] != "simulation"
+    ]
     beams = [
         {
             "id": beam["id"],
@@ -429,6 +466,7 @@ def _to_frame(snapshot: Any) -> Frame:
         lights=lights,
         decals=decals,
         mesh_instances=mesh_instances,
+        volumes=volumes,
         beams=beams,
         trails=trails,
         camera=camera,

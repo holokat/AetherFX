@@ -7,6 +7,7 @@
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
 
 #include "aether/compiler/compiled_effect.hpp"
 #include "aether/core/serialization.hpp"
@@ -15,6 +16,7 @@
 
 using namespace aether;
 using Catch::Approx;
+using Catch::Matchers::WithinAbs;
 
 namespace {
 
@@ -1475,4 +1477,127 @@ TEST_CASE("orientation does not disturb the billboard determinism contract", "[s
         b->step();
         REQUIRE(a->state().hash() == b->state().hash());
     }
+}
+
+// docs/RUNTIME.md section 7 "volume" + docs/VOLUMES.md.
+TEST_CASE("volume: procedural state is resolved inside the window", "[sim][volume]") {
+    Effect e;
+    e.name = "volume";
+    e.duration = 4.0;
+    e.seed = 11;
+    Node v = node_of(NodeType::Volume, "cloud");
+    v.parameters["mode"] = Parameter{std::string("procedural")};
+    v.parameters["shape"] = Parameter{std::string("column")};
+    v.parameters["position"] = Parameter{Vec3{1.0f, 2.0f, -3.0f}};
+    v.parameters["radius"] = Parameter{1.25f};
+    v.parameters["height"] = Parameter{3.0f};
+    v.parameters["emission"] = Parameter{2.5f};
+    v.parameters["color"] = Parameter{Color{0.2f, 0.4f, 0.9f, 1.0f}};
+    v.parameters["color_hot"] = Parameter{Color{1.0f, 0.8f, 0.2f, 1.0f}};
+    v.parameters["filament_scale"] = Parameter{3.5f};
+    v.parameters["strands"] = Parameter{0.8f};
+    v.parameters["carve"] = Parameter{0.3f};
+    v.parameters["softness"] = Parameter{0.4f};
+    v.parameters["spiral_arms"] = Parameter{5};
+    v.parameters["arm_sharpness"] = Parameter{2.5f};
+    v.parameters["twist"] = Parameter{0.7f};
+    v.parameters["spin"] = Parameter{0.25f};
+    v.parameters["climb"] = Parameter{1.5f};
+    v.parameters["scatter"] = Parameter{0.9f};
+    v.parameters["march_steps"] = Parameter{64};
+    v.parameters["start_time"] = Parameter{1.0f};
+    v.parameters["duration"] = Parameter{1.0f};
+    // Animated: the runtime must read it at t1, not at its constant value.
+    Parameter density{0.0f};
+    density.set_keyframe(0.0, Value(0.0f));
+    density.set_keyframe(1.0, Value(1.0f));
+    density.set_keyframe(2.0, Value(3.0f));
+    v.parameters["density"] = density;
+    e.add_node(v);
+
+    auto runtime = runtime_for(e);
+    runtime->simulate_to(0.5);
+    CHECK(runtime->state().volumes.empty());  // before the window
+
+    runtime->simulate_to(1.5);
+    REQUIRE(runtime->state().volumes.size() == 1);
+    const VolumeState& s = runtime->state().volumes.front();
+    CHECK(s.id == "cloud");
+    CHECK(s.mode == "procedural");
+    CHECK(s.shape == "column");
+    CHECK(s.backend == "procedural_volume");
+    CHECK_THAT(s.radius, WithinAbs(1.25, 1e-5));
+    CHECK_THAT(s.height, WithinAbs(3.0, 1e-5));
+    CHECK_THAT(s.emission, WithinAbs(2.5, 1e-5));
+    CHECK_THAT(s.color.b, WithinAbs(0.9, 1e-5));
+    CHECK_THAT(s.color_hot.r, WithinAbs(1.0, 1e-5));
+    CHECK_THAT(s.filament_scale, WithinAbs(3.5, 1e-5));
+    CHECK_THAT(s.strands, WithinAbs(0.8, 1e-5));
+    CHECK_THAT(s.carve, WithinAbs(0.3, 1e-5));
+    CHECK_THAT(s.softness, WithinAbs(0.4, 1e-5));
+    CHECK(s.spiral_arms == 5);
+    CHECK_THAT(s.arm_sharpness, WithinAbs(2.5, 1e-5));
+    CHECK_THAT(s.twist, WithinAbs(0.7, 1e-5));
+    CHECK_THAT(s.spin, WithinAbs(0.25, 1e-5));
+    CHECK_THAT(s.climb, WithinAbs(1.5, 1e-5));
+    CHECK_THAT(s.scatter, WithinAbs(0.9, 1e-5));
+    CHECK(s.march_steps == 64);
+    // Animated density, sampled at the step's t1 (1.5 -> halfway from 1 to 3).
+    CHECK_THAT(s.density, WithinAbs(2.0, 1e-3));
+    CHECK_THAT(static_cast<double>(s.time), WithinAbs(1.5, 1e-3));
+
+    // Transform and bounds: a column of radius 1.25, height 3 around (1, 2, -3).
+    CHECK_THAT(s.transform.at(0, 3), WithinAbs(1.0, 1e-5));
+    CHECK_THAT(s.transform.at(1, 3), WithinAbs(2.0, 1e-5));
+    CHECK_THAT(s.bounds_min.x, WithinAbs(-0.25, 1e-4));
+    CHECK_THAT(s.bounds_max.x, WithinAbs(2.25, 1e-4));
+    CHECK_THAT(s.bounds_min.y, WithinAbs(0.5, 1e-4));
+    CHECK_THAT(s.bounds_max.y, WithinAbs(3.5, 1e-4));
+
+    runtime->simulate_to(2.5);
+    CHECK(runtime->state().volumes.empty());  // after the window
+}
+
+TEST_CASE("volume: mode simulation stays the stub", "[sim][volume]") {
+    Effect e;
+    e.name = "volume";
+    e.duration = 2.0;
+    e.seed = 3;
+    Node v = node_of(NodeType::Volume, "smoke");
+    v.parameters["mode"] = Parameter{std::string("simulation")};
+    v.parameters["bounds"] = Parameter{Vec3{4.0f, 6.0f, 4.0f}};
+    v.parameters["density"] = Parameter{0.75f};
+    v.parameters["temperature"] = Parameter{900.0f};
+    // Procedural-only parameters are set but must be ignored in simulation mode.
+    v.parameters["shape"] = Parameter{std::string("ring")};
+    v.parameters["radius"] = Parameter{9.0f};
+    e.add_node(v);
+
+    auto runtime = runtime_for(e);
+    runtime->simulate_to(0.5);
+    REQUIRE(runtime->state().volumes.size() == 1);
+    const VolumeState& s = runtime->state().volumes.front();
+    CHECK(s.mode == "simulation");
+    CHECK(s.backend == "volume_stub");
+    CHECK_THAT(s.density, WithinAbs(0.75, 1e-5));
+    CHECK_THAT(s.temperature, WithinAbs(900.0, 1e-3));
+    CHECK(s.shape == "sphere");  // untouched default, not the authored "ring"
+    // Bounds come from the authored simulation domain, not from `radius`.
+    CHECK_THAT(s.bounds_min.y, WithinAbs(-3.0, 1e-4));
+    CHECK_THAT(s.bounds_max.y, WithinAbs(3.0, 1e-4));
+}
+
+TEST_CASE("volume: the void_nebula example emits its procedural volume", "[sim][volume][examples]") {
+    auto runtime = runtime_for(load_example("void_nebula.json"));
+    runtime->simulate_to(1.2);
+    const FrameState& state = runtime->state();
+    REQUIRE(state.volumes.size() == 1);
+    const VolumeState& v = state.volumes.front();
+    CHECK(v.id == "void_core");
+    CHECK(v.mode == "procedural");
+    CHECK(v.shape == "nebula");
+    CHECK(v.backend == "procedural_volume");
+    CHECK(v.spiral_arms == 3);
+    CHECK(v.density > 0.0f);
+    CHECK(v.bounds_max.y > v.bounds_min.y);
 }

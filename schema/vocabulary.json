@@ -3237,7 +3237,7 @@
     },
     "volume": {
       "default_tier": 3,
-      "description": "Volumetric simulation (Tier 3; the V1 backend is a stub that reports statistics).",
+      "description": "A bounded volume: a procedural raymarched density field (mode: procedural) or, later, a fluid simulation (mode: simulation, a V1 stub that reports statistics). See docs/VOLUMES.md.",
       "inputs": {
         "colliders": {
           "accepts": [
@@ -3276,6 +3276,16 @@
         "volume"
       ],
       "parameters": {
+        "arm_sharpness": {
+          "animatable": false,
+          "default": 1.5,
+          "description": "spiral arm contrast and winding",
+          "enum": [],
+          "max": null,
+          "min": 0.1,
+          "type": "float",
+          "units": ""
+        },
         "bounds": {
           "animatable": false,
           "default": [
@@ -3298,6 +3308,54 @@
           "max": null,
           "min": null,
           "type": "float",
+          "units": ""
+        },
+        "carve": {
+          "animatable": false,
+          "default": 0.45,
+          "description": "density threshold: higher carves more holes",
+          "enum": [],
+          "max": 1,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "climb": {
+          "animatable": true,
+          "default": 0.0,
+          "description": "upward advection of the noise field",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "m/s"
+        },
+        "color": {
+          "animatable": true,
+          "default": [
+            0.6,
+            0.3,
+            1.0
+          ],
+          "description": "base tint",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "color",
+          "units": ""
+        },
+        "color_hot": {
+          "animatable": false,
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "description": "tint at the densest core",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "color",
           "units": ""
         },
         "combustion_rate": {
@@ -3323,7 +3381,7 @@
         "density": {
           "animatable": true,
           "default": 1.0,
-          "description": "injected density",
+          "description": "overall opacity per metre (injected density in simulation mode)",
           "enum": [],
           "max": null,
           "min": 0,
@@ -3350,6 +3408,16 @@
           "type": "float",
           "units": "s"
         },
+        "emission": {
+          "animatable": true,
+          "default": 1.0,
+          "description": "HDR emission multiplier (bloom feeds on it)",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
         "expansion": {
           "animatable": false,
           "default": 0.0,
@@ -3360,6 +3428,16 @@
           "type": "float",
           "units": ""
         },
+        "filament_scale": {
+          "animatable": false,
+          "default": 2.0,
+          "description": "noise frequency",
+          "enum": [],
+          "max": null,
+          "min": 0.1,
+          "type": "float",
+          "units": "1/m"
+        },
         "fuel": {
           "animatable": false,
           "default": 0.0,
@@ -3368,6 +3446,39 @@
           "max": null,
           "min": 0,
           "type": "float",
+          "units": ""
+        },
+        "height": {
+          "animatable": true,
+          "default": 2.0,
+          "description": "column/cone height, disc/ring thickness",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "m"
+        },
+        "march_steps": {
+          "animatable": false,
+          "default": 48,
+          "description": "quality/speed knob (a backend may clamp it)",
+          "enum": [],
+          "max": 192,
+          "min": 8,
+          "type": "int",
+          "units": ""
+        },
+        "mode": {
+          "animatable": false,
+          "default": "procedural",
+          "description": "procedural = raymarched closed-form density; simulation = the future fluid solver (W104)",
+          "enum": [
+            "procedural",
+            "simulation"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
           "units": ""
         },
         "phase": {
@@ -3392,6 +3503,16 @@
           "max": null,
           "min": null,
           "type": "vec3",
+          "units": "m"
+        },
+        "radius": {
+          "animatable": true,
+          "default": 1.5,
+          "description": "shape radius",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
           "units": "m"
         },
         "rotation": {
@@ -3422,6 +3543,63 @@
           "type": "vec3",
           "units": ""
         },
+        "scatter": {
+          "animatable": false,
+          "default": 0.3,
+          "description": "single-scatter lighting weight from scene lights",
+          "enum": [],
+          "max": 1,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "shape": {
+          "animatable": false,
+          "default": "sphere",
+          "description": "bounding shape of the procedural field",
+          "enum": [
+            "sphere",
+            "column",
+            "disc",
+            "ring",
+            "nebula",
+            "cone"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
+          "units": ""
+        },
+        "softness": {
+          "animatable": false,
+          "default": 0.6,
+          "description": "edge falloff of the bounding shape",
+          "enum": [],
+          "max": 1,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "spin": {
+          "animatable": true,
+          "default": 0.0,
+          "description": "rotation around the up axis",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "1/s"
+        },
+        "spiral_arms": {
+          "animatable": false,
+          "default": 0,
+          "description": "azimuthal arm count (nebula/disc)",
+          "enum": [],
+          "max": 8,
+          "min": 0,
+          "type": "int",
+          "units": ""
+        },
         "start_time": {
           "animatable": false,
           "default": 0.0,
@@ -3432,6 +3610,16 @@
           "type": "float",
           "units": "s"
         },
+        "strands": {
+          "animatable": false,
+          "default": 0.5,
+          "description": "0 = soft clouds, 1 = stringy filaments (ridged noise blend)",
+          "enum": [],
+          "max": 1,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
         "temperature": {
           "animatable": true,
           "default": 0.0,
@@ -3441,6 +3629,16 @@
           "min": 0,
           "type": "float",
           "units": ""
+        },
+        "twist": {
+          "animatable": true,
+          "default": 0.0,
+          "description": "twist per metre of height",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "rad/m"
         },
         "volume_type": {
           "animatable": false,

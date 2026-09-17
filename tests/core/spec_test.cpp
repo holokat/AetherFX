@@ -9,6 +9,7 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
 #include "aether/core/error.hpp"
+#include "aether/core/frame_state.hpp"
 #include "aether/core/spec.hpp"
 #include "aether/core/validation.hpp"
 
@@ -324,4 +325,89 @@ TEST_CASE("node_window resolves start/duration", "[core][spec]") {
     material.type = NodeType::Material;
     CHECK(node_window(material).start == 0.0);
     CHECK(node_window(material).end == -1.0);
+}
+
+TEST_CASE("volume: the procedural vocabulary (docs/VOLUMES.md)", "[core][spec][volume]") {
+    const NodeSpec& spec = SpecRegistry::instance().get(NodeType::Volume);
+    auto find = [&](const std::string& name) -> const ParamSpec* {
+        for (const ParamSpec& p : spec.params)
+            if (p.name == name) return &p;
+        return nullptr;
+    };
+
+    SECTION("every parameter of the design exists, with its default and range") {
+        struct Expected {
+            const char* name;
+            ValueType type;
+            bool animatable;
+        };
+        const Expected expected[]{
+            {"mode", ValueType::Enum, false},          {"shape", ValueType::Enum, false},
+            {"radius", ValueType::Float, true},        {"height", ValueType::Float, true},
+            {"density", ValueType::Float, true},       {"emission", ValueType::Float, true},
+            {"color", ValueType::Color, true},         {"color_hot", ValueType::Color, false},
+            {"filament_scale", ValueType::Float, false}, {"strands", ValueType::Float, false},
+            {"carve", ValueType::Float, false},        {"softness", ValueType::Float, false},
+            {"spiral_arms", ValueType::Int, false},    {"arm_sharpness", ValueType::Float, false},
+            {"twist", ValueType::Float, true},         {"spin", ValueType::Float, true},
+            {"climb", ValueType::Float, true},         {"scatter", ValueType::Float, false},
+            {"march_steps", ValueType::Int, false},
+        };
+        for (const Expected& e : expected) {
+            CAPTURE(e.name);
+            const ParamSpec* p = find(e.name);
+            REQUIRE(p != nullptr);
+            CHECK(p->type == e.type);
+            CHECK(p->animatable == e.animatable);
+        }
+        // The physical (mode: simulation) parameters stay.
+        for (const char* name : {"volume_type", "bounds", "voxel_size", "temperature", "fuel", "dissipation",
+                                 "buoyancy", "vorticity", "cooling", "expansion", "combustion_rate"}) {
+            CAPTURE(name);
+            CHECK(find(name) != nullptr);
+        }
+    }
+
+    SECTION("defaults") {
+        Node volume;
+        volume.type = NodeType::Volume;
+        CHECK(param_string(volume, "mode") == "procedural");
+        CHECK(param_string(volume, "shape") == "sphere");
+        CHECK_THAT(param_float(volume, "radius"), WithinAbs(1.5, 1e-6));
+        CHECK_THAT(param_float(volume, "height"), WithinAbs(2.0, 1e-6));
+        CHECK_THAT(param_float(volume, "density"), WithinAbs(1.0, 1e-6));
+        CHECK_THAT(param_float(volume, "emission"), WithinAbs(1.0, 1e-6));
+        CHECK_THAT(param_float(volume, "filament_scale"), WithinAbs(2.0, 1e-6));
+        CHECK_THAT(param_float(volume, "strands"), WithinAbs(0.5, 1e-6));
+        CHECK_THAT(param_float(volume, "carve"), WithinAbs(0.45, 1e-6));
+        CHECK_THAT(param_float(volume, "softness"), WithinAbs(0.6, 1e-6));
+        CHECK_THAT(param_float(volume, "arm_sharpness"), WithinAbs(1.5, 1e-6));
+        CHECK_THAT(param_float(volume, "scatter"), WithinAbs(0.3, 1e-6));
+        CHECK(param_int(volume, "spiral_arms") == 0);
+        CHECK(param_int(volume, "march_steps") == 48);
+        const Color color = param_color(volume, "color");
+        CHECK_THAT(color.r, WithinAbs(0.6, 1e-6));
+        CHECK_THAT(color.g, WithinAbs(0.3, 1e-6));
+        CHECK_THAT(color.b, WithinAbs(1.0, 1e-6));
+    }
+
+    SECTION("the enums are the designed ones") {
+        REQUIRE(find("mode") != nullptr);
+        CHECK(find("mode")->enum_values == std::vector<std::string>{"procedural", "simulation"});
+        REQUIRE(find("shape") != nullptr);
+        CHECK(find("shape")->enum_values ==
+              std::vector<std::string>{"sphere", "column", "disc", "ring", "nebula", "cone"});
+    }
+}
+
+TEST_CASE("volume_shape_extent bounds every shape", "[core][spec][volume]") {
+    CHECK(volume_shape_extent("sphere", 2.0f, 5.0f) == Vec3{2, 2, 2});   // height is unused
+    CHECK(volume_shape_extent("column", 1.0f, 4.0f) == Vec3{1, 2, 1});
+    CHECK(volume_shape_extent("cone", 1.0f, 4.0f) == Vec3{1, 2, 1});
+    CHECK(volume_shape_extent("nebula", 3.0f, 2.0f) == Vec3{3, 1, 3});
+    CHECK(volume_shape_extent("disc", 2.0f, 4.0f) == Vec3{2, 0.5f, 2});  // 0.25 * height thick
+    CHECK(volume_shape_extent("ring", 2.0f, 4.0f) == Vec3{3, 1, 3});     // major 2 + minor 1
+    CHECK(volume_shape_extent("unknown", 1.5f, 9.0f) == Vec3{1.5f, 1.5f, 1.5f});
+    // Negative sizes never produce a negative box.
+    CHECK(volume_shape_extent("column", -1.0f, -4.0f) == Vec3{0, 0, 0});
 }

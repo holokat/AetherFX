@@ -255,6 +255,46 @@ class MeshInstanceInfo(ctypes.Structure):
     ]
 
 
+class VolumeInfo(ctypes.Structure):
+    """``struct aetherfx_volume_info`` - a `volume` node's resolved frame state.
+
+    ``mode`` is ``"procedural"`` (a raymarched density field; every field below
+    is meaningful, see docs/VOLUMES.md) or ``"simulation"`` (the V1 fluid stub:
+    id, bounds, density and temperature only).
+    """
+
+    _fields_ = [
+        ("id", c_char_p),
+        ("mode", c_char_p),
+        ("shape", c_char_p),
+        ("volume_type", c_char_p),
+        ("backend", c_char_p),
+        ("transform", c_float * 16),
+        ("bounds_min", c_float * 3),
+        ("bounds_max", c_float * 3),
+        ("radius", c_float),
+        ("height", c_float),
+        ("density", c_float),
+        ("emission", c_float),
+        ("color", c_float * 4),
+        ("color_hot", c_float * 4),
+        ("filament_scale", c_float),
+        ("strands", c_float),
+        ("carve", c_float),
+        ("softness", c_float),
+        ("spiral_arms", c_int),
+        ("arm_sharpness", c_float),
+        ("twist", c_float),
+        ("spin", c_float),
+        ("climb", c_float),
+        ("scatter", c_float),
+        ("march_steps", c_int),
+        ("seed", c_uint32),
+        ("time", c_float),
+        ("temperature", c_float),
+    ]
+
+
 class BeamInfo(ctypes.Structure):
     """``struct aetherfx_beam_info``."""
 
@@ -321,6 +361,7 @@ _EXPECTED_SIZES: tuple[tuple[type[ctypes.Structure], int], ...] = (
     (LightInfo, 64),
     (DecalInfo, 96),
     (MeshInstanceInfo, 112),
+    (VolumeInfo, 232),
     (BeamInfo, 64),
     (TrailVertex, 52),
     (TrailInfo, 32),
@@ -534,6 +575,8 @@ _SIGNATURES: dict[str, tuple[Any, tuple[Any, ...]]] = {
     "aetherfx_decal_info": (c_int, (c_void_p, c_int, POINTER(DecalInfo))),
     "aetherfx_runtime_mesh_instance_count": (c_int, (c_void_p,)),
     "aetherfx_mesh_instance_info": (c_int, (c_void_p, c_int, POINTER(MeshInstanceInfo))),
+    "aetherfx_runtime_volume_count": (c_int, (c_void_p,)),
+    "aetherfx_volume_info": (c_int, (c_void_p, c_int, POINTER(VolumeInfo))),
     "aetherfx_runtime_beam_count": (c_int, (c_void_p,)),
     "aetherfx_beam_info": (c_int, (c_void_p, c_int, POINTER(BeamInfo))),
     "aetherfx_beam_polyline": (c_int, (c_void_p, c_int, c_int, POINTER(_FLOAT_P), POINTER(c_size_t))),
@@ -1139,6 +1182,7 @@ class RuntimeFrame:
     lights: list[dict[str, Any]] = field(default_factory=list)
     decals: list[dict[str, Any]] = field(default_factory=list)
     mesh_instances: list[dict[str, Any]] = field(default_factory=list)
+    volumes: list[dict[str, Any]] = field(default_factory=list)
     beams: list[dict[str, Any]] = field(default_factory=list)   # {..., "polylines": [(N, 3) f32]}
     trails: list[dict[str, Any]] = field(default_factory=list)  # {..., "ribbons": [(N, 12) f32]}
     camera: dict[str, Any] | None = None
@@ -1241,6 +1285,7 @@ class Runtime(_Handle):
             lights=list(self._lights(library, handle)),
             decals=list(self._decals(library, handle)),
             mesh_instances=list(self._mesh_instances(library, handle)),
+            volumes=list(self._volumes(library, handle)),
             beams=list(self._beams(library, handle)),
             trails=list(self._trails(library, handle)),
             camera=self.camera(),
@@ -1354,6 +1399,42 @@ class Runtime(_Handle):
                 "color": _vec(info.color),
                 "emissive": float(info.emissive),
                 "visible": bool(info.visible),
+            }
+
+    def _volumes(self, library: ctypes.CDLL, handle: c_void_p) -> Iterator[dict[str, Any]]:
+        count = _check(library, library.aetherfx_runtime_volume_count(handle), "aetherfx_runtime_volume_count")
+        for index in range(count):
+            info = VolumeInfo()
+            _check(library, library.aetherfx_volume_info(handle, index, byref(info)), "aetherfx_volume_info")
+            yield {
+                "id": _text(info.id),
+                "mode": _text(info.mode),
+                "shape": _text(info.shape),
+                "volume_type": _text(info.volume_type),
+                "backend": _text(info.backend),
+                "transform": _vec(info.transform),
+                "bounds_min": _vec(info.bounds_min),
+                "bounds_max": _vec(info.bounds_max),
+                "radius": float(info.radius),
+                "height": float(info.height),
+                "density": float(info.density),
+                "emission": float(info.emission),
+                "color": _vec(info.color),
+                "color_hot": _vec(info.color_hot),
+                "filament_scale": float(info.filament_scale),
+                "strands": float(info.strands),
+                "carve": float(info.carve),
+                "softness": float(info.softness),
+                "spiral_arms": int(info.spiral_arms),
+                "arm_sharpness": float(info.arm_sharpness),
+                "twist": float(info.twist),
+                "spin": float(info.spin),
+                "climb": float(info.climb),
+                "scatter": float(info.scatter),
+                "march_steps": int(info.march_steps),
+                "seed": int(info.seed),
+                "time": float(info.time),
+                "temperature": float(info.temperature),
             }
 
     def _beams(self, library: ctypes.CDLL, handle: c_void_p) -> Iterator[dict[str, Any]]:

@@ -23,6 +23,7 @@ import { HeatHazeShader, MAX_LIGHTS, installBloomClamp, makeNoiseTexture } from 
 import { LAYER_OPAQUE, LAYER_TRANSPARENT, ParticleRenderer, makeSharedUniforms } from './particles.js';
 import { DecalRenderer, RibbonRenderer } from './ribbons.js';
 import { MeshInstanceRenderer, STAGE_DEFAULTS, Stage } from './scene.js';
+import { VolumeRenderer } from './volumes.js';
 import { ResourceSet } from './resources.js';
 
 /* How bright a pixel may be before the bloom pyramid stops caring (see
@@ -84,6 +85,7 @@ export class GLViewer {
     this.ribbons = new RibbonRenderer(this.scene);
     this.decals = new DecalRenderer(this.scene);
     this.meshInstances = new MeshInstanceRenderer(this.scene);
+    this.volumes = new VolumeRenderer(this.scene, this.shared);
 
     this.depthTarget = null;
     this.buildComposer();
@@ -129,8 +131,15 @@ export class GLViewer {
 
   buildComposer() {
     const size = this.drawingSize();
+    // 4x MSAA on the scene pass.  SMAA alone runs *after* tone mapping and barely
+    // touches a bright mesh silhouette on a dark background - an ice crystal edge
+    // stair-steps because the HDR values either side of it differ by an order of
+    // magnitude.  Multisampling the HDR target fixes it at the source; three.js
+    // resolves the buffer when a pass reads its texture.  `depthTarget` stays
+    // single-sampled: the soft-particle and volume passes sample it directly as a
+    // depth texture, which a multisampled attachment cannot be.
     const target = new THREE.WebGLRenderTarget(size.width, size.height, {
-      type: THREE.HalfFloatType, colorSpace: THREE.LinearSRGBColorSpace, depthBuffer: true
+      type: THREE.HalfFloatType, colorSpace: THREE.LinearSRGBColorSpace, depthBuffer: true, samples: 4
     });
     this.composer = new EffectComposer(this.renderer, target);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
@@ -340,6 +349,7 @@ export class GLViewer {
         this.stage.updateLights(frame);
         this.meshInstances.update(frame, context);
         this.decals.update(frame, context);
+        this.volumes.update(frame);
         this.applyPostEffects(frame.post_effects);
         this.particleCount = this.particles.update(frame, context);
       }
@@ -413,6 +423,7 @@ export class GLViewer {
     this.ribbons.dispose();
     this.decals.dispose();
     this.meshInstances.dispose();
+    this.volumes.dispose();
     this.stage.dispose();
     this.resources.dispose();
     this.noiseTexture.dispose();

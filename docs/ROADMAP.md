@@ -33,8 +33,12 @@ end before adding depth.
 
 ## M2 Volumetrics and physics
 
+* Done (M1.5): procedural raymarched volumes - `volume` with `mode: procedural`,
+  the same closed-form density field in the reference renderer and the GPU
+  viewer (docs/VOLUMES.md).
 * OpenVDB/NanoVDB grids, coarse Eulerian smoke/fire (density, temperature,
-  fuel, buoyancy, vorticity confinement), volume raymarching in the renderer.
+  fuel, buoyancy, vorticity confinement) behind `mode: simulation`, feeding the
+  raymarcher that already exists.
 * Jolt rigid debris behind the physics abstraction (Tier 2).
 
 ## M3 Reference reconstruction

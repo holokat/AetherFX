@@ -865,6 +865,51 @@ int aetherfx_mesh_instance_info(const aetherfx_runtime* runtime, int index,
 }
 
 // ---------------------------------------------------------------------------
+// Frame state: volumes
+// ---------------------------------------------------------------------------
+
+int aetherfx_runtime_volume_count(const aetherfx_runtime* runtime) {
+    return guard_status([&]() -> int { return to_count(state_of(runtime).volumes.size()); });
+}
+
+int aetherfx_volume_info(const aetherfx_runtime* runtime, int index, struct aetherfx_volume_info* out) {
+    return guard_status([&]() -> int {
+        require_mutable(out, "out");
+        const aether::FrameState& state = state_of(runtime);
+        const aether::VolumeState& volume = state.volumes[require_index(index, state.volumes.size(), "volume")];
+        out->id = c_str(volume.id);
+        out->mode = c_str(volume.mode);
+        out->shape = c_str(volume.shape);
+        out->volume_type = c_str(volume.volume_type);
+        out->backend = c_str(volume.backend);
+        std::memcpy(out->transform, volume.transform.m.data(), sizeof(out->transform));
+        copy_vec3(out->bounds_min, volume.bounds_min);
+        copy_vec3(out->bounds_max, volume.bounds_max);
+        out->radius = volume.radius;
+        out->height = volume.height;
+        out->density = volume.density;
+        out->emission = volume.emission;
+        copy_color(out->color, volume.color);
+        copy_color(out->color_hot, volume.color_hot);
+        out->filament_scale = volume.filament_scale;
+        out->strands = volume.strands;
+        out->carve = volume.carve;
+        out->softness = volume.softness;
+        out->spiral_arms = volume.spiral_arms;
+        out->arm_sharpness = volume.arm_sharpness;
+        out->twist = volume.twist;
+        out->spin = volume.spin;
+        out->climb = volume.climb;
+        out->scatter = volume.scatter;
+        out->march_steps = volume.march_steps;
+        out->seed = volume.seed;
+        out->time = volume.time;
+        out->temperature = volume.temperature;
+        return AETHERFX_OK;
+    });
+}
+
+// ---------------------------------------------------------------------------
 // Frame state: beams and trails
 // ---------------------------------------------------------------------------
 

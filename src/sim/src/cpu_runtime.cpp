@@ -10,6 +10,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <map>
 #include <string>
 #include <utility>
@@ -1045,19 +1046,57 @@ void CpuRuntime::emit_post_effect(const CompiledNode& cn, const Node& n, double 
     state_.post_effects.push_back(std::move(p));
 }
 
+// docs/RUNTIME.md section 7 "volume". `mode: procedural` resolves the whole
+// raymarching description (docs/VOLUMES.md) at t1; `mode: simulation` stays the V1
+// stub and fills only the domain bounds, density and temperature.
 void CpuRuntime::emit_volume(const CompiledNode& cn, const Node& n, double t1) {
     VolumeState v;
     v.id = n.id;
     v.volume_type = param_string(n, "volume_type");
-    const Vec3 bounds = param_vec3(n, "bounds");
-    const Mat4 world = compiled_.effect.world_transform(n, t1);
-    const Vec3 a = world.transform_point(bounds * -0.5f);
-    const Vec3 b = world.transform_point(bounds * 0.5f);
-    v.bounds_min = vmin(a, b);
-    v.bounds_max = vmax(a, b);
+    v.mode = param_string(n, "mode");
+    v.backend = cn.backend;
     v.density = param_float(n, "density", t1);
     v.temperature = param_float(n, "temperature", t1);
-    v.backend = cn.backend;
+    const Mat4 world = compiled_.effect.world_transform(n, t1);
+    v.transform = world;
+    v.time = static_cast<float>(t1);
+    v.seed = static_cast<uint32_t>(cn.seed);
+
+    Vec3 extent = param_vec3(n, "bounds") * 0.5f;  // simulation: the authored domain
+    if (v.mode != "simulation") {
+        v.shape = param_string(n, "shape");
+        v.radius = param_float(n, "radius", t1);
+        v.height = param_float(n, "height", t1);
+        v.emission = param_float(n, "emission", t1);
+        v.color = param_color(n, "color", t1);
+        v.color_hot = param_color(n, "color_hot");
+        v.filament_scale = param_float(n, "filament_scale");
+        v.strands = param_float(n, "strands");
+        v.carve = param_float(n, "carve");
+        v.softness = param_float(n, "softness");
+        v.spiral_arms = param_int(n, "spiral_arms");
+        v.arm_sharpness = param_float(n, "arm_sharpness");
+        v.twist = param_float(n, "twist", t1);
+        v.spin = param_float(n, "spin", t1);
+        v.climb = param_float(n, "climb", t1);
+        v.scatter = param_float(n, "scatter");
+        v.march_steps = param_int(n, "march_steps");
+        extent = volume_shape_extent(v.shape, v.radius, v.height);
+    }
+
+    // World AABB of the local box, the eight corners transformed.
+    Vec3 lo{std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
+    Vec3 hi = lo * -1.0f;
+    for (int corner = 0; corner < 8; ++corner) {
+        const Vec3 local{(corner & 1) ? extent.x : -extent.x,
+                         (corner & 2) ? extent.y : -extent.y,
+                         (corner & 4) ? extent.z : -extent.z};
+        const Vec3 p = world.transform_point(local);
+        lo = vmin(lo, p);
+        hi = vmax(hi, p);
+    }
+    v.bounds_min = lo;
+    v.bounds_max = hi;
     state_.volumes.push_back(std::move(v));
 }
 

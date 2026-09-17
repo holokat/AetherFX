@@ -689,3 +689,55 @@ TEST_CASE("two runtimes of the same effect stay bit identical", "[capi]") {
                           ia.count * 3 * sizeof(float)) == 0);
     }
 }
+
+TEST_CASE("void_nebula exposes its procedural volume", "[capi][volume]") {
+    Effect effect(example("void_nebula.json"));
+    REQUIRE(effect.handle != nullptr);
+    Compiled compiled(effect);
+    REQUIRE(compiled.handle != nullptr);
+    Runtime runtime(compiled);
+    REQUIRE(runtime.handle != nullptr);
+
+    // Before the density ramps in, the node is already inside its window.
+    REQUIRE(aetherfx_runtime_simulate_to(runtime, 1.2) == AETHERFX_OK);
+    REQUIRE(aetherfx_runtime_volume_count(runtime) == 1);
+
+    struct aetherfx_volume_info volume;
+    REQUIRE(aetherfx_volume_info(runtime, 0, &volume) == AETHERFX_OK);
+    REQUIRE(volume.id != nullptr);
+    CHECK(std::string(volume.id) == "void_core");
+    CHECK(std::string(volume.mode) == "procedural");
+    CHECK(std::string(volume.shape) == "nebula");
+    CHECK(std::string(volume.backend) == "procedural_volume");
+    CHECK(std::string(volume.volume_type) == "magic");
+    CHECK(volume.radius == Approx(2.2f).margin(1e-4));
+    CHECK(volume.density > 0.0f);
+    CHECK(volume.emission > 0.0f);
+    CHECK(volume.spiral_arms == 3);
+    CHECK(volume.march_steps == 48);
+    CHECK(volume.strands == Approx(0.6f).margin(1e-4));
+    CHECK(volume.carve == Approx(0.5f).margin(1e-4));
+    CHECK(volume.spin == Approx(0.15f).margin(1e-4));
+    CHECK(volume.scatter >= 0.0f);
+    CHECK(volume.time == Approx(1.2f).margin(0.02f));
+    for (int i = 0; i < 16; ++i) CHECK(std::isfinite(volume.transform[i]));
+    // Column-major, so the translation is the last column: the node sits above y = 0.
+    CHECK(volume.transform[13] > 1.0f);
+    for (int i = 0; i < 3; ++i) CHECK(volume.bounds_max[i] > volume.bounds_min[i]);
+    CHECK(volume.color[2] > volume.color[1]);       // a violet shell
+    CHECK(volume.color_hot[1] > volume.color_hot[0]);  // a cyan core
+
+    // Out of range is reported, never thrown.
+    CHECK(aetherfx_volume_info(runtime, 1, &volume) == AETHERFX_ERROR_OUT_OF_RANGE);
+    CHECK(aetherfx_volume_info(runtime, 0, nullptr) == AETHERFX_ERROR_INVALID_ARGUMENT);
+    CHECK(aetherfx_runtime_volume_count(nullptr) < 0);
+
+    // An effect with no volume reports zero, not an error.
+    Effect plain(example("fireball.json"));
+    REQUIRE(plain.handle != nullptr);
+    Compiled plain_compiled(plain);
+    REQUIRE(plain_compiled.handle != nullptr);
+    Runtime plain_runtime(plain_compiled);
+    REQUIRE(plain_runtime.handle != nullptr);
+    CHECK(aetherfx_runtime_volume_count(plain_runtime) == 0);
+}

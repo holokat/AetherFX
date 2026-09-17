@@ -69,7 +69,8 @@ class TestLibrary:
 
     def test_every_abi_function_is_declared(self):
         library = native.load_library()
-        assert len(native._SIGNATURES) == 74
+        # 74 through ABI 1, plus the two additive volume entry points.
+        assert len(native._SIGNATURES) == 76
         for name in native._SIGNATURES:
             assert getattr(library, name).argtypes is not None, name
 
@@ -297,6 +298,37 @@ class TestRuntime:
             assert ribbon.dtype == np.float32
             assert np.isfinite(ribbon).all()
             assert ((ribbon[:, 4] >= 0.0) & (ribbon[:, 4] <= 1.0)).all()  # normalized age
+        runtime.close()
+
+
+    def test_void_nebula_exposes_its_procedural_volume(self):
+        """docs/VOLUMES.md: a `volume` in mode `procedural` resolves the whole field."""
+        with native.Effect.from_file(EXAMPLES_DIR / "void_nebula.json") as effect:
+            with effect.compile(1.0 / 60.0) as compiled:
+                runtime = compiled.runtime()
+                runtime.simulate_to(1.2)
+                frame = runtime.frame()
+                assert len(frame.volumes) == 1
+                volume = frame.volumes[0]
+                assert volume["id"] == "void_core"
+                assert volume["mode"] == "procedural"
+                assert volume["shape"] == "nebula"
+                assert volume["backend"] == "procedural_volume"
+                assert volume["spiral_arms"] == 3
+                assert volume["march_steps"] == 48
+                assert volume["density"] > 0.0
+                assert volume["emission"] > 0.0
+                assert len(volume["transform"]) == 16
+                assert all(np.isfinite(volume["transform"]))
+                assert volume["bounds_max"][1] > volume["bounds_min"][1]
+                assert len(volume["color"]) == 4 and len(volume["color_hot"]) == 4
+                assert volume["time"] == pytest.approx(1.2, abs=0.02)
+                runtime.close()
+
+    def test_fireball_has_no_volumes(self, fireball: native.Compiled):
+        runtime = fireball.runtime()
+        runtime.simulate_to(0.5)
+        assert runtime.frame().volumes == []
         runtime.close()
 
 

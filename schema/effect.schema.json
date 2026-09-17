@@ -1996,7 +1996,7 @@
     },
     "node_volume": {
       "additionalProperties": false,
-      "description": "Volumetric simulation (Tier 3; the V1 backend is a stub that reports statistics).",
+      "description": "A bounded volume: a procedural raymarched density field (mode: procedural) or, later, a fluid simulation (mode: simulation, a V1 stub that reports statistics). See docs/VOLUMES.md.",
       "properties": {
         "enabled": {
           "type": "boolean"
@@ -2037,11 +2037,26 @@
         "parameters": {
           "additionalProperties": false,
           "properties": {
+            "arm_sharpness": {
+              "$ref": "#/$defs/param_float_min0p1"
+            },
             "bounds": {
               "$ref": "#/$defs/param_vec3"
             },
             "buoyancy": {
               "$ref": "#/$defs/param_float"
+            },
+            "carve": {
+              "$ref": "#/$defs/param_float_min0_max1"
+            },
+            "climb": {
+              "$ref": "#/$defs/param_float"
+            },
+            "color": {
+              "$ref": "#/$defs/param_color"
+            },
+            "color_hot": {
+              "$ref": "#/$defs/param_color"
             },
             "combustion_rate": {
               "$ref": "#/$defs/param_float_min0"
@@ -2058,11 +2073,26 @@
             "duration": {
               "$ref": "#/$defs/param_float"
             },
+            "emission": {
+              "$ref": "#/$defs/param_float_min0"
+            },
             "expansion": {
               "$ref": "#/$defs/param_float_min0"
             },
+            "filament_scale": {
+              "$ref": "#/$defs/param_float_min0p1"
+            },
             "fuel": {
               "$ref": "#/$defs/param_float_min0"
+            },
+            "height": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "march_steps": {
+              "$ref": "#/$defs/param_int_min8_max192"
+            },
+            "mode": {
+              "$ref": "#/$defs/param_enum_procedural_simulation"
             },
             "phase": {
               "$ref": "#/$defs/param_string"
@@ -2070,17 +2100,41 @@
             "position": {
               "$ref": "#/$defs/param_vec3"
             },
+            "radius": {
+              "$ref": "#/$defs/param_float_min0"
+            },
             "rotation": {
               "$ref": "#/$defs/param_vec3"
             },
             "scale": {
               "$ref": "#/$defs/param_vec3"
             },
+            "scatter": {
+              "$ref": "#/$defs/param_float_min0_max1"
+            },
+            "shape": {
+              "$ref": "#/$defs/param_enum_sphere_column_disc_ring_nebula_cone"
+            },
+            "softness": {
+              "$ref": "#/$defs/param_float_min0_max1"
+            },
+            "spin": {
+              "$ref": "#/$defs/param_float"
+            },
+            "spiral_arms": {
+              "$ref": "#/$defs/param_int_min0_max8"
+            },
             "start_time": {
               "$ref": "#/$defs/param_float_min0"
             },
+            "strands": {
+              "$ref": "#/$defs/param_float_min0_max1"
+            },
             "temperature": {
               "$ref": "#/$defs/param_float_min0"
+            },
+            "twist": {
+              "$ref": "#/$defs/param_float"
             },
             "volume_type": {
               "$ref": "#/$defs/param_enum_smoke_fire_fog_dust_magic_generic_density"
@@ -2724,6 +2778,36 @@
         }
       ]
     },
+    "param_enum_procedural_simulation": {
+      "anyOf": [
+        {
+          "enum": [
+            "procedural",
+            "simulation"
+          ],
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "enum": [
+                "procedural",
+                "simulation"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
     "param_enum_scalar_vector_density_temperature_fuel_velocity_sdf_noise": {
       "anyOf": [
         {
@@ -2793,6 +2877,44 @@
                 "dust",
                 "magic",
                 "generic_density"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_enum_sphere_column_disc_ring_nebula_cone": {
+      "anyOf": [
+        {
+          "enum": [
+            "sphere",
+            "column",
+            "disc",
+            "ring",
+            "nebula",
+            "cone"
+          ],
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "enum": [
+                "sphere",
+                "column",
+                "disc",
+                "ring",
+                "nebula",
+                "cone"
               ],
               "type": "string"
             }
@@ -3140,6 +3262,30 @@
         }
       ]
     },
+    "param_float_min0p1": {
+      "anyOf": [
+        {
+          "minimum": 0.1,
+          "type": "number"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "minimum": 0.1,
+              "type": "number"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
     "param_float_min1": {
       "anyOf": [
         {
@@ -3251,6 +3397,32 @@
             },
             "value": {
               "maximum": 16,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_int_min0_max8": {
+      "anyOf": [
+        {
+          "maximum": 8,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "maximum": 8,
               "minimum": 0,
               "type": "integer"
             }
@@ -3512,6 +3684,32 @@
             "value": {
               "maximum": 512,
               "minimum": 4,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_int_min8_max192": {
+      "anyOf": [
+        {
+          "maximum": 192,
+          "minimum": 8,
+          "type": "integer"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "maximum": 192,
+              "minimum": 8,
               "type": "integer"
             }
           },

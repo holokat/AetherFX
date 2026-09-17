@@ -27,6 +27,10 @@ Header (frame message)::
      "decals": [{"id", "position", "normal", "size", "rotation_deg", "color", "opacity", "emissive",
                  "circle", "blend", "texture", "material"}],
      "mesh_instances": [{"id", "mesh", "material", "transform" (16, column-major), "color", "emissive", "visible"}],
+     "volumes": [{"id", "mode", "shape", "transform" (16, column-major), "bounds_min", "bounds_max",
+                  "radius", "height", "density", "emission", "color", "color_hot", "filament_scale",
+                  "strands", "carve", "softness", "spiral_arms", "arm_sharpness", "twist", "spin",
+                  "climb", "scatter", "march_steps", "seed", "time"}],   # plain JSON, nothing in the blob
      "beams": [{"id", "width", "color", "emissive", "blend", "material", "pulse_phase",
                 "polylines": [{"offset", "count"}]}],           # xyz f32 triplets in the blob
      "trails": [{"id", "blend", "material", "twist_deg",
@@ -103,6 +107,7 @@ class Frame:
     lights: list[dict[str, Any]] = field(default_factory=list)
     decals: list[dict[str, Any]] = field(default_factory=list)
     mesh_instances: list[dict[str, Any]] = field(default_factory=list)
+    volumes: list[dict[str, Any]] = field(default_factory=list)        # procedural raymarched volumes (docs/VOLUMES.md)
     beams: list[dict[str, Any]] = field(default_factory=list)          # {..., "polylines": [np.ndarray (N,3)]}
     trails: list[dict[str, Any]] = field(default_factory=list)         # {..., "ribbons": [np.ndarray (N,12)]}
     camera: dict[str, Any] | None = None
@@ -151,7 +156,8 @@ def encode_frame(frame: Frame, fps: float = 60.0) -> bytes:
     header = {
         "type": "frame", "version": STREAM_VERSION, "time": frame.time, "frame": frame.frame, "fps": fps,
         "systems": systems_json, "lights": frame.lights, "decals": frame.decals,
-        "mesh_instances": frame.mesh_instances, "beams": beams_json, "trails": trails_json,
+        "mesh_instances": frame.mesh_instances, "volumes": frame.volumes,
+        "beams": beams_json, "trails": trails_json,
         "camera": frame.camera, "post_effects": frame.post_effects,
     }
     head = json.dumps(header, separators=(",", ":")).encode("utf-8")

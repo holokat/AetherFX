@@ -58,7 +58,8 @@ imageio     <- core                 PNG/JPG/TGA/BMP + EXR codecs, tonemap, flipb
 procedural  <- core                 noise, procedural textures, mesh primitives
 compiler    <- core, procedural, imageio   tier selection, resource baking, plan
 sim         <- core, compiler       CPU reference runtime (GPU runtime later)
-render      <- core, imageio        software reference renderer, video encode
+render      <- core, imageio, procedural   software reference renderer, video encode
+                                    (procedural: the volume density field's fbm, see docs/VOLUMES.md)
 tools       <- core, compiler, sim, render, procedural   ToolRegistry, Session
 cli         <- tools                `aetherfx` executable, JSON-RPC stdio server
 gpu         <- core                 wgpu-native bootstrap (optional, AETHER_WITH_GPU)
@@ -109,7 +110,9 @@ See `docs/VOCABULARY.md` for the full node and parameter list.
    * Tier 1 Particles: emitter + particle_system (CPU now, GPU later)
    * Tier 2 Physics: particle_system with `physics: rigid` (Jolt later; V1
      falls back to Tier 1 with collision and emits a warning)
-   * Tier 3 Volumetric: volume (V1: stub backend, statistics only, warning)
+   * Tier 3 Volumetric: volume - `mode: procedural` is raymarched
+     (backend `procedural_volume`, docs/VOLUMES.md); `mode: simulation` is
+     still a stub backend, statistics only, warning W104
 5. bake resources: procedural textures -> `Image`, mesh primitives ->
    `MeshData`, materials -> `MaterialDesc`, into a `ResourceSet`
 6. emit `Diagnostics` (what was downgraded, what is unsupported, budgets)
@@ -125,7 +128,7 @@ runtime must produce the same FrameState within floating point tolerance
 
 `FrameState` is the only thing the renderer sees: SoA particle buffers per
 system, light states, beam polylines, trail ribbons, decal states, mesh
-instances, volume stubs, plus time and frame index. It carries resource ids
+instances, volumes, plus time and frame index. It carries resource ids
 (material, texture, mesh) that index the `ResourceSet`.
 
 Fixed timestep (default 1/60 s). `simulate_to(t)` steps in fixed increments

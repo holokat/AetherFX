@@ -1,0 +1,952 @@
+{
+  "schema_version": "0.1.0",
+  "name": "Void Nebula",
+  "duration": 4.0,
+  "seed": 827,
+  "timeline": {
+    "phases": [
+      {
+        "name": "anticipation",
+        "start": 0.0,
+        "end": 0.6
+      },
+      {
+        "name": "peak",
+        "start": 0.6,
+        "end": 1.4
+      },
+      {
+        "name": "sustain",
+        "start": 1.4,
+        "end": 3.2
+      },
+      {
+        "name": "decay",
+        "start": 3.2,
+        "end": 4.0
+      }
+    ]
+  },
+  "layers": [
+    {
+      "id": "telegraph",
+      "name": "Rune circle",
+      "role": "telegraph"
+    },
+    {
+      "id": "primary",
+      "name": "Void nebula",
+      "role": "primary"
+    },
+    {
+      "id": "secondary",
+      "name": "Pulled sparks and wisps",
+      "role": "secondary"
+    },
+    {
+      "id": "interaction",
+      "name": "Motes and light",
+      "role": "interaction"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "cam",
+      "type": "camera",
+      "parameters": {
+        "position": [
+          0.0,
+          4.0,
+          8.4
+        ],
+        "target": [
+          0.0,
+          1.8,
+          0.0
+        ],
+        "fov": 42
+      }
+    },
+    {
+      "id": "tex_rune",
+      "type": "texture",
+      "parameters": {
+        "width": 512,
+        "height": 512,
+        "graph": {
+          "nodes": [
+            {
+              "id": "outer",
+              "op": "ring",
+              "params": {
+                "radius": 0.46,
+                "thickness": 0.016,
+                "softness": 0.006
+              }
+            },
+            {
+              "id": "outer2",
+              "op": "ring",
+              "params": {
+                "radius": 0.425,
+                "thickness": 0.007,
+                "softness": 0.004
+              }
+            },
+            {
+              "id": "inner",
+              "op": "ring",
+              "params": {
+                "radius": 0.29,
+                "thickness": 0.012,
+                "softness": 0.005
+              }
+            },
+            {
+              "id": "spokes",
+              "op": "spokes",
+              "params": {
+                "count": 12,
+                "width": 0.006
+              }
+            },
+            {
+              "id": "spoke_band",
+              "op": "ring",
+              "params": {
+                "radius": 0.36,
+                "thickness": 0.12,
+                "softness": 0.02
+              }
+            },
+            {
+              "id": "spokes_m",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "spokes",
+                "b": "spoke_band"
+              }
+            },
+            {
+              "id": "star",
+              "op": "star",
+              "params": {
+                "points": 6,
+                "radius": 0.26,
+                "core_radius": 0.05
+              }
+            },
+            {
+              "id": "star_lv",
+              "op": "levels",
+              "params": {
+                "in_low": 0.4,
+                "in_high": 0.95,
+                "out_high": 0.5
+              },
+              "inputs": {
+                "a": "star"
+              }
+            },
+            {
+              "id": "r1",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "outer",
+                "b": "outer2"
+              }
+            },
+            {
+              "id": "r2",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "r1",
+                "b": "inner"
+              }
+            },
+            {
+              "id": "r3",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "r2",
+                "b": "spokes_m"
+              }
+            },
+            {
+              "id": "all",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "r3",
+                "b": "star_lv"
+              }
+            }
+          ],
+          "output": "all"
+        }
+      }
+    },
+    {
+      "id": "tex_puff",
+      "type": "texture",
+      "parameters": {
+        "width": 128,
+        "height": 128,
+        "frames": 8,
+        "graph": {
+          "nodes": [
+            {
+              "id": "r",
+              "op": "gradient_radial",
+              "params": {
+                "radius": 0.5,
+                "falloff": "smooth"
+              }
+            },
+            {
+              "id": "n",
+              "op": "fbm",
+              "params": {
+                "frequency": 4.0,
+                "octaves": 4,
+                "seed": 11,
+                "animate": 1.0
+              }
+            },
+            {
+              "id": "m",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "r",
+                "b": "n"
+              }
+            },
+            {
+              "id": "l",
+              "op": "levels",
+              "params": {
+                "in_low": 0.05,
+                "in_high": 0.6
+              },
+              "inputs": {
+                "a": "m"
+              }
+            }
+          ],
+          "output": "l"
+        }
+      }
+    },
+    {
+      "id": "tex_spark",
+      "type": "texture",
+      "parameters": {
+        "width": 32,
+        "height": 32,
+        "graph": {
+          "nodes": [
+            {
+              "id": "r",
+              "op": "gradient_radial",
+              "params": {
+                "radius": 0.5,
+                "falloff": "quadratic"
+              }
+            }
+          ],
+          "output": "r"
+        }
+      }
+    },
+    {
+      "id": "mat_wisp",
+      "type": "material",
+      "parameters": {
+        "blend": "alpha",
+        "shading": "lit",
+        "base_color": [
+          0.05,
+          0.02,
+          0.09,
+          1.0
+        ],
+        "soft_particle": true,
+        "depth_fade": 0.3,
+        "dissolve": 0.5,
+        "erosion": 0.25
+      }
+    },
+    {
+      "id": "mat_astral",
+      "type": "material",
+      "parameters": {
+        "blend": "additive",
+        "emissive_color": [
+          0.35,
+          0.9,
+          0.95,
+          1.0
+        ],
+        "emissive_intensity": 1.4,
+        "soft_particle": true,
+        "depth_fade": 0.15,
+        "dissolve": 0.35,
+        "erosion": 0.2
+      }
+    },
+    {
+      "id": "f_vortex",
+      "type": "force",
+      "parameters": {
+        "force_type": "vortex",
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "strength": 3.4,
+        "radius": 4.2,
+        "falloff": "smooth"
+      }
+    },
+    {
+      "id": "f_pull",
+      "type": "force",
+      "parameters": {
+        "force_type": "attractor",
+        "position": [
+          0.0,
+          1.5,
+          0.0
+        ],
+        "strength": 2.6,
+        "radius": 6.5,
+        "falloff": "smooth"
+      }
+    },
+    {
+      "id": "f_pull_strong",
+      "type": "force",
+      "parameters": {
+        "force_type": "attractor",
+        "position": [
+          0.0,
+          1.9,
+          0.0
+        ],
+        "strength": 6.5,
+        "radius": 7.0,
+        "falloff": "smooth"
+      }
+    },
+    {
+      "id": "f_curl",
+      "type": "force",
+      "parameters": {
+        "force_type": "curl_noise",
+        "strength": 1.1,
+        "frequency": 0.7,
+        "octaves": 2,
+        "speed": 0.5
+      }
+    },
+    {
+      "id": "f_lift",
+      "type": "force",
+      "parameters": {
+        "force_type": "buoyancy",
+        "strength": 0.5
+      }
+    },
+    {
+      "id": "ground",
+      "type": "collider",
+      "parameters": {
+        "collider_type": "plane",
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "bounce": 0.05,
+        "friction": 0.7
+      }
+    },
+    {
+      "id": "rune",
+      "type": "decal",
+      "layer": "telegraph",
+      "parameters": {
+        "shape": "circle",
+        "size": [
+          7.2,
+          7.2
+        ],
+        "color": [
+          0.45,
+          0.2,
+          1.0,
+          1.0
+        ],
+        "emissive": 1.8,
+        "blend": "additive",
+        "opacity": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 0.0
+            },
+            {
+              "time": 0.45,
+              "value": 1.0
+            },
+            {
+              "time": 1.2,
+              "value": 0.85
+            },
+            {
+              "time": 3.2,
+              "value": 0.7
+            },
+            {
+              "time": 4.0,
+              "value": 0.0
+            }
+          ]
+        },
+        "fade_in": 0.0,
+        "fade_out": 0.0
+      },
+      "inputs": {
+        "texture": "tex_rune"
+      }
+    },
+    {
+      "id": "void_core",
+      "type": "volume",
+      "layer": "primary",
+      "parameters": {
+        "mode": "procedural",
+        "volume_type": "magic",
+        "shape": "nebula",
+        "position": [
+          0.0,
+          1.95,
+          0.0
+        ],
+        "radius": 2.2,
+        "height": 2.4,
+        "density": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 0.0
+            },
+            {
+              "time": 0.55,
+              "value": 0.5
+            },
+            {
+              "time": 1.1,
+              "value": 1.9
+            },
+            {
+              "time": 1.6,
+              "value": 1.7
+            },
+            {
+              "time": 3.2,
+              "value": 1.4
+            },
+            {
+              "time": 4.0,
+              "value": 0.0
+            }
+          ]
+        },
+        "emission": 1.5,
+        "color": [
+          0.32,
+          0.1,
+          0.82,
+          1.0
+        ],
+        "color_hot": [
+          0.3,
+          0.88,
+          0.95,
+          1.0
+        ],
+        "filament_scale": 1.8,
+        "strands": 0.6,
+        "carve": 0.5,
+        "softness": 0.75,
+        "spiral_arms": 3,
+        "arm_sharpness": 1.7,
+        "twist": 0.4,
+        "spin": 0.15,
+        "climb": 0.1,
+        "scatter": 0.3,
+        "march_steps": 48
+      }
+    },
+    {
+      "id": "spark_ps",
+      "type": "particle_system",
+      "layer": "secondary",
+      "parameters": {
+        "max_particles": 2600,
+        "lifetime": 1.5,
+        "lifetime_variance": 0.5,
+        "size": 0.05,
+        "size_variance": 0.02,
+        "color": [
+          0.5,
+          0.95,
+          1.0,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              0.55,
+              1.0,
+              1.0,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.5,
+              0.18,
+              0.95,
+              1.0
+            ]
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.1,
+            1.0
+          ],
+          [
+            0.85,
+            1.0
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 5.5,
+        "drag": 0.4,
+        "render_mode": "stretched_billboard",
+        "velocity_stretch": 0.18,
+        "blend": "additive"
+      },
+      "inputs": {
+        "sprite": "tex_spark",
+        "forces": [
+          "f_pull_strong",
+          "f_vortex",
+          "f_curl"
+        ]
+      }
+    },
+    {
+      "id": "sparks",
+      "type": "emitter",
+      "layer": "secondary",
+      "parameters": {
+        "shape": "ring",
+        "radius": 3.5,
+        "inner_radius": 2.9,
+        "position": [
+          0.0,
+          0.3,
+          0.0
+        ],
+        "rate": {
+          "value": 60.0,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 60.0
+            },
+            {
+              "time": 0.6,
+              "value": 320.0
+            },
+            {
+              "time": 1.2,
+              "value": 460.0
+            },
+            {
+              "time": 3.2,
+              "value": 300.0
+            },
+            {
+              "time": 3.7,
+              "value": 0.0
+            }
+          ]
+        },
+        "velocity": 0.9,
+        "velocity_variance": 0.6,
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 45
+      },
+      "inputs": {
+        "particle": "spark_ps"
+      }
+    },
+    {
+      "id": "wisp_ps",
+      "type": "particle_system",
+      "layer": "secondary",
+      "parameters": {
+        "max_particles": 1400,
+        "lifetime": 2.2,
+        "lifetime_variance": 0.6,
+        "size": 0.85,
+        "size_variance": 0.35,
+        "size_over_life": [
+          [
+            0.0,
+            0.5
+          ],
+          [
+            0.5,
+            1.0
+          ],
+          [
+            1.0,
+            0.45
+          ]
+        ],
+        "color": [
+          0.05,
+          0.02,
+          0.1,
+          1.0
+        ],
+        "opacity": 0.55,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.2,
+            0.8
+          ],
+          [
+            0.8,
+            0.55
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "drag": 0.95,
+        "blend": "alpha",
+        "sort": true,
+        "angular_velocity": 25.0,
+        "angular_velocity_variance": 25.0
+      },
+      "inputs": {
+        "sprite": "tex_puff",
+        "material": "mat_wisp",
+        "forces": [
+          "f_pull",
+          "f_vortex",
+          "f_curl",
+          "f_lift"
+        ],
+        "colliders": [
+          "ground"
+        ]
+      }
+    },
+    {
+      "id": "wisps",
+      "type": "emitter",
+      "layer": "secondary",
+      "parameters": {
+        "shape": "ring",
+        "radius": 4.2,
+        "inner_radius": 3.4,
+        "position": [
+          0.0,
+          0.6,
+          0.0
+        ],
+        "rate": {
+          "value": 30.0,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 30.0
+            },
+            {
+              "time": 0.6,
+              "value": 90.0
+            },
+            {
+              "time": 1.4,
+              "value": 150.0
+            },
+            {
+              "time": 3.2,
+              "value": 110.0
+            },
+            {
+              "time": 3.8,
+              "value": 0.0
+            }
+          ]
+        },
+        "velocity": 0.35,
+        "velocity_variance": 0.25,
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 40,
+        "radial_velocity": -0.8
+      },
+      "inputs": {
+        "particle": "wisp_ps"
+      }
+    },
+    {
+      "id": "mote_ps",
+      "type": "particle_system",
+      "layer": "interaction",
+      "parameters": {
+        "max_particles": 900,
+        "lifetime": 2.4,
+        "lifetime_variance": 0.8,
+        "size": 0.22,
+        "size_variance": 0.1,
+        "size_over_life": [
+          [
+            0.0,
+            0.3
+          ],
+          [
+            0.4,
+            1.0
+          ],
+          [
+            1.0,
+            0.2
+          ]
+        ],
+        "color": [
+          0.4,
+          0.95,
+          1.0,
+          1.0
+        ],
+        "opacity": 0.45,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.25,
+            1.0
+          ],
+          [
+            0.75,
+            0.8
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 1.1,
+        "drag": 1.2,
+        "blend": "additive"
+      },
+      "inputs": {
+        "sprite": "tex_puff",
+        "material": "mat_astral",
+        "forces": [
+          "f_vortex",
+          "f_curl",
+          "f_lift"
+        ]
+      }
+    },
+    {
+      "id": "motes",
+      "type": "emitter",
+      "layer": "interaction",
+      "parameters": {
+        "shape": "sphere",
+        "radius": 2.0,
+        "position": [
+          0.0,
+          1.9,
+          0.0
+        ],
+        "rate": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 0.0
+            },
+            {
+              "time": 0.6,
+              "value": 30.0
+            },
+            {
+              "time": 1.2,
+              "value": 65.0
+            },
+            {
+              "time": 3.2,
+              "value": 50.0
+            },
+            {
+              "time": 3.8,
+              "value": 0.0
+            }
+          ]
+        },
+        "velocity": 0.5,
+        "velocity_variance": 0.4,
+        "direction": [
+          0,
+          0,
+          0
+        ],
+        "spread": 0,
+        "start_time": 0.4
+      },
+      "inputs": {
+        "particle": "mote_ps"
+      }
+    },
+    {
+      "id": "void_light",
+      "type": "light",
+      "layer": "interaction",
+      "parameters": {
+        "light_type": "point",
+        "position": [
+          0.0,
+          1.9,
+          0.0
+        ],
+        "color": [
+          0.5,
+          0.35,
+          1.0,
+          1.0
+        ],
+        "radius": 10.0,
+        "intensity": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 0.0
+            },
+            {
+              "time": 0.5,
+              "value": 2.5
+            },
+            {
+              "time": 1.1,
+              "value": 9.0
+            },
+            {
+              "time": 1.6,
+              "value": 7.5
+            },
+            {
+              "time": 3.2,
+              "value": 6.0
+            },
+            {
+              "time": 4.0,
+              "value": 0.0
+            }
+          ]
+        },
+        "flicker_amplitude": 0.12,
+        "flicker_frequency": 7.0
+      }
+    },
+    {
+      "id": "post_bloom",
+      "type": "post_effect",
+      "parameters": {
+        "post_type": "bloom",
+        "intensity": 0.55,
+        "threshold": 1.0,
+        "radius": 0.06
+      }
+    }
+  ],
+  "metadata": {
+    "reference": "Astral Void Blast: a purple/teal nebula opening over a rune circle",
+    "analysis": "telegraph: rune circle fades in | peak: the procedural nebula volume blooms, three spiral arms winding slowly | sustain: sparks and dark wisps are dragged into the vortex, astral motes drift inside the cloud | decay: density, light and emitters fall to zero",
+    "timing": "anticipation 0-0.6, peak 0.6-1.4, sustain 1.4-3.2, decay 3.2-4.0",
+    "render_settings": {
+      "ground_albedo": 0.04,
+      "background": [
+        0.004,
+        0.004,
+        0.012,
+        1.0
+      ],
+      "bloom_intensity": 0.55,
+      "bloom_radius": 0.06,
+      "exposure": 1.1,
+      "grid": false
+    }
+  }
+}

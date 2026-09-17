@@ -211,7 +211,14 @@ emissive = emissive_base * emissive_over_life(u)
   emit warning W103 and support only the first 512.
 * **camera**: FrameState.camera from animated params.
 * **post_effect**: PostEffectState inside its window.
-* **volume**: VolumeState stub with density/temperature params (W104).
+* **volume**: VolumeState inside the node's window. `mode: procedural`
+  (docs/VOLUMES.md) resolves the whole field - shape, radius, height, density,
+  emission, colours, filament_scale, strands, carve, softness, spiral_arms,
+  arm_sharpness, twist, spin, climb, scatter, march_steps - with animated
+  parameters evaluated at `t1`, plus the node's world `transform`, its derived
+  `seed`, `time = t1`, and `bounds_min/max` = the world AABB of
+  `volume_shape_extent(shape, radius, height)`. `mode: simulation` is still the
+  V1 stub: id, `bounds`-derived AABB, density and temperature only (W104).
 * **field**: no runtime output in V1.
 
 ## 8. Events

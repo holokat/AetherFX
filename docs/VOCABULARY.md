@@ -179,13 +179,39 @@ resolution: int = 32 [4..512]
 ```
 inputs: `source: noise|volume|mesh`. outputs: `field`.
 
-### volume  (Tier 3; V1 backend is a stub that reports statistics)
+### volume  (Tier 3; `mode: procedural` is raymarched, `mode: simulation` is a stub)
 transform, window, plus:
 ```
+mode: enum = procedural [procedural, simulation]   simulation = the future fluid solver (W104 until then)
 volume_type: enum = smoke [smoke, fire, fog, dust, magic, generic_density]
+```
+`mode: procedural` - a raymarched closed-form density field, see docs/VOLUMES.md
+for the function, the shape table and the marching model:
+```
+shape: enum = sphere [sphere, column, disc, ring, nebula, cone]
+radius: float = 1.5 [0..] (A)          shape radius (m)
+height: float = 2 [0..] (A)            column/cone height, disc/ring thickness (m)
+density: float = 1 [0..] (A)           extinction per metre
+emission: float = 1 [0..] (A)          HDR emission multiplier (bloom feeds on it)
+color: color = 0.6,0.3,1,1 (A)         base tint
+color_hot: color = 1,1,1,1             tint at the densest core
+filament_scale: float = 2 [0.1..]      noise frequency (1/m)
+strands: float = 0.5 [0..1]            0 = soft clouds, 1 = stringy filaments
+carve: float = 0.45 [0..1]             density threshold: higher carves more holes
+softness: float = 0.6 [0..1]           edge falloff of the bounding shape
+spiral_arms: int = 0 [0..8]            azimuthal arm count (nebula/disc)
+arm_sharpness: float = 1.5 [0.1..]
+twist: float = 0 (A)                   radians of twist per metre of height
+spin: float = 0 (A)                    revolutions per second around the up axis
+climb: float = 0 (A)                   m/s upward advection of the noise field
+scatter: float = 0.3 [0..1]            single-scatter weight from the scene lights
+march_steps: int = 48 [8..192]         quality/speed knob (a backend may clamp it)
+```
+`mode: simulation` - the fluid domain (V1: reported, not solved):
+```
 bounds: vec3 = 2,2,2
 voxel_size: float = 0.05 [0.005..1]
-density: float = 1 [0..] (A)
+density: float = 1 [0..] (A)           injected density
 temperature: float = 0 [0..] (A)
 fuel: float = 0 [0..]
 dissipation: float = 0.1 [0..]
@@ -195,7 +221,8 @@ cooling: float = 0.5 [0..]
 expansion: float = 0 [0..]
 combustion_rate: float = 1 [0..]
 ```
-inputs: `sources: emitter[]`, `forces: force[]`, `colliders: collider[]`, `material: material`.
+inputs: `sources: emitter[]`, `forces: force[]`, `colliders: collider[]`, `material: material`
+(all four are for the simulation path; a procedural volume needs none of them).
 outputs: `volume`.
 
 ### mesh  (Tier 0 renderable, or emitter shape)

@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "aether/core/enums.hpp"
@@ -124,14 +125,52 @@ struct MeshInstanceState {
     bool visible = true;
 };
 
+// A bounded volume. `mode` picks which half of this struct matters:
+//   "procedural" - a raymarched closed-form density field (docs/VOLUMES.md); every
+//                  field below is resolved and a renderer can draw it on its own.
+//   "simulation" - the V1 fluid stub: id, bounds, density and temperature only.
 struct VolumeState {
     std::string id;
     std::string volume_type;
-    Vec3 bounds_min, bounds_max;
+    Vec3 bounds_min, bounds_max;  // world-space AABB of the shape
     float density = 0.0f;
     float temperature = 0.0f;
-    std::string backend;  // "volume_stub"
+    std::string backend;  // "procedural_volume" or "volume_stub"
+
+    std::string mode = "procedural";
+    std::string shape = "sphere";
+    float radius = 1.5f;
+    float height = 2.0f;
+    float emission = 1.0f;
+    Color color{0.6f, 0.3f, 1.0f, 1.0f};
+    Color color_hot{1, 1, 1, 1};
+    float filament_scale = 2.0f;
+    float strands = 0.5f;
+    float carve = 0.45f;
+    float softness = 0.6f;
+    int spiral_arms = 0;
+    float arm_sharpness = 1.5f;
+    float twist = 0.0f;   // rad per metre of height
+    float spin = 0.0f;    // revolutions per second about the local up axis
+    float climb = 0.0f;   // m/s of upward noise advection
+    float scatter = 0.3f;
+    int march_steps = 48;
+    Mat4 transform;       // local -> world (the node's world transform)
+    uint32_t seed = 0;    // the node's derived stream seed, truncated
+    float time = 0.0f;    // effect time the field is evaluated at
 };
+
+// Shape constants shared by every volume backend, as fractions of `height`:
+// a disc is a slab this thick, a ring's tube has this radius.
+inline constexpr float kVolumeDiscThickness = 0.25f;
+inline constexpr float kVolumeRingThickness = 0.25f;
+
+// Half-extents, in the volume's local space, of the box that tightly contains a
+// procedural `shape`. The density function is exactly zero outside it, so this is
+// both the runtime's AABB source and the box every raymarching backend marches
+// through. Every backend (CPU renderer, three.js viewer, engine bridges) must agree
+// with this, so it lives here rather than in one renderer.
+Vec3 volume_shape_extent(std::string_view shape, float radius, float height);
 
 struct FrameState {
     double time = 0.0;

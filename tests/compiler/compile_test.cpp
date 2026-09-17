@@ -530,21 +530,51 @@ TEST_CASE("a trail on a particle system warns W103", "[compiler][diagnostics]") 
     CHECK(c.find("spark_ps")->trail == "trail");
 }
 
-TEST_CASE("volume nodes compile to the stub backend with W104", "[compiler][diagnostics]") {
-    Effect effect = load_example("fireball.json");
-    Node volume;
-    volume.id = "smoke_volume";
-    volume.type = NodeType::Volume;
-    volume.parameters["volume_type"] = Parameter{std::string("smoke")};
-    effect.add_node(volume);
+TEST_CASE("volume backends follow `mode`", "[compiler][diagnostics][volume]") {
+    auto compile_with_mode = [](const char* mode) {
+        Effect effect = load_example("fireball.json");
+        Node volume;
+        volume.id = "smoke_volume";
+        volume.type = NodeType::Volume;
+        volume.parameters["volume_type"] = Parameter{std::string("smoke")};
+        if (mode != nullptr) volume.parameters["mode"] = Parameter{std::string(mode)};
+        effect.add_node(volume);
+        return compiler::compile(effect);
+    };
 
-    const CompiledEffect c = compiler::compile(effect);
-    const CompiledNode* n = c.find("smoke_volume");
+    SECTION("mode: simulation is still the V1 stub, and still warns") {
+        const CompiledEffect c = compile_with_mode("simulation");
+        const CompiledNode* n = c.find("smoke_volume");
+        REQUIRE(n != nullptr);
+        CHECK(n->tier == Tier::Volumetric);
+        CHECK(n->backend == "volume_stub");
+        CHECK(has_code_for(c.diagnostics, "W104", "smoke_volume"));
+        CHECK(c.plan_json().at("tiers").at("volumetric").get<int>() == 1);
+    }
+
+    SECTION("mode: procedural is implemented, so no W104") {
+        const char* modes[]{nullptr, "procedural"};  // procedural is the default
+        for (const char* mode : modes) {
+            CAPTURE(mode == nullptr ? "(default)" : mode);
+            const CompiledEffect c = compile_with_mode(mode);
+            const CompiledNode* n = c.find("smoke_volume");
+            REQUIRE(n != nullptr);
+            CHECK(n->tier == Tier::Volumetric);
+            CHECK(n->backend == "procedural_volume");
+            CHECK_FALSE(has_code(c.diagnostics, "W104"));
+            CHECK(c.plan_json().at("tiers").at("volumetric").get<int>() == 1);
+        }
+    }
+}
+
+TEST_CASE("the void_nebula example compiles clean", "[compiler][examples][volume]") {
+    const CompiledEffect c = compiler::compile(load_example("void_nebula.json"));
+    INFO(c.diagnostics.summary());
+    CHECK(c.diagnostics.error_count() == 0);
+    CHECK(c.diagnostics.warning_count() == 0);
+    const CompiledNode* n = c.find("void_core");
     REQUIRE(n != nullptr);
-    CHECK(n->tier == Tier::Volumetric);
-    CHECK(n->backend == "volume_stub");
-    CHECK(has_code_for(c.diagnostics, "W104", "smoke_volume"));
-    CHECK(c.plan_json().at("tiers").at("volumetric").get<int>() == 1);
+    CHECK(n->backend == "procedural_volume");
 }
 
 TEST_CASE("seeded mesh primitives bake one resource per variant", "[compiler][mesh][variants]") {
