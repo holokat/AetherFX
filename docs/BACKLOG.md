@@ -81,3 +81,13 @@ simplified once the feature lands.
   (`draw_particle_quad` animated-frame path; reproduces with `flame` and `fire_sim`, disappears with
   `frames: 1`). Likely part of the "fake triangles" complaint on CPU renders and flipbook exports.
 - `rotation_variance` appears to have no effect on billboard particles (renders byte-identical).
+
+## Authoring pitfalls worth fixing in the engine or the validator
+- Texture ops carry alpha in all four channels and `erosion` lifts alpha to 1 everywhere, so a
+  final `levels` with `in_low` near 0 renders sprites as solid opaque quads. Wanted: a validator
+  warning when a sprite texture has no true black point, or alpha derived from luminance.
+- `volume.softness` is edge softness: low values give a hard pill silhouette. Document it and
+  consider renaming or adding a separate density-contrast parameter.
+- The viewer multiplies light intensity by 3.2 with true inverse-square falloff while the docs
+  describe `intensity / (d^2 + 1)`; a point light inside a mesh blows it out and `shading: lit`
+  leaves a specular hotspot at roughness 0.55. Align the docs and the two renderers.
