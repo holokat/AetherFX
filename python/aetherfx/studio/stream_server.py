@@ -59,7 +59,8 @@ from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
 from .stream import FrameSource, MockFrameSource, encode_frame
 
-__all__ = ["create_frame_source", "ResourceCache", "stream_routes", "public_resources", "mesh_payload"]
+__all__ = ["create_frame_source", "ResourceCache", "stream_routes", "public_resources", "mesh_payload",
+           "source_time_scale"]
 
 LOGGER = logging.getLogger("aetherfx.studio.stream")
 
@@ -225,9 +226,35 @@ def clamp_speed(value: Any, default: float = 1.0) -> float:
     return max(MIN_SPEED, min(MAX_SPEED, speed))
 
 
-def playback_target(origin_time: float, elapsed_wall: float, speed: float) -> float:
-    """Effect time reached after ``elapsed_wall`` seconds of wall clock at ``speed``x."""
-    return origin_time + elapsed_wall * speed
+def source_time_scale(source: Any, default: float = 1.0) -> float:
+    """The effect's own playback speed, or ``default`` for a source without one.
+
+    ``time_scale`` is optional on :class:`FrameSource`, and a source that is
+    between effects may raise rather than answer, so anything that is not a
+    positive number means "plays at 1x".
+    """
+    getter = getattr(source, "time_scale", None)
+    if getter is None:
+        return default
+    try:
+        scale = float(getter())
+    except Exception:  # noqa: BLE001 - a source without an effect open is normal
+        return default
+    if scale != scale or scale <= 0.0:  # NaN or non-positive
+        return default
+    return scale
+
+
+def playback_target(origin_time: float, elapsed_wall: float, speed: float, time_scale: float = 1.0) -> float:
+    """Effect time reached after ``elapsed_wall`` seconds of wall clock.
+
+    Two multipliers, and they compose.  ``speed`` is the *viewer's* play-bar
+    choice - how fast the person watching wants to see it, and not part of the
+    effect.  ``time_scale`` is the *effect's* own speed, authored in the
+    document and driven by its Speed control, so it is what a game would play
+    the effect at too (docs/RUNTIME.md 11).
+    """
+    return origin_time + elapsed_wall * speed * time_scale
 
 
 class ResourceCache:
@@ -308,8 +335,9 @@ class _Connection:
         self.time = 0.0
         self.fps = DEFAULT_FPS
         self.loop_playback = True
-        self.speed = 1.0
-        self.duration = 1.0
+        self.speed = 1.0            # the play bar's multiplier (the viewer's choice)
+        self.time_scale = 1.0       # the effect's own speed (the document's)
+        self.duration = 1.0         # effect seconds
         self.opened = False
         self._resources: dict[str, Any] | None = None
 
@@ -388,6 +416,10 @@ class _Connection:
                 await run_in_threadpool(source.open, effect if isinstance(effect, dict) else {})
                 raw = await run_in_threadpool(source.resources)
                 self.duration = max(0.0, float(await run_in_threadpool(source.duration)))
+                # Re-read on every open: the frontend re-opens after every
+                # control change, so moving the Speed slider must re-pace
+                # playback without restarting it.
+                self.time_scale = await run_in_threadpool(source_time_scale, source)
             except Exception as exc:  # noqa: BLE001 - a bad effect must not kill the socket
                 LOGGER.warning("frame source open failed: %s", exc, exc_info=True)
                 self.opened = False
@@ -398,6 +430,9 @@ class _Connection:
         resource_cache(self.studio).update(raw)
         self._resources = public_resources(raw)
         self.time = self._clamp(self.time)
+        # The resources message carries the effect block, including the speed a
+        # control may just have changed, so the open handshake stays exactly
+        # two messages: resources, then the frame at the current time.
         await self.send_json(self._resources)
         await self.send_frame(self.time)
 
@@ -436,7 +471,10 @@ class _Connection:
         try:
             while True:
                 started = time.monotonic()
-                target = playback_target(origin_time, started - origin_wall, self.speed)
+                # Read both multipliers per frame: an `open` while playing (a
+                # slider moved) swaps the effect's speed underneath us, and the
+                # origin is fixed, so the rate changes without a time jump.
+                target = playback_target(origin_time, started - origin_wall, self.speed, self.time_scale)
                 if self.duration > 0.0 and target >= self.duration:
                     if self.loop_playback:
                         origin_wall = started
@@ -488,8 +526,13 @@ class _Connection:
         await self.send_json({
             "type": "state",
             "playing": bool(self.play_task is not None) if playing is None else playing,
+            # `time` and `duration` are effect seconds - the timeline, the
+            # keyframes and the phases all live there.  `wall_duration` is how
+            # long the effect takes to play at its own `time_scale`.
             "time": self.time, "fps": self.fps, "loop": self.loop_playback, "duration": self.duration,
             "speed": self.speed,
+            "time_scale": self.time_scale,
+            "wall_duration": self.wall_duration(),
         })
 
     async def send_error(self, code: str, message: str) -> None:
@@ -513,6 +556,10 @@ class _Connection:
         except Exception:  # noqa: BLE001
             return 1.0 / 60.0
         return dt if dt > 0 else 1.0 / 60.0
+
+    def wall_duration(self) -> float:
+        """Wall-clock seconds the effect lasts at its own speed (not the play bar's)."""
+        return self.duration / self.time_scale if self.time_scale > 0.0 else self.duration
 
     def _clamp(self, when: float) -> float:
         if self.duration <= 0.0:

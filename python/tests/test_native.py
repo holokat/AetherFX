@@ -480,9 +480,12 @@ class TestNativeFrameSource:
             assert resources["type"] == "resources"
             assert resources["effect"] == {
                 "name": "Fire AOE", "duration": pytest.approx(3.0),
+                "time_scale": pytest.approx(1.0), "wall_duration": pytest.approx(3.0),
                 "fixed_dt": pytest.approx(1.0 / 60.0), "seed": 7,
             }
             assert source.duration() == pytest.approx(3.0)
+            assert source.time_scale() == pytest.approx(1.0)
+            assert source.wall_duration() == pytest.approx(3.0)
             assert source.fixed_dt() == pytest.approx(1.0 / 60.0)
 
             puff = resources["textures"]["tex_puff"]
