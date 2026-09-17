@@ -653,19 +653,19 @@ def build_ground() -> list[str]:
         if early:
             keys += [(BURST_T, 0.6), (BURST_T + 0.05, 1.0)]
         peak = max(when + rise, BURST_T + 0.05)
-        hold = 0.6 if early else 1.0      # the copies overlap in the middle: the inner one steps back
+        hold = 0.5 if early else 1.0      # the copies overlap in the middle: the inner one steps back
         keys += [(max(peak + 0.02, 0.95), hold), (1.25, 0.62 * hold), (SINK_T, 0.42 * hold), (2.16, 0.0)]
         cracks.append(node(nid, "decal", {
             "shape": "circle", "size": track([(when, [size * 0.9, size * 0.9]), (when + rise + 0.1, [size, size])]),
             "position": [0.0, y, 0.0], "rotation": [0.0, {"web_inner": 0.0, "web_mid": 73.0, "web_outer": 151.0}[nid], 0.0],
-            "color": [0.16, 0.46, 1.0, 1.0], "emissive": 2.0, "blend": "additive", "opacity": track(keys),
+            "color": [0.16, 0.46, 1.0, 1.0], "emissive": 1.3, "blend": "additive", "opacity": track(keys),
             "fade_in": 0.0, "fade_out": 0.0, "start_time": fr(when),
         }, {"texture": "tex_web"}, layer))
 
     # radial fractures racing out with the front (the rays end at uv 0.5)
     cracks.append(node("fractures", "decal", {
         "shape": "circle", "size": front_track(0.47, lead=0.35, floor=0.6), "position": [0.0, 0.018, 0.0],
-        "color": [0.3, 0.66, 1.0, 1.0], "emissive": 2.0, "blend": "additive",
+        "color": [0.3, 0.66, 1.0, 1.0], "emissive": 1.3, "blend": "additive",
         "opacity": track([(BURST_T, 0.0), (BURST_T + 0.04, 1.0), (1.0, 1.0), (1.3, 0.55), (SINK_T, 0.36), (2.16, 0.0)]),
         "fade_in": 0.0, "fade_out": 0.0, "start_time": fr(BURST_T),
     }, {"texture": "tex_rays"}, layer))
