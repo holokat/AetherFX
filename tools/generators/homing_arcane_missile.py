@@ -906,8 +906,8 @@ def build() -> dict[str, Any]:
     }, layer="charge", parent="missile", inputs={"particle": "ps_gather"}))
     # the kick: a soft ring left hanging at the launch point and a fan of sparks thrown backwards
     add(node("ps_kick_ring", "particle_system", {
-        "max_particles": 2, "lifetime": 0.3, "size": 2.4,
-        "size_over_life": [[0.0, 0.18], [0.4, 0.75], [1.0, 1.0]], "color": rgba(violet), "opacity": 0.5,
+        "max_particles": 2, "lifetime": 0.3, "size": 2.0,
+        "size_over_life": [[0.0, 0.18], [0.4, 0.75], [1.0, 1.0]], "color": rgba(violet), "opacity": 0.3,
         "opacity_over_life": [[0.0, 0.9], [0.4, 0.5], [1.0, 0.0]], "emissive": 1.8,
         "render_mode": "billboard", "blend": "additive", "soft_particle_distance": 0.1,
     }, layer="charge", inputs={"sprite": "tex_ring", "material": "mat_glow"}))
@@ -957,7 +957,7 @@ def build() -> dict[str, Any]:
     }, layer="impact", inputs={"sprite": "tex_rays", "material": "mat_glow"}))
     burst("e_rays", "ps_rays", 5, {"shape": "point", "velocity": 0.0})
     add(node("ps_shock", "particle_system", {
-        "max_particles": 2, "lifetime": 0.36, "size": 4.2,
+        "max_particles": 2, "lifetime": 0.36, "size": 3.2,
         "size_over_life": [[0.0, 0.1], [0.25, 0.55], [0.6, 0.85], [1.0, 1.0]], "rotation_variance": 180.0,
         "color": rgba(mix(violet, AZURE, 0.25)), "opacity": 0.36,
         "opacity_over_life": [[0.0, 1.0], [0.4, 0.55], [1.0, 0.0]], "emissive": 1.6,
@@ -1000,17 +1000,17 @@ def build() -> dict[str, Any]:
 
     # ---------------- dissipate: a loose ring of motes that hangs and fades ----------------
     add(node("ps_ring_motes", "particle_system", {
-        "max_particles": 100, "lifetime": 0.34, "lifetime_variance": 0.05, "size": 0.065, "size_variance": 0.03,
+        "max_particles": 160, "lifetime": 0.4, "lifetime_variance": 0.03, "size": 0.078, "size_variance": 0.035,
         "size_over_life": twinkle, "color": rgba(mix(violet, hot, 0.5)),
         "color_over_life": [[0.0, rgba(hot)], [0.4, rgba(mix(violet, hot, 0.25))], [1.0, rgba(deep)]],
-        "opacity_over_life": [[0.0, 1.0], [0.55, 0.85], [1.0, 0.0]], "emissive": 3.0, "drag": 5.2,
+        "opacity_over_life": [[0.0, 1.0], [0.7, 0.9], [1.0, 0.0]], "emissive": 3.4, "drag": 5.2,
         "render_mode": "billboard", "blend": "additive", "soft_particle_distance": 0.05,
     }, layer="aftermath", inputs={"sprite": "tex_mote", "material": "mat_spark", "forces": ["f_drift"]}))
     # the ring emitter lies in XZ: stand it up and turn it to face the camera
     to_camera = heading_of(sub(tuple(CAMERA["position"]), TARGET))      # type: ignore[arg-type]
     burst("e_ring_motes", "ps_ring_motes", 72, {
         "shape": "ring", "radius": 0.5, "inner_radius": 0.36, "direction": [0.0, 0.0, 0.0], "velocity": 0.0,
-        "velocity_variance": 0.5, "radial_velocity": 3.8,
+        "velocity_variance": 0.3, "radial_velocity": 3.8,
         "rotation": [round(90.0 - to_camera[1], 2),
                      round(to_camera[0] - fl.pivot_azimuth - fl.swing_side[F_IMPACT] + 90.0, 2), 0.0],
     }, layer="aftermath", times=[0.0, 0.05])

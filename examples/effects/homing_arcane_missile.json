@@ -9612,7 +9612,7 @@
    "parameters": {
     "max_particles": 2,
     "lifetime": 0.3,
-    "size": 2.4,
+    "size": 2.0,
     "size_over_life": [
      [
       0.0,
@@ -9633,7 +9633,7 @@
      1.0,
      1.0
     ],
-    "opacity": 0.5,
+    "opacity": 0.3,
     "opacity_over_life": [
      [
       0.0,
@@ -10013,7 +10013,7 @@
    "parameters": {
     "max_particles": 2,
     "lifetime": 0.36,
-    "size": 4.2,
+    "size": 3.2,
     "size_over_life": [
      [
       0.0,
@@ -10418,11 +10418,11 @@
    "type": "particle_system",
    "layer": "aftermath",
    "parameters": {
-    "max_particles": 100,
-    "lifetime": 0.34,
-    "lifetime_variance": 0.05,
-    "size": 0.065,
-    "size_variance": 0.03,
+    "max_particles": 160,
+    "lifetime": 0.4,
+    "lifetime_variance": 0.03,
+    "size": 0.078,
+    "size_variance": 0.035,
     "size_over_life": [
      [
       0.0,
@@ -10494,15 +10494,15 @@
       1.0
      ],
      [
-      0.55,
-      0.85
+      0.7,
+      0.9
      ],
      [
       1.0,
       0.0
      ]
     ],
-    "emissive": 3.0,
+    "emissive": 3.4,
     "drag": 5.2,
     "render_mode": "billboard",
     "blend": "additive",
@@ -10539,7 +10539,7 @@
      0.0
     ],
     "velocity": 0.0,
-    "velocity_variance": 0.5,
+    "velocity_variance": 0.3,
     "radial_velocity": 3.8,
     "rotation": [
      73.2,
