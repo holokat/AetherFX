@@ -122,24 +122,85 @@ PERF_SCRIPT = """
   const v = window.aetherViewer.gl;
   if (typeof S !== 'undefined' && !S.playing) document.getElementById('btn-play').click();
   await new Promise(r => setTimeout(r, 600));
+
+  // Phase 1: free-running.  Render fps, stream fps and bytes, draw calls, triangles, long tasks.
   let raf = 0, frames = 0, bytes = 0, long = 0, longMax = 0, worstGap = 0, last = performance.now();
   const po = new PerformanceObserver(l => { for (const e of l.getEntries()) { long++; longMax = Math.max(longMax, e.duration); } });
   try { po.observe({ entryTypes: ['longtask'] }); } catch (err) {}
   const orig = v.client.onFrame;
   v.client.onFrame = function () { frames++; return orig.apply(this, arguments); };
-  let calls = 0, tris = 0, samples = 0;
+  const sock = v.client.socket;
+  const onMessage = (e) => { if (e.data && e.data.byteLength) bytes += e.data.byteLength; };
+  if (sock) sock.addEventListener('message', onMessage);
+  let calls = 0, tris = 0, samples = 0, peakCalls = 0, peakTris = 0;
   const t0 = performance.now();
   await new Promise(res => { const tick = () => {
       const now = performance.now(); worstGap = Math.max(worstGap, now - last); last = now; raf++;
-      calls += v.renderer.info.render.calls; tris += v.renderer.info.render.triangles; samples++;
+      const c = v.renderer.info.render.calls, t = v.renderer.info.render.triangles;
+      calls += c; tris += t; samples++; peakCalls = Math.max(peakCalls, c); peakTris = Math.max(peakTris, t);
       if (now - t0 < %(ms)d) requestAnimationFrame(tick); else res(); };
     requestAnimationFrame(tick); });
   v.client.onFrame = orig; po.disconnect();
+  if (sock) sock.removeEventListener('message', onMessage);
   const secs = (performance.now() - t0) / 1000;
+
+  // Phase 2: GPU-synchronised frame cost.  readPixels blocks until the GPU has finished the frame,
+  // so renderFrame + readPixels is the true CPU + GPU cost of one frame, independent of the 60 Hz cap.
+  const gl = v.renderer.getContext();
+  const px = new Uint8Array(4);
+  const costs = [];
+  let peakParticles = 0, particleSum = 0, overdrawSum = 0, overdrawPeak = 0;
+  // Deterministic fill-rate estimate: the summed screen area of every sprite quad, in units of the
+  // viewport area ("how many times is the whole frame painted over").  Quads are clipped to the frame as
+  // a whole, not individually, so treat it as an upper bound that is comparable before and after an edit.
+  const overdrawLayers = (viewer) => {
+    const frame = viewer.frame, cam = viewer.camera;
+    if (!frame || !cam) return 0;
+    const e = cam.matrixWorldInverse.elements;
+    const h = viewer.renderer.domElement.height, w = viewer.renderer.domElement.width;
+    const focal = h / (2 * Math.tan((cam.fov * Math.PI / 180) / 2));
+    let area = 0;
+    for (const system of (frame.systems || [])) {
+      if (system.render_mode === 'mesh' || system.render_mode === 'none' || !system.views) continue;
+      const pos = system.views.position, size = system.views.size, count = system.count | 0;
+      if (!pos || !size) continue;
+      for (let i = 0; i < count; i++) {
+        const x = pos[i * 3], y = pos[i * 3 + 1], z = pos[i * 3 + 2];
+        const depth = -(e[2] * x + e[6] * y + e[10] * z + e[14]);
+        if (depth <= 0.05) continue;
+        const px = size[i] * focal / depth;
+        area += Math.min(px * px, w * h);
+      }
+    }
+    return area / (w * h);
+  };
+  const origRender = v.renderFrame;
+  v.renderFrame = function (now) {
+    const a = performance.now();
+    origRender.call(this, now);
+    gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    costs.push(performance.now() - a);
+    const n = this.particleCount || 0;
+    peakParticles = Math.max(peakParticles, n); particleSum += n;
+    const layers = overdrawLayers(this);
+    overdrawSum += layers; overdrawPeak = Math.max(overdrawPeak, layers);
+  };
+  await new Promise(r => setTimeout(r, %(ms)d));
+  delete v.renderFrame;
   if (typeof S !== 'undefined' && S.playing) document.getElementById('btn-play').click();
+  const kept = costs.slice(Math.min(5, Math.max(0, costs.length - 1))).sort((a, b) => a - b);
+  const pick = (q) => kept.length ? kept[Math.min(kept.length - 1, Math.floor(q * kept.length))] : 0;
+  const mean = kept.length ? kept.reduce((a, b) => a + b, 0) / kept.length : 0;
+
   return JSON.stringify({ render_fps: +(raf / secs).toFixed(1), stream_fps: +(frames / secs).toFixed(1),
+    stream_kb_per_frame: +(bytes / Math.max(1, frames) / 1024).toFixed(1),
+    stream_mbit_per_s: +(bytes * 8 / secs / 1e6).toFixed(2),
+    frame_ms_avg: +mean.toFixed(2), frame_ms_p95: +pick(0.95).toFixed(2), frame_ms_max: +pick(0.999).toFixed(2),
+    particles_avg: Math.round(particleSum / Math.max(1, costs.length)), particles_peak: peakParticles,
+    overdraw_avg: +(overdrawSum / Math.max(1, costs.length)).toFixed(2), overdraw_peak: +overdrawPeak.toFixed(2),
     worst_frame_gap_ms: Math.round(worstGap), long_tasks: long, longest_task_ms: Math.round(longMax),
-    avg_draw_calls: Math.round(calls / Math.max(1, samples)), avg_triangles: Math.round(tris / Math.max(1, samples)),
+    avg_draw_calls: Math.round(calls / Math.max(1, samples)), peak_draw_calls: peakCalls,
+    avg_triangles: Math.round(tris / Math.max(1, samples)), peak_triangles: peakTris,
     geometries: v.renderer.info.memory.geometries, textures: v.renderer.info.memory.textures,
     canvas: [v.renderer.domElement.width, v.renderer.domElement.height] });
 })()
