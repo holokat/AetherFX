@@ -1,0 +1,11340 @@
+{
+ "schema_version": "0.1.0",
+ "name": "Homing Arcane Missile",
+ "description": "A violet crystal missile charges, kicks off on a gentle arc, then hooks hard after a target that moves mid-flight, trailing a braid of soft ribbons and orbiting shards into a crystal burst.",
+ "duration": 1.8,
+ "seed": 41739,
+ "timeline": {
+  "phases": [
+   {
+    "name": "spawn_charge",
+    "start": 0.0,
+    "end": 0.2
+   },
+   {
+    "name": "launch",
+    "start": 0.2,
+    "end": 0.4
+   },
+   {
+    "name": "mid_flight",
+    "start": 0.4,
+    "end": 1.0
+   },
+   {
+    "name": "target_adjust",
+    "start": 1.0,
+    "end": 1.4
+   },
+   {
+    "name": "impact",
+    "start": 1.4,
+    "end": 1.6
+   },
+   {
+    "name": "dissipate",
+    "start": 1.6,
+    "end": 1.8
+   }
+  ]
+ },
+ "layers": [
+  {
+   "id": "charge",
+   "name": "Spawn and launch",
+   "role": "telegraph"
+  },
+  {
+   "id": "head",
+   "name": "Crystal head",
+   "role": "primary"
+  },
+  {
+   "id": "braid",
+   "name": "Energy braid",
+   "role": "primary"
+  },
+  {
+   "id": "fragments",
+   "name": "Orbiting fragments",
+   "role": "secondary"
+  },
+  {
+   "id": "motes",
+   "name": "Sparkle motes",
+   "role": "secondary"
+  },
+  {
+   "id": "impact",
+   "name": "Impact",
+   "role": "interaction"
+  },
+  {
+   "id": "aftermath",
+   "name": "Dissipate",
+   "role": "aftermath"
+  },
+  {
+   "id": "light",
+   "name": "Lighting",
+   "role": "interaction"
+  }
+ ],
+ "nodes": [
+  {
+   "id": "tex_glow",
+   "type": "texture",
+   "parameters": {
+    "width": 64,
+    "height": 64,
+    "graph": {
+     "nodes": [
+      {
+       "id": "r",
+       "op": "gradient_radial",
+       "params": {
+        "radius": 0.5,
+        "falloff": "smooth"
+       }
+      }
+     ],
+     "output": "r"
+    }
+   }
+  },
+  {
+   "id": "tex_core",
+   "type": "texture",
+   "parameters": {
+    "width": 96,
+    "height": 96,
+    "graph": {
+     "nodes": [
+      {
+       "id": "hot",
+       "op": "gradient_radial",
+       "params": {
+        "radius": 0.3,
+        "falloff": "quadratic"
+       }
+      },
+      {
+       "id": "hotl",
+       "op": "levels",
+       "params": {
+        "gamma": 0.6
+       },
+       "inputs": {
+        "a": "hot"
+       }
+      },
+      {
+       "id": "halo",
+       "op": "gradient_radial",
+       "params": {
+        "radius": 0.5,
+        "falloff": "smooth"
+       }
+      },
+      {
+       "id": "halol",
+       "op": "levels",
+       "params": {
+        "out_high": 0.42,
+        "gamma": 0.8
+       },
+       "inputs": {
+        "a": "halo"
+       }
+      },
+      {
+       "id": "m",
+       "op": "math",
+       "params": {
+        "mode": "max"
+       },
+       "inputs": {
+        "a": "hotl",
+        "b": "halol"
+       }
+      }
+     ],
+     "output": "m"
+    }
+   }
+  },
+  {
+   "id": "tex_mote",
+   "type": "texture",
+   "parameters": {
+    "width": 32,
+    "height": 32,
+    "graph": {
+     "nodes": [
+      {
+       "id": "r",
+       "op": "gradient_radial",
+       "params": {
+        "radius": 0.5,
+        "falloff": "quadratic"
+       }
+      },
+      {
+       "id": "lv",
+       "op": "levels",
+       "params": {
+        "gamma": 0.8
+       },
+       "inputs": {
+        "a": "r"
+       }
+      }
+     ],
+     "output": "lv"
+    }
+   }
+  },
+  {
+   "id": "tex_glint",
+   "type": "texture",
+   "parameters": {
+    "width": 64,
+    "height": 64,
+    "graph": {
+     "nodes": [
+      {
+       "id": "s",
+       "op": "star",
+       "params": {
+        "points": 5,
+        "width": 0.05,
+        "outer_radius": 0.48,
+        "core_radius": 0.07,
+        "softness": 0.035,
+        "rotation": 17.0
+       }
+      },
+      {
+       "id": "r",
+       "op": "gradient_radial",
+       "params": {
+        "radius": 0.34,
+        "falloff": "quadratic"
+       }
+      },
+      {
+       "id": "rl",
+       "op": "levels",
+       "params": {
+        "out_high": 0.7,
+        "gamma": 0.7
+       },
+       "inputs": {
+        "a": "r"
+       }
+      },
+      {
+       "id": "m",
+       "op": "math",
+       "params": {
+        "mode": "max"
+       },
+       "inputs": {
+        "a": "s",
+        "b": "rl"
+       }
+      },
+      {
+       "id": "b",
+       "op": "blur",
+       "params": {
+        "radius": 1.2
+       },
+       "inputs": {
+        "a": "m"
+       }
+      }
+     ],
+     "output": "b"
+    }
+   }
+  },
+  {
+   "id": "tex_aura",
+   "type": "texture",
+   "parameters": {
+    "width": 128,
+    "height": 128,
+    "graph": {
+     "nodes": [
+      {
+       "id": "rim",
+       "op": "ring",
+       "params": {
+        "radius": 0.44,
+        "thickness": 0.022,
+        "softness": 0.03
+       }
+      },
+      {
+       "id": "glow",
+       "op": "ring",
+       "params": {
+        "radius": 0.43,
+        "thickness": 0.07,
+        "softness": 0.09
+       }
+      },
+      {
+       "id": "glowl",
+       "op": "levels",
+       "params": {
+        "out_high": 0.3
+       },
+       "inputs": {
+        "a": "glow"
+       }
+      },
+      {
+       "id": "shell",
+       "op": "math",
+       "params": {
+        "mode": "max"
+       },
+       "inputs": {
+        "a": "rim",
+        "b": "glowl"
+       }
+      },
+      {
+       "id": "front",
+       "op": "gradient_linear",
+       "params": {
+        "angle": 90.0,
+        "start": 1.0,
+        "end": 0.0
+       }
+      },
+      {
+       "id": "frontl",
+       "op": "levels",
+       "params": {
+        "in_low": 0.18,
+        "in_high": 0.95,
+        "out_low": 0.06,
+        "gamma": 0.8
+       },
+       "inputs": {
+        "a": "front"
+       }
+      },
+      {
+       "id": "bow",
+       "op": "math",
+       "params": {
+        "mode": "multiply"
+       },
+       "inputs": {
+        "a": "shell",
+        "b": "frontl"
+       }
+      },
+      {
+       "id": "fill",
+       "op": "gradient_radial",
+       "params": {
+        "radius": 0.44,
+        "falloff": "smooth"
+       }
+      },
+      {
+       "id": "filll",
+       "op": "levels",
+       "params": {
+        "out_high": 0.1
+       },
+       "inputs": {
+        "a": "fill"
+       }
+      },
+      {
+       "id": "m",
+       "op": "math",
+       "params": {
+        "mode": "max"
+       },
+       "inputs": {
+        "a": "bow",
+        "b": "filll"
+       }
+      }
+     ],
+     "output": "m"
+    }
+   }
+  },
+  {
+   "id": "tex_ring",
+   "type": "texture",
+   "parameters": {
+    "width": 128,
+    "height": 128,
+    "graph": {
+     "nodes": [
+      {
+       "id": "ring",
+       "op": "ring",
+       "params": {
+        "radius": 0.45,
+        "thickness": 0.02,
+        "softness": 0.03
+       }
+      },
+      {
+       "id": "halo",
+       "op": "ring",
+       "params": {
+        "radius": 0.44,
+        "thickness": 0.06,
+        "softness": 0.07
+       }
+      },
+      {
+       "id": "halol",
+       "op": "levels",
+       "params": {
+        "out_high": 0.32
+       },
+       "inputs": {
+        "a": "halo"
+       }
+      },
+      {
+       "id": "m",
+       "op": "math",
+       "params": {
+        "mode": "max"
+       },
+       "inputs": {
+        "a": "ring",
+        "b": "halol"
+       }
+      },
+      {
+       "id": "n",
+       "op": "fbm",
+       "params": {
+        "frequency": 2.2,
+        "octaves": 2,
+        "seed": 71
+       }
+      },
+      {
+       "id": "nl",
+       "op": "levels",
+       "params": {
+        "in_low": 0.25,
+        "in_high": 0.8,
+        "out_low": 0.45
+       },
+       "inputs": {
+        "a": "n"
+       }
+      },
+      {
+       "id": "o",
+       "op": "math",
+       "params": {
+        "mode": "multiply"
+       },
+       "inputs": {
+        "a": "m",
+        "b": "nl"
+       }
+      }
+     ],
+     "output": "o"
+    }
+   }
+  },
+  {
+   "id": "tex_rays",
+   "type": "texture",
+   "parameters": {
+    "width": 256,
+    "height": 256,
+    "graph": {
+     "nodes": [
+      {
+       "id": "s1",
+       "op": "spokes",
+       "params": {
+        "count": 11,
+        "width": 0.03,
+        "softness": 0.03,
+        "inner_radius": 0.03,
+        "outer_radius": 0.5,
+        "rotation": 7.0
+       }
+      },
+      {
+       "id": "s2",
+       "op": "spokes",
+       "params": {
+        "count": 7,
+        "width": 0.016,
+        "softness": 0.02,
+        "inner_radius": 0.02,
+        "outer_radius": 0.44,
+        "rotation": 31.0
+       }
+      },
+      {
+       "id": "s2l",
+       "op": "levels",
+       "params": {
+        "out_high": 0.8
+       },
+       "inputs": {
+        "a": "s2"
+       }
+      },
+      {
+       "id": "s",
+       "op": "math",
+       "params": {
+        "mode": "max"
+       },
+       "inputs": {
+        "a": "s1",
+        "b": "s2l"
+       }
+      },
+      {
+       "id": "w",
+       "op": "fbm",
+       "params": {
+        "frequency": 2.4,
+        "octaves": 2,
+        "seed": 913
+       }
+      },
+      {
+       "id": "bent",
+       "op": "distort",
+       "params": {
+        "amount": 0.05
+       },
+       "inputs": {
+        "a": "s",
+        "by": "w"
+       }
+      },
+      {
+       "id": "n",
+       "op": "fbm",
+       "params": {
+        "frequency": 5.0,
+        "octaves": 3,
+        "seed": 377
+       }
+      },
+      {
+       "id": "nl",
+       "op": "levels",
+       "params": {
+        "in_low": 0.3,
+        "in_high": 0.72,
+        "out_low": 0.08
+       },
+       "inputs": {
+        "a": "n"
+       }
+      },
+      {
+       "id": "broken",
+       "op": "math",
+       "params": {
+        "mode": "multiply"
+       },
+       "inputs": {
+        "a": "bent",
+        "b": "nl"
+       }
+      },
+      {
+       "id": "fall",
+       "op": "gradient_radial",
+       "params": {
+        "radius": 0.5,
+        "falloff": "quadratic"
+       }
+      },
+      {
+       "id": "rays",
+       "op": "math",
+       "params": {
+        "mode": "multiply"
+       },
+       "inputs": {
+        "a": "broken",
+        "b": "fall"
+       }
+      },
+      {
+       "id": "soft",
+       "op": "blur",
+       "params": {
+        "radius": 2.2
+       },
+       "inputs": {
+        "a": "rays"
+       }
+      },
+      {
+       "id": "lv",
+       "op": "levels",
+       "params": {
+        "in_high": 0.55,
+        "gamma": 0.85
+       },
+       "inputs": {
+        "a": "soft"
+       }
+      }
+     ],
+     "output": "lv"
+    }
+   }
+  },
+  {
+   "id": "tex_ribbon",
+   "type": "texture",
+   "parameters": {
+    "width": 128,
+    "height": 64,
+    "graph": {
+     "nodes": [
+      {
+       "id": "g",
+       "op": "gradient_linear",
+       "params": {
+        "angle": 90.0,
+        "start": 0.0,
+        "end": 1.0
+       }
+      },
+      {
+       "id": "gi",
+       "op": "invert",
+       "inputs": {
+        "a": "g"
+       }
+      },
+      {
+       "id": "t",
+       "op": "math",
+       "params": {
+        "mode": "min"
+       },
+       "inputs": {
+        "a": "g",
+        "b": "gi"
+       }
+      },
+      {
+       "id": "body",
+       "op": "levels",
+       "params": {
+        "in_high": 0.5,
+        "gamma": 0.6
+       },
+       "inputs": {
+        "a": "t"
+       }
+      },
+      {
+       "id": "n",
+       "op": "fbm",
+       "params": {
+        "frequency": 3.0,
+        "octaves": 3,
+        "seed": 433,
+        "tile": true
+       }
+      },
+      {
+       "id": "nl",
+       "op": "levels",
+       "params": {
+        "in_low": 0.28,
+        "in_high": 0.74,
+        "out_low": 0.3
+       },
+       "inputs": {
+        "a": "n"
+       }
+      },
+      {
+       "id": "streaks",
+       "op": "math",
+       "params": {
+        "mode": "multiply"
+       },
+       "inputs": {
+        "a": "body",
+        "b": "nl"
+       }
+      },
+      {
+       "id": "bodyl",
+       "op": "levels",
+       "params": {
+        "out_high": 0.62
+       },
+       "inputs": {
+        "a": "streaks"
+       }
+      },
+      {
+       "id": "line",
+       "op": "levels",
+       "params": {
+        "in_low": 0.385,
+        "in_high": 0.5,
+        "gamma": 0.75
+       },
+       "inputs": {
+        "a": "t"
+       }
+      },
+      {
+       "id": "n2",
+       "op": "fbm",
+       "params": {
+        "frequency": 2.0,
+        "octaves": 2,
+        "seed": 877,
+        "tile": true
+       }
+      },
+      {
+       "id": "n2l",
+       "op": "levels",
+       "params": {
+        "in_low": 0.3,
+        "in_high": 0.7,
+        "out_low": 0.4
+       },
+       "inputs": {
+        "a": "n2"
+       }
+      },
+      {
+       "id": "filament",
+       "op": "math",
+       "params": {
+        "mode": "multiply"
+       },
+       "inputs": {
+        "a": "line",
+        "b": "n2l"
+       }
+      },
+      {
+       "id": "m",
+       "op": "math",
+       "params": {
+        "mode": "max"
+       },
+       "inputs": {
+        "a": "bodyl",
+        "b": "filament"
+       }
+      }
+     ],
+     "output": "m"
+    }
+   }
+  },
+  {
+   "id": "tex_filament",
+   "type": "texture",
+   "parameters": {
+    "width": 8,
+    "height": 32,
+    "graph": {
+     "nodes": [
+      {
+       "id": "g",
+       "op": "gradient_linear",
+       "params": {
+        "angle": 90.0,
+        "start": 0.0,
+        "end": 1.0
+       }
+      },
+      {
+       "id": "gi",
+       "op": "invert",
+       "inputs": {
+        "a": "g"
+       }
+      },
+      {
+       "id": "t",
+       "op": "math",
+       "params": {
+        "mode": "min"
+       },
+       "inputs": {
+        "a": "g",
+        "b": "gi"
+       }
+      },
+      {
+       "id": "lv",
+       "op": "levels",
+       "params": {
+        "in_high": 0.5,
+        "gamma": 0.5
+       },
+       "inputs": {
+        "a": "t"
+       }
+      }
+     ],
+     "output": "lv"
+    }
+   }
+  },
+  {
+   "id": "tex_mist",
+   "type": "texture",
+   "parameters": {
+    "width": 64,
+    "height": 64,
+    "graph": {
+     "nodes": [
+      {
+       "id": "r",
+       "op": "gradient_radial",
+       "params": {
+        "radius": 0.5,
+        "falloff": "smooth"
+       }
+      },
+      {
+       "id": "n",
+       "op": "fbm",
+       "params": {
+        "frequency": 2.6,
+        "octaves": 3,
+        "seed": 191
+       }
+      },
+      {
+       "id": "nl",
+       "op": "levels",
+       "params": {
+        "in_low": 0.2,
+        "in_high": 0.85,
+        "out_low": 0.35
+       },
+       "inputs": {
+        "a": "n"
+       }
+      },
+      {
+       "id": "m",
+       "op": "math",
+       "params": {
+        "mode": "multiply"
+       },
+       "inputs": {
+        "a": "r",
+        "b": "nl"
+       }
+      }
+     ],
+     "output": "m"
+    }
+   }
+  },
+  {
+   "id": "mat_glow",
+   "type": "material",
+   "parameters": {
+    "blend": "additive",
+    "base_color": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "emissive_color": [
+     0.56,
+     0.26,
+     1.0,
+     1.0
+    ],
+    "emissive_intensity": 0.3,
+    "soft_particle": true,
+    "depth_fade": 0.2
+   }
+  },
+  {
+   "id": "mat_spark",
+   "type": "material",
+   "parameters": {
+    "blend": "additive",
+    "base_color": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "emissive_color": [
+     0.93,
+     0.88,
+     1.0,
+     1.0
+    ],
+    "emissive_intensity": 0.35,
+    "soft_particle": true,
+    "depth_fade": 0.08
+   }
+  },
+  {
+   "id": "mat_ribbon",
+   "type": "material",
+   "parameters": {
+    "blend": "additive",
+    "base_color": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "emissive_color": [
+     0.56,
+     0.26,
+     1.0,
+     1.0
+    ],
+    "emissive_intensity": 0.25,
+    "soft_particle": true,
+    "depth_fade": 0.12,
+    "double_sided": true
+   },
+   "inputs": {
+    "base_texture": "tex_ribbon"
+   }
+  },
+  {
+   "id": "mat_filament",
+   "type": "material",
+   "parameters": {
+    "blend": "additive",
+    "base_color": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "emissive_color": [
+     0.74,
+     0.84,
+     1.0,
+     1.0
+    ],
+    "emissive_intensity": 0.3,
+    "soft_particle": true,
+    "depth_fade": 0.1,
+    "double_sided": true
+   },
+   "inputs": {
+    "base_texture": "tex_filament"
+   }
+  },
+  {
+   "id": "mat_gem_shell",
+   "type": "material",
+   "parameters": {
+    "blend": "alpha",
+    "shading": "lit",
+    "base_color": [
+     0.3263,
+     0.2075,
+     0.5,
+     1.0
+    ],
+    "emissive_color": [
+     0.56,
+     0.26,
+     1.0,
+     1.0
+    ],
+    "emissive_intensity": 0.2,
+    "opacity": 0.62
+   }
+  },
+  {
+   "id": "mat_gem_core",
+   "type": "material",
+   "parameters": {
+    "blend": "alpha",
+    "shading": "lit",
+    "base_color": [
+     0.93,
+     0.88,
+     1.0,
+     1.0
+    ],
+    "emissive_color": [
+     0.93,
+     0.88,
+     1.0,
+     1.0
+    ],
+    "emissive_intensity": 0.5,
+    "opacity": 1.0
+   }
+  },
+  {
+   "id": "mat_fragment",
+   "type": "material",
+   "parameters": {
+    "blend": "alpha",
+    "shading": "lit",
+    "base_color": [
+     0.4248,
+     0.3048,
+     0.6,
+     1.0
+    ],
+    "emissive_color": [
+     0.671,
+     0.446,
+     1.0,
+     1.0
+    ],
+    "emissive_intensity": 0.3,
+    "opacity": 1.0
+   }
+  },
+  {
+   "id": "mat_burst_shard",
+   "type": "material",
+   "parameters": {
+    "blend": "alpha",
+    "shading": "lit",
+    "base_color": [
+     0.3487,
+     0.2112,
+     0.55,
+     1.0
+    ],
+    "emissive_color": [
+     0.6895,
+     0.477,
+     1.0,
+     1.0
+    ],
+    "emissive_intensity": 1.1,
+    "fresnel_power": 2.4,
+    "double_sided": true,
+    "opacity": 1.0
+   }
+  },
+  {
+   "id": "f_drift",
+   "type": "force",
+   "parameters": {
+    "force_type": "curl_noise",
+    "strength": 0.9,
+    "frequency": 1.3,
+    "octaves": 2,
+    "speed": 0.6
+   }
+  },
+  {
+   "id": "f_fall",
+   "type": "force",
+   "parameters": {
+    "force_type": "gravity",
+    "strength": 4.2,
+    "direction": [
+     0.0,
+     -1.0,
+     0.0
+    ]
+   }
+  },
+  {
+   "id": "aim_pivot",
+   "type": "mesh",
+   "layer": "head",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "position": [
+     1.1063,
+     2.2192,
+     -1.7537
+    ],
+    "rotation": [
+     0.0,
+     -1.784,
+     0.0
+    ]
+   }
+  },
+  {
+   "id": "aim_side",
+   "type": "mesh",
+   "layer": "head",
+   "parent": "aim_pivot",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "rotation": {
+     "value": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "track": [
+      {
+       "time": 0.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.98333,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.0,
+       "value": [
+        0.0,
+        -0.772,
+        0.0
+       ]
+      },
+      {
+       "time": 1.01667,
+       "value": [
+        0.0,
+        -1.637,
+        0.0
+       ]
+      },
+      {
+       "time": 1.03333,
+       "value": [
+        0.0,
+        -2.568,
+        0.0
+       ]
+      },
+      {
+       "time": 1.05,
+       "value": [
+        0.0,
+        -3.565,
+        0.0
+       ]
+      },
+      {
+       "time": 1.06667,
+       "value": [
+        0.0,
+        -4.632,
+        0.0
+       ]
+      },
+      {
+       "time": 1.08333,
+       "value": [
+        0.0,
+        -5.771,
+        0.0
+       ]
+      },
+      {
+       "time": 1.1,
+       "value": [
+        0.0,
+        -6.984,
+        0.0
+       ]
+      },
+      {
+       "time": 1.11667,
+       "value": [
+        0.0,
+        -8.274,
+        0.0
+       ]
+      },
+      {
+       "time": 1.13333,
+       "value": [
+        0.0,
+        -9.643,
+        0.0
+       ]
+      },
+      {
+       "time": 1.15,
+       "value": [
+        0.0,
+        -11.095,
+        0.0
+       ]
+      },
+      {
+       "time": 1.16667,
+       "value": [
+        0.0,
+        -12.63,
+        0.0
+       ]
+      },
+      {
+       "time": 1.18333,
+       "value": [
+        0.0,
+        -14.252,
+        0.0
+       ]
+      },
+      {
+       "time": 1.2,
+       "value": [
+        0.0,
+        -15.963,
+        0.0
+       ]
+      },
+      {
+       "time": 1.21667,
+       "value": [
+        0.0,
+        -17.765,
+        0.0
+       ]
+      },
+      {
+       "time": 1.23333,
+       "value": [
+        0.0,
+        -19.66,
+        0.0
+       ]
+      },
+      {
+       "time": 1.25,
+       "value": [
+        0.0,
+        -21.649,
+        0.0
+       ]
+      },
+      {
+       "time": 1.26667,
+       "value": [
+        0.0,
+        -23.734,
+        0.0
+       ]
+      },
+      {
+       "time": 1.28333,
+       "value": [
+        0.0,
+        -25.915,
+        0.0
+       ]
+      },
+      {
+       "time": 1.3,
+       "value": [
+        0.0,
+        -28.195,
+        0.0
+       ]
+      },
+      {
+       "time": 1.31667,
+       "value": [
+        0.0,
+        -30.572,
+        0.0
+       ]
+      },
+      {
+       "time": 1.33333,
+       "value": [
+        0.0,
+        -33.047,
+        0.0
+       ]
+      },
+      {
+       "time": 1.35,
+       "value": [
+        0.0,
+        -35.618,
+        0.0
+       ]
+      },
+      {
+       "time": 1.36667,
+       "value": [
+        0.0,
+        -38.285,
+        0.0
+       ]
+      },
+      {
+       "time": 1.38333,
+       "value": [
+        0.0,
+        -41.046,
+        0.0
+       ]
+      },
+      {
+       "time": 1.4,
+       "value": [
+        0.0,
+        -43.896,
+        0.0
+       ]
+      },
+      {
+       "time": 1.8,
+       "value": [
+        0.0,
+        -43.896,
+        0.0
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "aim_height",
+   "type": "mesh",
+   "layer": "head",
+   "parent": "aim_side",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "rotation": {
+     "value": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "track": [
+      {
+       "time": 0.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.98333,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.0,
+       "value": [
+        0.0,
+        0.0,
+        -0.125
+       ]
+      },
+      {
+       "time": 1.01667,
+       "value": [
+        0.0,
+        0.0,
+        -0.389
+       ]
+      },
+      {
+       "time": 1.03333,
+       "value": [
+        0.0,
+        0.0,
+        -0.697
+       ]
+      },
+      {
+       "time": 1.05,
+       "value": [
+        0.0,
+        0.0,
+        -1.041
+       ]
+      },
+      {
+       "time": 1.06667,
+       "value": [
+        0.0,
+        0.0,
+        -1.416
+       ]
+      },
+      {
+       "time": 1.08333,
+       "value": [
+        0.0,
+        0.0,
+        -1.819
+       ]
+      },
+      {
+       "time": 1.1,
+       "value": [
+        0.0,
+        0.0,
+        -2.249
+       ]
+      },
+      {
+       "time": 1.11667,
+       "value": [
+        0.0,
+        0.0,
+        -2.704
+       ]
+      },
+      {
+       "time": 1.13333,
+       "value": [
+        0.0,
+        0.0,
+        -3.185
+       ]
+      },
+      {
+       "time": 1.15,
+       "value": [
+        0.0,
+        0.0,
+        -3.691
+       ]
+      },
+      {
+       "time": 1.16667,
+       "value": [
+        0.0,
+        0.0,
+        -4.224
+       ]
+      },
+      {
+       "time": 1.18333,
+       "value": [
+        0.0,
+        0.0,
+        -4.784
+       ]
+      },
+      {
+       "time": 1.2,
+       "value": [
+        0.0,
+        0.0,
+        -5.372
+       ]
+      },
+      {
+       "time": 1.21667,
+       "value": [
+        0.0,
+        0.0,
+        -5.99
+       ]
+      },
+      {
+       "time": 1.23333,
+       "value": [
+        0.0,
+        0.0,
+        -6.642
+       ]
+      },
+      {
+       "time": 1.25,
+       "value": [
+        0.0,
+        0.0,
+        -7.328
+       ]
+      },
+      {
+       "time": 1.26667,
+       "value": [
+        0.0,
+        0.0,
+        -8.052
+       ]
+      },
+      {
+       "time": 1.28333,
+       "value": [
+        0.0,
+        0.0,
+        -8.819
+       ]
+      },
+      {
+       "time": 1.3,
+       "value": [
+        0.0,
+        0.0,
+        -9.632
+       ]
+      },
+      {
+       "time": 1.31667,
+       "value": [
+        0.0,
+        0.0,
+        -10.496
+       ]
+      },
+      {
+       "time": 1.33333,
+       "value": [
+        0.0,
+        0.0,
+        -11.417
+       ]
+      },
+      {
+       "time": 1.35,
+       "value": [
+        0.0,
+        0.0,
+        -12.402
+       ]
+      },
+      {
+       "time": 1.36667,
+       "value": [
+        0.0,
+        0.0,
+        -13.458
+       ]
+      },
+      {
+       "time": 1.38333,
+       "value": [
+        0.0,
+        0.0,
+        -14.593
+       ]
+      },
+      {
+       "time": 1.4,
+       "value": [
+        0.0,
+        0.0,
+        -15.818
+       ]
+      },
+      {
+       "time": 1.8,
+       "value": [
+        0.0,
+        0.0,
+        -15.818
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "missile",
+   "type": "mesh",
+   "layer": "head",
+   "parent": "aim_height",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "position": {
+     "value": [
+      -5.2678,
+      -0.9192,
+      1.3183
+     ],
+     "track": [
+      {
+       "time": 0.0,
+       "value": [
+        -5.2678,
+        -0.9192,
+        1.3183
+       ]
+      },
+      {
+       "time": 0.1,
+       "value": [
+        -5.2678,
+        -0.9192,
+        1.3183
+       ]
+      },
+      {
+       "time": 0.11667,
+       "value": [
+        -5.2712,
+        -0.9201,
+        1.3198
+       ]
+      },
+      {
+       "time": 0.13333,
+       "value": [
+        -5.2806,
+        -0.9225,
+        1.3238
+       ]
+      },
+      {
+       "time": 0.15,
+       "value": [
+        -5.2934,
+        -0.9258,
+        1.3294
+       ]
+      },
+      {
+       "time": 0.16667,
+       "value": [
+        -5.3062,
+        -0.9291,
+        1.3349
+       ]
+      },
+      {
+       "time": 0.18333,
+       "value": [
+        -5.3156,
+        -0.9315,
+        1.3389
+       ]
+      },
+      {
+       "time": 0.2,
+       "value": [
+        -5.319,
+        -0.9324,
+        1.3404
+       ]
+      },
+      {
+       "time": 0.21667,
+       "value": [
+        -5.3183,
+        -0.9322,
+        1.3401
+       ]
+      },
+      {
+       "time": 0.23333,
+       "value": [
+        -5.3139,
+        -0.931,
+        1.3382
+       ]
+      },
+      {
+       "time": 0.25,
+       "value": [
+        -5.3024,
+        -0.9281,
+        1.3332
+       ]
+      },
+      {
+       "time": 0.26667,
+       "value": [
+        -5.2813,
+        -0.9227,
+        1.3242
+       ]
+      },
+      {
+       "time": 0.28333,
+       "value": [
+        -5.2487,
+        -0.9143,
+        1.3101
+       ]
+      },
+      {
+       "time": 0.3,
+       "value": [
+        -5.2032,
+        -0.9026,
+        1.2904
+       ]
+      },
+      {
+       "time": 0.31667,
+       "value": [
+        -5.1441,
+        -0.8874,
+        1.265
+       ]
+      },
+      {
+       "time": 0.33333,
+       "value": [
+        -5.0714,
+        -0.8687,
+        1.2336
+       ]
+      },
+      {
+       "time": 0.35,
+       "value": [
+        -4.9856,
+        -0.8466,
+        1.1967
+       ]
+      },
+      {
+       "time": 0.36667,
+       "value": [
+        -4.8878,
+        -0.8215,
+        1.1548
+       ]
+      },
+      {
+       "time": 0.38333,
+       "value": [
+        -4.7799,
+        -0.7938,
+        1.1088
+       ]
+      },
+      {
+       "time": 0.4,
+       "value": [
+        -4.6642,
+        -0.7641,
+        1.06
+       ]
+      },
+      {
+       "time": 0.41667,
+       "value": [
+        -4.5438,
+        -0.7333,
+        1.0098
+       ]
+      },
+      {
+       "time": 0.43333,
+       "value": [
+        -4.4219,
+        -0.7022,
+        0.9599
+       ]
+      },
+      {
+       "time": 0.45,
+       "value": [
+        -4.2994,
+        -0.671,
+        0.9106
+       ]
+      },
+      {
+       "time": 0.46667,
+       "value": [
+        -4.1763,
+        -0.6398,
+        0.8623
+       ]
+      },
+      {
+       "time": 0.48333,
+       "value": [
+        -4.0524,
+        -0.6085,
+        0.8149
+       ]
+      },
+      {
+       "time": 0.5,
+       "value": [
+        -3.9279,
+        -0.5771,
+        0.7687
+       ]
+      },
+      {
+       "time": 0.51667,
+       "value": [
+        -3.8027,
+        -0.5457,
+        0.7236
+       ]
+      },
+      {
+       "time": 0.53333,
+       "value": [
+        -3.6768,
+        -0.5142,
+        0.6798
+       ]
+      },
+      {
+       "time": 0.55,
+       "value": [
+        -3.5501,
+        -0.4826,
+        0.6372
+       ]
+      },
+      {
+       "time": 0.56667,
+       "value": [
+        -3.4228,
+        -0.451,
+        0.5958
+       ]
+      },
+      {
+       "time": 0.58333,
+       "value": [
+        -3.2948,
+        -0.4193,
+        0.5557
+       ]
+      },
+      {
+       "time": 0.6,
+       "value": [
+        -3.1661,
+        -0.3876,
+        0.5169
+       ]
+      },
+      {
+       "time": 0.61667,
+       "value": [
+        -3.0368,
+        -0.3558,
+        0.4793
+       ]
+      },
+      {
+       "time": 0.63333,
+       "value": [
+        -2.9068,
+        -0.3239,
+        0.4431
+       ]
+      },
+      {
+       "time": 0.65,
+       "value": [
+        -2.7761,
+        -0.2924,
+        0.4081
+       ]
+      },
+      {
+       "time": 0.66667,
+       "value": [
+        -2.6446,
+        -0.2614,
+        0.3743
+       ]
+      },
+      {
+       "time": 0.68333,
+       "value": [
+        -2.5124,
+        -0.2313,
+        0.3419
+       ]
+      },
+      {
+       "time": 0.7,
+       "value": [
+        -2.3792,
+        -0.2025,
+        0.3107
+       ]
+      },
+      {
+       "time": 0.71667,
+       "value": [
+        -2.2452,
+        -0.1751,
+        0.2807
+       ]
+      },
+      {
+       "time": 0.73333,
+       "value": [
+        -2.1103,
+        -0.1494,
+        0.2521
+       ]
+      },
+      {
+       "time": 0.75,
+       "value": [
+        -1.9745,
+        -0.1256,
+        0.2247
+       ]
+      },
+      {
+       "time": 0.76667,
+       "value": [
+        -1.8378,
+        -0.1038,
+        0.1986
+       ]
+      },
+      {
+       "time": 0.78333,
+       "value": [
+        -1.7003,
+        -0.0841,
+        0.1739
+       ]
+      },
+      {
+       "time": 0.8,
+       "value": [
+        -1.562,
+        -0.0667,
+        0.1505
+       ]
+      },
+      {
+       "time": 0.81667,
+       "value": [
+        -1.4229,
+        -0.0514,
+        0.1285
+       ]
+      },
+      {
+       "time": 0.83333,
+       "value": [
+        -1.2831,
+        -0.0384,
+        0.1079
+       ]
+      },
+      {
+       "time": 0.85,
+       "value": [
+        -1.1426,
+        -0.0275,
+        0.0887
+       ]
+      },
+      {
+       "time": 0.86667,
+       "value": [
+        -1.0015,
+        -0.0188,
+        0.0709
+       ]
+      },
+      {
+       "time": 0.88333,
+       "value": [
+        -0.8599,
+        -0.012,
+        0.0545
+       ]
+      },
+      {
+       "time": 0.9,
+       "value": [
+        -0.7177,
+        -0.007,
+        0.0397
+       ]
+      },
+      {
+       "time": 0.91667,
+       "value": [
+        -0.5751,
+        -0.0035,
+        0.0266
+       ]
+      },
+      {
+       "time": 0.93333,
+       "value": [
+        -0.4319,
+        -0.0014,
+        0.0157
+       ]
+      },
+      {
+       "time": 0.95,
+       "value": [
+        -0.2884,
+        -0.0004,
+        0.0073
+       ]
+      },
+      {
+       "time": 0.96667,
+       "value": [
+        -0.1444,
+        0.0,
+        0.0019
+       ]
+      },
+      {
+       "time": 0.98333,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.0,
+       "value": [
+        0.1446,
+        -0.0003,
+        0.0
+       ]
+      },
+      {
+       "time": 1.01667,
+       "value": [
+        0.2894,
+        -0.0006,
+        0.0
+       ]
+      },
+      {
+       "time": 1.03333,
+       "value": [
+        0.4345,
+        -0.0009,
+        0.0
+       ]
+      },
+      {
+       "time": 1.05,
+       "value": [
+        0.5799,
+        -0.0012,
+        0.0
+       ]
+      },
+      {
+       "time": 1.06667,
+       "value": [
+        0.7261,
+        -0.0015,
+        0.0
+       ]
+      },
+      {
+       "time": 1.08333,
+       "value": [
+        0.873,
+        -0.0018,
+        0.0
+       ]
+      },
+      {
+       "time": 1.1,
+       "value": [
+        1.021,
+        -0.0021,
+        0.0
+       ]
+      },
+      {
+       "time": 1.11667,
+       "value": [
+        1.1701,
+        -0.0024,
+        0.0
+       ]
+      },
+      {
+       "time": 1.13333,
+       "value": [
+        1.3204,
+        -0.0027,
+        0.0
+       ]
+      },
+      {
+       "time": 1.15,
+       "value": [
+        1.4719,
+        -0.003,
+        0.0
+       ]
+      },
+      {
+       "time": 1.16667,
+       "value": [
+        1.6246,
+        -0.0034,
+        0.0
+       ]
+      },
+      {
+       "time": 1.18333,
+       "value": [
+        1.7784,
+        -0.0037,
+        0.0
+       ]
+      },
+      {
+       "time": 1.2,
+       "value": [
+        1.9331,
+        -0.004,
+        0.0
+       ]
+      },
+      {
+       "time": 1.21667,
+       "value": [
+        2.0886,
+        -0.0043,
+        0.0
+       ]
+      },
+      {
+       "time": 1.23333,
+       "value": [
+        2.2445,
+        -0.0046,
+        0.0
+       ]
+      },
+      {
+       "time": 1.25,
+       "value": [
+        2.4005,
+        -0.005,
+        0.0
+       ]
+      },
+      {
+       "time": 1.26667,
+       "value": [
+        2.5562,
+        -0.0053,
+        0.0
+       ]
+      },
+      {
+       "time": 1.28333,
+       "value": [
+        2.711,
+        -0.0056,
+        0.0
+       ]
+      },
+      {
+       "time": 1.3,
+       "value": [
+        2.8643,
+        -0.0059,
+        0.0
+       ]
+      },
+      {
+       "time": 1.31667,
+       "value": [
+        3.0155,
+        -0.0062,
+        0.0
+       ]
+      },
+      {
+       "time": 1.33333,
+       "value": [
+        3.1638,
+        -0.0065,
+        0.0
+       ]
+      },
+      {
+       "time": 1.35,
+       "value": [
+        3.3084,
+        -0.0068,
+        0.0
+       ]
+      },
+      {
+       "time": 1.36667,
+       "value": [
+        3.4486,
+        -0.0071,
+        0.0
+       ]
+      },
+      {
+       "time": 1.38333,
+       "value": [
+        3.5833,
+        -0.0074,
+        0.0
+       ]
+      },
+      {
+       "time": 1.4,
+       "value": [
+        3.7119,
+        -0.0077,
+        0.0
+       ]
+      },
+      {
+       "time": 1.8,
+       "value": [
+        3.7119,
+        -0.0077,
+        0.0
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "head_yaw",
+   "type": "mesh",
+   "layer": "head",
+   "parent": "missile",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "rotation": {
+     "value": [
+      0.0,
+      23.334,
+      0.0
+     ],
+     "track": [
+      {
+       "time": 0.0,
+       "value": [
+        0.0,
+        23.334,
+        0.0
+       ]
+      },
+      {
+       "time": 0.3,
+       "value": [
+        0.0,
+        23.334,
+        0.0
+       ]
+      },
+      {
+       "time": 0.31667,
+       "value": [
+        0.0,
+        23.327,
+        0.0
+       ]
+      },
+      {
+       "time": 0.33333,
+       "value": [
+        0.0,
+        23.3,
+        0.0
+       ]
+      },
+      {
+       "time": 0.35,
+       "value": [
+        0.0,
+        23.24,
+        0.0
+       ]
+      },
+      {
+       "time": 0.36667,
+       "value": [
+        0.0,
+        23.133,
+        0.0
+       ]
+      },
+      {
+       "time": 0.38333,
+       "value": [
+        0.0,
+        22.97,
+        0.0
+       ]
+      },
+      {
+       "time": 0.4,
+       "value": [
+        0.0,
+        22.744,
+        0.0
+       ]
+      },
+      {
+       "time": 0.41667,
+       "value": [
+        0.0,
+        22.453,
+        0.0
+       ]
+      },
+      {
+       "time": 0.43333,
+       "value": [
+        0.0,
+        22.093,
+        0.0
+       ]
+      },
+      {
+       "time": 0.45,
+       "value": [
+        0.0,
+        21.668,
+        0.0
+       ]
+      },
+      {
+       "time": 0.46667,
+       "value": [
+        0.0,
+        21.185,
+        0.0
+       ]
+      },
+      {
+       "time": 0.48333,
+       "value": [
+        0.0,
+        20.652,
+        0.0
+       ]
+      },
+      {
+       "time": 0.5,
+       "value": [
+        0.0,
+        20.083,
+        0.0
+       ]
+      },
+      {
+       "time": 0.51667,
+       "value": [
+        0.0,
+        19.491,
+        0.0
+       ]
+      },
+      {
+       "time": 0.53333,
+       "value": [
+        0.0,
+        18.892,
+        0.0
+       ]
+      },
+      {
+       "time": 0.55,
+       "value": [
+        0.0,
+        18.292,
+        0.0
+       ]
+      },
+      {
+       "time": 0.56667,
+       "value": [
+        0.0,
+        17.692,
+        0.0
+       ]
+      },
+      {
+       "time": 0.58333,
+       "value": [
+        0.0,
+        17.092,
+        0.0
+       ]
+      },
+      {
+       "time": 0.6,
+       "value": [
+        0.0,
+        16.492,
+        0.0
+       ]
+      },
+      {
+       "time": 0.61667,
+       "value": [
+        0.0,
+        15.892,
+        0.0
+       ]
+      },
+      {
+       "time": 0.63333,
+       "value": [
+        0.0,
+        15.292,
+        0.0
+       ]
+      },
+      {
+       "time": 0.65,
+       "value": [
+        0.0,
+        14.692,
+        0.0
+       ]
+      },
+      {
+       "time": 0.66667,
+       "value": [
+        0.0,
+        14.092,
+        0.0
+       ]
+      },
+      {
+       "time": 0.68333,
+       "value": [
+        0.0,
+        13.491,
+        0.0
+       ]
+      },
+      {
+       "time": 0.7,
+       "value": [
+        0.0,
+        12.891,
+        0.0
+       ]
+      },
+      {
+       "time": 0.71667,
+       "value": [
+        0.0,
+        12.291,
+        0.0
+       ]
+      },
+      {
+       "time": 0.73333,
+       "value": [
+        0.0,
+        11.691,
+        0.0
+       ]
+      },
+      {
+       "time": 0.75,
+       "value": [
+        0.0,
+        11.091,
+        0.0
+       ]
+      },
+      {
+       "time": 0.76667,
+       "value": [
+        0.0,
+        10.492,
+        0.0
+       ]
+      },
+      {
+       "time": 0.78333,
+       "value": [
+        0.0,
+        9.892,
+        0.0
+       ]
+      },
+      {
+       "time": 0.8,
+       "value": [
+        0.0,
+        9.292,
+        0.0
+       ]
+      },
+      {
+       "time": 0.81667,
+       "value": [
+        0.0,
+        8.692,
+        0.0
+       ]
+      },
+      {
+       "time": 0.83333,
+       "value": [
+        0.0,
+        8.092,
+        0.0
+       ]
+      },
+      {
+       "time": 0.85,
+       "value": [
+        0.0,
+        7.492,
+        0.0
+       ]
+      },
+      {
+       "time": 0.86667,
+       "value": [
+        0.0,
+        6.892,
+        0.0
+       ]
+      },
+      {
+       "time": 0.88333,
+       "value": [
+        0.0,
+        6.279,
+        0.0
+       ]
+      },
+      {
+       "time": 0.9,
+       "value": [
+        0.0,
+        5.599,
+        0.0
+       ]
+      },
+      {
+       "time": 0.91667,
+       "value": [
+        0.0,
+        4.795,
+        0.0
+       ]
+      },
+      {
+       "time": 0.93333,
+       "value": [
+        0.0,
+        3.844,
+        0.0
+       ]
+      },
+      {
+       "time": 0.95,
+       "value": [
+        0.0,
+        2.734,
+        0.0
+       ]
+      },
+      {
+       "time": 0.96667,
+       "value": [
+        0.0,
+        1.455,
+        0.0
+       ]
+      },
+      {
+       "time": 0.98333,
+       "value": [
+        0.0,
+        0.386,
+        0.0
+       ]
+      },
+      {
+       "time": 1.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.8,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "head_yaw_k1",
+   "type": "mesh",
+   "layer": "head",
+   "parent": "head_yaw",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "rotation": {
+     "value": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "track": [
+      {
+       "time": 0.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.96667,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.98333,
+       "value": [
+        0.0,
+        -0.386,
+        0.0
+       ]
+      },
+      {
+       "time": 1.0,
+       "value": [
+        0.0,
+        -0.866,
+        0.0
+       ]
+      },
+      {
+       "time": 1.01667,
+       "value": [
+        0.0,
+        -1.828,
+        0.0
+       ]
+      },
+      {
+       "time": 1.03333,
+       "value": [
+        0.0,
+        -2.922,
+        0.0
+       ]
+      },
+      {
+       "time": 1.05,
+       "value": [
+        0.0,
+        -4.155,
+        0.0
+       ]
+      },
+      {
+       "time": 1.06667,
+       "value": [
+        0.0,
+        -5.531,
+        0.0
+       ]
+      },
+      {
+       "time": 1.08333,
+       "value": [
+        0.0,
+        -7.061,
+        0.0
+       ]
+      },
+      {
+       "time": 1.1,
+       "value": [
+        0.0,
+        -8.755,
+        0.0
+       ]
+      },
+      {
+       "time": 1.11667,
+       "value": [
+        0.0,
+        -10.623,
+        0.0
+       ]
+      },
+      {
+       "time": 1.13333,
+       "value": [
+        0.0,
+        -12.68,
+        0.0
+       ]
+      },
+      {
+       "time": 1.15,
+       "value": [
+        0.0,
+        -14.94,
+        0.0
+       ]
+      },
+      {
+       "time": 1.16667,
+       "value": [
+        0.0,
+        -17.416,
+        0.0
+       ]
+      },
+      {
+       "time": 1.18333,
+       "value": [
+        0.0,
+        -20.121,
+        0.0
+       ]
+      },
+      {
+       "time": 1.2,
+       "value": [
+        0.0,
+        -23.064,
+        0.0
+       ]
+      },
+      {
+       "time": 1.21667,
+       "value": [
+        0.0,
+        -26.253,
+        0.0
+       ]
+      },
+      {
+       "time": 1.23333,
+       "value": [
+        0.0,
+        -29.691,
+        0.0
+       ]
+      },
+      {
+       "time": 1.25,
+       "value": [
+        0.0,
+        -33.376,
+        0.0
+       ]
+      },
+      {
+       "time": 1.26667,
+       "value": [
+        0.0,
+        -37.302,
+        0.0
+       ]
+      },
+      {
+       "time": 1.28333,
+       "value": [
+        0.0,
+        -41.458,
+        0.0
+       ]
+      },
+      {
+       "time": 1.3,
+       "value": [
+        0.0,
+        -45.828,
+        0.0
+       ]
+      },
+      {
+       "time": 1.31667,
+       "value": [
+        0.0,
+        -50.394,
+        0.0
+       ]
+      },
+      {
+       "time": 1.33333,
+       "value": [
+        0.0,
+        -55.131,
+        0.0
+       ]
+      },
+      {
+       "time": 1.35,
+       "value": [
+        0.0,
+        -60.009,
+        0.0
+       ]
+      },
+      {
+       "time": 1.36667,
+       "value": [
+        0.0,
+        -64.995,
+        0.0
+       ]
+      },
+      {
+       "time": 1.38333,
+       "value": [
+        0.0,
+        -70.049,
+        0.0
+       ]
+      },
+      {
+       "time": 1.4,
+       "value": [
+        0.0,
+        -67.029,
+        0.0
+       ]
+      },
+      {
+       "time": 1.8,
+       "value": [
+        0.0,
+        -67.029,
+        0.0
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "head_yaw_k2",
+   "type": "mesh",
+   "layer": "head",
+   "parent": "head_yaw_k1",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "rotation": {
+     "value": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "track": [
+      {
+       "time": 0.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.01667,
+       "value": [
+        0.0,
+        0.001,
+        0.0
+       ]
+      },
+      {
+       "time": 1.03333,
+       "value": [
+        0.0,
+        0.006,
+        0.0
+       ]
+      },
+      {
+       "time": 1.05,
+       "value": [
+        0.0,
+        0.019,
+        0.0
+       ]
+      },
+      {
+       "time": 1.06667,
+       "value": [
+        0.0,
+        0.046,
+        0.0
+       ]
+      },
+      {
+       "time": 1.08333,
+       "value": [
+        0.0,
+        0.096,
+        0.0
+       ]
+      },
+      {
+       "time": 1.1,
+       "value": [
+        0.0,
+        0.178,
+        0.0
+       ]
+      },
+      {
+       "time": 1.11667,
+       "value": [
+        0.0,
+        0.306,
+        0.0
+       ]
+      },
+      {
+       "time": 1.13333,
+       "value": [
+        0.0,
+        0.495,
+        0.0
+       ]
+      },
+      {
+       "time": 1.15,
+       "value": [
+        0.0,
+        0.761,
+        0.0
+       ]
+      },
+      {
+       "time": 1.16667,
+       "value": [
+        0.0,
+        1.121,
+        0.0
+       ]
+      },
+      {
+       "time": 1.18333,
+       "value": [
+        0.0,
+        1.591,
+        0.0
+       ]
+      },
+      {
+       "time": 1.2,
+       "value": [
+        0.0,
+        2.184,
+        0.0
+       ]
+      },
+      {
+       "time": 1.21667,
+       "value": [
+        0.0,
+        2.914,
+        0.0
+       ]
+      },
+      {
+       "time": 1.23333,
+       "value": [
+        0.0,
+        3.788,
+        0.0
+       ]
+      },
+      {
+       "time": 1.25,
+       "value": [
+        0.0,
+        4.811,
+        0.0
+       ]
+      },
+      {
+       "time": 1.26667,
+       "value": [
+        0.0,
+        5.984,
+        0.0
+       ]
+      },
+      {
+       "time": 1.28333,
+       "value": [
+        0.0,
+        7.306,
+        0.0
+       ]
+      },
+      {
+       "time": 1.3,
+       "value": [
+        0.0,
+        8.769,
+        0.0
+       ]
+      },
+      {
+       "time": 1.31667,
+       "value": [
+        0.0,
+        10.365,
+        0.0
+       ]
+      },
+      {
+       "time": 1.33333,
+       "value": [
+        0.0,
+        12.081,
+        0.0
+       ]
+      },
+      {
+       "time": 1.35,
+       "value": [
+        0.0,
+        13.904,
+        0.0
+       ]
+      },
+      {
+       "time": 1.36667,
+       "value": [
+        0.0,
+        15.814,
+        0.0
+       ]
+      },
+      {
+       "time": 1.38333,
+       "value": [
+        0.0,
+        17.792,
+        0.0
+       ]
+      },
+      {
+       "time": 1.4,
+       "value": [
+        0.0,
+        17.682,
+        0.0
+       ]
+      },
+      {
+       "time": 1.8,
+       "value": [
+        0.0,
+        17.682,
+        0.0
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "head_pitch_k1",
+   "type": "mesh",
+   "layer": "head",
+   "parent": "head_yaw_k2",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "rotation": {
+     "value": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "track": [
+      {
+       "time": 0.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.96667,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.98333,
+       "value": [
+        0.0,
+        0.0,
+        -0.063
+       ]
+      },
+      {
+       "time": 1.0,
+       "value": [
+        0.0,
+        0.0,
+        -0.264
+       ]
+      },
+      {
+       "time": 1.01667,
+       "value": [
+        0.0,
+        0.0,
+        -0.594
+       ]
+      },
+      {
+       "time": 1.03333,
+       "value": [
+        0.0,
+        0.0,
+        -0.995
+       ]
+      },
+      {
+       "time": 1.05,
+       "value": [
+        0.0,
+        0.0,
+        -1.449
+       ]
+      },
+      {
+       "time": 1.06667,
+       "value": [
+        0.0,
+        0.0,
+        -1.949
+       ]
+      },
+      {
+       "time": 1.08333,
+       "value": [
+        0.0,
+        0.0,
+        -2.492
+       ]
+      },
+      {
+       "time": 1.1,
+       "value": [
+        0.0,
+        0.0,
+        -3.077
+       ]
+      },
+      {
+       "time": 1.11667,
+       "value": [
+        0.0,
+        0.0,
+        -3.708
+       ]
+      },
+      {
+       "time": 1.13333,
+       "value": [
+        0.0,
+        0.0,
+        -4.386
+       ]
+      },
+      {
+       "time": 1.15,
+       "value": [
+        0.0,
+        0.0,
+        -5.116
+       ]
+      },
+      {
+       "time": 1.16667,
+       "value": [
+        0.0,
+        0.0,
+        -5.905
+       ]
+      },
+      {
+       "time": 1.18333,
+       "value": [
+        0.0,
+        0.0,
+        -6.76
+       ]
+      },
+      {
+       "time": 1.2,
+       "value": [
+        0.0,
+        0.0,
+        -7.687
+       ]
+      },
+      {
+       "time": 1.21667,
+       "value": [
+        0.0,
+        0.0,
+        -8.697
+       ]
+      },
+      {
+       "time": 1.23333,
+       "value": [
+        0.0,
+        0.0,
+        -9.801
+       ]
+      },
+      {
+       "time": 1.25,
+       "value": [
+        0.0,
+        0.0,
+        -11.011
+       ]
+      },
+      {
+       "time": 1.26667,
+       "value": [
+        0.0,
+        0.0,
+        -12.342
+       ]
+      },
+      {
+       "time": 1.28333,
+       "value": [
+        0.0,
+        0.0,
+        -13.815
+       ]
+      },
+      {
+       "time": 1.3,
+       "value": [
+        0.0,
+        0.0,
+        -15.449
+       ]
+      },
+      {
+       "time": 1.31667,
+       "value": [
+        0.0,
+        0.0,
+        -17.271
+       ]
+      },
+      {
+       "time": 1.33333,
+       "value": [
+        0.0,
+        0.0,
+        -19.312
+       ]
+      },
+      {
+       "time": 1.35,
+       "value": [
+        0.0,
+        0.0,
+        -21.603
+       ]
+      },
+      {
+       "time": 1.36667,
+       "value": [
+        0.0,
+        0.0,
+        -24.178
+       ]
+      },
+      {
+       "time": 1.38333,
+       "value": [
+        0.0,
+        0.0,
+        -27.068
+       ]
+      },
+      {
+       "time": 1.4,
+       "value": [
+        0.0,
+        0.0,
+        -26.03
+       ]
+      },
+      {
+       "time": 1.8,
+       "value": [
+        0.0,
+        0.0,
+        -26.03
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "head_pitch_k2",
+   "type": "mesh",
+   "layer": "head",
+   "parent": "head_pitch_k1",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "rotation": {
+     "value": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "track": [
+      {
+       "time": 0.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.01667,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.03333,
+       "value": [
+        0.0,
+        0.0,
+        0.002
+       ]
+      },
+      {
+       "time": 1.05,
+       "value": [
+        0.0,
+        0.0,
+        0.007
+       ]
+      },
+      {
+       "time": 1.06667,
+       "value": [
+        0.0,
+        0.0,
+        0.017
+       ]
+      },
+      {
+       "time": 1.08333,
+       "value": [
+        0.0,
+        0.0,
+        0.035
+       ]
+      },
+      {
+       "time": 1.1,
+       "value": [
+        0.0,
+        0.0,
+        0.064
+       ]
+      },
+      {
+       "time": 1.11667,
+       "value": [
+        0.0,
+        0.0,
+        0.109
+       ]
+      },
+      {
+       "time": 1.13333,
+       "value": [
+        0.0,
+        0.0,
+        0.175
+       ]
+      },
+      {
+       "time": 1.15,
+       "value": [
+        0.0,
+        0.0,
+        0.268
+       ]
+      },
+      {
+       "time": 1.16667,
+       "value": [
+        0.0,
+        0.0,
+        0.392
+       ]
+      },
+      {
+       "time": 1.18333,
+       "value": [
+        0.0,
+        0.0,
+        0.554
+       ]
+      },
+      {
+       "time": 1.2,
+       "value": [
+        0.0,
+        0.0,
+        0.76
+       ]
+      },
+      {
+       "time": 1.21667,
+       "value": [
+        0.0,
+        0.0,
+        1.017
+       ]
+      },
+      {
+       "time": 1.23333,
+       "value": [
+        0.0,
+        0.0,
+        1.332
+       ]
+      },
+      {
+       "time": 1.25,
+       "value": [
+        0.0,
+        0.0,
+        1.715
+       ]
+      },
+      {
+       "time": 1.26667,
+       "value": [
+        0.0,
+        0.0,
+        2.174
+       ]
+      },
+      {
+       "time": 1.28333,
+       "value": [
+        0.0,
+        0.0,
+        2.723
+       ]
+      },
+      {
+       "time": 1.3,
+       "value": [
+        0.0,
+        0.0,
+        3.376
+       ]
+      },
+      {
+       "time": 1.31667,
+       "value": [
+        0.0,
+        0.0,
+        4.151
+       ]
+      },
+      {
+       "time": 1.33333,
+       "value": [
+        0.0,
+        0.0,
+        5.069
+       ]
+      },
+      {
+       "time": 1.35,
+       "value": [
+        0.0,
+        0.0,
+        6.154
+       ]
+      },
+      {
+       "time": 1.36667,
+       "value": [
+        0.0,
+        0.0,
+        7.429
+       ]
+      },
+      {
+       "time": 1.38333,
+       "value": [
+        0.0,
+        0.0,
+        8.915
+       ]
+      },
+      {
+       "time": 1.4,
+       "value": [
+        0.0,
+        0.0,
+        9.234
+       ]
+      },
+      {
+       "time": 1.8,
+       "value": [
+        0.0,
+        0.0,
+        9.234
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "head_tilt",
+   "type": "mesh",
+   "layer": "head",
+   "parent": "head_pitch_k2",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "rotation": {
+     "value": [
+      0.0,
+      0.0,
+      13.29
+     ],
+     "track": [
+      {
+       "time": 0.0,
+       "value": [
+        0.0,
+        0.0,
+        13.29
+       ]
+      },
+      {
+       "time": 0.26667,
+       "value": [
+        0.0,
+        0.0,
+        13.29
+       ]
+      },
+      {
+       "time": 0.28333,
+       "value": [
+        0.002,
+        0.0,
+        13.29
+       ]
+      },
+      {
+       "time": 0.3,
+       "value": [
+        0.026,
+        0.0,
+        13.29
+       ]
+      },
+      {
+       "time": 0.31667,
+       "value": [
+        0.114,
+        0.0,
+        13.29
+       ]
+      },
+      {
+       "time": 0.33333,
+       "value": [
+        0.299,
+        0.0,
+        13.289
+       ]
+      },
+      {
+       "time": 0.35,
+       "value": [
+        0.579,
+        0.0,
+        13.289
+       ]
+      },
+      {
+       "time": 0.36667,
+       "value": [
+        0.933,
+        0.0,
+        13.289
+       ]
+      },
+      {
+       "time": 0.38333,
+       "value": [
+        1.341,
+        0.0,
+        13.289
+       ]
+      },
+      {
+       "time": 0.4,
+       "value": [
+        1.783,
+        0.0,
+        13.289
+       ]
+      },
+      {
+       "time": 0.41667,
+       "value": [
+        2.246,
+        0.0,
+        13.288
+       ]
+      },
+      {
+       "time": 0.43333,
+       "value": [
+        2.707,
+        0.0,
+        13.288
+       ]
+      },
+      {
+       "time": 0.45,
+       "value": [
+        3.133,
+        0.0,
+        13.288
+       ]
+      },
+      {
+       "time": 0.46667,
+       "value": [
+        3.504,
+        0.0,
+        13.288
+       ]
+      },
+      {
+       "time": 0.48333,
+       "value": [
+        3.802,
+        0.0,
+        13.288
+       ]
+      },
+      {
+       "time": 0.5,
+       "value": [
+        4.006,
+        0.0,
+        13.288
+       ]
+      },
+      {
+       "time": 0.51667,
+       "value": [
+        4.108,
+        0.0,
+        13.287
+       ]
+      },
+      {
+       "time": 0.53333,
+       "value": [
+        4.137,
+        0.0,
+        13.287
+       ]
+      },
+      {
+       "time": 0.55,
+       "value": [
+        4.14,
+        0.0,
+        13.287
+       ]
+      },
+      {
+       "time": 0.6,
+       "value": [
+        4.14,
+        0.0,
+        13.287
+       ]
+      },
+      {
+       "time": 0.61667,
+       "value": [
+        4.141,
+        0.0,
+        13.279
+       ]
+      },
+      {
+       "time": 0.63333,
+       "value": [
+        4.141,
+        0.0,
+        13.207
+       ]
+      },
+      {
+       "time": 0.65,
+       "value": [
+        4.141,
+        0.0,
+        13.001
+       ]
+      },
+      {
+       "time": 0.66667,
+       "value": [
+        4.141,
+        0.0,
+        12.653
+       ]
+      },
+      {
+       "time": 0.68333,
+       "value": [
+        4.14,
+        0.0,
+        12.178
+       ]
+      },
+      {
+       "time": 0.7,
+       "value": [
+        4.14,
+        0.0,
+        11.592
+       ]
+      },
+      {
+       "time": 0.71667,
+       "value": [
+        4.14,
+        0.0,
+        10.912
+       ]
+      },
+      {
+       "time": 0.73333,
+       "value": [
+        4.14,
+        0.0,
+        10.153
+       ]
+      },
+      {
+       "time": 0.75,
+       "value": [
+        4.14,
+        0.0,
+        9.33
+       ]
+      },
+      {
+       "time": 0.76667,
+       "value": [
+        4.14,
+        0.0,
+        8.46
+       ]
+      },
+      {
+       "time": 0.78333,
+       "value": [
+        4.139,
+        0.0,
+        7.558
+       ]
+      },
+      {
+       "time": 0.8,
+       "value": [
+        4.139,
+        0.0,
+        6.64
+       ]
+      },
+      {
+       "time": 0.81667,
+       "value": [
+        4.139,
+        0.0,
+        5.723
+       ]
+      },
+      {
+       "time": 0.83333,
+       "value": [
+        4.139,
+        0.0,
+        4.821
+       ]
+      },
+      {
+       "time": 0.85,
+       "value": [
+        4.139,
+        0.0,
+        3.951
+       ]
+      },
+      {
+       "time": 0.86667,
+       "value": [
+        4.186,
+        0.0,
+        3.128
+       ]
+      },
+      {
+       "time": 0.88333,
+       "value": [
+        4.462,
+        0.0,
+        2.369
+       ]
+      },
+      {
+       "time": 0.9,
+       "value": [
+        5.119,
+        0.0,
+        1.689
+       ]
+      },
+      {
+       "time": 0.91667,
+       "value": [
+        6.052,
+        0.0,
+        1.103
+       ]
+      },
+      {
+       "time": 0.93333,
+       "value": [
+        7.11,
+        0.0,
+        0.629
+       ]
+      },
+      {
+       "time": 0.95,
+       "value": [
+        8.243,
+        0.0,
+        0.281
+       ]
+      },
+      {
+       "time": 0.96667,
+       "value": [
+        9.433,
+        0.0,
+        0.074
+       ]
+      },
+      {
+       "time": 0.98333,
+       "value": [
+        10.669,
+        0.0,
+        -0.056
+       ]
+      },
+      {
+       "time": 1.0,
+       "value": [
+        11.952,
+        0.0,
+        -0.118
+       ]
+      },
+      {
+       "time": 1.01667,
+       "value": [
+        13.284,
+        0.0,
+        -0.118
+       ]
+      },
+      {
+       "time": 1.03333,
+       "value": [
+        14.66,
+        0.0,
+        -0.118
+       ]
+      },
+      {
+       "time": 1.05,
+       "value": [
+        16.08,
+        0.0,
+        -0.119
+       ]
+      },
+      {
+       "time": 1.06667,
+       "value": [
+        17.548,
+        0.0,
+        -0.12
+       ]
+      },
+      {
+       "time": 1.08333,
+       "value": [
+        19.066,
+        0.0,
+        -0.122
+       ]
+      },
+      {
+       "time": 1.1,
+       "value": [
+        20.638,
+        0.0,
+        -0.125
+       ]
+      },
+      {
+       "time": 1.11667,
+       "value": [
+        22.267,
+        0.0,
+        -0.13
+       ]
+      },
+      {
+       "time": 1.13333,
+       "value": [
+        23.956,
+        0.0,
+        -0.137
+       ]
+      },
+      {
+       "time": 1.15,
+       "value": [
+        25.712,
+        0.0,
+        -0.147
+       ]
+      },
+      {
+       "time": 1.16667,
+       "value": [
+        27.537,
+        0.0,
+        -0.161
+       ]
+      },
+      {
+       "time": 1.18333,
+       "value": [
+        29.438,
+        0.0,
+        -0.178
+       ]
+      },
+      {
+       "time": 1.2,
+       "value": [
+        31.42,
+        0.0,
+        -0.2
+       ]
+      },
+      {
+       "time": 1.21667,
+       "value": [
+        33.489,
+        0.0,
+        -0.227
+       ]
+      },
+      {
+       "time": 1.23333,
+       "value": [
+        35.651,
+        0.0,
+        -0.26
+       ]
+      },
+      {
+       "time": 1.25,
+       "value": [
+        37.915,
+        0.0,
+        -0.299
+       ]
+      },
+      {
+       "time": 1.26667,
+       "value": [
+        40.286,
+        0.0,
+        -0.345
+       ]
+      },
+      {
+       "time": 1.28333,
+       "value": [
+        42.774,
+        0.0,
+        -0.399
+       ]
+      },
+      {
+       "time": 1.3,
+       "value": [
+        45.387,
+        0.0,
+        -0.461
+       ]
+      },
+      {
+       "time": 1.31667,
+       "value": [
+        47.238,
+        0.0,
+        -0.531
+       ]
+      },
+      {
+       "time": 1.33333,
+       "value": [
+        48.443,
+        0.0,
+        -0.612
+       ]
+      },
+      {
+       "time": 1.35,
+       "value": [
+        49.793,
+        0.0,
+        -0.705
+       ]
+      },
+      {
+       "time": 1.36667,
+       "value": [
+        51.301,
+        0.0,
+        -0.813
+       ]
+      },
+      {
+       "time": 1.38333,
+       "value": [
+        52.984,
+        0.0,
+        -0.94
+       ]
+      },
+      {
+       "time": 1.4,
+       "value": [
+        53.487,
+        0.0,
+        -0.943
+       ]
+      },
+      {
+       "time": 1.8,
+       "value": [
+        53.487,
+        0.0,
+        -0.943
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "body",
+   "type": "mesh",
+   "layer": "head",
+   "parent": "head_tilt",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "scale": [
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "id": "head_form",
+   "type": "mesh",
+   "layer": "head",
+   "parent": "body",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "scale": {
+     "value": [
+      0.001,
+      0.001,
+      0.0008
+     ],
+     "track": [
+      {
+       "time": 0.0,
+       "value": [
+        0.001,
+        0.001,
+        0.0008
+       ]
+      },
+      {
+       "time": 0.2,
+       "value": [
+        0.001,
+        0.001,
+        0.0008
+       ]
+      },
+      {
+       "time": 0.25,
+       "value": [
+        0.55,
+        0.55,
+        0.462
+       ]
+      },
+      {
+       "time": 0.31,
+       "value": [
+        1.16,
+        1.16,
+        0.9744
+       ]
+      },
+      {
+       "time": 0.38,
+       "value": [
+        0.97,
+        0.97,
+        0.8148
+       ]
+      },
+      {
+       "time": 0.44,
+       "value": [
+        1.0,
+        1.0,
+        0.84
+       ]
+      },
+      {
+       "time": 1.3,
+       "value": [
+        1.0,
+        1.0,
+        0.84
+       ]
+      },
+      {
+       "time": 1.385,
+       "value": [
+        1.12,
+        1.12,
+        0.9408
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "gem_shell_front",
+   "type": "mesh",
+   "layer": "head",
+   "parent": "head_form",
+   "seed": 11,
+   "parameters": {
+    "primitive": "crystal",
+    "radius": 0.17,
+    "height": 0.5,
+    "segments": 6,
+    "irregularity": 0.0,
+    "position": [
+     0.19,
+     0.0,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     -90.0
+    ],
+    "color": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "emissive": {
+     "value": 0.5,
+     "track": [
+      {
+       "time": 0.2,
+       "value": 0.5
+      },
+      {
+       "time": 0.3,
+       "value": 1.6
+      },
+      {
+       "time": 0.44,
+       "value": 0.85
+      },
+      {
+       "time": 1.2,
+       "value": 0.85
+      },
+      {
+       "time": 1.39,
+       "value": 1.7
+      }
+     ]
+    },
+    "start_time": 0.2,
+    "duration": 1.194
+   },
+   "inputs": {
+    "material": "mat_gem_shell"
+   }
+  },
+  {
+   "id": "gem_shell_back",
+   "type": "mesh",
+   "layer": "head",
+   "parent": "head_form",
+   "seed": 11,
+   "parameters": {
+    "primitive": "crystal",
+    "radius": 0.17,
+    "height": 0.26,
+    "segments": 6,
+    "irregularity": 0.0,
+    "position": [
+     -0.19,
+     0.0,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     90.0
+    ],
+    "color": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "emissive": {
+     "value": 0.5,
+     "track": [
+      {
+       "time": 0.2,
+       "value": 0.5
+      },
+      {
+       "time": 0.3,
+       "value": 1.6
+      },
+      {
+       "time": 0.44,
+       "value": 0.85
+      },
+      {
+       "time": 1.2,
+       "value": 0.85
+      },
+      {
+       "time": 1.39,
+       "value": 1.7
+      }
+     ]
+    },
+    "start_time": 0.2,
+    "duration": 1.194
+   },
+   "inputs": {
+    "material": "mat_gem_shell"
+   }
+  },
+  {
+   "id": "gem_core_front",
+   "type": "mesh",
+   "layer": "head",
+   "parent": "head_form",
+   "seed": 11,
+   "parameters": {
+    "primitive": "crystal",
+    "radius": 0.0782,
+    "height": 0.23,
+    "segments": 6,
+    "irregularity": 0.0,
+    "position": [
+     0.0874,
+     0.0,
+     0.0
+    ],
+    "rotation": [
+     30.0,
+     0.0,
+     -90.0
+    ],
+    "color": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "emissive": {
+     "value": 2.0,
+     "track": [
+      {
+       "time": 0.2,
+       "value": 2.0
+      },
+      {
+       "time": 0.3,
+       "value": 5.5
+      },
+      {
+       "time": 0.44,
+       "value": 3.4
+      },
+      {
+       "time": 1.2,
+       "value": 3.4
+      },
+      {
+       "time": 1.39,
+       "value": 6.0
+      }
+     ]
+    },
+    "start_time": 0.2,
+    "duration": 1.194
+   },
+   "inputs": {
+    "material": "mat_gem_core"
+   }
+  },
+  {
+   "id": "gem_core_back",
+   "type": "mesh",
+   "layer": "head",
+   "parent": "head_form",
+   "seed": 11,
+   "parameters": {
+    "primitive": "crystal",
+    "radius": 0.0782,
+    "height": 0.1196,
+    "segments": 6,
+    "irregularity": 0.0,
+    "position": [
+     -0.0874,
+     0.0,
+     0.0
+    ],
+    "rotation": [
+     30.0,
+     0.0,
+     90.0
+    ],
+    "color": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "emissive": {
+     "value": 2.0,
+     "track": [
+      {
+       "time": 0.2,
+       "value": 2.0
+      },
+      {
+       "time": 0.3,
+       "value": 5.5
+      },
+      {
+       "time": 0.44,
+       "value": 3.4
+      },
+      {
+       "time": 1.2,
+       "value": 3.4
+      },
+      {
+       "time": 1.39,
+       "value": 6.0
+      }
+     ]
+    },
+    "start_time": 0.2,
+    "duration": 1.194
+   },
+   "inputs": {
+    "material": "mat_gem_core"
+   }
+  },
+  {
+   "id": "follow_anchor",
+   "type": "mesh",
+   "layer": "head",
+   "parent": "head_tilt",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "position": {
+     "value": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "track": [
+      {
+       "time": 0.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.2,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.21667,
+       "value": [
+        -0.0029,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.23333,
+       "value": [
+        -0.0089,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.25,
+       "value": [
+        -0.0182,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.26667,
+       "value": [
+        -0.03,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.28333,
+       "value": [
+        -0.0437,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.3,
+       "value": [
+        -0.0585,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.31667,
+       "value": [
+        -0.0737,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.33333,
+       "value": [
+        -0.0887,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.35,
+       "value": [
+        -0.1026,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.36667,
+       "value": [
+        -0.1149,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.38333,
+       "value": [
+        -0.1248,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.4,
+       "value": [
+        -0.1315,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.41667,
+       "value": [
+        -0.1347,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.43333,
+       "value": [
+        -0.1355,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.45,
+       "value": [
+        -0.1358,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.46667,
+       "value": [
+        -0.1361,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.48333,
+       "value": [
+        -0.1363,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.5,
+       "value": [
+        -0.1366,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.51667,
+       "value": [
+        -0.1369,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.53333,
+       "value": [
+        -0.1372,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.55,
+       "value": [
+        -0.1374,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.56667,
+       "value": [
+        -0.1377,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.58333,
+       "value": [
+        -0.138,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.6,
+       "value": [
+        -0.1382,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.61667,
+       "value": [
+        -0.1385,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.63333,
+       "value": [
+        -0.1388,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.65,
+       "value": [
+        -0.1391,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.66667,
+       "value": [
+        -0.1393,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.68333,
+       "value": [
+        -0.1396,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.7,
+       "value": [
+        -0.1399,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.71667,
+       "value": [
+        -0.1401,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.73333,
+       "value": [
+        -0.1404,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.75,
+       "value": [
+        -0.1407,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.76667,
+       "value": [
+        -0.141,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.78333,
+       "value": [
+        -0.1412,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.8,
+       "value": [
+        -0.1415,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.81667,
+       "value": [
+        -0.1418,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.83333,
+       "value": [
+        -0.1421,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.85,
+       "value": [
+        -0.1423,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.86667,
+       "value": [
+        -0.1426,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.88333,
+       "value": [
+        -0.1429,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.9,
+       "value": [
+        -0.1431,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.91667,
+       "value": [
+        -0.1434,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.93333,
+       "value": [
+        -0.1437,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.95,
+       "value": [
+        -0.144,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.96667,
+       "value": [
+        -0.1442,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.98333,
+       "value": [
+        -0.1445,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.0,
+       "value": [
+        -0.1447,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.01667,
+       "value": [
+        -0.145,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.03333,
+       "value": [
+        -0.1454,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.05,
+       "value": [
+        -0.1462,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.06667,
+       "value": [
+        -0.1473,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.08333,
+       "value": [
+        -0.1487,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.1,
+       "value": [
+        -0.1504,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.11667,
+       "value": [
+        -0.1524,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.13333,
+       "value": [
+        -0.1547,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.15,
+       "value": [
+        -0.1573,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.16667,
+       "value": [
+        -0.1603,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.18333,
+       "value": [
+        -0.1635,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.2,
+       "value": [
+        -0.1671,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.21667,
+       "value": [
+        -0.171,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.23333,
+       "value": [
+        -0.1752,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.25,
+       "value": [
+        -0.1797,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.26667,
+       "value": [
+        -0.1845,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.28333,
+       "value": [
+        -0.1896,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.3,
+       "value": [
+        -0.195,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.31667,
+       "value": [
+        -0.2008,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.33333,
+       "value": [
+        -0.2068,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.35,
+       "value": [
+        -0.2132,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.36667,
+       "value": [
+        -0.2198,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.38333,
+       "value": [
+        -0.2268,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.4,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.8,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "ps_halo",
+   "type": "particle_system",
+   "layer": "head",
+   "parameters": {
+    "max_particles": 24,
+    "lifetime": 0.05,
+    "size": 1.25,
+    "size_over_life": [
+     [
+      0.0,
+      0.9
+     ],
+     [
+      0.5,
+      1.0
+     ],
+     [
+      1.0,
+      0.95
+     ]
+    ],
+    "color": [
+     0.56,
+     0.26,
+     1.0,
+     1.0
+    ],
+    "color_over_life": [
+     [
+      0.0,
+      [
+       0.6895,
+       0.477,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      1.0,
+      [
+       0.56,
+       0.26,
+       1.0,
+       1.0
+      ]
+     ]
+    ],
+    "opacity": 0.2,
+    "opacity_over_life": [
+     [
+      0.0,
+      0.6
+     ],
+     [
+      0.4,
+      1.0
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 1.4,
+    "render_mode": "billboard",
+    "blend": "additive",
+    "soft_particle_distance": 0.3
+   },
+   "inputs": {
+    "sprite": "tex_glow",
+    "material": "mat_glow"
+   }
+  },
+  {
+   "id": "e_halo",
+   "type": "emitter",
+   "layer": "head",
+   "parent": "follow_anchor",
+   "parameters": {
+    "shape": "point",
+    "velocity": 0.0,
+    "inherit_velocity": 1.0,
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.0,
+       "value": 0.0
+      },
+      {
+       "time": 0.04,
+       "value": 120.0
+      },
+      {
+       "time": 1.38,
+       "value": 120.0
+      },
+      {
+       "time": 1.4,
+       "value": 0.0
+      }
+     ]
+    },
+    "duration": 1.41
+   },
+   "inputs": {
+    "particle": "ps_halo"
+   }
+  },
+  {
+   "id": "ps_aura",
+   "type": "particle_system",
+   "layer": "head",
+   "parameters": {
+    "max_particles": 24,
+    "lifetime": 0.05,
+    "size": 1.12,
+    "color": [
+     0.483,
+     0.351,
+     1.0,
+     1.0
+    ],
+    "opacity": 0.34,
+    "opacity_over_life": [
+     [
+      0.0,
+      0.7
+     ],
+     [
+      0.4,
+      1.0
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 2.2,
+    "render_mode": "billboard",
+    "align_to_velocity": true,
+    "blend": "additive",
+    "soft_particle_distance": 0.1
+   },
+   "inputs": {
+    "sprite": "tex_aura",
+    "material": "mat_glow"
+   }
+  },
+  {
+   "id": "e_aura",
+   "type": "emitter",
+   "layer": "head",
+   "parent": "follow_anchor",
+   "parameters": {
+    "shape": "point",
+    "velocity": 0.0,
+    "inherit_velocity": 1.0,
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.26,
+       "value": 0.0
+      },
+      {
+       "time": 0.34,
+       "value": 120.0
+      },
+      {
+       "time": 1.38,
+       "value": 120.0
+      },
+      {
+       "time": 1.4,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.26,
+    "duration": 1.15
+   },
+   "inputs": {
+    "particle": "ps_aura"
+   }
+  },
+  {
+   "id": "braid_a",
+   "type": "mesh",
+   "layer": "braid",
+   "parent": "body",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "position": [
+     -0.33,
+     0.0,
+     0.0
+    ],
+    "rotation": {
+     "value": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "track": [
+      {
+       "time": 0.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.2,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.21667,
+       "value": [
+        0.11,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.23333,
+       "value": [
+        0.88,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.25,
+       "value": [
+        2.85,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.26667,
+       "value": [
+        6.46,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.28333,
+       "value": [
+        12.05,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.3,
+       "value": [
+        19.85,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.31667,
+       "value": [
+        29.98,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.33333,
+       "value": [
+        42.45,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.35,
+       "value": [
+        57.16,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.36667,
+       "value": [
+        73.9,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.38333,
+       "value": [
+        92.36,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.4,
+       "value": [
+        112.12,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.41667,
+       "value": [
+        132.65,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.43333,
+       "value": [
+        153.39,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.45,
+       "value": [
+        174.18,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.46667,
+       "value": [
+        195.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.48333,
+       "value": [
+        215.86,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.5,
+       "value": [
+        236.77,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.51667,
+       "value": [
+        257.72,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.53333,
+       "value": [
+        278.71,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.55,
+       "value": [
+        299.74,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.56667,
+       "value": [
+        320.82,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.58333,
+       "value": [
+        341.93,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.6,
+       "value": [
+        363.09,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.61667,
+       "value": [
+        384.29,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.63333,
+       "value": [
+        405.53,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.65,
+       "value": [
+        426.81,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.66667,
+       "value": [
+        448.14,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.68333,
+       "value": [
+        469.5,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.7,
+       "value": [
+        490.91,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.71667,
+       "value": [
+        512.36,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.73333,
+       "value": [
+        533.85,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.75,
+       "value": [
+        555.38,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.76667,
+       "value": [
+        576.96,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.78333,
+       "value": [
+        598.57,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.8,
+       "value": [
+        620.23,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.81667,
+       "value": [
+        641.93,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.83333,
+       "value": [
+        663.67,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.85,
+       "value": [
+        685.46,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.86667,
+       "value": [
+        707.28,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.88333,
+       "value": [
+        729.15,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.9,
+       "value": [
+        751.06,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.91667,
+       "value": [
+        773.01,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.93333,
+       "value": [
+        795.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.95,
+       "value": [
+        817.03,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.96667,
+       "value": [
+        839.11,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.98333,
+       "value": [
+        861.23,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.0,
+       "value": [
+        883.38,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.01667,
+       "value": [
+        905.57,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.03333,
+       "value": [
+        927.81,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.05,
+       "value": [
+        950.14,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.06667,
+       "value": [
+        972.61,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.08333,
+       "value": [
+        995.27,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.1,
+       "value": [
+        1018.17,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.11667,
+       "value": [
+        1041.36,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.13333,
+       "value": [
+        1064.88,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.15,
+       "value": [
+        1088.78,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.16667,
+       "value": [
+        1113.12,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.18333,
+       "value": [
+        1137.92,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.2,
+       "value": [
+        1163.26,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.21667,
+       "value": [
+        1189.16,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.23333,
+       "value": [
+        1215.69,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.25,
+       "value": [
+        1242.88,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.26667,
+       "value": [
+        1270.79,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.28333,
+       "value": [
+        1299.46,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.3,
+       "value": [
+        1328.94,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.31667,
+       "value": [
+        1359.28,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.33333,
+       "value": [
+        1390.52,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.35,
+       "value": [
+        1422.72,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.36667,
+       "value": [
+        1455.92,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.38333,
+       "value": [
+        1490.16,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.4,
+       "value": [
+        1525.51,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.8,
+       "value": [
+        1525.51,
+        0.0,
+        0.0
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "braid_b",
+   "type": "mesh",
+   "layer": "braid",
+   "parent": "body",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "position": [
+     -0.33,
+     0.0,
+     0.0
+    ],
+    "rotation": {
+     "value": [
+      70.0,
+      0.0,
+      0.0
+     ],
+     "track": [
+      {
+       "time": 0.0,
+       "value": [
+        70.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.2,
+       "value": [
+        70.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.21667,
+       "value": [
+        69.91,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.23333,
+       "value": [
+        69.33,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.25,
+       "value": [
+        67.84,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.26667,
+       "value": [
+        65.1,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.28333,
+       "value": [
+        60.86,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.3,
+       "value": [
+        54.95,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.31667,
+       "value": [
+        47.27,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.33333,
+       "value": [
+        37.82,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.35,
+       "value": [
+        26.67,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.36667,
+       "value": [
+        13.98,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.38333,
+       "value": [
+        -0.01,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.4,
+       "value": [
+        -15.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.41667,
+       "value": [
+        -30.56,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.43333,
+       "value": [
+        -46.28,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.45,
+       "value": [
+        -62.04,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.46667,
+       "value": [
+        -77.82,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.48333,
+       "value": [
+        -93.64,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.5,
+       "value": [
+        -109.49,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.51667,
+       "value": [
+        -125.37,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.53333,
+       "value": [
+        -141.28,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.55,
+       "value": [
+        -157.22,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.56667,
+       "value": [
+        -173.2,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.58333,
+       "value": [
+        -189.21,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.6,
+       "value": [
+        -205.24,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.61667,
+       "value": [
+        -221.31,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.63333,
+       "value": [
+        -237.42,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.65,
+       "value": [
+        -253.55,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.66667,
+       "value": [
+        -269.72,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.68333,
+       "value": [
+        -285.91,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.7,
+       "value": [
+        -302.14,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.71667,
+       "value": [
+        -318.4,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.73333,
+       "value": [
+        -334.69,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.75,
+       "value": [
+        -351.02,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.76667,
+       "value": [
+        -367.37,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.78333,
+       "value": [
+        -383.76,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.8,
+       "value": [
+        -400.18,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.81667,
+       "value": [
+        -416.63,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.83333,
+       "value": [
+        -433.11,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.85,
+       "value": [
+        -449.62,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.86667,
+       "value": [
+        -466.17,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.88333,
+       "value": [
+        -482.74,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.9,
+       "value": [
+        -499.35,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.91667,
+       "value": [
+        -515.99,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.93333,
+       "value": [
+        -532.66,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.95,
+       "value": [
+        -549.36,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.96667,
+       "value": [
+        -566.1,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.98333,
+       "value": [
+        -582.86,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.0,
+       "value": [
+        -599.66,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.01667,
+       "value": [
+        -616.48,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.03333,
+       "value": [
+        -633.34,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.05,
+       "value": [
+        -650.26,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.06667,
+       "value": [
+        -667.3,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.08333,
+       "value": [
+        -684.48,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.1,
+       "value": [
+        -701.84,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.11667,
+       "value": [
+        -719.42,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.13333,
+       "value": [
+        -737.25,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.15,
+       "value": [
+        -755.37,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.16667,
+       "value": [
+        -773.81,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.18333,
+       "value": [
+        -792.62,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.2,
+       "value": [
+        -811.82,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.21667,
+       "value": [
+        -831.46,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.23333,
+       "value": [
+        -851.57,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.25,
+       "value": [
+        -872.18,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.26667,
+       "value": [
+        -893.34,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.28333,
+       "value": [
+        -915.07,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.3,
+       "value": [
+        -937.42,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.31667,
+       "value": [
+        -960.42,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.33333,
+       "value": [
+        -984.1,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.35,
+       "value": [
+        -1008.51,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.36667,
+       "value": [
+        -1033.68,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.38333,
+       "value": [
+        -1059.64,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.4,
+       "value": [
+        -1086.43,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.8,
+       "value": [
+        -1086.43,
+        0.0,
+        0.0
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "braid_c",
+   "type": "mesh",
+   "layer": "braid",
+   "parent": "body",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "position": [
+     -0.33,
+     0.0,
+     0.0
+    ],
+    "rotation": {
+     "value": [
+      200.0,
+      0.0,
+      0.0
+     ],
+     "track": [
+      {
+       "time": 0.0,
+       "value": [
+        200.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.2,
+       "value": [
+        200.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.21667,
+       "value": [
+        200.19,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.23333,
+       "value": [
+        201.48,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.25,
+       "value": [
+        204.78,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.26667,
+       "value": [
+        210.84,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.28333,
+       "value": [
+        220.23,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.3,
+       "value": [
+        233.33,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.31667,
+       "value": [
+        250.33,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.33333,
+       "value": [
+        271.25,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.35,
+       "value": [
+        295.94,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.36667,
+       "value": [
+        324.04,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.38333,
+       "value": [
+        355.03,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.4,
+       "value": [
+        388.2,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.41667,
+       "value": [
+        422.67,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.43333,
+       "value": [
+        457.48,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.45,
+       "value": [
+        492.37,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.46667,
+       "value": [
+        527.32,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.48333,
+       "value": [
+        562.34,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.5,
+       "value": [
+        597.44,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.51667,
+       "value": [
+        632.6,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.53333,
+       "value": [
+        667.83,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.55,
+       "value": [
+        703.14,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.56667,
+       "value": [
+        738.51,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.58333,
+       "value": [
+        773.96,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.6,
+       "value": [
+        809.47,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.61667,
+       "value": [
+        845.05,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.63333,
+       "value": [
+        880.71,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.65,
+       "value": [
+        916.43,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.66667,
+       "value": [
+        952.23,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.68333,
+       "value": [
+        988.09,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.7,
+       "value": [
+        1024.03,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.71667,
+       "value": [
+        1060.03,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.73333,
+       "value": [
+        1096.1,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.75,
+       "value": [
+        1132.25,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.76667,
+       "value": [
+        1168.46,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.78333,
+       "value": [
+        1204.75,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.8,
+       "value": [
+        1241.1,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.81667,
+       "value": [
+        1277.53,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.83333,
+       "value": [
+        1314.02,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.85,
+       "value": [
+        1350.59,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.86667,
+       "value": [
+        1387.22,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.88333,
+       "value": [
+        1423.93,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.9,
+       "value": [
+        1460.7,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.91667,
+       "value": [
+        1497.55,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.93333,
+       "value": [
+        1534.46,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.95,
+       "value": [
+        1571.45,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.96667,
+       "value": [
+        1608.5,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 0.98333,
+       "value": [
+        1645.63,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.0,
+       "value": [
+        1682.82,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.01667,
+       "value": [
+        1720.07,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.03333,
+       "value": [
+        1757.39,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.05,
+       "value": [
+        1794.87,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.06667,
+       "value": [
+        1832.59,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.08333,
+       "value": [
+        1870.63,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.1,
+       "value": [
+        1909.08,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.11667,
+       "value": [
+        1948.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.13333,
+       "value": [
+        1987.48,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.15,
+       "value": [
+        2027.6,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.16667,
+       "value": [
+        2068.44,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.18333,
+       "value": [
+        2110.09,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.2,
+       "value": [
+        2152.61,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.21667,
+       "value": [
+        2196.09,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.23333,
+       "value": [
+        2240.62,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.25,
+       "value": [
+        2286.26,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.26667,
+       "value": [
+        2333.11,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.28333,
+       "value": [
+        2381.23,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.3,
+       "value": [
+        2430.72,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.31667,
+       "value": [
+        2481.64,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.33333,
+       "value": [
+        2534.09,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.35,
+       "value": [
+        2588.13,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.36667,
+       "value": [
+        2643.86,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.38333,
+       "value": [
+        2701.35,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.4,
+       "value": [
+        2760.68,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.8,
+       "value": [
+        2760.68,
+        0.0,
+        0.0
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "ribbon_violet_src",
+   "type": "mesh",
+   "layer": "braid",
+   "parent": "braid_a",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "position": [
+     0.0,
+     0.115,
+     0.0
+    ]
+   }
+  },
+  {
+   "id": "ribbon_violet",
+   "type": "trail",
+   "layer": "braid",
+   "parameters": {
+    "lifetime": 0.46,
+    "max_segments": 64,
+    "min_vertex_distance": 0.02,
+    "taper": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.05,
+      0.5
+     ],
+     [
+      0.16,
+      1.0
+     ],
+     [
+      0.55,
+      0.82
+     ],
+     [
+      1.0,
+      0.12
+     ]
+    ],
+    "opacity_over_life": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.06,
+      1.0
+     ],
+     [
+      0.4,
+      0.62
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "color": [
+     0.599,
+     0.266,
+     0.997,
+     1.0
+    ],
+    "blend": "additive",
+    "uv_scroll": -0.9,
+    "width": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.22,
+       "value": 0.0
+      },
+      {
+       "time": 0.32,
+       "value": 0.138
+      },
+      {
+       "time": 0.46,
+       "value": 0.23
+      },
+      {
+       "time": 1.4,
+       "value": 0.23
+      },
+      {
+       "time": 1.56,
+       "value": 0.161
+      },
+      {
+       "time": 1.74,
+       "value": 0.0
+      }
+     ]
+    },
+    "emissive": {
+     "value": 0.6,
+     "track": [
+      {
+       "time": 0.22,
+       "value": 0.6
+      },
+      {
+       "time": 0.4,
+       "value": 1.5
+      },
+      {
+       "time": 1.3,
+       "value": 1.5
+      },
+      {
+       "time": 1.4,
+       "value": 2.25
+      },
+      {
+       "time": 1.7,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.22
+   },
+   "inputs": {
+    "source": "ribbon_violet_src",
+    "material": "mat_ribbon"
+   }
+  },
+  {
+   "id": "ribbon_magenta_src",
+   "type": "mesh",
+   "layer": "braid",
+   "parent": "braid_a",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "position": [
+     0.0,
+     -0.115,
+     0.0
+    ]
+   }
+  },
+  {
+   "id": "ribbon_magenta",
+   "type": "trail",
+   "layer": "braid",
+   "parameters": {
+    "lifetime": 0.42,
+    "max_segments": 64,
+    "min_vertex_distance": 0.02,
+    "taper": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.05,
+      0.5
+     ],
+     [
+      0.16,
+      1.0
+     ],
+     [
+      0.55,
+      0.82
+     ],
+     [
+      1.0,
+      0.12
+     ]
+    ],
+    "opacity_over_life": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.06,
+      1.0
+     ],
+     [
+      0.4,
+      0.62
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "color": [
+     0.742,
+     0.288,
+     0.986,
+     1.0
+    ],
+    "blend": "additive",
+    "uv_scroll": -0.9,
+    "width": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.22,
+       "value": 0.0
+      },
+      {
+       "time": 0.32,
+       "value": 0.12
+      },
+      {
+       "time": 0.46,
+       "value": 0.2
+      },
+      {
+       "time": 1.4,
+       "value": 0.2
+      },
+      {
+       "time": 1.56,
+       "value": 0.14
+      },
+      {
+       "time": 1.74,
+       "value": 0.0
+      }
+     ]
+    },
+    "emissive": {
+     "value": 0.52,
+     "track": [
+      {
+       "time": 0.22,
+       "value": 0.52
+      },
+      {
+       "time": 0.4,
+       "value": 1.3
+      },
+      {
+       "time": 1.3,
+       "value": 1.3
+      },
+      {
+       "time": 1.4,
+       "value": 1.95
+      },
+      {
+       "time": 1.7,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.22
+   },
+   "inputs": {
+    "source": "ribbon_magenta_src",
+    "material": "mat_ribbon"
+   }
+  },
+  {
+   "id": "ribbon_azure_src",
+   "type": "mesh",
+   "layer": "braid",
+   "parent": "braid_b",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "position": [
+     0.0,
+     0.0,
+     0.17
+    ]
+   }
+  },
+  {
+   "id": "ribbon_azure",
+   "type": "trail",
+   "layer": "braid",
+   "parameters": {
+    "lifetime": 0.5,
+    "max_segments": 64,
+    "min_vertex_distance": 0.02,
+    "taper": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.05,
+      0.5
+     ],
+     [
+      0.16,
+      1.0
+     ],
+     [
+      0.55,
+      0.82
+     ],
+     [
+      1.0,
+      0.12
+     ]
+    ],
+    "opacity_over_life": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.06,
+      1.0
+     ],
+     [
+      0.4,
+      0.62
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "color": [
+     0.34,
+     0.52,
+     1.0,
+     1.0
+    ],
+    "blend": "additive",
+    "uv_scroll": -0.9,
+    "width": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.22,
+       "value": 0.0
+      },
+      {
+       "time": 0.32,
+       "value": 0.102
+      },
+      {
+       "time": 0.46,
+       "value": 0.17
+      },
+      {
+       "time": 1.4,
+       "value": 0.17
+      },
+      {
+       "time": 1.56,
+       "value": 0.119
+      },
+      {
+       "time": 1.74,
+       "value": 0.0
+      }
+     ]
+    },
+    "emissive": {
+     "value": 0.54,
+     "track": [
+      {
+       "time": 0.22,
+       "value": 0.54
+      },
+      {
+       "time": 0.4,
+       "value": 1.35
+      },
+      {
+       "time": 1.3,
+       "value": 1.35
+      },
+      {
+       "time": 1.4,
+       "value": 2.025
+      },
+      {
+       "time": 1.7,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.22
+   },
+   "inputs": {
+    "source": "ribbon_azure_src",
+    "material": "mat_ribbon"
+   }
+  },
+  {
+   "id": "filament_a_src",
+   "type": "mesh",
+   "layer": "braid",
+   "parent": "braid_c",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "position": [
+     0.0,
+     0.07,
+     0.0
+    ]
+   }
+  },
+  {
+   "id": "filament_a",
+   "type": "trail",
+   "layer": "braid",
+   "parameters": {
+    "lifetime": 0.34,
+    "max_segments": 64,
+    "min_vertex_distance": 0.02,
+    "taper": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.05,
+      0.5
+     ],
+     [
+      0.16,
+      1.0
+     ],
+     [
+      0.55,
+      0.82
+     ],
+     [
+      1.0,
+      0.12
+     ]
+    ],
+    "opacity_over_life": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.06,
+      1.0
+     ],
+     [
+      0.4,
+      0.62
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "color": [
+     0.74,
+     0.84,
+     1.0,
+     1.0
+    ],
+    "blend": "additive",
+    "uv_scroll": -0.9,
+    "width": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.22,
+       "value": 0.0
+      },
+      {
+       "time": 0.32,
+       "value": 0.0204
+      },
+      {
+       "time": 0.46,
+       "value": 0.034
+      },
+      {
+       "time": 1.4,
+       "value": 0.034
+      },
+      {
+       "time": 1.56,
+       "value": 0.0238
+      },
+      {
+       "time": 1.74,
+       "value": 0.0
+      }
+     ]
+    },
+    "emissive": {
+     "value": 1.04,
+     "track": [
+      {
+       "time": 0.22,
+       "value": 1.04
+      },
+      {
+       "time": 0.4,
+       "value": 2.6
+      },
+      {
+       "time": 1.3,
+       "value": 2.6
+      },
+      {
+       "time": 1.4,
+       "value": 3.9
+      },
+      {
+       "time": 1.7,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.22
+   },
+   "inputs": {
+    "source": "filament_a_src",
+    "material": "mat_filament"
+   }
+  },
+  {
+   "id": "filament_b_src",
+   "type": "mesh",
+   "layer": "braid",
+   "parent": "braid_c",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "position": [
+     0.0,
+     -0.07,
+     0.0
+    ]
+   }
+  },
+  {
+   "id": "filament_b",
+   "type": "trail",
+   "layer": "braid",
+   "parameters": {
+    "lifetime": 0.3,
+    "max_segments": 64,
+    "min_vertex_distance": 0.02,
+    "taper": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.05,
+      0.5
+     ],
+     [
+      0.16,
+      1.0
+     ],
+     [
+      0.55,
+      0.82
+     ],
+     [
+      1.0,
+      0.12
+     ]
+    ],
+    "opacity_over_life": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.06,
+      1.0
+     ],
+     [
+      0.4,
+      0.62
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "color": [
+     0.686,
+     0.666,
+     1.0,
+     1.0
+    ],
+    "blend": "additive",
+    "uv_scroll": -0.9,
+    "width": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.22,
+       "value": 0.0
+      },
+      {
+       "time": 0.32,
+       "value": 0.0168
+      },
+      {
+       "time": 0.46,
+       "value": 0.028
+      },
+      {
+       "time": 1.4,
+       "value": 0.028
+      },
+      {
+       "time": 1.56,
+       "value": 0.0196
+      },
+      {
+       "time": 1.74,
+       "value": 0.0
+      }
+     ]
+    },
+    "emissive": {
+     "value": 0.88,
+     "track": [
+      {
+       "time": 0.22,
+       "value": 0.88
+      },
+      {
+       "time": 0.4,
+       "value": 2.2
+      },
+      {
+       "time": 1.3,
+       "value": 2.2
+      },
+      {
+       "time": 1.4,
+       "value": 3.3
+      },
+      {
+       "time": 1.7,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.22
+   },
+   "inputs": {
+    "source": "filament_b_src",
+    "material": "mat_filament"
+   }
+  },
+  {
+   "id": "orbit_1",
+   "type": "mesh",
+   "layer": "fragments",
+   "parent": "body",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "position": [
+     0.1,
+     0.0,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     14.0,
+     -9.0
+    ]
+   }
+  },
+  {
+   "id": "orbit_1_spin",
+   "type": "mesh",
+   "layer": "fragments",
+   "parent": "orbit_1",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "rotation": {
+     "value": [
+      20.0,
+      0.0,
+      0.0
+     ],
+     "track": [
+      {
+       "time": 0.0,
+       "value": [
+        20.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.8,
+       "value": [
+        862.4,
+        0.0,
+        0.0
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "shard_1",
+   "type": "mesh",
+   "layer": "fragments",
+   "parent": "orbit_1_spin",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "position": [
+     0.0,
+     0.43,
+     0.0
+    ],
+    "rotation": {
+     "value": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "track": [
+      {
+       "time": 0.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.8,
+       "value": [
+        247.0,
+        -80.0,
+        0.0
+       ]
+      }
+     ]
+    },
+    "scale": {
+     "value": [
+      0.001,
+      0.001,
+      0.0008
+     ],
+     "track": [
+      {
+       "time": 0.0,
+       "value": [
+        0.001,
+        0.001,
+        0.0008
+       ]
+      },
+      {
+       "time": 0.33,
+       "value": [
+        0.001,
+        0.001,
+        0.0008
+       ]
+      },
+      {
+       "time": 0.43,
+       "value": [
+        1.12,
+        1.12,
+        0.896
+       ]
+      },
+      {
+       "time": 0.5,
+       "value": [
+        1.0,
+        1.0,
+        0.8
+       ]
+      },
+      {
+       "time": 1.34,
+       "value": [
+        1.0,
+        1.0,
+        0.8
+       ]
+      },
+      {
+       "time": 1.39,
+       "value": [
+        0.001,
+        0.001,
+        0.0008
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "shard_1_front",
+   "type": "mesh",
+   "layer": "fragments",
+   "parent": "shard_1",
+   "seed": 21,
+   "parameters": {
+    "primitive": "crystal",
+    "radius": 0.052,
+    "height": 0.2,
+    "segments": 4,
+    "irregularity": 0.0,
+    "position": [
+     0.1,
+     0.0,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     -90.0
+    ],
+    "color": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "emissive": 1.5,
+    "start_time": 0.33,
+    "duration": 1.064
+   },
+   "inputs": {
+    "material": "mat_fragment"
+   }
+  },
+  {
+   "id": "shard_1_back",
+   "type": "mesh",
+   "layer": "fragments",
+   "parent": "shard_1",
+   "seed": 21,
+   "parameters": {
+    "primitive": "crystal",
+    "radius": 0.052,
+    "height": 0.11,
+    "segments": 4,
+    "irregularity": 0.0,
+    "position": [
+     -0.055,
+     0.0,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     90.0
+    ],
+    "color": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "emissive": 1.5,
+    "start_time": 0.33,
+    "duration": 1.064
+   },
+   "inputs": {
+    "material": "mat_fragment"
+   }
+  },
+  {
+   "id": "shard_1_trail",
+   "type": "trail",
+   "layer": "fragments",
+   "parameters": {
+    "lifetime": 0.17,
+    "max_segments": 32,
+    "min_vertex_distance": 0.02,
+    "taper": [
+     [
+      0.0,
+      0.2
+     ],
+     [
+      0.12,
+      1.0
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "opacity_over_life": [
+     [
+      0.0,
+      0.9
+     ],
+     [
+      0.5,
+      0.45
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "color": [
+     0.677,
+     0.637,
+     1.0,
+     1.0
+    ],
+    "blend": "additive",
+    "emissive": 1.6,
+    "width": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.34,
+       "value": 0.0
+      },
+      {
+       "time": 0.48,
+       "value": 0.05
+      },
+      {
+       "time": 1.34,
+       "value": 0.05
+      },
+      {
+       "time": 1.4,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.34
+   },
+   "inputs": {
+    "source": "shard_1",
+    "material": "mat_filament"
+   }
+  },
+  {
+   "id": "orbit_2",
+   "type": "mesh",
+   "layer": "fragments",
+   "parent": "body",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "position": [
+     -0.08,
+     0.0,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     -17.0,
+     12.0
+    ]
+   }
+  },
+  {
+   "id": "orbit_2_spin",
+   "type": "mesh",
+   "layer": "fragments",
+   "parent": "orbit_2",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "rotation": {
+     "value": [
+      150.0,
+      0.0,
+      0.0
+     ],
+     "track": [
+      {
+       "time": 0.0,
+       "value": [
+        150.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.8,
+       "value": [
+        -510.96,
+        0.0,
+        0.0
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "shard_2",
+   "type": "mesh",
+   "layer": "fragments",
+   "parent": "orbit_2_spin",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "position": [
+     0.0,
+     0.52,
+     0.0
+    ],
+    "rotation": {
+     "value": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "track": [
+      {
+       "time": 0.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.8,
+       "value": [
+        304.0,
+        -20.0,
+        0.0
+       ]
+      }
+     ]
+    },
+    "scale": {
+     "value": [
+      0.0008,
+      0.0008,
+      0.0006
+     ],
+     "track": [
+      {
+       "time": 0.0,
+       "value": [
+        0.0008,
+        0.0008,
+        0.0006
+       ]
+      },
+      {
+       "time": 0.36,
+       "value": [
+        0.0008,
+        0.0008,
+        0.0006
+       ]
+      },
+      {
+       "time": 0.46,
+       "value": [
+        0.8736,
+        0.8736,
+        0.6989
+       ]
+      },
+      {
+       "time": 0.53,
+       "value": [
+        0.78,
+        0.78,
+        0.624
+       ]
+      },
+      {
+       "time": 1.34,
+       "value": [
+        0.78,
+        0.78,
+        0.624
+       ]
+      },
+      {
+       "time": 1.39,
+       "value": [
+        0.0008,
+        0.0008,
+        0.0006
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "shard_2_front",
+   "type": "mesh",
+   "layer": "fragments",
+   "parent": "shard_2",
+   "seed": 22,
+   "parameters": {
+    "primitive": "crystal",
+    "radius": 0.052,
+    "height": 0.2,
+    "segments": 6,
+    "irregularity": 0.0,
+    "position": [
+     0.1,
+     0.0,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     -90.0
+    ],
+    "color": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "emissive": 1.5,
+    "start_time": 0.36,
+    "duration": 1.034
+   },
+   "inputs": {
+    "material": "mat_fragment"
+   }
+  },
+  {
+   "id": "shard_2_back",
+   "type": "mesh",
+   "layer": "fragments",
+   "parent": "shard_2",
+   "seed": 22,
+   "parameters": {
+    "primitive": "crystal",
+    "radius": 0.052,
+    "height": 0.11,
+    "segments": 6,
+    "irregularity": 0.0,
+    "position": [
+     -0.055,
+     0.0,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     90.0
+    ],
+    "color": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "emissive": 1.5,
+    "start_time": 0.36,
+    "duration": 1.034
+   },
+   "inputs": {
+    "material": "mat_fragment"
+   }
+  },
+  {
+   "id": "shard_2_trail",
+   "type": "trail",
+   "layer": "fragments",
+   "parameters": {
+    "lifetime": 0.17,
+    "max_segments": 32,
+    "min_vertex_distance": 0.02,
+    "taper": [
+     [
+      0.0,
+      0.2
+     ],
+     [
+      0.12,
+      1.0
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "opacity_over_life": [
+     [
+      0.0,
+      0.9
+     ],
+     [
+      0.5,
+      0.45
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "color": [
+     0.677,
+     0.637,
+     1.0,
+     1.0
+    ],
+    "blend": "additive",
+    "emissive": 1.6,
+    "width": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.34,
+       "value": 0.0
+      },
+      {
+       "time": 0.48,
+       "value": 0.039
+      },
+      {
+       "time": 1.34,
+       "value": 0.039
+      },
+      {
+       "time": 1.4,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.34
+   },
+   "inputs": {
+    "source": "shard_2",
+    "material": "mat_filament"
+   }
+  },
+  {
+   "id": "orbit_3",
+   "type": "mesh",
+   "layer": "fragments",
+   "parent": "body",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "position": [
+     -0.2,
+     0.0,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     8.0,
+     19.0
+    ]
+   }
+  },
+  {
+   "id": "orbit_3_spin",
+   "type": "mesh",
+   "layer": "fragments",
+   "parent": "orbit_3",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "rotation": {
+     "value": [
+      265.0,
+      0.0,
+      0.0
+     ],
+     "track": [
+      {
+       "time": 0.0,
+       "value": [
+        265.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.8,
+       "value": [
+        1340.68,
+        0.0,
+        0.0
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "shard_3",
+   "type": "mesh",
+   "layer": "fragments",
+   "parent": "orbit_3_spin",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 6,
+    "visible": false,
+    "position": [
+     0.0,
+     0.37,
+     0.0
+    ],
+    "rotation": {
+     "value": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "track": [
+      {
+       "time": 0.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 1.8,
+       "value": [
+        361.0,
+        40.0,
+        0.0
+       ]
+      }
+     ]
+    },
+    "scale": {
+     "value": [
+      0.0006,
+      0.0006,
+      0.0005
+     ],
+     "track": [
+      {
+       "time": 0.0,
+       "value": [
+        0.0006,
+        0.0006,
+        0.0005
+       ]
+      },
+      {
+       "time": 0.39,
+       "value": [
+        0.0006,
+        0.0006,
+        0.0005
+       ]
+      },
+      {
+       "time": 0.49,
+       "value": [
+        0.6944,
+        0.6944,
+        0.5555
+       ]
+      },
+      {
+       "time": 0.56,
+       "value": [
+        0.62,
+        0.62,
+        0.496
+       ]
+      },
+      {
+       "time": 1.34,
+       "value": [
+        0.62,
+        0.62,
+        0.496
+       ]
+      },
+      {
+       "time": 1.39,
+       "value": [
+        0.0006,
+        0.0006,
+        0.0005
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "shard_3_front",
+   "type": "mesh",
+   "layer": "fragments",
+   "parent": "shard_3",
+   "seed": 23,
+   "parameters": {
+    "primitive": "crystal",
+    "radius": 0.052,
+    "height": 0.2,
+    "segments": 4,
+    "irregularity": 0.0,
+    "position": [
+     0.1,
+     0.0,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     -90.0
+    ],
+    "color": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "emissive": 1.5,
+    "start_time": 0.39,
+    "duration": 1.004
+   },
+   "inputs": {
+    "material": "mat_fragment"
+   }
+  },
+  {
+   "id": "shard_3_back",
+   "type": "mesh",
+   "layer": "fragments",
+   "parent": "shard_3",
+   "seed": 23,
+   "parameters": {
+    "primitive": "crystal",
+    "radius": 0.052,
+    "height": 0.11,
+    "segments": 4,
+    "irregularity": 0.0,
+    "position": [
+     -0.055,
+     0.0,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     90.0
+    ],
+    "color": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "emissive": 1.5,
+    "start_time": 0.39,
+    "duration": 1.004
+   },
+   "inputs": {
+    "material": "mat_fragment"
+   }
+  },
+  {
+   "id": "shard_3_trail",
+   "type": "trail",
+   "layer": "fragments",
+   "parameters": {
+    "lifetime": 0.17,
+    "max_segments": 32,
+    "min_vertex_distance": 0.02,
+    "taper": [
+     [
+      0.0,
+      0.2
+     ],
+     [
+      0.12,
+      1.0
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "opacity_over_life": [
+     [
+      0.0,
+      0.9
+     ],
+     [
+      0.5,
+      0.45
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "color": [
+     0.677,
+     0.637,
+     1.0,
+     1.0
+    ],
+    "blend": "additive",
+    "emissive": 1.6,
+    "width": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.34,
+       "value": 0.0
+      },
+      {
+       "time": 0.48,
+       "value": 0.031
+      },
+      {
+       "time": 1.34,
+       "value": 0.031
+      },
+      {
+       "time": 1.4,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.34
+   },
+   "inputs": {
+    "source": "shard_3",
+    "material": "mat_filament"
+   }
+  },
+  {
+   "id": "ps_motes",
+   "type": "particle_system",
+   "layer": "motes",
+   "parameters": {
+    "max_particles": 220,
+    "lifetime": 0.6,
+    "lifetime_variance": 0.22,
+    "size": 0.05,
+    "size_variance": 0.026,
+    "size_over_life": [
+     [
+      0.0,
+      0.3
+     ],
+     [
+      0.12,
+      1.0
+     ],
+     [
+      0.3,
+      0.55
+     ],
+     [
+      0.46,
+      1.0
+     ],
+     [
+      0.64,
+      0.45
+     ],
+     [
+      0.8,
+      0.8
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "color": [
+     0.93,
+     0.88,
+     1.0,
+     1.0
+    ],
+    "color_over_life": [
+     [
+      0.0,
+      [
+       0.93,
+       0.88,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      0.35,
+      [
+       0.671,
+       0.446,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      1.0,
+      [
+       0.22,
+       0.07,
+       0.62,
+       1.0
+      ]
+     ]
+    ],
+    "opacity_over_life": [
+     [
+      0.0,
+      1.0
+     ],
+     [
+      0.7,
+      0.8
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 3.4,
+    "drag": 1.6,
+    "render_mode": "billboard",
+    "blend": "additive",
+    "soft_particle_distance": 0.05
+   },
+   "inputs": {
+    "sprite": "tex_mote",
+    "material": "mat_spark",
+    "forces": [
+     "f_drift"
+    ]
+   }
+  },
+  {
+   "id": "e_motes",
+   "type": "emitter",
+   "layer": "motes",
+   "parent": "body",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.14,
+    "position": [
+     -0.3,
+     0.0,
+     0.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "velocity": 0.5,
+    "velocity_variance": 0.4,
+    "inherit_velocity": 0.1,
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.0,
+       "value": 0.0
+      },
+      {
+       "time": 0.24,
+       "value": 0.0
+      },
+      {
+       "time": 0.34,
+       "value": 150.0
+      },
+      {
+       "time": 1.36,
+       "value": 150.0
+      },
+      {
+       "time": 1.4,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.24,
+    "duration": 1.16
+   },
+   "inputs": {
+    "particle": "ps_motes"
+   }
+  },
+  {
+   "id": "ps_glints",
+   "type": "particle_system",
+   "layer": "motes",
+   "parameters": {
+    "max_particles": 40,
+    "lifetime": 0.42,
+    "lifetime_variance": 0.12,
+    "size": 0.15,
+    "size_variance": 0.05,
+    "size_over_life": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.2,
+      1.0
+     ],
+     [
+      0.45,
+      0.5
+     ],
+     [
+      0.65,
+      0.9
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "rotation_variance": 180.0,
+    "angular_velocity": 40.0,
+    "angular_velocity_variance": 60.0,
+    "color": [
+     0.7825,
+     0.79,
+     1.0,
+     1.0
+    ],
+    "opacity_over_life": [
+     [
+      0.0,
+      1.0
+     ],
+     [
+      0.75,
+      0.8
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 2.6,
+    "drag": 2.0,
+    "render_mode": "billboard",
+    "blend": "additive",
+    "soft_particle_distance": 0.05
+   },
+   "inputs": {
+    "sprite": "tex_glint",
+    "material": "mat_spark",
+    "forces": [
+     "f_drift"
+    ]
+   }
+  },
+  {
+   "id": "e_glints",
+   "type": "emitter",
+   "layer": "motes",
+   "parent": "body",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.22,
+    "position": [
+     -0.35,
+     0.0,
+     0.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "velocity": 0.35,
+    "velocity_variance": 0.25,
+    "inherit_velocity": 0.06,
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.0,
+       "value": 0.0
+      },
+      {
+       "time": 0.24,
+       "value": 0.0
+      },
+      {
+       "time": 0.34,
+       "value": 26.0
+      },
+      {
+       "time": 1.36,
+       "value": 26.0
+      },
+      {
+       "time": 1.4,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.24,
+    "duration": 1.16
+   },
+   "inputs": {
+    "particle": "ps_glints"
+   }
+  },
+  {
+   "id": "ps_haze",
+   "type": "particle_system",
+   "layer": "braid",
+   "parameters": {
+    "max_particles": 40,
+    "lifetime": 0.42,
+    "lifetime_variance": 0.1,
+    "size": 0.5,
+    "size_variance": 0.14,
+    "size_over_life": [
+     [
+      0.0,
+      0.5
+     ],
+     [
+      0.4,
+      1.0
+     ],
+     [
+      1.0,
+      1.25
+     ]
+    ],
+    "rotation_variance": 180.0,
+    "color": [
+     0.39,
+     0.165,
+     0.81,
+     1.0
+    ],
+    "opacity": 0.2,
+    "opacity_over_life": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.2,
+      1.0
+     ],
+     [
+      0.55,
+      0.6
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 0.9,
+    "drag": 1.0,
+    "render_mode": "billboard",
+    "blend": "additive",
+    "soft_particle_distance": 0.25
+   },
+   "inputs": {
+    "sprite": "tex_mist",
+    "material": "mat_glow"
+   }
+  },
+  {
+   "id": "e_haze",
+   "type": "emitter",
+   "layer": "braid",
+   "parent": "body",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.1,
+    "position": [
+     -0.45,
+     0.0,
+     0.0
+    ],
+    "velocity": 0.0,
+    "inherit_velocity": 0.08,
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.0,
+       "value": 0.0
+      },
+      {
+       "time": 0.24,
+       "value": 0.0
+      },
+      {
+       "time": 0.34,
+       "value": 54.0
+      },
+      {
+       "time": 1.36,
+       "value": 54.0
+      },
+      {
+       "time": 1.4,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.24,
+    "duration": 1.16
+   },
+   "inputs": {
+    "particle": "ps_haze"
+   }
+  },
+  {
+   "id": "ps_orb",
+   "type": "particle_system",
+   "layer": "charge",
+   "parameters": {
+    "max_particles": 4,
+    "lifetime": 0.34,
+    "size": 0.95,
+    "size_over_life": [
+     [
+      0.0,
+      0.12
+     ],
+     [
+      0.45,
+      0.62
+     ],
+     [
+      0.6,
+      0.72
+     ],
+     [
+      0.72,
+      1.25
+     ],
+     [
+      1.0,
+      0.3
+     ]
+    ],
+    "color": [
+     0.671,
+     0.446,
+     1.0,
+     1.0
+    ],
+    "color_over_life": [
+     [
+      0.0,
+      [
+       0.56,
+       0.26,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      0.6,
+      [
+       0.745,
+       0.57,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      0.74,
+      [
+       0.93,
+       0.88,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      1.0,
+      [
+       0.56,
+       0.26,
+       1.0,
+       1.0
+      ]
+     ]
+    ],
+    "opacity": 0.9,
+    "opacity_over_life": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.2,
+      0.75
+     ],
+     [
+      0.7,
+      1.0
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 2.0,
+    "render_mode": "billboard",
+    "blend": "additive",
+    "soft_particle_distance": 0.2
+   },
+   "inputs": {
+    "sprite": "tex_core",
+    "material": "mat_glow"
+   }
+  },
+  {
+   "id": "e_orb",
+   "type": "emitter",
+   "layer": "charge",
+   "parent": "missile",
+   "parameters": {
+    "shape": "point",
+    "velocity": 0.0,
+    "rate": 0.0,
+    "burst_count": 1,
+    "burst_times": [
+     0.0
+    ],
+    "duration": 0.1
+   },
+   "inputs": {
+    "particle": "ps_orb"
+   }
+  },
+  {
+   "id": "ps_halo_ring",
+   "type": "particle_system",
+   "layer": "charge",
+   "parameters": {
+    "max_particles": 6,
+    "lifetime": 0.24,
+    "size": 1.5,
+    "size_over_life": [
+     [
+      0.0,
+      1.0
+     ],
+     [
+      0.7,
+      0.42
+     ],
+     [
+      1.0,
+      0.3
+     ]
+    ],
+    "color": [
+     0.494,
+     0.338,
+     1.0,
+     1.0
+    ],
+    "opacity": 0.75,
+    "opacity_over_life": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.3,
+      1.0
+     ],
+     [
+      0.8,
+      0.8
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 2.4,
+    "rotation_variance": 180.0,
+    "render_mode": "billboard",
+    "blend": "additive",
+    "soft_particle_distance": 0.1
+   },
+   "inputs": {
+    "sprite": "tex_ring",
+    "material": "mat_glow"
+   }
+  },
+  {
+   "id": "e_halo_ring",
+   "type": "emitter",
+   "layer": "charge",
+   "parent": "missile",
+   "parameters": {
+    "shape": "point",
+    "velocity": 0.0,
+    "rate": 0.0,
+    "burst_count": 1,
+    "burst_times": [
+     0.0,
+     0.07
+    ],
+    "duration": 0.15
+   },
+   "inputs": {
+    "particle": "ps_halo_ring"
+   }
+  },
+  {
+   "id": "ps_gather",
+   "type": "particle_system",
+   "layer": "charge",
+   "parameters": {
+    "max_particles": 90,
+    "lifetime": 0.19,
+    "lifetime_variance": 0.03,
+    "size": 0.05,
+    "size_variance": 0.02,
+    "size_over_life": [
+     [
+      0.0,
+      0.4
+     ],
+     [
+      0.5,
+      1.0
+     ],
+     [
+      1.0,
+      0.5
+     ]
+    ],
+    "color": [
+     0.745,
+     0.57,
+     1.0,
+     1.0
+    ],
+    "color_over_life": [
+     [
+      0.0,
+      [
+       0.56,
+       0.26,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      1.0,
+      [
+       0.93,
+       0.88,
+       1.0,
+       1.0
+      ]
+     ]
+    ],
+    "opacity_over_life": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.25,
+      1.0
+     ],
+     [
+      0.85,
+      1.0
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 3.0,
+    "render_mode": "stretched_billboard",
+    "velocity_stretch": 0.16,
+    "blend": "additive",
+    "soft_particle_distance": 0.05
+   },
+   "inputs": {
+    "sprite": "tex_mote",
+    "material": "mat_spark"
+   }
+  },
+  {
+   "id": "e_gather",
+   "type": "emitter",
+   "layer": "charge",
+   "parent": "missile",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.85,
+    "surface_only": true,
+    "direction": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "velocity": 0.0,
+    "radial_velocity": -4.3,
+    "rate": {
+     "value": 260.0,
+     "track": [
+      {
+       "time": 0.0,
+       "value": 260.0
+      },
+      {
+       "time": 0.12,
+       "value": 200.0
+      },
+      {
+       "time": 0.17,
+       "value": 0.0
+      }
+     ]
+    },
+    "duration": 0.18
+   },
+   "inputs": {
+    "particle": "ps_gather"
+   }
+  },
+  {
+   "id": "ps_kick_ring",
+   "type": "particle_system",
+   "layer": "charge",
+   "parameters": {
+    "max_particles": 2,
+    "lifetime": 0.3,
+    "size": 1.9,
+    "size_over_life": [
+     [
+      0.0,
+      0.18
+     ],
+     [
+      0.4,
+      0.75
+     ],
+     [
+      1.0,
+      1.0
+     ]
+    ],
+    "color": [
+     0.56,
+     0.26,
+     1.0,
+     1.0
+    ],
+    "opacity": 0.5,
+    "opacity_over_life": [
+     [
+      0.0,
+      0.9
+     ],
+     [
+      0.4,
+      0.5
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 1.8,
+    "render_mode": "billboard",
+    "blend": "additive",
+    "soft_particle_distance": 0.1
+   },
+   "inputs": {
+    "sprite": "tex_ring",
+    "material": "mat_glow"
+   }
+  },
+  {
+   "id": "e_kick_ring",
+   "type": "emitter",
+   "layer": "charge",
+   "parameters": {
+    "shape": "point",
+    "position": [
+     -4.2519,
+     1.2868,
+     -0.5795
+    ],
+    "velocity": 0.0,
+    "rate": 0.0,
+    "burst_count": 1,
+    "burst_times": [
+     0.0
+    ],
+    "start_time": 0.21,
+    "duration": 0.1
+   },
+   "inputs": {
+    "particle": "ps_kick_ring"
+   }
+  },
+  {
+   "id": "ps_kick_sparks",
+   "type": "particle_system",
+   "layer": "charge",
+   "parameters": {
+    "max_particles": 60,
+    "lifetime": 0.3,
+    "lifetime_variance": 0.12,
+    "size": 0.045,
+    "size_variance": 0.02,
+    "size_over_life": [
+     [
+      0.0,
+      1.0
+     ],
+     [
+      1.0,
+      0.1
+     ]
+    ],
+    "color": [
+     0.93,
+     0.88,
+     1.0,
+     1.0
+    ],
+    "color_over_life": [
+     [
+      0.0,
+      [
+       0.93,
+       0.88,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      0.5,
+      [
+       0.56,
+       0.26,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      1.0,
+      [
+       0.22,
+       0.07,
+       0.62,
+       1.0
+      ]
+     ]
+    ],
+    "opacity_over_life": [
+     [
+      0.0,
+      1.0
+     ],
+     [
+      0.6,
+      0.8
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 3.2,
+    "drag": 4.0,
+    "render_mode": "stretched_billboard",
+    "velocity_stretch": 0.14,
+    "blend": "additive",
+    "soft_particle_distance": 0.05
+   },
+   "inputs": {
+    "sprite": "tex_mote",
+    "material": "mat_spark",
+    "forces": [
+     "f_drift"
+    ]
+   }
+  },
+  {
+   "id": "e_kick_sparks",
+   "type": "emitter",
+   "layer": "charge",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.1,
+    "position": [
+     -4.2519,
+     1.2868,
+     -0.5795
+    ],
+    "direction": [
+     -0.905,
+     -0.23,
+     0.357
+    ],
+    "spread": 38.0,
+    "velocity": 3.4,
+    "velocity_variance": 2.2,
+    "rate": 0.0,
+    "burst_count": 44,
+    "burst_times": [
+     0.0
+    ],
+    "start_time": 0.21,
+    "duration": 0.1
+   },
+   "inputs": {
+    "particle": "ps_kick_sparks"
+   }
+  },
+  {
+   "id": "ps_flash",
+   "type": "particle_system",
+   "layer": "impact",
+   "parameters": {
+    "max_particles": 3,
+    "lifetime": 0.17,
+    "size": 2.5,
+    "size_over_life": [
+     [
+      0.0,
+      0.3
+     ],
+     [
+      0.22,
+      1.0
+     ],
+     [
+      1.0,
+      0.72
+     ]
+    ],
+    "color": [
+     0.93,
+     0.88,
+     1.0,
+     1.0
+    ],
+    "color_over_life": [
+     [
+      0.0,
+      [
+       0.93,
+       0.88,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      0.4,
+      [
+       0.7265,
+       0.539,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      1.0,
+      [
+       0.56,
+       0.26,
+       1.0,
+       1.0
+      ]
+     ]
+    ],
+    "opacity": 0.85,
+    "opacity_over_life": [
+     [
+      0.0,
+      1.0
+     ],
+     [
+      0.3,
+      0.7
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 2.2,
+    "render_mode": "billboard",
+    "blend": "additive",
+    "soft_particle_distance": 0.3
+   },
+   "inputs": {
+    "sprite": "tex_core",
+    "material": "mat_glow"
+   }
+  },
+  {
+   "id": "e_flash",
+   "type": "emitter",
+   "layer": "impact",
+   "parent": "missile",
+   "parameters": {
+    "rate": 0.0,
+    "burst_count": 1,
+    "burst_times": [
+     0.0
+    ],
+    "start_time": 1.395,
+    "duration": 0.2,
+    "shape": "point",
+    "velocity": 0.0
+   },
+   "inputs": {
+    "particle": "ps_flash"
+   }
+  },
+  {
+   "id": "ps_rays",
+   "type": "particle_system",
+   "layer": "impact",
+   "parameters": {
+    "max_particles": 6,
+    "lifetime": 0.21,
+    "lifetime_variance": 0.03,
+    "size": 3.0,
+    "size_variance": 0.7,
+    "size_over_life": [
+     [
+      0.0,
+      0.25
+     ],
+     [
+      0.3,
+      0.9
+     ],
+     [
+      1.0,
+      1.12
+     ]
+    ],
+    "rotation_variance": 180.0,
+    "angular_velocity_variance": 25.0,
+    "color": [
+     0.745,
+     0.57,
+     1.0,
+     1.0
+    ],
+    "color_over_life": [
+     [
+      0.0,
+      [
+       0.93,
+       0.88,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      0.5,
+      [
+       0.671,
+       0.446,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      1.0,
+      [
+       0.56,
+       0.26,
+       1.0,
+       1.0
+      ]
+     ]
+    ],
+    "opacity": 0.8,
+    "opacity_over_life": [
+     [
+      0.0,
+      1.0
+     ],
+     [
+      0.35,
+      0.7
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 2.0,
+    "render_mode": "billboard",
+    "blend": "additive",
+    "soft_particle_distance": 0.3
+   },
+   "inputs": {
+    "sprite": "tex_rays",
+    "material": "mat_glow"
+   }
+  },
+  {
+   "id": "e_rays",
+   "type": "emitter",
+   "layer": "impact",
+   "parent": "missile",
+   "parameters": {
+    "rate": 0.0,
+    "burst_count": 3,
+    "burst_times": [
+     0.0
+    ],
+    "start_time": 1.395,
+    "duration": 0.2,
+    "shape": "point",
+    "velocity": 0.0
+   },
+   "inputs": {
+    "particle": "ps_rays"
+   }
+  },
+  {
+   "id": "ps_shock",
+   "type": "particle_system",
+   "layer": "impact",
+   "parameters": {
+    "max_particles": 2,
+    "lifetime": 0.38,
+    "size": 3.3,
+    "size_over_life": [
+     [
+      0.0,
+      0.1
+     ],
+     [
+      0.25,
+      0.55
+     ],
+     [
+      0.6,
+      0.85
+     ],
+     [
+      1.0,
+      1.0
+     ]
+    ],
+    "rotation_variance": 180.0,
+    "color": [
+     0.505,
+     0.325,
+     1.0,
+     1.0
+    ],
+    "opacity": 0.42,
+    "opacity_over_life": [
+     [
+      0.0,
+      1.0
+     ],
+     [
+      0.4,
+      0.55
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 1.6,
+    "render_mode": "billboard",
+    "blend": "additive",
+    "soft_particle_distance": 0.2
+   },
+   "inputs": {
+    "sprite": "tex_ring",
+    "material": "mat_glow"
+   }
+  },
+  {
+   "id": "e_shock",
+   "type": "emitter",
+   "layer": "impact",
+   "parent": "missile",
+   "parameters": {
+    "rate": 0.0,
+    "burst_count": 1,
+    "burst_times": [
+     0.0
+    ],
+    "start_time": 1.395,
+    "duration": 0.2,
+    "shape": "point",
+    "velocity": 0.0
+   },
+   "inputs": {
+    "particle": "ps_shock"
+   }
+  },
+  {
+   "id": "ps_streaks",
+   "type": "particle_system",
+   "layer": "impact",
+   "parameters": {
+    "max_particles": 50,
+    "lifetime": 0.22,
+    "lifetime_variance": 0.08,
+    "size": 0.07,
+    "size_variance": 0.025,
+    "size_over_life": [
+     [
+      0.0,
+      1.0
+     ],
+     [
+      0.6,
+      0.8
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "color": [
+     0.93,
+     0.88,
+     1.0,
+     1.0
+    ],
+    "color_over_life": [
+     [
+      0.0,
+      [
+       0.93,
+       0.88,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      0.45,
+      [
+       0.6895,
+       0.477,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      1.0,
+      [
+       0.56,
+       0.26,
+       1.0,
+       1.0
+      ]
+     ]
+    ],
+    "opacity_over_life": [
+     [
+      0.0,
+      1.0
+     ],
+     [
+      0.6,
+      0.7
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 3.6,
+    "drag": 7.0,
+    "render_mode": "stretched_billboard",
+    "velocity_stretch": 0.3,
+    "blend": "additive",
+    "soft_particle_distance": 0.05
+   },
+   "inputs": {
+    "sprite": "tex_mote",
+    "material": "mat_spark"
+   }
+  },
+  {
+   "id": "e_streaks",
+   "type": "emitter",
+   "layer": "impact",
+   "parent": "missile",
+   "parameters": {
+    "rate": 0.0,
+    "burst_count": 30,
+    "burst_times": [
+     0.0
+    ],
+    "start_time": 1.395,
+    "duration": 0.2,
+    "shape": "sphere",
+    "radius": 0.08,
+    "direction": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "velocity": 9.5,
+    "velocity_variance": 5.5
+   },
+   "inputs": {
+    "particle": "ps_streaks"
+   }
+  },
+  {
+   "id": "mesh_burst_shard",
+   "type": "mesh",
+   "seed": 77,
+   "parameters": {
+    "primitive": "crystal",
+    "radius": 0.3,
+    "height": 1.0,
+    "segments": 5,
+    "irregularity": 0.55,
+    "variants": 6,
+    "visible": false
+   }
+  },
+  {
+   "id": "ps_burst_shards",
+   "type": "particle_system",
+   "layer": "impact",
+   "parameters": {
+    "max_particles": 40,
+    "lifetime": 0.4,
+    "lifetime_variance": 0.09,
+    "size": 0.15,
+    "size_variance": 0.06,
+    "size_over_life": [
+     [
+      0.0,
+      0.35
+     ],
+     [
+      0.1,
+      1.0
+     ],
+     [
+      0.62,
+      0.85
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "color": [
+     0.708,
+     0.508,
+     1.0,
+     1.0
+    ],
+    "emissive": 1.2,
+    "render_mode": "mesh",
+    "blend": "alpha",
+    "orientation": "tumble",
+    "angular_velocity": 340.0,
+    "angular_velocity_variance": 160.0,
+    "mesh_scale": [
+     0.55,
+     1.5,
+     0.45
+    ],
+    "mesh_scale_variance": [
+     0.15,
+     0.5,
+     0.12
+    ],
+    "drag": 3.4
+   },
+   "inputs": {
+    "mesh": "mesh_burst_shard",
+    "material": "mat_burst_shard",
+    "forces": [
+     "f_fall"
+    ]
+   }
+  },
+  {
+   "id": "e_burst_shards",
+   "type": "emitter",
+   "layer": "impact",
+   "parent": "missile",
+   "parameters": {
+    "rate": 0.0,
+    "burst_count": 22,
+    "burst_times": [
+     0.0
+    ],
+    "start_time": 1.395,
+    "duration": 0.2,
+    "shape": "sphere",
+    "radius": 0.12,
+    "direction": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "velocity": 5.6,
+    "velocity_variance": 2.6
+   },
+   "inputs": {
+    "particle": "ps_burst_shards"
+   }
+  },
+  {
+   "id": "ps_burst_sparks",
+   "type": "particle_system",
+   "layer": "impact",
+   "parameters": {
+    "max_particles": 180,
+    "lifetime": 0.32,
+    "lifetime_variance": 0.13,
+    "size": 0.042,
+    "size_variance": 0.02,
+    "size_over_life": [
+     [
+      0.0,
+      1.0
+     ],
+     [
+      0.5,
+      0.8
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "color": [
+     0.93,
+     0.88,
+     1.0,
+     1.0
+    ],
+    "color_over_life": [
+     [
+      0.0,
+      [
+       0.93,
+       0.88,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      0.4,
+      [
+       0.671,
+       0.446,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      1.0,
+      [
+       0.22,
+       0.07,
+       0.62,
+       1.0
+      ]
+     ]
+    ],
+    "opacity_over_life": [
+     [
+      0.0,
+      1.0
+     ],
+     [
+      0.7,
+      0.8
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 3.4,
+    "drag": 4.6,
+    "render_mode": "stretched_billboard",
+    "velocity_stretch": 0.07,
+    "blend": "additive",
+    "soft_particle_distance": 0.05
+   },
+   "inputs": {
+    "sprite": "tex_mote",
+    "material": "mat_spark",
+    "forces": [
+     "f_drift",
+     "f_fall"
+    ]
+   }
+  },
+  {
+   "id": "e_burst_sparks",
+   "type": "emitter",
+   "layer": "impact",
+   "parent": "missile",
+   "parameters": {
+    "rate": 0.0,
+    "burst_count": 120,
+    "burst_times": [
+     0.0
+    ],
+    "start_time": 1.395,
+    "duration": 0.2,
+    "shape": "sphere",
+    "radius": 0.1,
+    "direction": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "velocity": 4.6,
+    "velocity_variance": 3.2
+   },
+   "inputs": {
+    "particle": "ps_burst_sparks"
+   }
+  },
+  {
+   "id": "ps_ring_motes",
+   "type": "particle_system",
+   "layer": "aftermath",
+   "parameters": {
+    "max_particles": 90,
+    "lifetime": 0.34,
+    "lifetime_variance": 0.05,
+    "size": 0.06,
+    "size_variance": 0.03,
+    "size_over_life": [
+     [
+      0.0,
+      0.3
+     ],
+     [
+      0.12,
+      1.0
+     ],
+     [
+      0.3,
+      0.55
+     ],
+     [
+      0.46,
+      1.0
+     ],
+     [
+      0.64,
+      0.45
+     ],
+     [
+      0.8,
+      0.8
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "color": [
+     0.745,
+     0.57,
+     1.0,
+     1.0
+    ],
+    "color_over_life": [
+     [
+      0.0,
+      [
+       0.93,
+       0.88,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      0.4,
+      [
+       0.6525,
+       0.415,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      1.0,
+      [
+       0.22,
+       0.07,
+       0.62,
+       1.0
+      ]
+     ]
+    ],
+    "opacity_over_life": [
+     [
+      0.0,
+      1.0
+     ],
+     [
+      0.55,
+      0.85
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 3.0,
+    "drag": 5.2,
+    "render_mode": "billboard",
+    "blend": "additive",
+    "soft_particle_distance": 0.05
+   },
+   "inputs": {
+    "sprite": "tex_mote",
+    "material": "mat_spark",
+    "forces": [
+     "f_drift"
+    ]
+   }
+  },
+  {
+   "id": "e_ring_motes",
+   "type": "emitter",
+   "layer": "aftermath",
+   "parent": "missile",
+   "parameters": {
+    "rate": 0.0,
+    "burst_count": 64,
+    "burst_times": [
+     0.0,
+     0.05
+    ],
+    "start_time": 1.395,
+    "duration": 0.2,
+    "shape": "ring",
+    "radius": 0.42,
+    "inner_radius": 0.3,
+    "direction": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "velocity": 0.0,
+    "velocity_variance": 0.5,
+    "radial_velocity": 3.3,
+    "rotation": [
+     75.33,
+     51.69,
+     0.0
+    ]
+   },
+   "inputs": {
+    "particle": "ps_ring_motes"
+   }
+  },
+  {
+   "id": "ps_afterglow",
+   "type": "particle_system",
+   "layer": "aftermath",
+   "parameters": {
+    "max_particles": 2,
+    "lifetime": 0.4,
+    "size": 1.7,
+    "size_over_life": [
+     [
+      0.0,
+      0.6
+     ],
+     [
+      1.0,
+      1.15
+     ]
+    ],
+    "color": [
+     0.424,
+     0.184,
+     0.848,
+     1.0
+    ],
+    "opacity": 0.5,
+    "opacity_over_life": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.2,
+      1.0
+     ],
+     [
+      0.55,
+      0.5
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 1.0,
+    "render_mode": "billboard",
+    "blend": "additive",
+    "soft_particle_distance": 0.3
+   },
+   "inputs": {
+    "sprite": "tex_mist",
+    "material": "mat_glow"
+   }
+  },
+  {
+   "id": "e_afterglow",
+   "type": "emitter",
+   "layer": "aftermath",
+   "parent": "missile",
+   "parameters": {
+    "rate": 0.0,
+    "burst_count": 1,
+    "burst_times": [
+     0.0
+    ],
+    "start_time": 1.395,
+    "duration": 0.2,
+    "shape": "point",
+    "velocity": 0.0
+   },
+   "inputs": {
+    "particle": "ps_afterglow"
+   }
+  },
+  {
+   "id": "l_missile",
+   "type": "light",
+   "layer": "light",
+   "parent": "missile",
+   "parameters": {
+    "light_type": "point",
+    "position": [
+     0.0,
+     -0.6,
+     0.0
+    ],
+    "color": [
+     0.516,
+     0.312,
+     1.0,
+     1.0
+    ],
+    "radius": 5.0,
+    "flicker_amplitude": 0.1,
+    "flicker_frequency": 16.0,
+    "intensity": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.0,
+       "value": 0.0
+      },
+      {
+       "time": 0.16,
+       "value": 1.6
+      },
+      {
+       "time": 0.24,
+       "value": 5.0
+      },
+      {
+       "time": 0.4,
+       "value": 3.6
+      },
+      {
+       "time": 1.3,
+       "value": 3.8
+      },
+      {
+       "time": 1.39,
+       "value": 5.0
+      },
+      {
+       "time": 1.42,
+       "value": 0.0
+      }
+     ]
+    },
+    "duration": 1.43
+   }
+  },
+  {
+   "id": "l_key",
+   "type": "light",
+   "layer": "light",
+   "parent": "missile",
+   "parameters": {
+    "light_type": "point",
+    "position": [
+     0.2,
+     0.8,
+     0.9
+    ],
+    "color": [
+     0.835,
+     0.86,
+     1.0,
+     1.0
+    ],
+    "radius": 2.4,
+    "intensity": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.2,
+       "value": 0.0
+      },
+      {
+       "time": 0.3,
+       "value": 1.5
+      },
+      {
+       "time": 1.38,
+       "value": 1.5
+      },
+      {
+       "time": 1.4,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.2,
+    "duration": 1.2
+   }
+  },
+  {
+   "id": "l_impact",
+   "type": "light",
+   "layer": "light",
+   "parent": "missile",
+   "parameters": {
+    "light_type": "point",
+    "position": [
+     0.0,
+     0.25,
+     0.45
+    ],
+    "color": [
+     0.6895,
+     0.477,
+     1.0,
+     1.0
+    ],
+    "radius": 7.0,
+    "intensity": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 1.395,
+       "value": 0.0
+      },
+      {
+       "time": 1.43,
+       "value": 15.0
+      },
+      {
+       "time": 1.52,
+       "value": 5.0
+      },
+      {
+       "time": 1.66,
+       "value": 1.2
+      },
+      {
+       "time": 1.78,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 1.395
+   }
+  },
+  {
+   "id": "cam",
+   "type": "camera",
+   "parameters": {
+    "position": [
+     4.4,
+     3.2,
+     8.4
+    ],
+    "target": [
+     -0.1,
+     1.45,
+     -0.2
+    ],
+    "fov": 40.0
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "missile_size",
+   "label": "Missile size",
+   "group": "Crystal head",
+   "min": 0.4,
+   "max": 2.5,
+   "default": 1.0,
+   "value": 1.0,
+   "step": 0.01,
+   "unit": "x",
+   "bindings": [
+    {
+     "node": "body",
+     "parameter": "scale",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_halo",
+     "parameter": "size",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_aura",
+     "parameter": "size",
+     "op": "multiply"
+    },
+    {
+     "node": "ribbon_violet",
+     "parameter": "width",
+     "op": "multiply"
+    },
+    {
+     "node": "ribbon_magenta",
+     "parameter": "width",
+     "op": "multiply"
+    },
+    {
+     "node": "ribbon_azure",
+     "parameter": "width",
+     "op": "multiply"
+    },
+    {
+     "node": "filament_a",
+     "parameter": "width",
+     "op": "multiply"
+    },
+    {
+     "node": "filament_b",
+     "parameter": "width",
+     "op": "multiply"
+    }
+   ]
+  },
+  {
+   "id": "trail_intensity",
+   "label": "Braid glow",
+   "group": "Energy braid",
+   "min": 0.0,
+   "max": 3.0,
+   "default": 1.0,
+   "value": 1.0,
+   "step": 0.01,
+   "unit": "x",
+   "bindings": [
+    {
+     "node": "ribbon_violet",
+     "parameter": "color",
+     "op": "multiply"
+    },
+    {
+     "node": "ribbon_magenta",
+     "parameter": "color",
+     "op": "multiply"
+    },
+    {
+     "node": "ribbon_azure",
+     "parameter": "color",
+     "op": "multiply"
+    },
+    {
+     "node": "filament_a",
+     "parameter": "color",
+     "op": "multiply"
+    },
+    {
+     "node": "filament_b",
+     "parameter": "color",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_haze",
+     "parameter": "color",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_motes",
+     "parameter": "color",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_glints",
+     "parameter": "color",
+     "op": "multiply"
+    }
+   ]
+  },
+  {
+   "id": "trail_length",
+   "label": "Braid length",
+   "group": "Energy braid",
+   "min": 0.3,
+   "max": 2.5,
+   "default": 1.0,
+   "value": 1.0,
+   "step": 0.01,
+   "unit": "x",
+   "bindings": [
+    {
+     "node": "ribbon_violet",
+     "parameter": "lifetime",
+     "op": "multiply"
+    },
+    {
+     "node": "ribbon_magenta",
+     "parameter": "lifetime",
+     "op": "multiply"
+    },
+    {
+     "node": "ribbon_azure",
+     "parameter": "lifetime",
+     "op": "multiply"
+    },
+    {
+     "node": "filament_a",
+     "parameter": "lifetime",
+     "op": "multiply"
+    },
+    {
+     "node": "filament_b",
+     "parameter": "lifetime",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_haze",
+     "parameter": "lifetime",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_motes",
+     "parameter": "lifetime",
+     "op": "multiply"
+    }
+   ]
+  },
+  {
+   "id": "fragments",
+   "label": "Orbiting fragments",
+   "group": "Orbiting fragments",
+   "min": 0.0,
+   "max": 2.5,
+   "default": 1.0,
+   "value": 1.0,
+   "step": 0.01,
+   "unit": "x",
+   "bindings": [
+    {
+     "node": "shard_1",
+     "parameter": "scale",
+     "op": "multiply"
+    },
+    {
+     "node": "shard_2",
+     "parameter": "scale",
+     "op": "multiply"
+    },
+    {
+     "node": "shard_3",
+     "parameter": "scale",
+     "op": "multiply"
+    },
+    {
+     "node": "shard_1_trail",
+     "parameter": "width",
+     "op": "multiply"
+    },
+    {
+     "node": "shard_2_trail",
+     "parameter": "width",
+     "op": "multiply"
+    },
+    {
+     "node": "shard_3_trail",
+     "parameter": "width",
+     "op": "multiply"
+    }
+   ]
+  },
+  {
+   "id": "impact_burst",
+   "label": "Impact burst",
+   "group": "Impact",
+   "min": 0.0,
+   "max": 3.0,
+   "default": 1.0,
+   "value": 1.0,
+   "step": 0.01,
+   "unit": "x",
+   "bindings": [
+    {
+     "node": "e_burst_shards",
+     "parameter": "burst_count",
+     "op": "multiply"
+    },
+    {
+     "node": "e_burst_sparks",
+     "parameter": "burst_count",
+     "op": "multiply"
+    },
+    {
+     "node": "e_streaks",
+     "parameter": "burst_count",
+     "op": "multiply"
+    },
+    {
+     "node": "e_ring_motes",
+     "parameter": "burst_count",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_flash",
+     "parameter": "size",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_rays",
+     "parameter": "size",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_shock",
+     "parameter": "size",
+     "op": "multiply"
+    },
+    {
+     "node": "l_impact",
+     "parameter": "intensity",
+     "op": "multiply"
+    }
+   ]
+  },
+  {
+   "id": "target_side",
+   "label": "Target shift",
+   "group": "Global",
+   "min": 0.0,
+   "max": 2.0,
+   "default": 1.0,
+   "value": 1.0,
+   "step": 0.01,
+   "unit": "x",
+   "bindings": [
+    {
+     "node": "aim_side",
+     "parameter": "rotation",
+     "op": "multiply"
+    },
+    {
+     "node": "head_yaw_k1",
+     "parameter": "rotation",
+     "op": "multiply"
+    },
+    {
+     "node": "head_yaw_k2",
+     "parameter": "rotation",
+     "op": "multiply"
+    },
+    {
+     "node": "head_yaw_k2",
+     "parameter": "rotation",
+     "op": "multiply"
+    },
+    {
+     "node": "head_pitch_k2",
+     "parameter": "rotation",
+     "op": "multiply"
+    }
+   ]
+  },
+  {
+   "id": "target_height",
+   "label": "Target drop",
+   "group": "Global",
+   "min": -0.5,
+   "max": 2.0,
+   "default": 1.0,
+   "value": 1.0,
+   "step": 0.01,
+   "unit": "x",
+   "bindings": [
+    {
+     "node": "aim_height",
+     "parameter": "rotation",
+     "op": "multiply"
+    },
+    {
+     "node": "head_pitch_k1",
+     "parameter": "rotation",
+     "op": "multiply"
+    },
+    {
+     "node": "head_pitch_k2",
+     "parameter": "rotation",
+     "op": "multiply"
+    }
+   ]
+  },
+  {
+   "id": "hue",
+   "label": "Hue",
+   "group": "Global",
+   "min": -180.0,
+   "max": 180.0,
+   "default": 0.0,
+   "value": 0.0,
+   "step": 1.0,
+   "unit": "deg",
+   "bindings": [
+    {
+     "node": "mat_glow",
+     "parameter": "base_color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "mat_glow",
+     "parameter": "emissive_color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "mat_spark",
+     "parameter": "base_color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "mat_spark",
+     "parameter": "emissive_color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "mat_ribbon",
+     "parameter": "base_color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "mat_ribbon",
+     "parameter": "emissive_color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "mat_filament",
+     "parameter": "base_color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "mat_filament",
+     "parameter": "emissive_color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "mat_gem_shell",
+     "parameter": "base_color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "mat_gem_shell",
+     "parameter": "emissive_color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "mat_gem_core",
+     "parameter": "base_color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "mat_gem_core",
+     "parameter": "emissive_color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "mat_fragment",
+     "parameter": "base_color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "mat_fragment",
+     "parameter": "emissive_color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "mat_burst_shard",
+     "parameter": "base_color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "mat_burst_shard",
+     "parameter": "emissive_color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_halo",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_halo",
+     "parameter": "color_over_life",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_aura",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ribbon_violet",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ribbon_magenta",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ribbon_azure",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "filament_a",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "filament_b",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "shard_1_trail",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "shard_2_trail",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "shard_3_trail",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_motes",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_motes",
+     "parameter": "color_over_life",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_glints",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_haze",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_orb",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_orb",
+     "parameter": "color_over_life",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_halo_ring",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_gather",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_gather",
+     "parameter": "color_over_life",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_kick_ring",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_kick_sparks",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_kick_sparks",
+     "parameter": "color_over_life",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_flash",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_flash",
+     "parameter": "color_over_life",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_rays",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_rays",
+     "parameter": "color_over_life",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_shock",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_streaks",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_streaks",
+     "parameter": "color_over_life",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_burst_shards",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_burst_sparks",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_burst_sparks",
+     "parameter": "color_over_life",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_ring_motes",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_ring_motes",
+     "parameter": "color_over_life",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_afterglow",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "l_missile",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "l_key",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "l_impact",
+     "parameter": "color",
+     "op": "hue_shift"
+    }
+   ]
+  },
+  {
+   "id": "global_speed",
+   "label": "Speed",
+   "group": "Global",
+   "min": 0.25,
+   "max": 4.0,
+   "default": 1.0,
+   "value": 1.0,
+   "step": 0.05,
+   "unit": "x",
+   "bindings": [
+    {
+     "node": "$effect",
+     "parameter": "time_scale",
+     "op": "multiply"
+    }
+   ]
+  }
+ ],
+ "metadata": {
+  "generator": "tools/generators/homing_arcane_missile.py",
+  "tags": [
+   "arcane",
+   "projectile",
+   "missile",
+   "homing",
+   "crystal",
+   "impact",
+   "magic"
+  ],
+  "analysis": "spawn_charge 0-0.2 violet orb, contracting halo ring, motes rushing in | launch 0.2-0.4 the crystal forms inside the flash and kicks forward, ribbons start | mid_flight 0.4-1.0 gentle arc away from the target, braid of three ribbons and two filaments, three orbiting shards with thin trails, sparkle motes | target_adjust 1.0-1.4 the target has moved: a tightening, accelerating hook down and towards the camera | impact 1.4-1.6 core flash, irregular soft rays, tumbling crystal shards, sparks, a faint expanding ring | dissipate 1.6-1.8 a loose ring of fading motes",
+  "layout": {
+   "launch": [
+    -4.2,
+    1.3,
+    -0.6
+   ],
+   "pivot": [
+    1.106,
+    2.219,
+    -1.754
+   ],
+   "target": [
+    3.6,
+    1.2,
+    0.8
+   ],
+   "target_side": "1 = the authored target; 0 = the target never moved; 2 = it moved twice as far"
+  },
+  "render_settings": {
+   "background": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "ground_albedo": 0.05,
+   "bloom_intensity": 0.24,
+   "bloom_radius": 0.045,
+   "exposure": 0.95,
+   "grid": false
+  }
+ }
+}
