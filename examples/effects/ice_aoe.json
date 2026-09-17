@@ -1,0 +1,1677 @@
+{
+  "schema_version": "0.1.0",
+  "name": "Ice AOE",
+  "duration": 4.0,
+  "seed": 21,
+  "timeline": {
+    "phases": [
+      {
+        "name": "anticipation",
+        "start": 0.0,
+        "end": 0.3
+      },
+      {
+        "name": "activation",
+        "start": 0.3,
+        "end": 0.6
+      },
+      {
+        "name": "peak",
+        "start": 0.6,
+        "end": 1.2
+      },
+      {
+        "name": "sustain",
+        "start": 1.2,
+        "end": 2.5
+      },
+      {
+        "name": "linger",
+        "start": 2.5,
+        "end": 3.5
+      },
+      {
+        "name": "decay",
+        "start": 3.5,
+        "end": 4.0
+      }
+    ]
+  },
+  "layers": [
+    {
+      "id": "telegraph",
+      "name": "Cast",
+      "role": "telegraph"
+    },
+    {
+      "id": "formation",
+      "name": "Formation",
+      "role": "ignition"
+    },
+    {
+      "id": "crystals",
+      "name": "Crystals",
+      "role": "primary"
+    },
+    {
+      "id": "shards",
+      "name": "Shards and snow",
+      "role": "secondary"
+    },
+    {
+      "id": "interaction",
+      "name": "Light and mist",
+      "role": "interaction"
+    },
+    {
+      "id": "aftermath",
+      "name": "Frost",
+      "role": "aftermath"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "cam",
+      "type": "camera",
+      "parameters": {
+        "position": [
+          0.0,
+          3.8,
+          9.6
+        ],
+        "target": [
+          0.0,
+          1.8,
+          0.0
+        ],
+        "fov": 42
+      }
+    },
+    {
+      "id": "tex_rune",
+      "type": "texture",
+      "parameters": {
+        "width": 512,
+        "height": 512,
+        "graph": {
+          "nodes": [
+            {
+              "id": "r1",
+              "op": "ring",
+              "params": {
+                "radius": 0.47,
+                "thickness": 0.012,
+                "softness": 0.005
+              }
+            },
+            {
+              "id": "r2",
+              "op": "ring",
+              "params": {
+                "radius": 0.36,
+                "thickness": 0.007,
+                "softness": 0.004
+              }
+            },
+            {
+              "id": "r3",
+              "op": "ring",
+              "params": {
+                "radius": 0.22,
+                "thickness": 0.006,
+                "softness": 0.004
+              }
+            },
+            {
+              "id": "sp",
+              "op": "spokes",
+              "params": {
+                "count": 12,
+                "width": 0.005,
+                "softness": 0.003,
+                "inner_radius": 0.05,
+                "outer_radius": 0.47
+              }
+            },
+            {
+              "id": "st",
+              "op": "star",
+              "params": {
+                "points": 8,
+                "width": 0.05,
+                "outer_radius": 0.3,
+                "core_radius": 0.045,
+                "softness": 0.006
+              }
+            },
+            {
+              "id": "cr",
+              "op": "cracks",
+              "params": {
+                "density": 8.0,
+                "width": 0.005,
+                "seed": 4
+              }
+            },
+            {
+              "id": "mask",
+              "op": "gradient_radial",
+              "params": {
+                "radius": 0.45,
+                "inner_radius": 0.1,
+                "falloff": "smooth"
+              }
+            },
+            {
+              "id": "crm",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "cr",
+                "b": "mask"
+              }
+            },
+            {
+              "id": "crl",
+              "op": "levels",
+              "params": {
+                "out_high": 0.55
+              },
+              "inputs": {
+                "a": "crm"
+              }
+            },
+            {
+              "id": "a",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "r1",
+                "b": "r2"
+              }
+            },
+            {
+              "id": "b",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "a",
+                "b": "r3"
+              }
+            },
+            {
+              "id": "c",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "b",
+                "b": "sp"
+              }
+            },
+            {
+              "id": "d",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "c",
+                "b": "st"
+              }
+            },
+            {
+              "id": "e",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "d",
+                "b": "crl"
+              }
+            }
+          ],
+          "output": "e"
+        }
+      }
+    },
+    {
+      "id": "tex_cracks",
+      "type": "texture",
+      "parameters": {
+        "width": 512,
+        "height": 512,
+        "graph": {
+          "nodes": [
+            {
+              "id": "cr",
+              "op": "cracks",
+              "params": {
+                "density": 10.0,
+                "width": 0.006,
+                "seed": 9
+              }
+            },
+            {
+              "id": "mask",
+              "op": "gradient_radial",
+              "params": {
+                "radius": 0.5,
+                "inner_radius": 0.05,
+                "falloff": "smooth"
+              }
+            },
+            {
+              "id": "m",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "cr",
+                "b": "mask"
+              }
+            }
+          ],
+          "output": "m"
+        }
+      }
+    },
+    {
+      "id": "tex_frost",
+      "type": "texture",
+      "parameters": {
+        "width": 256,
+        "height": 256,
+        "graph": {
+          "nodes": [
+            {
+              "id": "r",
+              "op": "gradient_radial",
+              "params": {
+                "radius": 0.5,
+                "inner_radius": 0.15,
+                "falloff": "smooth"
+              }
+            },
+            {
+              "id": "n",
+              "op": "fbm",
+              "params": {
+                "frequency": 5.0,
+                "octaves": 4,
+                "seed": 13
+              }
+            },
+            {
+              "id": "m",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "r",
+                "b": "n"
+              }
+            },
+            {
+              "id": "l",
+              "op": "levels",
+              "params": {
+                "in_low": 0.08,
+                "in_high": 0.5
+              },
+              "inputs": {
+                "a": "m"
+              }
+            }
+          ],
+          "output": "l"
+        }
+      }
+    },
+    {
+      "id": "tex_puff",
+      "type": "texture",
+      "parameters": {
+        "width": 128,
+        "height": 128,
+        "frames": 8,
+        "graph": {
+          "nodes": [
+            {
+              "id": "r",
+              "op": "gradient_radial",
+              "params": {
+                "radius": 0.5,
+                "falloff": "smooth"
+              }
+            },
+            {
+              "id": "n",
+              "op": "fbm",
+              "params": {
+                "frequency": 4.0,
+                "octaves": 4,
+                "seed": 11,
+                "animate": 0.8
+              }
+            },
+            {
+              "id": "m",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "r",
+                "b": "n"
+              }
+            },
+            {
+              "id": "l",
+              "op": "levels",
+              "params": {
+                "in_low": 0.05,
+                "in_high": 0.6
+              },
+              "inputs": {
+                "a": "m"
+              }
+            }
+          ],
+          "output": "l"
+        }
+      }
+    },
+    {
+      "id": "tex_spark",
+      "type": "texture",
+      "parameters": {
+        "width": 32,
+        "height": 32,
+        "graph": {
+          "nodes": [
+            {
+              "id": "r",
+              "op": "gradient_radial",
+              "params": {
+                "radius": 0.5,
+                "falloff": "quadratic"
+              }
+            }
+          ],
+          "output": "r"
+        }
+      }
+    },
+    {
+      "id": "mat_ice",
+      "type": "material",
+      "parameters": {
+        "blend": "alpha",
+        "shading": "lit",
+        "base_color": [
+          0.22,
+          0.42,
+          0.85,
+          1.0
+        ],
+        "emissive_color": [
+          0.55,
+          0.8,
+          1.0,
+          1.0
+        ],
+        "emissive_intensity": 0.12,
+        "fresnel_power": 3.0
+      }
+    },
+    {
+      "id": "mat_shard",
+      "type": "material",
+      "parameters": {
+        "blend": "alpha",
+        "shading": "lit",
+        "base_color": [
+          0.3,
+          0.5,
+          0.9,
+          1.0
+        ],
+        "emissive_color": [
+          0.6,
+          0.85,
+          1.0,
+          1.0
+        ],
+        "emissive_intensity": 0.3,
+        "fresnel_power": 3.0
+      }
+    },
+    {
+      "id": "mat_mist",
+      "type": "material",
+      "parameters": {
+        "blend": "alpha",
+        "shading": "lit",
+        "base_color": [
+          0.72,
+          0.82,
+          1.0,
+          1.0
+        ],
+        "soft_particle": true,
+        "depth_fade": 0.35,
+        "dissolve": 0.4,
+        "erosion": 0.3
+      }
+    },
+    {
+      "id": "mat_glow",
+      "type": "material",
+      "parameters": {
+        "blend": "additive",
+        "emissive_color": [
+          0.6,
+          0.85,
+          1.0,
+          1.0
+        ],
+        "emissive_intensity": 1.2,
+        "soft_particle": true,
+        "depth_fade": 0.15
+      }
+    },
+    {
+      "id": "spike_mesh",
+      "type": "mesh",
+      "parameters": {
+        "primitive": "cone",
+        "radius": 0.22,
+        "height": 1.0,
+        "segments": 6,
+        "visible": false
+      }
+    },
+    {
+      "id": "shard_mesh",
+      "type": "mesh",
+      "parameters": {
+        "primitive": "cone",
+        "radius": 0.3,
+        "height": 1.0,
+        "segments": 5,
+        "visible": false
+      }
+    },
+    {
+      "id": "gravity",
+      "type": "force",
+      "parameters": {
+        "force_type": "gravity",
+        "strength": 9.81
+      }
+    },
+    {
+      "id": "lift",
+      "type": "force",
+      "parameters": {
+        "force_type": "buoyancy",
+        "strength": 0.55
+      }
+    },
+    {
+      "id": "cold_turb",
+      "type": "force",
+      "parameters": {
+        "force_type": "turbulence",
+        "strength": 0.7,
+        "frequency": 0.7,
+        "octaves": 2
+      }
+    },
+    {
+      "id": "snow_fall",
+      "type": "force",
+      "parameters": {
+        "force_type": "directional",
+        "direction": [
+          0,
+          -1,
+          0
+        ],
+        "strength": 0.45
+      }
+    },
+    {
+      "id": "snow_turb",
+      "type": "force",
+      "parameters": {
+        "force_type": "turbulence",
+        "strength": 0.9,
+        "frequency": 1.1,
+        "octaves": 2
+      }
+    },
+    {
+      "id": "gather_pull",
+      "type": "force",
+      "parameters": {
+        "force_type": "attractor",
+        "strength": 5.0,
+        "position": [
+          0.0,
+          0.4,
+          0.0
+        ],
+        "radius": 4.5,
+        "falloff": "smooth"
+      }
+    },
+    {
+      "id": "ground",
+      "type": "collider",
+      "parameters": {
+        "collider_type": "plane",
+        "normal": [
+          0,
+          1,
+          0
+        ],
+        "bounce": 0.15,
+        "friction": 0.7
+      }
+    },
+    {
+      "id": "rune",
+      "type": "decal",
+      "parameters": {
+        "shape": "circle",
+        "size": [
+          7.2,
+          7.2
+        ],
+        "color": [
+          0.5,
+          0.72,
+          1.0,
+          1.0
+        ],
+        "emissive": 1.6,
+        "blend": "additive",
+        "opacity": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 0.0
+            },
+            {
+              "time": 0.3,
+              "value": 1.0
+            },
+            {
+              "time": 2.5,
+              "value": 1.0
+            },
+            {
+              "time": 3.5,
+              "value": 0.6
+            },
+            {
+              "time": 4.0,
+              "value": 0.0
+            }
+          ]
+        },
+        "fade_in": 0.0,
+        "fade_out": 0.0
+      },
+      "inputs": {
+        "texture": "tex_rune"
+      },
+      "layer": "telegraph"
+    },
+    {
+      "id": "gather_ps",
+      "type": "particle_system",
+      "parameters": {
+        "max_particles": 900,
+        "lifetime": 0.8,
+        "size": 0.035,
+        "size_variance": 0.015,
+        "color": [
+          0.7,
+          0.85,
+          1.0,
+          1.0
+        ],
+        "emissive": 4.0,
+        "drag": 0.2,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.2,
+            1.0
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "blend": "additive"
+      },
+      "inputs": {
+        "forces": [
+          "gather_pull"
+        ],
+        "sprite": "tex_spark"
+      },
+      "layer": "telegraph"
+    },
+    {
+      "id": "gather",
+      "type": "emitter",
+      "parameters": {
+        "shape": "ring",
+        "radius": 3.9,
+        "inner_radius": 3.3,
+        "position": [
+          0.0,
+          0.5,
+          0.0
+        ],
+        "rate": 400,
+        "velocity": 0.2,
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 30,
+        "phase": "anticipation"
+      },
+      "inputs": {
+        "particle": "gather_ps"
+      },
+      "layer": "telegraph"
+    },
+    {
+      "id": "small_spike_ps",
+      "type": "particle_system",
+      "parameters": {
+        "max_particles": 200,
+        "lifetime": 3.55,
+        "lifetime_variance": 0.15,
+        "size": 0.75,
+        "size_variance": 0.3,
+        "size_over_life": [
+          [
+            0.0,
+            0.02
+          ],
+          [
+            0.1,
+            1.06
+          ],
+          [
+            0.15,
+            1.0
+          ],
+          [
+            0.88,
+            1.0
+          ],
+          [
+            0.96,
+            0.55
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "render_mode": "mesh",
+        "blend": "alpha",
+        "drag": 25.0
+      },
+      "inputs": {
+        "mesh": "spike_mesh",
+        "material": "mat_ice"
+      },
+      "layer": "formation"
+    },
+    {
+      "id": "small_spikes",
+      "type": "emitter",
+      "parameters": {
+        "shape": "ring",
+        "radius": 3.5,
+        "inner_radius": 2.4,
+        "position": [
+          0.0,
+          0.3,
+          0.0
+        ],
+        "rate": 0,
+        "burst_count": 34,
+        "burst_times": [
+          0.05
+        ],
+        "velocity": 0.0,
+        "phase": "activation"
+      },
+      "inputs": {
+        "particle": "small_spike_ps"
+      },
+      "layer": "formation"
+    },
+    {
+      "id": "mid_spike_ps",
+      "type": "particle_system",
+      "parameters": {
+        "max_particles": 200,
+        "lifetime": 3.2,
+        "lifetime_variance": 0.15,
+        "size": 1.4,
+        "size_variance": 0.5,
+        "size_over_life": [
+          [
+            0.0,
+            0.02
+          ],
+          [
+            0.1,
+            1.06
+          ],
+          [
+            0.15,
+            1.0
+          ],
+          [
+            0.88,
+            1.0
+          ],
+          [
+            0.96,
+            0.55
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "render_mode": "mesh",
+        "blend": "alpha",
+        "drag": 25.0
+      },
+      "inputs": {
+        "mesh": "spike_mesh",
+        "material": "mat_ice"
+      },
+      "layer": "crystals"
+    },
+    {
+      "id": "mid_spikes",
+      "type": "emitter",
+      "parameters": {
+        "shape": "ring",
+        "radius": 2.6,
+        "inner_radius": 1.5,
+        "position": [
+          0.0,
+          0.6,
+          0.0
+        ],
+        "rate": 0,
+        "burst_count": 26,
+        "burst_times": [
+          0.0
+        ],
+        "velocity": 0.0,
+        "phase": "peak"
+      },
+      "inputs": {
+        "particle": "mid_spike_ps"
+      },
+      "layer": "crystals"
+    },
+    {
+      "id": "big_spike_ps",
+      "type": "particle_system",
+      "parameters": {
+        "max_particles": 200,
+        "lifetime": 3.15,
+        "lifetime_variance": 0.15,
+        "size": 2.4,
+        "size_variance": 0.8,
+        "size_over_life": [
+          [
+            0.0,
+            0.02
+          ],
+          [
+            0.1,
+            1.06
+          ],
+          [
+            0.15,
+            1.0
+          ],
+          [
+            0.88,
+            1.0
+          ],
+          [
+            0.96,
+            0.55
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "render_mode": "mesh",
+        "blend": "alpha",
+        "drag": 25.0
+      },
+      "inputs": {
+        "mesh": "spike_mesh",
+        "material": "mat_ice"
+      },
+      "layer": "crystals"
+    },
+    {
+      "id": "big_spikes",
+      "type": "emitter",
+      "parameters": {
+        "shape": "ring",
+        "radius": 1.5,
+        "inner_radius": 0.6,
+        "position": [
+          0.0,
+          1.1,
+          0.0
+        ],
+        "rate": 0,
+        "burst_count": 12,
+        "burst_times": [
+          0.05
+        ],
+        "velocity": 0.0,
+        "phase": "peak"
+      },
+      "inputs": {
+        "particle": "big_spike_ps"
+      },
+      "layer": "crystals"
+    },
+    {
+      "id": "central_ps",
+      "type": "particle_system",
+      "parameters": {
+        "max_particles": 2,
+        "lifetime": 3.1,
+        "lifetime_variance": 0.0,
+        "size": 5.2,
+        "size_variance": 0.0,
+        "size_over_life": [
+          [
+            0.0,
+            0.02
+          ],
+          [
+            0.1,
+            1.06
+          ],
+          [
+            0.15,
+            1.0
+          ],
+          [
+            0.88,
+            1.0
+          ],
+          [
+            0.96,
+            0.55
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "render_mode": "mesh",
+        "blend": "alpha",
+        "drag": 25.0
+      },
+      "inputs": {
+        "mesh": "spike_mesh",
+        "material": "mat_ice"
+      },
+      "layer": "crystals"
+    },
+    {
+      "id": "central",
+      "type": "emitter",
+      "parameters": {
+        "shape": "point",
+        "position": [
+          0.0,
+          2.5,
+          0.0
+        ],
+        "rate": 0,
+        "burst_count": 1,
+        "burst_times": [
+          0.1
+        ],
+        "velocity": 0.0,
+        "phase": "peak"
+      },
+      "inputs": {
+        "particle": "central_ps"
+      },
+      "layer": "crystals"
+    },
+    {
+      "id": "erupt_ps",
+      "type": "particle_system",
+      "parameters": {
+        "max_particles": 900,
+        "lifetime": 0.6,
+        "lifetime_variance": 0.2,
+        "size": 0.35,
+        "size_variance": 0.15,
+        "size_over_life": [
+          [
+            0.0,
+            0.4
+          ],
+          [
+            0.5,
+            1.0
+          ],
+          [
+            1.0,
+            1.3
+          ]
+        ],
+        "color": [
+          0.6,
+          0.85,
+          1.0,
+          1.0
+        ],
+        "emissive": 3.0,
+        "opacity_over_life": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            0.6,
+            0.6
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "drag": 2.0,
+        "blend": "additive"
+      },
+      "inputs": {
+        "sprite": "tex_puff",
+        "material": "mat_glow",
+        "forces": [
+          "cold_turb"
+        ]
+      },
+      "layer": "crystals"
+    },
+    {
+      "id": "erupt",
+      "type": "emitter",
+      "parameters": {
+        "shape": "disc",
+        "radius": 1.2,
+        "rate": 0,
+        "burst_count": 450,
+        "burst_times": [
+          0.0
+        ],
+        "velocity": 6.0,
+        "velocity_variance": 2.0,
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 30,
+        "phase": "peak"
+      },
+      "inputs": {
+        "particle": "erupt_ps"
+      },
+      "layer": "crystals"
+    },
+    {
+      "id": "flash",
+      "type": "light",
+      "parameters": {
+        "light_type": "point",
+        "position": [
+          0.0,
+          1.5,
+          0.0
+        ],
+        "color": [
+          0.7,
+          0.85,
+          1.0,
+          1.0
+        ],
+        "radius": 10.0,
+        "intensity": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.6,
+              "value": 0.0
+            },
+            {
+              "time": 0.7,
+              "value": 40.0
+            },
+            {
+              "time": 0.95,
+              "value": 0.0
+            }
+          ]
+        },
+        "phase": "peak"
+      },
+      "layer": "crystals"
+    },
+    {
+      "id": "shard_ps",
+      "type": "particle_system",
+      "parameters": {
+        "max_particles": 300,
+        "lifetime": 2.4,
+        "lifetime_variance": 0.6,
+        "size": 0.16,
+        "size_variance": 0.08,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.05,
+            1.0
+          ],
+          [
+            0.9,
+            1.0
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "angular_velocity": 120.0,
+        "angular_velocity_variance": 80.0,
+        "render_mode": "mesh",
+        "blend": "alpha",
+        "drag": 1.6,
+        "mass": 1.5
+      },
+      "inputs": {
+        "mesh": "shard_mesh",
+        "material": "mat_shard",
+        "forces": [
+          "lift",
+          "cold_turb"
+        ],
+        "colliders": [
+          "ground"
+        ]
+      },
+      "layer": "shards"
+    },
+    {
+      "id": "shards",
+      "type": "emitter",
+      "parameters": {
+        "shape": "ring",
+        "radius": 3.4,
+        "inner_radius": 1.8,
+        "position": [
+          0.0,
+          0.2,
+          0.0
+        ],
+        "rate": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.6,
+              "value": 0.0
+            },
+            {
+              "time": 0.9,
+              "value": 10.0
+            },
+            {
+              "time": 2.4,
+              "value": 8.0
+            },
+            {
+              "time": 2.6,
+              "value": 0.0
+            }
+          ]
+        },
+        "burst_count": 40,
+        "burst_times": [
+          0.0
+        ],
+        "velocity": 2.4,
+        "velocity_variance": 0.9,
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 22,
+        "phase": "peak"
+      },
+      "inputs": {
+        "particle": "shard_ps"
+      },
+      "layer": "shards"
+    },
+    {
+      "id": "crumble_ps",
+      "type": "particle_system",
+      "parameters": {
+        "max_particles": 400,
+        "lifetime": 0.9,
+        "lifetime_variance": 0.3,
+        "size": 0.1,
+        "size_variance": 0.06,
+        "opacity_over_life": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            0.8,
+            1.0
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "angular_velocity": 200.0,
+        "angular_velocity_variance": 120.0,
+        "render_mode": "mesh",
+        "blend": "alpha",
+        "drag": 0.3
+      },
+      "inputs": {
+        "mesh": "shard_mesh",
+        "material": "mat_shard",
+        "forces": [
+          "gravity",
+          "cold_turb"
+        ],
+        "colliders": [
+          "ground"
+        ]
+      },
+      "layer": "shards"
+    },
+    {
+      "id": "crumble",
+      "type": "emitter",
+      "parameters": {
+        "shape": "ring",
+        "radius": 2.6,
+        "inner_radius": 0.4,
+        "position": [
+          0.0,
+          1.6,
+          0.0
+        ],
+        "rate": 0,
+        "burst_count": 160,
+        "burst_times": [
+          0.0
+        ],
+        "velocity": 1.5,
+        "velocity_variance": 0.8,
+        "direction": [
+          0,
+          0,
+          0
+        ],
+        "phase": "decay"
+      },
+      "inputs": {
+        "particle": "crumble_ps"
+      },
+      "layer": "shards"
+    },
+    {
+      "id": "snow_ps",
+      "type": "particle_system",
+      "parameters": {
+        "max_particles": 2500,
+        "lifetime": 2.6,
+        "lifetime_variance": 0.8,
+        "size": 0.026,
+        "size_variance": 0.01,
+        "color": [
+          0.85,
+          0.92,
+          1.0,
+          1.0
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.15,
+            1.0
+          ],
+          [
+            0.85,
+            0.8
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 1.8,
+        "drag": 1.2,
+        "blend": "additive"
+      },
+      "inputs": {
+        "sprite": "tex_spark",
+        "forces": [
+          "snow_fall",
+          "snow_turb"
+        ]
+      },
+      "layer": "shards"
+    },
+    {
+      "id": "snow",
+      "type": "emitter",
+      "parameters": {
+        "shape": "disc",
+        "radius": 4.2,
+        "position": [
+          0.0,
+          3.6,
+          0.0
+        ],
+        "rate": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.5,
+              "value": 0.0
+            },
+            {
+              "time": 0.8,
+              "value": 160.0
+            },
+            {
+              "time": 3.2,
+              "value": 140.0
+            },
+            {
+              "time": 3.7,
+              "value": 0.0
+            }
+          ]
+        },
+        "velocity": 0.2,
+        "velocity_variance": 0.1,
+        "direction": [
+          0,
+          -1,
+          0
+        ],
+        "spread": 40,
+        "start_time": 0.5
+      },
+      "inputs": {
+        "particle": "snow_ps"
+      },
+      "layer": "shards"
+    },
+    {
+      "id": "cold_light",
+      "type": "light",
+      "parameters": {
+        "light_type": "point",
+        "position": [
+          1.5,
+          3.0,
+          2.0
+        ],
+        "color": [
+          0.55,
+          0.75,
+          1.0,
+          1.0
+        ],
+        "radius": 14.0,
+        "intensity": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.2,
+              "value": 0.0
+            },
+            {
+              "time": 0.6,
+              "value": 6.0
+            },
+            {
+              "time": 0.8,
+              "value": 26.0
+            },
+            {
+              "time": 2.5,
+              "value": 22.0
+            },
+            {
+              "time": 3.5,
+              "value": 9.0
+            },
+            {
+              "time": 4.0,
+              "value": 0.0
+            }
+          ]
+        },
+        "flicker_amplitude": 0.08,
+        "flicker_frequency": 6.0,
+        "start_time": 0.2
+      },
+      "layer": "interaction"
+    },
+    {
+      "id": "mist_ps",
+      "type": "particle_system",
+      "parameters": {
+        "max_particles": 900,
+        "lifetime": 2.6,
+        "lifetime_variance": 0.7,
+        "size": 1.4,
+        "size_variance": 0.4,
+        "size_over_life": [
+          [
+            0.0,
+            0.6
+          ],
+          [
+            1.0,
+            1.8
+          ]
+        ],
+        "color": [
+          0.6,
+          0.72,
+          0.95,
+          1.0
+        ],
+        "opacity": 0.38,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.3,
+            1.0
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "drag": 1.2,
+        "blend": "alpha",
+        "sort": true
+      },
+      "inputs": {
+        "sprite": "tex_puff",
+        "material": "mat_mist",
+        "forces": [
+          "cold_turb"
+        ]
+      },
+      "layer": "interaction"
+    },
+    {
+      "id": "mist",
+      "type": "emitter",
+      "parameters": {
+        "shape": "disc",
+        "radius": 3.8,
+        "position": [
+          0.0,
+          0.15,
+          0.0
+        ],
+        "rate": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.3,
+              "value": 0.0
+            },
+            {
+              "time": 0.6,
+              "value": 40.0
+            },
+            {
+              "time": 2.5,
+              "value": 60.0
+            },
+            {
+              "time": 3.0,
+              "value": 90.0
+            },
+            {
+              "time": 3.8,
+              "value": 0.0
+            }
+          ]
+        },
+        "velocity": 0.3,
+        "velocity_variance": 0.2,
+        "direction": [
+          0,
+          0,
+          0
+        ],
+        "radial_velocity": 0.5,
+        "spread": 30,
+        "start_time": 0.3
+      },
+      "inputs": {
+        "particle": "mist_ps"
+      },
+      "layer": "interaction"
+    },
+    {
+      "id": "frost_ground",
+      "type": "decal",
+      "parameters": {
+        "shape": "circle",
+        "size": [
+          7.6,
+          7.6
+        ],
+        "color": [
+          0.62,
+          0.74,
+          0.9,
+          1.0
+        ],
+        "blend": "alpha",
+        "opacity": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 1.0,
+              "value": 0.0
+            },
+            {
+              "time": 2.8,
+              "value": 0.55
+            },
+            {
+              "time": 3.6,
+              "value": 0.5
+            },
+            {
+              "time": 4.0,
+              "value": 0.0
+            }
+          ]
+        },
+        "start_time": 1.0
+      },
+      "inputs": {
+        "texture": "tex_frost"
+      },
+      "layer": "aftermath"
+    },
+    {
+      "id": "frost_cracks",
+      "type": "decal",
+      "parameters": {
+        "shape": "circle",
+        "size": [
+          8.2,
+          8.2
+        ],
+        "color": [
+          0.7,
+          0.85,
+          1.0,
+          1.0
+        ],
+        "emissive": 1.6,
+        "blend": "additive",
+        "opacity": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 2.2,
+              "value": 0.0
+            },
+            {
+              "time": 3.0,
+              "value": 0.9
+            },
+            {
+              "time": 3.6,
+              "value": 0.8
+            },
+            {
+              "time": 4.0,
+              "value": 0.0
+            }
+          ]
+        },
+        "start_time": 2.2
+      },
+      "inputs": {
+        "texture": "tex_cracks"
+      },
+      "layer": "aftermath"
+    }
+  ],
+  "metadata": {
+    "reference": "Ice Area of Effect concept sheet: cast 0-0.3 (runes appear, cold air gathers), formation 0.3-0.6 (ice shards rise), eruption 0.6-1.2 (massive spikes), sustain 1.2-2.5, linger 2.5-3.5 (frost spreads), dissipate 3.5-4.0 (shards crumble, mist fades)",
+    "render_settings": {
+      "ground_albedo": 0.1,
+      "background": [
+        0.006,
+        0.008,
+        0.014,
+        1.0
+      ],
+      "bloom_intensity": 0.4,
+      "bloom_radius": 0.05,
+      "exposure": 1.0,
+      "grid": false
+    }
+  }
+}
