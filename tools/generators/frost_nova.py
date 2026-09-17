@@ -22,8 +22,8 @@ travels from the centre to the rim" - stays in step when FRONT is retimed.
             so growing `size` reads as the spike stabbing out of the ground along its
             own axis and shrinking it sinks it back. The hero spikes (CROWN, RIM) are
             one point emitter each - azimuth, foot radius and lean per row - and the
-            fillers between them are ring emitters (FILL). No two are alike: three
-            size classes, three seeded crystal meshes with two variants each, per-axis
+            fillers between them are ring emitters (FILL). No two are alike: four
+            size classes, four seeded crystal meshes, per-axis
             scale variance and a lean cone on every emitter.
   ground    one warped Voronoi seam texture drawn three times at nested sizes (each
             lights as the front crosses it: finer fractures near the centre), a decal of
@@ -84,39 +84,42 @@ FRONT = [(0.43, 0.0), (0.47, 0.4), (0.6, 1.8), (0.7, 2.9), (0.8, 3.9), (0.9, 4.6
 
 BURST_T = 0.43          # the explosion
 SINK_T = 1.82           # spikes start to sink
-DEAD_T = 2.1            # ... and are gone (+/- their lifetime variance)
+DEAD_T = 2.13           # ... and the last one is gone (+ its lifetime variance, 0.04 s)
 
 
 @dataclass(frozen=True)
 class SpikeClass:
+    """One mesh particle system. A class is a size AND a time slot: its over-life curves are in
+    normalised life, so everything in it has to erupt within about 0.1 s to sink together."""
     id: str
     length: float       # visible length above the ground (m); the mesh is twice that, half of it buried
     variance: float
     girth: float        # visible width at the ground (m)
-    mesh: str
-    tint: tuple[float, float, float]
-    spawn: float        # typical eruption time, for the lifetime and the over-life curves
+    mesh: str           # the glass material costs three draws per mesh variant in the viewer:
+    tint: tuple[float, float, float]   # heroes get two variants, fillers one (scale variance does the rest)
 
 
 CLASSES = {c.id: c for c in [
-    SpikeClass("crown", 2.15, 0.5, 0.58, "mesh_spike_a", (0.62, 0.84, 1.0), 0.44),
-    SpikeClass("rim", 2.55, 0.4, 0.72, "mesh_spike_b", (0.42, 0.7, 1.0), 0.8),
-    SpikeClass("fill", 1.12, 0.58, 0.38, "mesh_spike_c", (0.48, 0.74, 1.0), 0.72),
+    SpikeClass("crown", 2.15, 0.5, 0.58, "mesh_spike_a", (0.62, 0.84, 1.0)),
+    SpikeClass("rim", 2.55, 0.4, 0.72, "mesh_spike_b", (0.42, 0.7, 1.0)),
+    SpikeClass("fill_in", 0.9, 0.4, 0.34, "mesh_spike_c", (0.5, 0.76, 1.0)),
+    SpikeClass("fill_out", 1.25, 0.55, 0.42, "mesh_spike_d", (0.45, 0.72, 1.0)),
 ]}
 
 #: Hero spikes, one point emitter each: (azimuth deg, foot radius m, lean deg from vertical, yaw off radial deg).
-#: Azimuth 90 faces the camera. Leans alternate steep / shallow so the crown is a burst, not a cone.
+#: Azimuth 90 faces the camera. Splayed towards it, the steep tall ones at the back, so the default
+#: view never looks straight down a spike.
 CROWN = [
     (14, 0.64, 38, 6), (52, 0.8, 50, -9), (99, 0.7, 56, 12), (139, 0.84, 47, 8), (172, 0.66, 35, -5),
     (211, 0.76, 28, 7), (249, 0.6, 20, -8), (287, 0.8, 31, 3), (326, 0.72, 44, -6),
 ]
 #: The rim: (azimuth, foot radius, lean, yaw, class). The tips reach about 4.9 m.
 RIM = [
-    (3, 3.2, 46, 4, "rim"), (29, 3.62, 57, -7, "fill"), (53, 3.12, 43, 6, "rim"),
-    (80, 3.55, 54, -4, "fill"), (104, 3.3, 48, -8, "rim"), (127, 3.18, 41, 5, "rim"),
-    (155, 3.66, 58, 9, "fill"), (181, 3.24, 47, -5, "rim"), (207, 3.58, 53, 6, "fill"),
-    (231, 3.1, 42, -6, "rim"), (258, 3.64, 56, 8, "fill"), (284, 3.26, 49, -4, "rim"),
-    (309, 3.5, 52, 7, "fill"), (336, 3.16, 44, -9, "rim"),
+    (3, 3.2, 46, 4, "rim"), (29, 3.62, 57, -7, "fill_out"), (53, 3.12, 43, 6, "rim"),
+    (80, 3.55, 54, -4, "fill_out"), (104, 3.3, 48, -8, "rim"), (127, 3.18, 41, 5, "rim"),
+    (155, 3.66, 58, 9, "fill_out"), (181, 3.24, 47, -5, "rim"), (207, 3.58, 53, 6, "fill_out"),
+    (231, 3.1, 42, -6, "rim"), (258, 3.64, 56, 8, "fill_out"), (284, 3.26, 49, -4, "rim"),
+    (309, 3.5, 52, 7, "fill_out"), (336, 3.16, 44, -9, "rim"),
 ]
 
 
@@ -134,10 +137,10 @@ class Fill:
 
 
 FILL = [
-    Fill("fill_a", 1.25, 1.75, 8, "fill", 31, 13, 11),
-    Fill("fill_b", 1.95, 2.6, 10, "fill", 37, 14, 23),
-    Fill("fill_c", 2.75, 3.3, 9, "fill", 43, 14, 37),
-    Fill("fill_d", 3.85, 4.35, 14, "fill", 57, 12, 41),
+    Fill("fill_a", 1.25, 1.75, 8, "fill_in", 31, 13, 11),
+    Fill("fill_b", 1.95, 2.6, 10, "fill_in", 37, 14, 23),
+    Fill("fill_c", 2.75, 3.3, 9, "fill_out", 43, 14, 37),
+    Fill("fill_d", 3.85, 4.35, 14, "fill_out", 57, 12, 41),
 ]
 
 # palette (linear): saturated ice blue, cyan-white only in the cores, deep blue in the shadows
@@ -416,15 +419,15 @@ def build_shared() -> None:
                                  "opacity": 0.88, "emissive_color": [0.3, 0.68, 1.0, 1.0], "emissive_intensity": 0.1,
                                  "fresnel_power": 4.2, "double_sided": False})
     node("mat_mist", "material", {"blend": "alpha", "shading": "lit", "base_color": [0.66, 0.82, 1.0, 1.0],
-                                  "emissive_color": [0.36, 0.62, 1.0, 1.0], "emissive_intensity": 0.9,
+                                  "emissive_color": [0.42, 0.66, 1.0, 1.0], "emissive_intensity": 0.95,
                                   "soft_particle": True, "depth_fade": 0.45, "dissolve": 0.24, "erosion": 0.42})
     node("mat_glow", "material", {"blend": "additive", "shading": "unlit", "emissive_color": [0.5, 0.8, 1.0, 1.0],
                                   "emissive_intensity": 0.6, "soft_particle": True, "depth_fade": 0.2})
 
-    for nid, facets, irregularity, seed in (("mesh_spike_a", 6, 0.5, 101), ("mesh_spike_b", 5, 0.62, 202),
-                                            ("mesh_spike_c", 7, 0.7, 303)):
+    for nid, facets, irregularity, variants, seed in (("mesh_spike_a", 6, 0.5, 2, 101), ("mesh_spike_b", 5, 0.62, 2, 202),
+                                                      ("mesh_spike_c", 7, 0.7, 1, 303), ("mesh_spike_d", 6, 0.66, 1, 505)):
         node(nid, "mesh", {"primitive": "crystal", "radius": 0.3, "height": 1.0, "segments": facets,
-                           "irregularity": irregularity, "variants": 2, "visible": False}, seed=seed)
+                           "irregularity": irregularity, "variants": variants, "visible": False}, seed=seed)
     node("mesh_shard", "mesh", {"primitive": "crystal", "radius": 0.3, "height": 1.0, "segments": 6,
                                 "irregularity": 0.45, "variants": 2, "visible": False}, seed=404)
 
@@ -458,26 +461,27 @@ def build_cast() -> None:
     node("cast_glow", "decal", {
         "shape": "circle", "size": track([(0.0, [3.0, 3.0]), (0.4, [5.6, 5.6]), (0.5, [7.6, 7.6]), (1.2, [8.4, 8.4])]),
         "color": tint(BLUE, 1.0), "blend": "additive", "position": [0.0, 0.01, 0.0],
-        "emissive": track([(0.0, 0.0), (0.2, 0.15), (0.4, 0.5), (0.46, 1.0), (0.62, 0.45), (1.2, 0.3), (1.8, 0.2),
+        "emissive": track([(0.0, 0.0), (0.2, 0.1), (0.4, 0.35), (0.46, 1.0), (0.62, 0.45), (1.2, 0.3), (1.8, 0.2),
                            (2.15, 0.0)]),
         "opacity": track([(0.0, 0.0), (0.15, 0.6), (0.46, 1.0), (1.8, 0.6), (2.15, 0.0)]),
         "fade_in": 0.0, "fade_out": 0.0,
     }, {"texture": "tex_glow"}, layer)
 
-    # The rising cold glow: big soft sprites born on the ground, climbing slowly and thinning, so
-    # they overlap into one wide column of light that is brightest at its foot - in place of the
-    # sheet's thin beam (house style: no ruler-straight light rods).
+    # The rising cold glow, in place of the sheet's thin beam (house style: no ruler-straight light
+    # rods): a dozen soft sprites stretched along their climb, each a 3 m ellipse of light with a
+    # falloff on every side, overlapping into one wide shaft that tapers upward and never holds still.
     node("column_ps", "particle_system", {
-        "max_particles": 48, "lifetime": 0.6, "lifetime_variance": 0.12, "size": 1.15, "size_variance": 0.3,
-        "size_over_life": [[0.0, 1.0], [1.0, 0.42]],
+        "max_particles": 40, "lifetime": 0.5, "lifetime_variance": 0.1, "size": 0.85, "size_variance": 0.25,
+        "size_over_life": [[0.0, 1.0], [1.0, 0.6]],
         "color": tint(ICE, 1.0), "color_over_life": [[0.0, tint(CYAN, 1.0)], [0.45, tint(ICE, 1.0)], [1.0, tint(DEEP, 1.0)]],
-        "opacity": 0.3, "opacity_over_life": [[0.0, 0.0], [0.12, 1.0], [0.5, 0.55], [1.0, 0.0]],
-        "emissive": 0.8, "drag": 1.0, "blend": "additive",
+        "opacity": 0.2, "opacity_over_life": [[0.0, 0.0], [0.2, 1.0], [0.55, 0.6], [1.0, 0.0]],
+        "emissive": 0.7, "drag": 0.6, "blend": "additive",
+        "render_mode": "stretched_billboard", "velocity_stretch": 1.0,
     }, {"sprite": "tex_glow", "material": "mat_glow"}, layer)
     node("column", "emitter", {
-        "shape": "disc", "radius": 0.3, "position": [0.0, 0.3, 0.0],
-        "rate": track([(0.0, 0.0), (0.05, 34.0), (0.2, 40.0), (0.36, 52.0), (0.42, 0.0)]),
-        "velocity": 2.3, "velocity_variance": 0.9, "direction": [0, 1, 0], "spread": 6.0,
+        "shape": "disc", "radius": 0.22, "position": [0.0, 0.5, 0.0],
+        "rate": track([(0.0, 0.0), (0.04, 26.0), (0.2, 30.0), (0.36, 40.0), (0.42, 0.0)]),
+        "velocity": 2.6, "velocity_variance": 0.9, "direction": [0, 1, 0], "spread": 4.0,
         "start_time": 0.0, "duration": 0.44,
     }, {"particle": "column_ps"}, layer)
 
@@ -501,7 +505,7 @@ def build_cast() -> None:
         "max_particles": 60, "lifetime": 0.7, "lifetime_variance": 0.15, "size": 0.95, "size_variance": 0.3,
         "size_over_life": [[0.0, 0.6], [1.0, 1.35]], "rotation_variance": 180.0,
         "angular_velocity_variance": 25.0,
-        "color": [0.55, 0.72, 1.0, 1.0], "opacity": 0.3, "opacity_over_life": [[0.0, 0.0], [0.35, 1.0], [1.0, 0.0]],
+        "color": [0.85, 0.93, 1.0, 1.0], "opacity": 0.34, "opacity_over_life": [[0.0, 0.0], [0.35, 1.0], [1.0, 0.0]],
         "drag": 1.6, "blend": "alpha", "sort": True, "sprite_fps": 9.0,
     }, {"sprite": "tex_puff", "material": "mat_mist", "forces": ["gather_pull"]}, "mist")
     node("creep", "emitter", {
@@ -560,16 +564,40 @@ def build_burst() -> None:
 # ---------------------------------------------------------------------------
 
 
-def build_spike_systems() -> None:
+def spike_direction(azimuth: float, lean: float) -> list[float]:
+    a, t = math.radians(azimuth), math.radians(lean)
+    return [r4(math.sin(t) * math.cos(a)), r4(math.cos(t)), r4(math.sin(t) * math.sin(a))]
+
+
+def spike_rows() -> list[dict[str, Any]]:
+    """Every spike emitter as a row: id, class, when it erupts, and what kind it is."""
+    rows = []
+    for i, (azimuth, radius, lean, yaw) in enumerate(CROWN):
+        # the crown stabs out over three frames, not all in one
+        rows.append({"id": f"crown_{i}", "cls": "crown", "when": fr(BURST_T + (i % 3) / FPS),
+                     "hero": (azimuth, radius, lean, yaw)})
+    for i, (azimuth, radius, lean, yaw, cls) in enumerate(RIM):
+        rows.append({"id": f"rim_{i}", "cls": cls, "when": fr(front_time(radius) + ((i * 5) % 3) / FPS),
+                     "hero": (azimuth, radius, lean, yaw)})
+    for f in FILL:
+        rows.append({"id": f.id, "cls": f.cls, "when": fr(front_time(0.5 * (f.inner + f.outer))), "fill": f})
+    return rows
+
+
+def build_spike_systems(rows: list[dict[str, Any]]) -> None:
     for c in CLASSES.values():
-        life = DEAD_T - c.spawn
+        times = [row["when"] for row in rows if row["cls"] == c.id]
+        first, last = min(times), max(times)
+        life = DEAD_T - last            # the last one to erupt is gone at DEAD_T, the first a little sooner
         grow = 0.075 / life
+        sink = (SINK_T - 0.5 * (first + last)) / life
+        shape = c.girth / (0.3 * c.length)
         node(f"spike_{c.id}_ps", "particle_system", {
-            "max_particles": 48, "lifetime": r4(life), "lifetime_variance": 0.05,
+            "max_particles": 80, "lifetime": r4(life), "lifetime_variance": 0.04,
             "size": c.length, "size_variance": c.variance,
             # stab out of the ground, overshoot, settle; hold; sink back
             "size_over_life": [[0.0, 0.0], [r4(grow), 1.14], [r4(grow * 1.9), 0.97], [r4(grow * 3.2), 1.0],
-                               [r4((SINK_T - c.spawn) / life), 1.0], [1.0, 0.0]],
+                               [r4(sink), 1.0], [1.0, 0.0]],
             "color": [c.tint[0], c.tint[1], c.tint[2], 1.0],
             "color_over_life": [[0.0, [1.5, 1.5, 1.5, 1.0]], [0.16, [1.0, 1.0, 1.0, 1.0]],
                                 [0.75, [0.82, 0.88, 1.0, 1.0]], [1.0, [0.5, 0.62, 0.95, 1.0]]],
@@ -577,45 +605,35 @@ def build_spike_systems() -> None:
             "render_mode": "mesh", "blend": "alpha", "drag": 0.0,
             "orientation": "velocity", "tilt": 4.0,
             # a blade, not a cone: wide one way, thin the other, each axis with its own variance
-            "mesh_scale": [r4(1.3 * c.girth / (0.3 * c.length)), 2.0, r4(0.62 * c.girth / (0.3 * c.length))],
-            "mesh_scale_variance": [r4(0.36 * c.girth / (0.3 * c.length)), 0.22, r4(0.16 * c.girth / (0.3 * c.length))],
+            "mesh_scale": [r4(1.3 * shape), 2.0, r4(0.62 * shape)],
+            "mesh_scale_variance": [r4(0.36 * shape), 0.22, r4(0.16 * shape)],
         }, {"mesh": c.mesh, "material": "mat_ice"}, "spikes")
 
 
-def spike_direction(azimuth: float, lean: float) -> list[float]:
-    a, t = math.radians(azimuth), math.radians(lean)
-    return [r4(math.sin(t) * math.cos(a)), r4(math.cos(t)), r4(math.sin(t) * math.sin(a))]
-
-
-def hero(nid: str, cls: str, azimuth: float, radius: float, lean: float, yaw: float, delay: float) -> str:
-    a = math.radians(azimuth)
-    return node(nid, "emitter", {
-        "shape": "point", "position": [r4(radius * math.cos(a)), 0.0, r4(radius * math.sin(a))],
-        "rate": 0, "burst_count": 1, "burst_times": [0.0],
-        # a crawl along the axis: `orientation: velocity` needs a direction, and the spike keeps creeping
-        "velocity": 0.075, "direction": spike_direction(azimuth + yaw, lean), "spread": 3.0,
-        "start_time": r4(fr(front_time(radius) + delay) - 0.001), "duration": 0.05,
-    }, {"particle": f"spike_{cls}_ps"}, "spikes")
-
-
 def build_spikes() -> tuple[list[str], list[str]]:
-    build_spike_systems()
+    rows = spike_rows()
+    build_spike_systems(rows)
     heroes, fills = [], []
-    for i, (azimuth, radius, lean, yaw) in enumerate(CROWN):
-        # the crown stabs out over three frames, not all in one
-        heroes.append(hero(f"crown_{i}", "crown", azimuth, radius, lean, yaw, (BURST_T - front_time(radius)) + (i % 3) / FPS))
-    for i, (azimuth, radius, lean, yaw, cls) in enumerate(RIM):
-        heroes.append(hero(f"rim_{i}", cls, azimuth, radius, lean, yaw, ((i * 5) % 3) / FPS))
-    for f in FILL:
-        mid = 0.5 * (f.inner + f.outer)
-        lean = math.radians(f.lean)
-        fills.append(node(f.id, "emitter", {
-            "shape": "ring", "radius": f.outer, "inner_radius": f.inner, "position": [0.0, 0.0, 0.0],
-            "scale": [1.0, 1.0, 1.0], "rate": 0, "burst_count": f.count, "burst_times": [0.0],
-            "velocity": r4(0.075 * math.cos(lean)), "direction": [0, 1, 0], "spread": f.cone,
-            "radial_velocity": r4(0.075 * math.sin(lean)),
-            "start_time": r4(fr(front_time(mid)) - 0.001), "duration": 0.05,
-        }, {"particle": f"spike_{f.cls}_ps"}, "spikes", seed=f.seed))
+    for row in rows:
+        common = {"rate": 0, "burst_times": [0.0], "start_time": r4(row["when"] - 0.001), "duration": 0.05}
+        if "hero" in row:
+            azimuth, radius, lean, yaw = row["hero"]
+            a = math.radians(azimuth)
+            heroes.append(node(row["id"], "emitter", {
+                "shape": "point", "position": [r4(radius * math.cos(a)), 0.0, r4(radius * math.sin(a))],
+                "burst_count": 1,
+                # a crawl along the axis: `orientation: velocity` needs a direction, and the spike keeps creeping
+                "velocity": 0.075, "direction": spike_direction(azimuth + yaw, lean), "spread": 3.0, **common,
+            }, {"particle": f"spike_{row['cls']}_ps"}, "spikes"))
+        else:
+            f = row["fill"]
+            lean = math.radians(f.lean)
+            fills.append(node(f.id, "emitter", {
+                "shape": "ring", "radius": f.outer, "inner_radius": f.inner, "position": [0.0, 0.0, 0.0],
+                "scale": [1.0, 1.0, 1.0], "burst_count": f.count,
+                "velocity": r4(0.075 * math.cos(lean)), "direction": [0, 1, 0], "spread": f.cone,
+                "radial_velocity": r4(0.075 * math.sin(lean)), **common,
+            }, {"particle": f"spike_{f.cls}_ps"}, "spikes", seed=f.seed))
     return heroes, fills
 
 
@@ -680,7 +698,7 @@ def build_shards() -> tuple[list[str], list[str]]:
     layer = "shards"
     # elongated crystal shards: out of the burst, and off the rim when the wave lands
     node("shard_ps", "particle_system", {
-        "max_particles": 40, "lifetime": 0.92, "lifetime_variance": 0.2, "size": 0.4, "size_variance": 0.16,
+        "max_particles": 70, "lifetime": 0.92, "lifetime_variance": 0.2, "size": 0.4, "size_variance": 0.16,
         "size_over_life": [[0.0, 0.3], [0.08, 1.0], [0.82, 1.0], [1.0, 0.0]],
         "color": [0.55, 0.82, 1.0, 1.0], "opacity_over_life": [[0.0, 1.0], [1.0, 1.0]],
         "angular_velocity": 280.0, "angular_velocity_variance": 170.0,
@@ -702,7 +720,7 @@ def build_shards() -> tuple[list[str], list[str]]:
 
     # sprite chips: out of the burst, then kicked up along the front (a ring emitter scaled with it)
     node("chip_ps", "particle_system", {
-        "max_particles": 260, "lifetime": 0.62, "lifetime_variance": 0.2, "size": 0.12, "size_variance": 0.06,
+        "max_particles": 520, "lifetime": 0.62, "lifetime_variance": 0.2, "size": 0.12, "size_variance": 0.06,
         "size_over_life": [[0.0, 0.5], [0.15, 1.0], [1.0, 0.35]], "rotation_variance": 180.0,
         "angular_velocity": 0.0, "angular_velocity_variance": 520.0,
         "color": tint(CYAN, 1.3), "color_over_life": [[0.0, tint(WHITE, 1.0)], [0.5, tint(CYAN, 1.0)], [1.0, tint(BLUE, 1.0)]],
@@ -727,7 +745,7 @@ def build_shards() -> tuple[list[str], list[str]]:
     twinkle = [[0.0, 0.0], [0.08, 1.0], [0.2, 0.15], [0.32, 1.0], [0.46, 0.1], [0.6, 0.9], [0.74, 0.12], [0.86, 0.7],
                [1.0, 0.0]]
     node("glitter_ps", "particle_system", {
-        "max_particles": 420, "lifetime": 0.7, "lifetime_variance": 0.3, "size": 0.05, "size_variance": 0.025,
+        "max_particles": 420, "lifetime": 0.5, "lifetime_variance": 0.14, "size": 0.05, "size_variance": 0.025,
         "color": tint(WHITE, 1.4), "opacity_over_life": twinkle, "emissive": 3.5, "emissive_over_life": twinkle,
         "drag": 1.5, "blend": "additive",
     }, {"sprite": "tex_spark", "forces": ["drift"]}, layer)
@@ -740,12 +758,12 @@ def build_shards() -> tuple[list[str], list[str]]:
     }, {"particle": "glitter_ps"}, layer)
     node("glitter_air", "emitter", {
         "shape": "disc", "radius": 4.4, "position": [0.0, 0.9, 0.0], "scale": [1.0, 1.0, 1.0],
-        "rate": track([(0.9, 0.0), (0.95, 150.0), (1.7, 120.0), (SINK_T, 0.0)]),
+        "rate": track([(0.9, 0.0), (0.95, 190.0), (1.5, 170.0), (1.55, 0.0)]),
         "velocity": 0.5, "velocity_variance": 0.5, "direction": [0, 1, 0], "spread": 180.0,
-        "start_time": fr(0.9), "duration": 0.95,
+        "start_time": fr(0.9), "duration": 0.66,
     }, {"particle": "glitter_ps"}, layer)
     node("shatter_ps", "particle_system", {
-        "max_particles": 200, "lifetime": 0.3, "lifetime_variance": 0.05, "size": 0.17, "size_variance": 0.08,
+        "max_particles": 420, "lifetime": 0.27, "lifetime_variance": 0.04, "size": 0.17, "size_variance": 0.08,
         "size_over_life": [[0.0, 0.5], [0.15, 1.0], [1.0, 0.3]], "rotation_variance": 180.0,
         "angular_velocity": 0.0, "angular_velocity_variance": 620.0,
         "color": tint(CYAN, 1.2), "color_over_life": [[0.0, tint(WHITE, 1.0)], [0.6, tint(CYAN, 1.0)], [1.0, tint(BLUE, 1.0)]],
@@ -753,18 +771,18 @@ def build_shards() -> tuple[list[str], list[str]]:
     }, {"sprite": "tex_chip", "forces": ["gravity"]}, "aftermath")
     node("shatter", "emitter", {
         "shape": "ring", "radius": 4.4, "inner_radius": 0.6, "position": [0.0, 0.8, 0.0], "scale": [1.0, 1.0, 1.0],
-        "rate": 0, "burst_count": 60, "burst_times": [0.0, 0.05, 0.1],
+        "rate": 0, "burst_count": 80, "burst_times": [0.0, 0.0333],
         "velocity": 1.8, "velocity_variance": 1.2, "direction": [0, 1, 0], "spread": 75.0, "radial_velocity": 1.0,
-        "start_time": fr(SINK_T + 0.02) - 0.001, "duration": 0.15,
+        "start_time": fr(SINK_T + 0.02) - 0.001, "duration": 0.1,
     }, {"particle": "shatter_ps"}, "aftermath", seed=13)
     node("glitter_fade_ps", "particle_system", {
-        "max_particles": 220, "lifetime": 0.3, "lifetime_variance": 0.05, "size": 0.06, "size_variance": 0.03,
+        "max_particles": 470, "lifetime": 0.27, "lifetime_variance": 0.04, "size": 0.06, "size_variance": 0.03,
         "color": tint(WHITE, 1.4), "opacity_over_life": twinkle, "emissive": 3.5, "emissive_over_life": twinkle,
         "drag": 1.0, "blend": "additive",
     }, {"sprite": "tex_spark", "forces": ["chip_gravity"]}, "aftermath")
     node("glitter_fade", "emitter", {
         "shape": "ring", "radius": 4.4, "inner_radius": 0.6, "position": [0.0, 0.7, 0.0], "scale": [1.0, 1.0, 1.0],
-        "rate": 0, "burst_count": 90, "burst_times": [0.0, 0.05],
+        "rate": 0, "burst_count": 90, "burst_times": [0.0, 0.0333],
         "velocity": 1.4, "velocity_variance": 1.0, "direction": [0, 1, 0], "spread": 80.0,
         "start_time": fr(SINK_T + 0.02) - 0.001, "duration": 0.1,
     }, {"particle": "glitter_fade_ps"}, "aftermath")
@@ -780,7 +798,7 @@ def build_mist() -> list[str]:
     layer = "mist"
     # rolling out with the front: born on it, pushed on, swelling
     node("roll_ps", "particle_system", {
-        "max_particles": 170, "lifetime": 0.85, "lifetime_variance": 0.2, "size": 1.45, "size_variance": 0.45,
+        "max_particles": 300, "lifetime": 0.85, "lifetime_variance": 0.2, "size": 1.45, "size_variance": 0.45,
         "size_over_life": [[0.0, 0.45], [0.4, 1.0], [1.0, 1.5]], "rotation_variance": 180.0,
         "angular_velocity_variance": 40.0,
         "color": [0.7, 0.84, 1.0, 1.0], "opacity": 0.5, "opacity_over_life": [[0.0, 0.0], [0.2, 1.0], [0.55, 0.7], [1.0, 0.0]],
@@ -796,16 +814,16 @@ def build_mist() -> list[str]:
 
     # drifting over the frozen disc while it lingers
     node("haze_ps", "particle_system", {
-        "max_particles": 80, "lifetime": 1.0, "lifetime_variance": 0.25, "size": 1.5, "size_variance": 0.45,
+        "max_particles": 80, "lifetime": 0.66, "lifetime_variance": 0.1, "size": 1.5, "size_variance": 0.45,
         "size_over_life": [[0.0, 0.6], [1.0, 1.4]], "rotation_variance": 180.0, "angular_velocity_variance": 20.0,
-        "color": [0.62, 0.78, 1.0, 1.0], "opacity": 0.36, "opacity_over_life": [[0.0, 0.0], [0.3, 1.0], [0.65, 0.8], [1.0, 0.0]],
+        "color": [0.8, 0.9, 1.0, 1.0], "opacity": 0.36, "opacity_over_life": [[0.0, 0.0], [0.3, 1.0], [0.65, 0.8], [1.0, 0.0]],
         "drag": 1.2, "blend": "alpha", "sort": True, "sprite_fps": 8.0,
     }, {"sprite": "tex_puff", "material": "mat_mist", "forces": ["drift"]}, layer)
     node("haze", "emitter", {
         "shape": "disc", "radius": 4.3, "position": [0.0, 0.28, 0.0], "scale": [1.0, 1.0, 1.0],
-        "rate": track([(0.85, 0.0), (0.95, 42.0), (1.5, 34.0), (1.78, 46.0), (1.95, 0.0)]),
+        "rate": track([(0.85, 0.0), (0.95, 60.0), (1.3, 56.0), (1.4, 0.0)]),
         "velocity": 0.3, "velocity_variance": 0.2, "direction": [0, 1, 0], "spread": 60.0, "radial_velocity": 0.5,
-        "start_time": fr(0.85), "duration": 1.12,
+        "start_time": fr(0.85), "duration": 0.57,
     }, {"particle": "haze_ps"}, layer)
     return ["creep", "roll", "haze"]
 
@@ -822,7 +840,7 @@ def build_lights() -> None:
     # sits high: a low one, above all one behind the effect facing the camera, hazes the floor grey.
     node("key_light", "light", {
         "light_type": "point", "position": [-7.0, 12.0, 6.0], "color": [0.8, 0.92, 1.0, 1.0], "radius": 40.0,
-        "intensity": track([(0.0, 0.0), (0.3, 20.0), (BURST_T, 50.0), (0.5, 150.0), (1.2, 140.0), (SINK_T, 95.0),
+        "intensity": track([(0.0, 0.0), (0.12, 40.0), (BURST_T, 60.0), (0.5, 150.0), (1.2, 140.0), (SINK_T, 95.0),
                             (2.18, 0.0)]),
     }, None, layer)
     # fill: deep blue from behind on the right, the colour of the shadows
