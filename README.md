@@ -1,158 +1,86 @@
 # AetherFX
 
-AI-native, open-source authoring system for real-time game VFX. The agent is
-a first-class author: it builds effects from a small, strongly typed
-vocabulary, simulates and renders them deterministically, looks at the
-result, and iterates.
+**Game VFX that an AI agent can author.** Describe an effect, or hand your agent a concept sheet, and it builds the effect from typed building blocks, looks at its own renders, and iterates. The result is one small JSON file that plays the same everywhere.
 
-```
-reference / prompt -> analysis (EAD) -> VFX graph -> validate -> compile
-    -> simulate -> render -> evaluate -> modify graph -> ... -> export
-```
+![AetherFX Studio](docs/media/studio.jpg)
 
-* `docs/ARCHITECTURE.md` - the contract every module follows
-* `docs/VOCABULARY.md` - node types and parameters
-* `docs/AGENT_API.md` - the tool API (CLI / JSON-RPC / Python / MCP)
-* `docs/ENGINE_INTEGRATION.md` - the C ABI for game engines (libaetherfx)
-* `docs/EAD.md` - the Effect Analysis Document
-* `docs/DEPENDENCIES.md` - every dependency, version and license
-* `docs/ROADMAP.md`
+- **A library of ready effects** you can preview, tweak with sliders and export.
+- **A studio** that runs locally in your browser: GPU preview at 60 fps, style sliders per part of the effect, playback and effect speed, search.
+- **Built for agents**: every authoring action is a tool over the Model Context Protocol (MCP), with the guides an agent needs served alongside.
+- **Deterministic and portable**: no shaders to write, no binary assets. Textures and meshes are procedural, and the same simulation runs in the studio, in exports and in your game through a small C library.
+- **MIT licensed**, including every effect. Use it in commercial games.
 
-## Status (M0 foundation, 2026-09-17)
+## Effects
 
-Working end to end on CPU: typed vocabulary (18 node types, 246 parameters),
-JSON graph with validation (E001-E020, W001-W006), compiler with tier
-selection and resource baking, deterministic particle runtime (forces,
-collisions, events, analytic beams/trails/decals/lights), software HDR
-renderer (soft particles, bloom, post), procedural textures, 65-tool agent
-API over JSON-RPC, CLI, Python client, MCP server, metric-based reference
-comparison, flipbook/frames/video export. GPU (wgpu-native) is bootstrapped
-but not yet used for simulation or rendering. Volumes (Tier 3) are procedural
-raymarched density fields on both the CPU renderer and the GPU viewer
-(docs/VOLUMES.md); the fluid-solver mode and rigid physics (Tier 2) are stubs
-with compile warnings. See docs/ROADMAP.md.
+| | | | |
+|:---:|:---:|:---:|:---:|
+| ![Fire AOE](docs/media/effects/fire_aoe.jpg) | ![Lightning AOE](docs/media/effects/lightning_aoe.jpg) | ![Arcane AOE](docs/media/effects/arcane_aoe.jpg) | ![Holy AOE](docs/media/effects/holy_aoe.jpg) |
+| Fire AOE | Lightning AOE | Arcane AOE | Holy AOE |
+| ![Fire Bolt](docs/media/effects/fire_bolt.jpg) | ![Ice Bolt](docs/media/effects/ice_bolt.jpg) | ![Lightning Strike](docs/media/effects/lightning_strike.jpg) | ![Earth Shatter](docs/media/effects/earth_shatter.jpg) |
+| Fire Bolt | Ice Bolt | Lightning Strike | Earth Shatter |
+| ![Heal](docs/media/effects/heal.jpg) | ![Teleport](docs/media/effects/teleport.jpg) | ![Poison Target](docs/media/effects/poison_target.jpg) | ![Ice AOE](docs/media/effects/ice_aoe.jpg) |
+| Heal (+5 variants) | Teleport (+3 variants) | Poison Target | Ice AOE |
 
-## Studio
-
-`aetherfx-studio` is a local web app (default http://127.0.0.1:8770) that
-spawns the engine itself. It is a library and a generator: the Library lists
-the built-in effects (protected, never overwritten) and your own - Fireball,
-Fire AOE, Ice AOE, Shadow AOE, Lightning Strike and Void Nebula (a procedural
-raymarched volume, see docs/VOLUMES.md), in `examples/effects/`; clicking one
-opens a working copy that auto-plays, every parameter is editable live, the
-camera orbits/zooms with the mouse, stage controls set ground/background/bloom,
-Random mutates values for exploration, and "Save as" adds a new library entry.
-The Style panel is the quick way to shape an effect without touching the graph:
-grouped sliders - Global first, then one group per layer - for intensity, size,
-density, opacity, speed and hue, which scale the authored values
-non-destructively and update the viewport as you drag (docs/CONTROLS.md). An
-effect that ships none gets a sensible set generated for the working copy when
-you open it. Speed is part of the effect - it is saved, exported and honoured
-in a game - unlike the play bar's speed selector, which only changes how you
-are watching.
-The Generate box builds or modifies effects from a text prompt. Generation is done by an AI agent driving the same tool API and
-looking at its own renders; the backend is picked automatically: Anthropic
-API key, a logged-in Claude Code (Agent SDK), or a worker attached from an
-interactive Claude Code session (`aetherfx.studio.worker_cli`).
-
-The header has two views: **Studio** (the viewport, the graph and the Library, with a live
-search over names, tags and descriptions - press `/`) and **Community**.
-
-```bash
-python/.venv/bin/aetherfx-studio --port 8770 --output-dir out/studio
-```
-
-## Community effects
-
-Contributed effects live in this repository under `community/effects/*.json` and arrive by pull
-request - GitHub is the whole backend: no accounts, no server of ours. CI checks a contribution,
-renders its previews and rebuilds a static index; the studio's Community view lists them with
-credit ("by &lt;name&gt;", linking to the contributor's GitHub profile) and opens each one as a
-working copy, so the contributed file is never changed.
-
-```bash
-python -m aetherfx.community check community/effects/<slug>.json --previews out/previews
-```
-
-That one command is the bar: engine validation with zero errors, byte-identical replays,
-budgets (6000 live sprites, 300 mesh particles, 160 nodes, 12 s, 96 MiB of baked texture),
-procedural-only assets, MIT, credit metadata, at least three named style controls, and the
-house-style lint (no crosses, no tube beams, no hard-edged ribbons, projectiles end in an
-impact).
-
-* **`CONTRIBUTING.md`** - written for the agent doing the work: what qualifies, what does not,
-  and the exact steps to submit.
-* **`docs/REVIEWING.md`** - written for the reviewing agent: commands, rubric, decisions.
-* **`docs/COMMUNITY.md`** - the metadata, the check rules, the index format and the hosting.
-
-Reference art, screenshots and preview media never enter the repository
-(`python/tests/test_repo_hygiene.py` enforces it); previews are CI artifacts.
-
-If AetherFX is useful to you, [star it on GitHub](https://github.com/holokat/AetherFX) -
-it is the only signal the project has.
-
-## Build
-
-```bash
-cmake --preset default && cmake --build --preset default && ctest --preset default
-```
-
-The build also produces `libaetherfx`, the C ABI game engines link against
-(`build/src/capi/libaetherfx.dylib|.so|.dll`, plus `libaetherfx_static.a` for
-static linking). It exposes the same deterministic simulation the studio uses -
-load, compile, step, read the per-frame particle/light/beam/trail/decal/mesh
-buffers - behind one C99 header, `src/capi/include/aetherfx/aetherfx.h`, with
-`aetherfx_*` as its only exported symbols. The engine renders; the library
-simulates. See `docs/ENGINE_INTEGRATION.md` for Unreal, Unity and Godot.
+Also in the library: Lesser Fireball, Shadow AOE, Void Nebula. All of them live in [`examples/effects`](examples/effects) as plain JSON.
 
 ## Quick start
 
-```bash
-./build/bin/aetherfx validate examples/effects/fireball.json
-./build/bin/aetherfx run examples/effects/fire_aoe.json --out out/fire_aoe --fps 24 --video
-./build/bin/aetherfx render examples/effects/lightning_strike.json --time 0.05 --out out/bolt.png
-./build/bin/aetherfx export examples/effects/fireball.json --format flipbook --out out/fireball_flipbook.png
-./build/bin/aetherfx tools            # list the 65 agent tools
-./build/bin/aetherfx serve            # JSON-RPC 2.0 over stdio (used by the Python client and MCP server)
-```
-
-## Bringing your own flipbooks
-
-Fire, smoke and explosion sprites read best as real flipbooks. Point a texture
-node at an image file and give it the sheet's grid; the compiler loads it and
-unrolls the grid into the engine's animated-sprite layout, so `frames` becomes
-`columns * rows` and the sprite plays over the particle's life (or at
-`sprite_fps`).
-
-```json
-{"id": "tex_fire", "type": "texture",
- "parameters": {"source": "file", "path": "../textures/fire_8x4.png",
-                "columns": 8, "rows": 4}}
-```
-
-`path` is absolute, or relative to the directory of the effect document - keep
-sheets next to the effects, for example in `examples/textures/`. PNG/JPG/TGA/BMP
-are read as sRGB and decoded to linear, `.exr` is read as linear HDR. Add
-`width`/`height` only when you want the frames resampled. If you would rather
-generate the sheet, the `flame` texture op bakes a seamless, animated fire
-flipbook procedurally (see `examples/effects/fire_aoe.json`).
-
-Python / MCP:
+You need CMake, a C++20 compiler and Python 3.10 or newer.
 
 ```bash
-cd python && python3.13 -m venv .venv && .venv/bin/pip install -e '.[dev,claude]'
-AETHERFX_BINARY=../build/bin/aetherfx .venv/bin/pytest -q
-.venv/bin/aetherfx-mcp --binary ../build/bin/aetherfx --output-dir ../out   # MCP server (stdio)
+git clone https://github.com/holokat/AetherFX.git
+cd AetherFX
+cmake --preset default && cmake --build --preset default
+python3 -m venv python/.venv && python/.venv/bin/pip install -e 'python[studio]'
+python/.venv/bin/aetherfx-studio
 ```
 
-MCP configuration for Claude Code / Claude Desktop is in `python/README.md`.
-The `AETHERFX_ANALYZER` environment variable selects the reference-analysis
-adapter (`mock` by default, `claude` with `ANTHROPIC_API_KEY`).
+The studio opens at <http://127.0.0.1:8770>. Pick an effect in the Library, drag the Style sliders, change the speed, orbit with the mouse. Built-in effects are never modified: you always work on a copy, and **Save as** adds it to your own list.
+
+## Use it with your AI agent
+
+With the studio running, point any MCP client at it and ask for an effect. Whatever the agent builds appears live in the studio.
+
+```bash
+claude mcp add --transport http aetherfx http://127.0.0.1:8770/mcp
+```
+
+Open <http://127.0.0.1:8770/mcp> in a browser for the agent documentation: connection snippets for Claude Code, Claude Desktop, Cursor and Codex, the authoring workflow, and every tool. Agents can read the same guides as MCP resources, or from `/llms.txt`.
+
+The studio's own **Generate** box uses your Anthropic API key or your local Claude Code login if you have one. It is optional: everything else works without it.
+
+## Use effects in your game
+
+| Export | What you get | Status |
+|---|---|---|
+| Flipbook | Sprite sheet + manifest, plays in any engine | Ready |
+| Package | Effect, resolved runtime data, baked textures and meshes | Ready |
+| Unreal Engine | Package + the AetherFX plugin (UE 5.8): import and cast from an actor | Ready |
+| Unity, Godot | The data package | Runtime not built yet: use the Flipbook for now |
+
+The engine also builds `libaetherfx`, a small C library that runs the same deterministic simulation inside your game. See [`docs/ENGINE_INTEGRATION.md`](docs/ENGINE_INTEGRATION.md) and [`docs/UNREAL.md`](docs/UNREAL.md).
+
+## Contribute an effect
+
+The **Community** view in the studio lists effects contributed by pull request, credited to their authors. Most people will let their agent do the work, so the guide is written for agents:
+
+1. Build an effect with your agent and save it.
+2. Run the contribution check: `python -m aetherfx.community check your_effect.json`
+3. Open a pull request that adds `community/effects/<name>.json`.
+
+Everything an effect must pass, what qualifies and what does not is in [`CONTRIBUTING.md`](CONTRIBUTING.md). If you like the project, a star helps others find it.
+
+## Learn more
+
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): how the pieces fit
+- [`docs/VOCABULARY.md`](docs/VOCABULARY.md): node types, parameters, texture ops
+- [`docs/CONTROLS.md`](docs/CONTROLS.md): style sliders and effect speed
+- [`docs/AGENT_API.md`](docs/AGENT_API.md): the tool API (CLI, JSON-RPC, Python, MCP)
+- [`docs/COMMUNITY.md`](docs/COMMUNITY.md) and [`docs/REVIEWING.md`](docs/REVIEWING.md): the community collection
+- [`docs/BACKLOG.md`](docs/BACKLOG.md) and [`docs/ROADMAP.md`](docs/ROADMAP.md): what is missing and what is next
 
 ## License and credits
 
-MIT (see `LICENSE`): free for any use, including commercial games. Every dependency is permissive and
-nothing proprietary is bundled; the audit is in `THIRD_PARTY_NOTICES.md`.
+MIT, see [`LICENSE`](LICENSE). Every dependency is permissive and nothing proprietary is bundled: the audit is in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md). All images in this repository were rendered by AetherFX from its own effects.
 
-Started by [Gene](https://x.com/cogentgene1). Built with and for AI agents: see `/mcp` on a running
-studio for the agent documentation.
+Started by [Gene](https://x.com/cogentgene1).

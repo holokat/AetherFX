@@ -828,18 +828,98 @@ function createEffect() {
   }), 'create');
 }
 
+/* ====================================================================== *
+ * in-app dialogs (no native prompt / confirm)
+ *
+ * openDialog({title, message, input: {value, placeholder, label}, confirm, cancel, danger, validate})
+ * resolves to the entered string (input dialogs), true (confirm dialogs) or null when dismissed.
+ * ====================================================================== */
+function openDialog(options) {
+  options = options || {};
+  return new Promise(function (resolve) {
+    var previous = document.activeElement;
+    var field = null;
+    var hint = el('div', { class: 'dialog-hint', role: 'status' });
+    var ok = el('button', { type: 'button', class: 'primary' + (options.danger ? ' danger' : ''), text: options.confirm || 'OK' });
+    var cancel = el('button', { type: 'button', class: 'ghost', text: options.cancel || 'Cancel' });
+    var body = el('div', { class: 'dialog-body' });
+    if (options.message) body.appendChild(el('p', { class: 'dialog-message', text: options.message }));
+    if (options.input) {
+      field = el('input', { type: 'text', class: 'dialog-input', spellcheck: 'false', autocomplete: 'off',
+                            placeholder: options.input.placeholder || '', value: options.input.value || '',
+                            'aria-label': options.input.label || options.title || 'value' });
+      body.appendChild(field);
+    }
+    body.appendChild(hint);
+    var card = el('div', { class: 'dialog-card', role: 'dialog', 'aria-modal': 'true', 'aria-label': options.title || 'Dialog' },
+      el('h2', { class: 'dialog-title', text: options.title || '' }),
+      body,
+      el('div', { class: 'dialog-actions' }, cancel, ok));
+    var overlay = el('div', { class: 'dialog-overlay' }, card);
+
+    function check() {
+      if (!field) return true;
+      var verdict = options.validate ? options.validate(field.value) : (field.value.trim() ? null : ' ');
+      var message = typeof verdict === 'string' ? verdict : (verdict && verdict.message) || '';
+      var blocking = typeof verdict === 'string' ? !!verdict : !!(verdict && verdict.block);
+      hint.textContent = message.trim();
+      hint.className = 'dialog-hint' + (blocking ? ' bad' : (message.trim() ? ' note' : ''));
+      ok.disabled = blocking;
+      return !blocking;
+    }
+    function close(result) {
+      document.removeEventListener('keydown', onKey, true);
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      if (previous && previous.focus) { try { previous.focus(); } catch (err) { /* gone */ } }
+      resolve(result);
+    }
+    function accept() { if (check()) close(field ? field.value.trim() : true); }
+    function onKey(ev) {
+      if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); close(null); }
+      else if (ev.key === 'Enter' && ev.target !== cancel) { ev.preventDefault(); ev.stopPropagation(); accept(); }
+      else if (ev.key === 'Tab') {                       /* keep focus inside the dialog */
+        var order = [field, cancel, ok].filter(function (n) { return n && !n.disabled; });
+        var index = order.indexOf(document.activeElement);
+        var next = order[(index + (ev.shiftKey ? -1 : 1) + order.length) % order.length] || order[0];
+        ev.preventDefault(); next.focus();
+      } else { ev.stopPropagation(); }                   /* page shortcuts (space, /) stay off */
+    }
+    ok.addEventListener('click', accept);
+    cancel.addEventListener('click', function () { close(null); });
+    overlay.addEventListener('mousedown', function (ev) { if (ev.target === overlay) close(null); });
+    if (field) field.addEventListener('input', check);
+    document.addEventListener('keydown', onKey, true);
+    document.body.appendChild(overlay);
+    check();
+    if (field) { field.focus(); field.select(); } else { ok.focus(); }
+  });
+}
+
 function saveEffect() {
   if (!S.data) { toast('nothing to save', 'warn'); return; }
   var current = (S.status && S.status.active_effect && S.status.active_effect.name) || 'effect';
   var src = (S.lists && S.lists.working && S.lists.working.source) || null;
   var suggestion = (src && src.builtin) ? current + ' copy' : current;
-  var name = window.prompt('Save into your library as:', suggestion);
-  if (name === null) return;
-  name = name.trim();
-  if (!name) return;
-  api('/api/effects/save', { body: { name: name } }).then(function (r) {
-    toast('saved "' + (r.name || name) + '"', 'ok');
-    return afterEffectChange();
+  var mine = ((S.lists && S.lists.library) || []).filter(function (item) { return item && !item.builtin && item.section !== 'community'; })
+    .map(function (item) { return String(item.name || '').toLowerCase(); });
+  openDialog({
+    title: 'Save to your library',
+    message: 'Built-in and community effects are never changed. This saves your working copy as a new entry under Mine.',
+    input: { value: suggestion, placeholder: 'Effect name', label: 'Effect name' },
+    confirm: 'Save',
+    validate: function (value) {
+      var name = value.trim();
+      if (!name) return { block: true, message: 'Give it a name.' };
+      if (name.length > 80) return { block: true, message: 'Keep the name under 80 characters.' };
+      if (mine.indexOf(name.toLowerCase()) !== -1) return { block: false, message: 'You already have "' + name + '": saving will replace it.' };
+      return null;
+    }
+  }).then(function (name) {
+    if (!name) return null;
+    return api('/api/effects/save', { body: { name: name } }).then(function (r) {
+      toast('saved "' + (r.name || name) + '"', 'ok');
+      return afterEffectChange();
+    });
   }).catch(function (err) { toast(err && err.message ? err.message : 'save failed', 'error'); });
 }
 
@@ -1046,7 +1126,17 @@ function setNodeProperty(nodeId, props) {
 }
 
 function deleteNode(nodeId) {
-  if (!window.confirm('Delete node "' + nodeId + '"?  References to it are removed.')) return Promise.resolve(null);
+  return openDialog({
+    title: 'Delete node',
+    message: 'Delete "' + nodeId + '"? References to it are removed. You can undo this.',
+    confirm: 'Delete', danger: true
+  }).then(function (yes) {
+    if (!yes) return null;
+    return deleteNodeConfirmed(nodeId);
+  });
+}
+
+function deleteNodeConfirmed(nodeId) {
   return guard(api('/api/node/delete', { body: { node_id: nodeId } }).then(function (result) {
     var dangling = (result && result.dangling) || [];
     toast('deleted ' + nodeId + (dangling.length ? ' (' + dangling.length + ' reference(s) cleared)' : ''), 'ok');
@@ -2431,14 +2521,24 @@ function exportRow(target) {
   go.addEventListener('click', fire);
   syncLabel();
 
-  return el('div', { class: 'export-row' },
-    el('div', { class: 'export-label', text: target.label || target.id }),
-    dest,
+  /* A monogram badge per target (engine logos are trademarks we do not ship) and an honest tag for
+   * targets that only deliver data today. */
+  var head = el('div', { class: 'export-label' },
+    el('span', { class: 'export-badge export-badge-' + target.id, text: target.badge || (target.label || target.id).slice(0, 2), 'aria-hidden': 'true' }),
+    el('span', { class: 'export-name', text: target.label || target.id }));
+  if (target.maturity === 'data') {
+    head.appendChild(el('span', { class: 'export-tag', text: 'data only', title: target.summary || '' }));
+  }
+  var row = el('div', { class: 'export-row' }, head);
+  if (target.summary) row.appendChild(el('div', { class: 'export-summary', text: target.summary }));
+  row.appendChild(dest);
+  row.appendChild(
     el('div', { class: 'export-foot' },
       el('label', { class: 'check', title: 'Remember this destination for next time' },
         remember, el('span', { text: 'remember' })),
       el('span', { class: 'grow' }),
       go));
+  return row;
 }
 
 function runExport(target, destination, remember, button) {

@@ -208,6 +208,8 @@ async def run(args: argparse.Namespace) -> int:
                 print("controls:", status)
                 if status.startswith("FAILED"):
                     return 5
+            if args.hide_hud:
+                await evaluate("(() => { const st = document.createElement('style'); st.textContent = '.gl-hud, #gl-stats, #gl-mode, .transport, #transport, .tp, .viewport-hud, .gl-note { visibility: hidden !important; }'; document.head.appendChild(st); return 1; })()")
             if args.camera:
                 cam = json.loads(args.camera)
                 expr = """(() => { const a = window.aetherViewer; const v = a && a.gl; if (!v || !v.camera) return 'no viewer';
@@ -221,7 +223,11 @@ async def run(args: argparse.Namespace) -> int:
                 print("perf:", report)
             for t in times:
                 info = await evaluate(SEEK_SCRIPT % {"time": t, "settle_ms": int(args.settle * 1000), "fallback_duration": args.duration})
-                shot = await send("Page.captureScreenshot", {"format": "png"})
+                params = {"format": "png"}
+                if args.clip_viewport:
+                    rect = json.loads(await evaluate("(() => { const r = document.getElementById('viewport').getBoundingClientRect(); return JSON.stringify({x: r.left, y: r.top, width: r.width, height: r.height}); })()"))
+                    params["clip"] = {**rect, "scale": 1}
+                shot = await send("Page.captureScreenshot", params)
                 path = f"{args.out}_t{t:.2f}.png"
                 with open(path, "wb") as handle:
                     handle.write(base64.b64decode(shot["data"]))
@@ -253,6 +259,10 @@ def main() -> int:
     parser.add_argument("--load-wait", type=float, default=8.0, help="seconds to wait after clicking the library row")
     parser.add_argument("--settle", type=float, default=2.0, help="seconds to wait after seeking before capture")
     parser.add_argument("--duration", type=float, default=3.0, help="fallback effect duration if the readout is unparsable")
+    parser.add_argument("--clip-viewport", action="store_true",
+                        help="capture only the effect viewport (no studio chrome), for galleries and docs")
+    parser.add_argument("--hide-hud", action="store_true",
+                        help="hide the stats, mode badge and play bar overlays before capturing")
     parser.add_argument("--perf", type=float, default=0.0,
                         help="play the effect for this many seconds first and print render fps, stream fps, "
                              "draw calls, triangles and long tasks as JSON")

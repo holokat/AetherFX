@@ -26,8 +26,14 @@ def _tracked_files() -> list[str]:
     return [line for line in out.splitlines() if line]
 
 
+#: README media: ONLY captures rendered by this engine of this library's own effects, and screenshots of
+#: the studio showing them. Never concept art, never anything a user pasted as a reference.
+ALLOWED_MEDIA_DIRS = ("docs/media/",)
+
+
 def test_no_reference_art_or_stray_media_is_tracked():
     media = {path for path in _tracked_files() if Path(path).suffix.lower() in MEDIA_SUFFIXES}
+    media = {path for path in media if not path.startswith(ALLOWED_MEDIA_DIRS)}
     unexpected = sorted(media - ALLOWED_MEDIA)
     assert not unexpected, (
         "media files are tracked: " + ", ".join(unexpected) + ". Reference images and screenshots never go into "
