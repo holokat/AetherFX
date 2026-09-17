@@ -15,10 +15,13 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "aether/core/error.hpp"
@@ -131,6 +134,45 @@ std::vector<OpSpec> build_op_specs() {
          {"sharpness", "float", 1.6, "contrast exponent; higher = thinner, hotter cores"},
          {"licks", "float", 0.4, "how much the tips break up into separate tongues"},
          {"seed", "int", 0, "per-op seed"}},
+        {}});
+    ops.push_back(OpSpec{
+        "fire_sim",
+        "Baked 2D flame simulation: temperature in [0,1] per frame, the op to reach for when fire has "
+        "to look like fire rather than like one painted tongue (`flame`). A grid the size of the "
+        "texture carries a temperature field; per step the velocity is buoyancy * heat upwards "
+        "(accelerating with height, so the column stretches), plus the curl of an animated noise "
+        "potential (`turbulence`, `turbulence_scale`, `detail`), plus an inward entrainment flow "
+        "integrated from dvx/dx = -dvy/dy along each row, which necks the plume the way a real one "
+        "narrows and pinches puffs off. The field is advected semi-Lagrangian with bilinear sampling "
+        "(cold air at the sides and above the tip, the fuel bed repeated below the base), cooled by a "
+        "noise-modulated rate that grows with height plus a subtractive term that erases whatever is "
+        "nearly cold - that is what leaves ragged eroded edges instead of a soft halo - lightly "
+        "diffused, and re-lit from a fuel band across the bottom `fuel_width` of the tile whose "
+        "moving patches make tongues that are born apart and split as they rise. `sharpness` is an "
+        "S-curve about 0.5 that keeps the white-hot core and crushes the haze. Frames are captured "
+        "every `substeps` steps after `warmup`; the root is at v = 0, so the sheet draws upright and "
+        "a stretched_billboard points its tip along the particle's velocity, exactly like `flame`. "
+        "With `loop` (default) every time axis is wrapped onto a circle so the forcing is exactly "
+        "periodic and the warm-up runs a whole loop before frame 0, which lands the state on the "
+        "forcing's limit cycle: frame 0 continues frame N-1 with no cross-fade and so no ghosting. "
+        "Bake it at 96x144..160x256 with frames: 24-32 and colour it with a material "
+        "temperature_gradient or a `colorize` with the fire ramp "
+        "[[0,[0.05,0,0,1]], [0.25,[0.8,0.1,0,1]], [0.5,[1,0.45,0.05,1]], [0.75,[1,0.85,0.35,1]], "
+        "[1,[1,1,0.85,1]]]. Deterministic: same seed, same bytes.",
+        {{"seed", "int", 0, "per-op seed, combined with the bake seed"},
+         {"fuel", "float", 1.25, "source intensity at the base, 0..2"},
+         {"fuel_width", "float", 0.6, "fraction of the width the fuel band covers, centred"},
+         {"buoyancy", "float", 1.7, "upward advection speed per unit heat"},
+         {"turbulence", "float", 1.15, "curl-noise strength"},
+         {"turbulence_scale", "float", 3.0, "curl-noise frequency (eddies per tile height)"},
+         {"cooling", "float", 1.8, "cooling and edge erosion rate per unit sim time"},
+         {"detail", "int", 4, "noise octaves, 1..5"},
+         {"speed", "float", 0.06, "sim time per baked frame"},
+         {"substeps", "int", 4, "simulation steps per frame, 1..8"},
+         {"warmup", "int", 48, "steps run before frame 0; raised to one whole loop when `loop`"},
+         {"loop", "bool", true, "periodic forcing plus a full-loop warm-up so the flipbook closes"},
+         {"flicker", "float", 0.35, "temporal fuel modulation, 0..1"},
+         {"sharpness", "float", 1.25, "output contrast about 0.5; 1 = linear"}},
         {}});
     ops.push_back(OpSpec{"cracks", "Thin bright lines along Worley cell boundaries on black.",
                          {{"density", "float", 5.0, "cells per unit UV"},
@@ -299,11 +341,21 @@ inline float soft_edge(float edge, float softness, float x) {
 
 inline void set_gray(Image& img, int x, int y, float v) { img.set(x, y, Color{v, v, v, v}); }
 
+// Baked frames of a `fire_sim` node, keyed by node id. The graph is evaluated
+// once per frame but the simulation runs once per bake, so the whole flipbook is
+// simulated on the first frame that asks for it and read back afterwards.
+struct FireSimCache {
+    std::map<std::string, std::vector<std::vector<float>>> by_node;
+};
+
 struct Ctx {
     int width = 0;
     int height = 0;
-    float time = 0.0f;
+    int frames = 1;      // frames in the bake
+    int frame = 0;       // index of the frame being evaluated
+    float time = 0.0f;   // frame / frames, in [0,1)
     uint32_t seed = 0;
+    std::shared_ptr<FireSimCache> fire;  // shared across the frames of one bake
 };
 
 uint32_t op_seed_of(const Ctx& ctx, const json& p, const std::string& id) {
@@ -662,6 +714,470 @@ Image eval_flame(const json& p, const Ctx& ctx, uint32_t seed) {
     return out;
 }
 
+// ---------------------------------------------------------------------------
+// fire_sim: a baked 2D flame simulation
+// ---------------------------------------------------------------------------
+//
+// `flame` paints one smooth tongue from noise; `fire_sim` runs a small
+// deterministic Eulerian simulation and bakes its temperature field into the
+// flipbook, so the shapes are made by the flow instead of by a silhouette
+// formula: tongues rise, neck, split off and cool into ragged wisps, and the
+// motion is coherent from frame to frame.
+//
+// The grid is the bake resolution, row j = 0 at the root (v = 0) and up the
+// flame with increasing j. World units put the height at 1 and the width at the
+// aspect ratio, so noise is isotropic in pixels. One step:
+//
+//   1. velocity   v = (0, buoyancy * heat * acceleration(height))
+//                     + turbulence * curl(psi)            (divergence free)
+//                     + entrainment                       (see below)
+//   2. advect     T(x) = T(x - v*dt) bilinear, cold air outside the sides and
+//                 above the tip, the fuel bed repeated below the base
+//   3. cool       T *= 1 - cooling*dt*(height, noise); then a subtractive term
+//                 that erases whatever is nearly cold, which is what erodes the
+//                 edges into rags instead of fading them into haze
+//   4. diffuse    one 5-point pass, keeps filaments from aliasing
+//   5. fuel       T = max(T, source) over the bottom band, broken into moving
+//                 patches so tongues are born apart and split as they rise
+//
+// The entrainment term is a cheap stand-in for a pressure solve: incompressible
+// flow has dvx/dx = -dvy/dy, so integrating the vertical gradient of the rise
+// speed along each row gives the sideways flow that pulls the column inwards
+// where it accelerates. That is what makes a plume narrow and pinch off puffs.
+//
+// Forcing fields (the curl potential and the cooling/erosion noise) are built on
+// a coarse grid once per frame and lerped across the substeps; the fine per-cell
+// work is then just advection and arithmetic.
+//
+// Looping (`loop: true`): every noise axis that carries time is wrapped onto a
+// circle whose circumference is one loop, so the forcing is exactly periodic,
+// and the sim is warmed up for at least one whole loop before frame 0 is kept.
+// Cooling plus outflow erase the initial state within a loop, so the state lands
+// on the forcing's limit cycle and frame 0 continues frame N-1 with no cross
+// fade and therefore no ghosting.
+//
+// Determinism: plain float, one thread, fixed loop order, no wall clock.
+
+struct FireSimSettings {
+    int nx = 1;
+    int ny = 1;
+    int frames = 1;
+    float fuel = 1.25f;
+    float fuel_width = 0.6f;
+    float buoyancy = 1.7f;
+    float turbulence = 1.15f;
+    float turbulence_scale = 3.0f;
+    float cooling = 1.8f;
+    int detail = 4;
+    float speed = 0.06f;
+    int substeps = 4;
+    int warmup = 48;
+    bool loop = true;
+    float flicker = 0.35f;
+    float sharpness = 1.25f;
+    uint32_t seed = 0;
+};
+
+// Tuning that is not exposed: the shape of the plume rather than its amount.
+constexpr float kAmbientRise = 0.45f;   // rise speed of cold air, as a fraction of `buoyancy`
+constexpr float kRiseBase = 0.5f;       // rise speed at the root ...
+constexpr float kRiseGain = 1.1f;       // ... plus this * sqrt(height): the plume accelerates
+constexpr float kEddyStretch = 0.42f;    // vertical squeeze of the curl potential: tall, licking eddies
+constexpr float kSway = 0.65f;          // sideways share of the curl velocity; fire wanders less than smoke
+constexpr float kTurbBase = 0.32f;      // turbulence at the root; it ramps in with height
+constexpr float kEntrain = 0.3f;       // strength of the continuity-driven inward flow
+constexpr float kCoolBase = 0.45f;      // cooling at the root ...
+constexpr float kCoolHeight = 1.6f;     // ... plus this * height
+constexpr float kCoolNoise = 1.1f;      // how much the cooling noise modulates that
+constexpr float kErode = 1.0f;          // subtractive cooling: erases the almost-cold
+constexpr float kTipKill = 2.6f;        // extra cooling over the last quarter: the tips burn out
+                                        // inside the tile instead of running off the top edge
+constexpr float kDiffuse = 0.03f;       // 5-point diffusion per step
+constexpr float kBandFrac = 0.05f;      // fuel bed height, as a fraction of the tile
+constexpr float kPatchBase = 0.15f;     // patchiness of the source at the very bottom row
+constexpr float kFieldSamples = 3.0f;   // forcing-grid samples per finest noise feature
+constexpr float kRootFade = 0.1f;       // the bottom of the tile fades in, so a big sprite has no
+                                        // hard bright edge to show its quad (`flame` does the same);
+                                        // the noise field breaks the fade up so the cut is ragged
+                                        // instead of a ruler-straight line across the sprite
+
+class FireSim {
+public:
+    explicit FireSim(const FireSimSettings& settings) : s_(settings) { run(); }
+
+    // One baked frame, row-major from the root up, values in [0,1].
+    const std::vector<float>& frame(int index) const {
+        const int i = clamp(index, 0, static_cast<int>(frames_.size()) - 1);
+        return frames_[static_cast<size_t>(i)];
+    }
+
+private:
+    // Coarse forcing grid: the curl potential's gradient plus the cooling noise.
+    struct Field {
+        std::vector<float> gx, gy, mix;
+    };
+
+    // fbm whose time axis is wrapped onto a circle: adding 1 to `phase` turns it
+    // by exactly 2*pi, so the field is periodic over one loop however fast it
+    // scrolls. `rate` is the distance travelled along y in one loop.
+    float looping_fbm(float x, float y, float phase, float rate, uint32_t seed, const FbmParams& fp) const {
+        if (!s_.loop) return fbm4(Vec4{x, y + phase * rate, phase * 0.85f, 0.0f}, seed, fp);
+        const float r = std::max(1e-3f, rate) / kTwoPi;
+        const float theta = (y + phase * rate) / r;
+        return fbm4(Vec4{x, r * std::cos(theta), r * std::sin(theta), 0.0f}, seed, fp);
+    }
+
+    void build_field(float phase, Field& field) const {
+        FbmParams potential;
+        potential.octaves = s_.detail;
+        potential.basis = NoiseBasis::Simplex;
+        FbmParams mixer = potential;
+        mixer.octaves = std::min(s_.detail + 1, 5);
+
+        const float ts = s_.turbulence_scale;
+        std::vector<float> psi(static_cast<size_t>(fnx_) * static_cast<size_t>(fny_), 0.0f);
+        for (int ky = 0; ky < fny_; ++ky) {
+            const float wy = static_cast<float>(ky) * hy_;
+            for (int kx = 0; kx < fnx_; ++kx) {
+                const float wx = static_cast<float>(kx) * hx_;
+                const size_t k = static_cast<size_t>(ky) * static_cast<size_t>(fnx_) + static_cast<size_t>(kx);
+                psi[k] = looping_fbm(wx * ts, wy * ts * kEddyStretch, phase, drift_ * ts * kEddyStretch,
+                                     s_.seed + 17u, potential);
+                field.mix[k] = 0.5f + 0.5f * looping_fbm(wx * ts * 1.9f + 37.5f, wy * ts * 1.9f, phase,
+                                                         drift_ * ts * 1.9f, s_.seed + 911u, mixer);
+            }
+        }
+        // Central differences (one sided at the border) give the curl potential's
+        // gradient at the same nodes; the curl itself is (dpsi/dy, -dpsi/dx).
+        for (int ky = 0; ky < fny_; ++ky) {
+            for (int kx = 0; kx < fnx_; ++kx) {
+                const size_t k = static_cast<size_t>(ky) * static_cast<size_t>(fnx_) + static_cast<size_t>(kx);
+                const int x0 = std::max(0, kx - 1), x1 = std::min(fnx_ - 1, kx + 1);
+                const int y0 = std::max(0, ky - 1), y1 = std::min(fny_ - 1, ky + 1);
+                const size_t row = static_cast<size_t>(ky) * static_cast<size_t>(fnx_);
+                field.gx[k] = (psi[row + static_cast<size_t>(x1)] - psi[row + static_cast<size_t>(x0)]) /
+                              (static_cast<float>(x1 - x0) * hx_);
+                field.gy[k] = (psi[static_cast<size_t>(y1) * static_cast<size_t>(fnx_) + static_cast<size_t>(kx)] -
+                               psi[static_cast<size_t>(y0) * static_cast<size_t>(fnx_) + static_cast<size_t>(kx)]) /
+                              (static_cast<float>(y1 - y0) * hy_);
+            }
+        }
+    }
+
+    // Bilinear lookup in a coarse field, blending the two keyframes that bracket
+    // the current time so the forcing is continuous across the substeps.
+    void sample_field(float wx, float wy, float blend, float& gx, float& gy, float& mix) const {
+        const float fx = clamp(wx / hx_, 0.0f, static_cast<float>(fnx_ - 1));
+        const float fy = clamp(wy / hy_, 0.0f, static_cast<float>(fny_ - 1));
+        const int x0 = std::min(static_cast<int>(fx), fnx_ - 2 > 0 ? fnx_ - 2 : 0);
+        const int y0 = std::min(static_cast<int>(fy), fny_ - 2 > 0 ? fny_ - 2 : 0);
+        const int x1 = std::min(x0 + 1, fnx_ - 1);
+        const int y1 = std::min(y0 + 1, fny_ - 1);
+        const float tx = fx - static_cast<float>(x0);
+        const float ty = fy - static_cast<float>(y0);
+        const size_t r0 = static_cast<size_t>(y0) * static_cast<size_t>(fnx_);
+        const size_t r1 = static_cast<size_t>(y1) * static_cast<size_t>(fnx_);
+        const size_t i00 = r0 + static_cast<size_t>(x0), i10 = r0 + static_cast<size_t>(x1);
+        const size_t i01 = r1 + static_cast<size_t>(x0), i11 = r1 + static_cast<size_t>(x1);
+        const auto pick = [&](const std::vector<float>& a, const std::vector<float>& b, size_t i) {
+            return lerp(a[i], b[i], blend);
+        };
+        const auto bilinear = [&](const std::vector<float>& a, const std::vector<float>& b) {
+            return lerp(lerp(pick(a, b, i00), pick(a, b, i10), tx), lerp(pick(a, b, i01), pick(a, b, i11), tx), ty);
+        };
+        gx = bilinear(field_a_.gx, field_b_.gx);
+        gy = bilinear(field_a_.gy, field_b_.gy);
+        mix = bilinear(field_a_.mix, field_b_.mix);
+    }
+
+    // Bilinear temperature lookup in fine-cell coordinates (cell centres at i+0.5).
+    float sample_temp(const std::vector<float>& t, float x, float y) const {
+        const float fx = x - 0.5f;
+        const float fy = y - 0.5f;
+        const float flx = std::floor(fx);
+        const float fly = std::floor(fy);
+        const int x0 = static_cast<int>(flx);
+        const int y0 = static_cast<int>(fly);
+        const float tx = fx - flx;
+        const float ty = fy - fly;
+        const auto at = [&](int i, int j) -> float {
+            if (i < 0 || i >= s_.nx) return 0.0f;   // cold air beside the flame
+            if (j >= s_.ny) return 0.0f;            // cold air above the tip
+            if (j < 0) j = 0;                       // the fuel bed continues below the base
+            return t[static_cast<size_t>(j) * static_cast<size_t>(s_.nx) + static_cast<size_t>(i)];
+        };
+        return lerp(lerp(at(x0, y0), at(x0 + 1, y0), tx), lerp(at(x0, y0 + 1), at(x0 + 1, y0 + 1), tx), ty);
+    }
+
+    void step(float dt, float phase, float blend) {
+        const int nx = s_.nx, ny = s_.ny;
+        const float inv_ny = 1.0f / static_cast<float>(ny);
+
+        // 1. velocity: buoyant rise + curl noise.
+        for (int j = 0; j < ny; ++j) {
+            const float wy = (static_cast<float>(j) + 0.5f) * cell_;
+            const float h = (static_cast<float>(j) + 0.5f) * inv_ny;
+            const float accel = kRiseBase + kRiseGain * std::sqrt(h);
+            const float turb = s_.turbulence / s_.turbulence_scale *
+                               (kTurbBase + (1.0f - kTurbBase) * smoothstep(0.0f, 0.35f, h));
+            for (int i = 0; i < nx; ++i) {
+                const size_t k = static_cast<size_t>(j) * static_cast<size_t>(nx) + static_cast<size_t>(i);
+                const float wx = (static_cast<float>(i) + 0.5f) * cell_;
+                float gx = 0.0f, gy = 0.0f, mix = 0.0f;
+                sample_field(wx, wy, blend, gx, gy, mix);
+                mix_[k] = mix;
+                const float heat = temp_[k];
+                const float rise = s_.buoyancy * (kAmbientRise + (1.0f - kAmbientRise) * heat) * accel;
+                vx_[k] = kSway * turb * gy;
+                vy_[k] = rise - turb * gx;
+            }
+        }
+
+        // 2. entrainment: dvx/dx = -dvy/dy integrated along the row, then centred
+        //    so the row has no net sideways drift.
+        if (kEntrain > 0.0f) {
+            std::vector<float> flow(static_cast<size_t>(nx), 0.0f);
+            for (int j = 0; j < ny; ++j) {
+                const size_t row = static_cast<size_t>(j) * static_cast<size_t>(nx);
+                const int jm = std::max(0, j - 1);
+                const int jp = std::min(ny - 1, j + 1);
+                const float inv_dy = 1.0f / (static_cast<float>(jp - jm) * cell_);
+                const size_t rm = static_cast<size_t>(jm) * static_cast<size_t>(nx);
+                const size_t rp = static_cast<size_t>(jp) * static_cast<size_t>(nx);
+                float prev = (vy_[rp] - vy_[rm]) * inv_dy;
+                float acc = 0.0f;
+                double sum = 0.0;
+                flow[0] = 0.0f;
+                for (int i = 1; i < nx; ++i) {
+                    const float d = (vy_[rp + static_cast<size_t>(i)] - vy_[rm + static_cast<size_t>(i)]) * inv_dy;
+                    acc -= 0.5f * (prev + d) * cell_;
+                    prev = d;
+                    flow[static_cast<size_t>(i)] = acc;
+                    sum += static_cast<double>(acc);
+                }
+                const float mean = static_cast<float>(sum / static_cast<double>(nx));
+                for (int i = 0; i < nx; ++i) {
+                    vx_[row + static_cast<size_t>(i)] += kEntrain * (flow[static_cast<size_t>(i)] - mean);
+                }
+            }
+        }
+
+        // 3. advect and cool.
+        const float to_cells = dt / cell_;
+        for (int j = 0; j < ny; ++j) {
+            const float h = (static_cast<float>(j) + 0.5f) * inv_ny;
+            const float tip = kTipKill * smoothstep(0.62f, 1.0f, h);
+            const float erode_ramp = smoothstep(0.02f, 0.28f, h);
+            for (int i = 0; i < nx; ++i) {
+                const size_t k = static_cast<size_t>(j) * static_cast<size_t>(nx) + static_cast<size_t>(i);
+                const float sx = static_cast<float>(i) + 0.5f - vx_[k] * to_cells;
+                const float sy = static_cast<float>(j) + 0.5f - vy_[k] * to_cells;
+                float heat = sample_temp(temp_, sx, sy);
+                const float mix = mix_[k];
+                const float cool = s_.cooling * dt * (kCoolBase + kCoolHeight * h) *
+                                   (1.0f + tip * (0.45f + 1.3f * (1.0f - mix))) *
+                                   (1.0f + kCoolNoise * (mix - 0.5f));
+                heat *= std::max(0.0f, 1.0f - cool);
+                heat -= s_.cooling * dt * kErode * erode_ramp * (0.3f + 1.5f * (1.0f - mix));
+                next_[k] = saturate(heat);
+            }
+        }
+
+        // 4. diffuse (5-point), writing back into the live field.
+        for (int j = 0; j < ny; ++j) {
+            const size_t row = static_cast<size_t>(j) * static_cast<size_t>(nx);
+            const size_t rm = static_cast<size_t>(std::max(0, j - 1)) * static_cast<size_t>(nx);
+            const size_t rp = static_cast<size_t>(std::min(ny - 1, j + 1)) * static_cast<size_t>(nx);
+            for (int i = 0; i < nx; ++i) {
+                const size_t k = row + static_cast<size_t>(i);
+                const size_t km = row + static_cast<size_t>(std::max(0, i - 1));
+                const size_t kp = row + static_cast<size_t>(std::min(nx - 1, i + 1));
+                const float around = 0.25f * (next_[km] + next_[kp] + next_[rm + static_cast<size_t>(i)] +
+                                              next_[rp + static_cast<size_t>(i)]);
+                temp_[k] = saturate(next_[k] + kDiffuse * (around - next_[k]));
+            }
+        }
+
+        // 5. fuel bed: patches that move and break so tongues are born separate.
+        FbmParams patch_fbm;
+        patch_fbm.octaves = 3;
+        patch_fbm.basis = NoiseBasis::Simplex;
+        FbmParams slow_fbm;
+        slow_fbm.octaves = 2;
+        slow_fbm.basis = NoiseBasis::Simplex;
+        const float flick =
+            1.0f - s_.flicker * (0.5f - 0.5f * looping_fbm(3.7f, 0.0f, phase, 2.0f, s_.seed + 4211u, slow_fbm));
+        const float half_width = std::max(0.02f, s_.fuel_width) * 0.5f;
+        for (int i = 0; i < nx; ++i) {
+            const float u = (static_cast<float>(i) + 0.5f) / static_cast<float>(nx);
+            const float big = 0.5f + 0.5f * looping_fbm(u * 3.1f, 0.0f, phase, 2.2f, s_.seed + 131u, slow_fbm);
+            const float fine = 0.5f + 0.5f * looping_fbm(u * 9.0f + 5.5f, 0.0f, phase, 3.6f, s_.seed + 577u, patch_fbm);
+            // A soft floor keeps the bed alight; the gaps between the patches are
+            // where two tongues part company.
+            patch_[static_cast<size_t>(i)] =
+                saturate((0.18f + 1.2f * smoothstep(0.38f, 0.74f, big)) * (0.35f + 0.85f * fine));
+        }
+        const int band = std::max(1, static_cast<int>(std::lround(static_cast<float>(ny) * kBandFrac)));
+        for (int j = 0; j < band && j < ny; ++j) {
+            const float jn = (static_cast<float>(j) + 0.5f) / static_cast<float>(band);
+            const float vprof = 1.0f - smoothstep(0.3f, 1.05f, jn);
+            const float patch_mix = kPatchBase + (1.0f - kPatchBase) * jn;
+            const size_t row = static_cast<size_t>(j) * static_cast<size_t>(nx);
+            for (int i = 0; i < nx; ++i) {
+                const float u = (static_cast<float>(i) + 0.5f) / static_cast<float>(nx);
+                const float d = std::fabs(u - 0.5f) / half_width;
+                const float band_mask = 1.0f - smoothstep(0.62f, 1.02f, d);
+                const float amp = s_.fuel * band_mask * vprof * flick *
+                                  lerp(1.0f, patch_[static_cast<size_t>(i)], patch_mix);
+                const size_t k = row + static_cast<size_t>(i);
+                temp_[k] = std::max(temp_[k], saturate(amp));
+            }
+        }
+    }
+
+    void run() {
+        const size_t cells = static_cast<size_t>(s_.nx) * static_cast<size_t>(s_.ny);
+        cell_ = 1.0f / static_cast<float>(s_.ny);
+        temp_.assign(cells, 0.0f);
+        next_.assign(cells, 0.0f);
+        vx_.assign(cells, 0.0f);
+        vy_.assign(cells, 0.0f);
+        mix_.assign(cells, 0.0f);
+        patch_.assign(static_cast<size_t>(s_.nx), 0.0f);
+
+        // Forcing grid: a few samples per finest noise feature, so the turbulence
+        // looks the same whatever the bake resolution is.
+        const float finest = s_.turbulence_scale * std::pow(2.0f, static_cast<float>(s_.detail - 1));
+        fny_ = clamp(static_cast<int>(std::lround(finest * kFieldSamples)) + 1, 12, 160);
+        const float aspect = static_cast<float>(s_.nx) / static_cast<float>(s_.ny);
+        fnx_ = clamp(static_cast<int>(std::lround(static_cast<float>(fny_ - 1) * aspect)) + 1, 4, 240);
+        hx_ = aspect / static_cast<float>(fnx_ - 1);
+        hy_ = 1.0f / static_cast<float>(fny_ - 1);
+        const size_t nodes = static_cast<size_t>(fnx_) * static_cast<size_t>(fny_);
+        field_a_.gx.assign(nodes, 0.0f);
+        field_a_.gy.assign(nodes, 0.0f);
+        field_a_.mix.assign(nodes, 0.0f);
+        field_b_ = field_a_;
+
+        // The eddies drift up with the flame, at least one tile per loop so the
+        // circle the time axis rides never shows its own vertical period.
+        const float loop_time = static_cast<float>(s_.frames) * s_.speed;
+        drift_ = clamp(s_.buoyancy * loop_time * 0.5f, 1.15f, 8.0f);
+
+        const float dt = s_.speed / static_cast<float>(s_.substeps);
+        const float phase_per_step = dt / std::max(1e-6f, loop_time);
+        int warmup = s_.warmup;
+        if (s_.loop) warmup = std::max(warmup, s_.frames * s_.substeps * 3 / 2);
+
+        // Keyframes of the forcing sit one frame apart; `key_` is the index of
+        // field_a_, field_b_ is the next one.
+        key_ = std::numeric_limits<int>::min();
+        const int total = warmup + s_.frames * s_.substeps;
+        frames_.clear();
+        frames_.reserve(static_cast<size_t>(s_.frames));
+        for (int step_index = 0; step_index < total; ++step_index) {
+            const float phase = static_cast<float>(step_index - warmup) * phase_per_step;
+            const float key_pos = phase * static_cast<float>(s_.frames);
+            const int key = static_cast<int>(std::floor(key_pos));
+            set_key(key);
+            step(dt, phase, key_pos - static_cast<float>(key));
+            const int captured = step_index + 1 - warmup;
+            if (captured > 0 && captured % s_.substeps == 0) emit();
+        }
+        while (frames_.size() < static_cast<size_t>(s_.frames)) emit();
+    }
+
+    void set_key(int key) {
+        if (key == key_) return;
+        const auto phase_of = [&](int k) { return static_cast<float>(k) / static_cast<float>(s_.frames); };
+        if (key == key_ + 1) {
+            std::swap(field_a_, field_b_);
+        } else {
+            build_field(phase_of(key), field_a_);
+        }
+        build_field(phase_of(key + 1), field_b_);
+        key_ = key;
+    }
+
+    void emit() {
+        std::vector<float> out(temp_.size(), 0.0f);
+        for (int j = 0; j < s_.ny; ++j) {
+            const float h = (static_cast<float>(j) + 0.5f) / static_cast<float>(s_.ny);
+            const size_t row = static_cast<size_t>(j) * static_cast<size_t>(s_.nx);
+            for (int i = 0; i < s_.nx; ++i) {
+                const size_t k = row + static_cast<size_t>(i);
+                const float root = smoothstep(0.0f, kRootFade * (0.35f + 1.3f * mix_[k]), h);
+                out[k] = contrast(temp_[k] * root, s_.sharpness);
+            }
+        }
+        frames_.push_back(std::move(out));
+    }
+
+    // S-curve about 0.5: keeps the white-hot core at 1 and crushes the haze.
+    static float contrast(float t, float s) {
+        const float v = saturate(t);
+        if (std::fabs(s - 1.0f) < 1e-4f) return v;
+        return v < 0.5f ? 0.5f * std::pow(2.0f * v, s) : 1.0f - 0.5f * std::pow(2.0f * (1.0f - v), s);
+    }
+
+    FireSimSettings s_;
+    float cell_ = 1.0f;
+    float drift_ = 1.5f;
+    int fnx_ = 2, fny_ = 2;
+    float hx_ = 1.0f, hy_ = 1.0f;
+    int key_ = 0;
+    Field field_a_, field_b_;
+    std::vector<float> temp_, next_, vx_, vy_, mix_, patch_;
+    std::vector<std::vector<float>> frames_;
+};
+
+FireSimSettings fire_sim_settings(const json& p, const Ctx& ctx, uint32_t seed) {
+    FireSimSettings s;
+    s.nx = ctx.width;
+    s.ny = ctx.height;
+    s.frames = std::max(1, ctx.frames);
+    s.fuel = clamp(param_float(p, "fuel", s.fuel), 0.0f, 2.0f);
+    s.fuel_width = clamp(param_float(p, "fuel_width", s.fuel_width), 0.02f, 1.0f);
+    s.buoyancy = clamp(param_float(p, "buoyancy", s.buoyancy), 0.0f, 8.0f);
+    s.turbulence = clamp(param_float(p, "turbulence", s.turbulence), 0.0f, 4.0f);
+    s.turbulence_scale = clamp(param_float(p, "turbulence_scale", s.turbulence_scale), 0.25f, 16.0f);
+    s.cooling = clamp(param_float(p, "cooling", s.cooling), 0.0f, 8.0f);
+    s.detail = clamp(param_int(p, "detail", s.detail), 1, 5);
+    s.speed = clamp(param_float(p, "speed", s.speed), 0.002f, 0.5f);
+    s.substeps = clamp(param_int(p, "substeps", s.substeps), 1, 8);
+    s.warmup = clamp(param_int(p, "warmup", s.warmup), 0, 512);
+    s.loop = param_bool(p, "loop", s.loop);
+    s.flicker = clamp(param_float(p, "flicker", s.flicker), 0.0f, 1.0f);
+    s.sharpness = clamp(param_float(p, "sharpness", s.sharpness), 0.1f, 8.0f);
+    s.seed = seed;
+    return s;
+}
+
+// The whole flipbook is simulated once and cached on the bake, then read back a
+// frame at a time: the graph is evaluated per frame, but the sim is not.
+Image eval_fire_sim(const json& p, const Ctx& ctx, uint32_t seed, const std::string& id) {
+    FireSimCache local;
+    FireSimCache& cache = ctx.fire != nullptr ? *ctx.fire : local;
+    auto it = cache.by_node.find(id);
+    if (it == cache.by_node.end()) {
+        FireSim sim(fire_sim_settings(p, ctx, seed));
+        std::vector<std::vector<float>> baked;
+        baked.reserve(static_cast<size_t>(std::max(1, ctx.frames)));
+        for (int f = 0; f < std::max(1, ctx.frames); ++f) baked.push_back(sim.frame(f));
+        it = cache.by_node.emplace(id, std::move(baked)).first;
+    }
+    const std::vector<std::vector<float>>& baked = it->second;
+    const int index = clamp(ctx.frame, 0, static_cast<int>(baked.size()) - 1);
+    const std::vector<float>& heat = baked[static_cast<size_t>(index)];
+    Image out(ctx.width, ctx.height);
+    for (int y = 0; y < ctx.height; ++y) {
+        for (int x = 0; x < ctx.width; ++x) {
+            set_gray(out, x, y, heat[static_cast<size_t>(y) * static_cast<size_t>(ctx.width) + static_cast<size_t>(x)]);
+        }
+    }
+    return out;
+}
+
 Image eval_constant(const json& p, const Ctx& ctx) {
     Image out(ctx.width, ctx.height);
     out.fill(param_color(p, "color", Color{1, 1, 1, 1}));
@@ -1012,6 +1528,7 @@ private:
         if (op == "cracks") return eval_cracks(p, ctx_, seed);
         if (op == "voronoi") return eval_voronoi(p, ctx_, seed);
         if (op == "flame") return eval_flame(p, ctx_, seed);
+        if (op == "fire_sim") return eval_fire_sim(p, ctx_, seed, node.id);
         if (op == "constant") return eval_constant(p, ctx_);
         if (op == "time") return eval_time(p, ctx_);
         if (op == "channel_pack") return eval_channel_pack(p, ctx_, inputs);
@@ -1096,12 +1613,16 @@ TextureResource bake_texture_graph(const nlohmann::json& graph, const TextureBak
     resource.frames = frames;
     resource.image.resize(options.width * frames, options.height, Color::transparent());
 
+    const auto fire_cache = std::make_shared<FireSimCache>();
     for (int f = 0; f < frames; ++f) {
         Ctx ctx;
         ctx.width = options.width;
         ctx.height = options.height;
+        ctx.frames = frames;
+        ctx.frame = f;
         ctx.time = static_cast<float>(f) / static_cast<float>(frames);
         ctx.seed = options.seed;
+        ctx.fire = fire_cache;
         Evaluator evaluator(parsed, ctx);
         const Image& frame = evaluator.evaluate(parsed.output);
         const int x0 = f * options.width;

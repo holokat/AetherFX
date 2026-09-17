@@ -511,7 +511,10 @@ Every op produces an RGBA float image at the texture resolution. Ops:
 `invert`, `dissolve_mask` (`threshold`, `softness`, input `a`),
 `colorize` (`gradient`), `constant` (`color`), `time` (`speed`) provides
 animation phase for animated noises,
-`flame` (`frequency`, `speed`, `warp`, `width`, `sharpness`, `licks`, `seed`).
+`flame` (`frequency`, `speed`, `warp`, `width`, `sharpness`, `licks`, `seed`),
+`fire_sim` (`seed`, `fuel`, `fuel_width`, `buoyancy`, `turbulence`,
+`turbulence_scale`, `cooling`, `detail`, `speed`, `substeps`, `warmup`, `loop`,
+`flicker`, `sharpness`).
 
 `flame` is the fire sprite generator: bake it with `frames: 16..32` and feed it
 through `levels` to pick the silhouette, then colour it with the material's
@@ -522,6 +525,52 @@ particle's velocity. Every time-carrying noise axis is wrapped onto a circle, so
 the flipbook loops seamlessly. Fire ramp for `colorize` or
 `material.temperature_gradient`:
 `[[0,[0.05,0,0,1]], [0.25,[0.8,0.1,0,1]], [0.5,[1,0.45,0.05,1]], [0.75,[1,0.85,0.35,1]], [1,[1,1,0.85,1]]]`.
+
+`fire_sim` is the other fire generator, and the one to reach for when the fire
+has to look simulated rather than painted. `flame` draws one smooth tongue from
+a noise-warped silhouette; `fire_sim` bakes a small deterministic 2D flame
+simulation, so the shapes come out of the flow: tongues rise, neck, split, tear
+off and burn out, the edges erode into rags, and the motion is coherent from
+frame to frame. It costs about 0.3 s to bake 128x192 at 32 frames; `flame` is
+far cheaper, so keep `flame` for small distant licks and spend `fire_sim` on the
+fire the player is looking at. Same conventions as `flame`: single channel in
+[0,1] written to rgb and alpha, root at `v = 0` and tip at `v = 1`, and a
+`temperature_gradient` or `colorize` with the fire ramp above turns it into
+fire.
+
+One step of the sim is: velocity = `buoyancy` * heat upwards (accelerating with
+height, which stretches the column) + `turbulence` * the curl of an animated
+noise potential (`turbulence_scale` sets the eddy size, `detail` the octaves) +
+an inward entrainment flow integrated from `dvx/dx = -dvy/dy` along each row,
+which is what necks a plume and pinches puffs off it; then semi-Lagrangian
+advection with bilinear sampling (cold air at the sides and above the tip, the
+fuel bed repeated below the base); then cooling, whose rate grows with height
+and is modulated by noise, plus a subtractive term that erases whatever is
+nearly cold - that is what leaves ragged edges instead of a soft halo; then a
+light diffusion; then the fuel band, `fuel_width` of the tile wide and lit to
+`fuel` (>1 widens the white-hot core), broken into moving patches so tongues are
+born apart, and scaled by `flicker` over time. One frame is captured every
+`substeps` steps, after `warmup` steps. `sharpness` is an output S-curve about
+0.5: it keeps the core white and crushes the haze. The bottom of the tile fades
+in over a noise-broken edge so a big sprite has no hard straight line across its
+root.
+
+With `loop` (the default) every noise axis that carries time is wrapped onto a
+circle, so the forcing is exactly periodic over the flipbook, and `warmup` is
+raised to a whole loop. Cooling and outflow erase the initial state within a
+loop, so the sim lands on the forcing's limit cycle and frame 0 continues frame
+N-1 without a cross-fade - and therefore without the ghosting a cross-fade
+would give. With `loop: false` the flipbook does not close; use it when the
+sheet is played once.
+
+```json
+{"id": "tex_fire", "type": "texture",
+ "parameters": {"width": 128, "height": 192, "frames": 32,
+                "graph": {"nodes": [{"id": "fire", "op": "fire_sim",
+                                     "params": {"seed": 3, "buoyancy": 1.7, "turbulence": 1.15,
+                                                "cooling": 1.8, "fuel_width": 0.6}}],
+                          "output": "fire"}}}
+```
 
 ## Effect-level
 

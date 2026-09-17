@@ -27,6 +27,15 @@ from aetherfx.studio.stream import decode_header, encode_frame
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EXAMPLES_DIR = REPO_ROOT / "examples" / "effects"
 
+
+def _document_camera(name: str) -> dict:
+    """Camera framing as authored in an example document (position/target/fov as floats)."""
+    doc = json.loads((EXAMPLES_DIR / f"{name}.json").read_text())
+    params = next(node for node in doc["nodes"] if node["type"] == "camera")["parameters"]
+    return {"position": [float(v) for v in params["position"]],
+            "target": [float(v) for v in params["target"]],
+            "fov": float(params["fov"])}
+
 HAVE_NATIVE = native.is_available()
 
 pytestmark = pytest.mark.skipif(not HAVE_NATIVE, reason="libaetherfx is not built (see cmake --preset capi)")
@@ -365,8 +374,10 @@ class TestNativeFrameSource:
 
             assert set(resources["materials"]) == {"mat_fire", "mat_rock", "mat_smoke"}
             assert resources["render_settings"]["exposure"] == pytest.approx(0.95)
-            assert resources["camera"] == {"position": [0.0, 3.6, 9.0], "target": [0.0, 1.4, 0.0],
-                                           "up": [0.0, 1.0, 0.0], "fov": 42.0}
+            # the expected framing comes from the document, so art changes do not break the test
+            doc_camera = _document_camera("fire_aoe")
+            assert resources["camera"] == {"position": doc_camera["position"], "target": doc_camera["target"],
+                                           "up": [0.0, 1.0, 0.0], "fov": doc_camera["fov"]}
             assert len(resources["timeline"]["phases"]) == 5
 
             stripped = {
@@ -426,10 +437,11 @@ class TestNativeFrameSource:
             assert all("texture" in d and "material" in d for d in header["decals"])
             # the per-frame camera is the runtime's (float32), not the document's doubles
             camera = header["camera"]
-            assert camera["position"] == pytest.approx([0.0, 3.6, 9.0], rel=1e-6)
-            assert camera["target"] == pytest.approx([0.0, 1.4, 0.0], rel=1e-6)
+            doc_camera = _document_camera("fire_aoe")
+            assert camera["position"] == pytest.approx(doc_camera["position"], rel=1e-6)
+            assert camera["target"] == pytest.approx(doc_camera["target"], rel=1e-6)
             assert camera["up"] == pytest.approx([0.0, 1.0, 0.0])
-            assert camera["fov"] == pytest.approx(42.0)
+            assert camera["fov"] == pytest.approx(doc_camera["fov"])
             assert set(camera) == {"position", "target", "up", "fov"}
             assert header["post_effects"] == []
 
