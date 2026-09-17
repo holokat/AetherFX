@@ -89,6 +89,22 @@ std::vector<OpSpec> build_op_specs() {
                           {"thickness", "float", 0.05, "full ring width"},
                           {"softness", "float", 0.01, "edge softness"}},
                          {}});
+    ops.push_back(OpSpec{"spokes", "Radial lines from the centre (compass / magic-circle spokes).",
+                         {{"count", "int", 8, "number of spokes"},
+                          {"width", "float", 0.008, "line width in UV units"},
+                          {"softness", "float", 0.004, "edge softness"},
+                          {"inner_radius", "float", 0.03, "spokes start here"},
+                          {"outer_radius", "float", 0.5, "spokes end here"},
+                          {"rotation", "float", 0.0, "rotation of the whole set in degrees"}},
+                         {}});
+    ops.push_back(OpSpec{"star", "Light-flare star: thin rays that taper away from a bright core.",
+                         {{"points", "int", 4, "number of rays"},
+                          {"width", "float", 0.02, "ray width at the core in UV units"},
+                          {"outer_radius", "float", 0.25, "ray length"},
+                          {"core_radius", "float", 0.04, "radius of the bright core"},
+                          {"softness", "float", 0.006, "edge softness"},
+                          {"rotation", "float", 0.0, "rotation in degrees"}},
+                         {}});
     ops.push_back(OpSpec{"cracks", "Thin bright lines along Worley cell boundaries on black.",
                          {{"density", "float", 5.0, "cells per unit UV"},
                           {"width", "float", 0.01, "crack width in UV units"},
@@ -412,6 +428,75 @@ Image eval_ring(const json& p, const Ctx& ctx) {
             const float u = uv_u(ctx, x);
             const float d = length(Vec2{u - 0.5f, v - 0.5f});
             set_gray(out, x, y, saturate(soft_edge(half, softness, std::fabs(d - radius))));
+        }
+    }
+    return out;
+}
+
+// Distance from (dx, dy) to the nearest of `count` rays leaving the origin (evenly spaced).
+float nearest_spoke_distance(float dx, float dy, int count, float rotation_rad) {
+    const float r = std::sqrt(dx * dx + dy * dy);
+    if (r < 1e-6f || count <= 0) return 0.0f;
+    const float step = kTwoPi / static_cast<float>(count);
+    float a = std::atan2(dy, dx) - rotation_rad;
+    a = a - std::floor(a / step) * step;                    // [0, step)
+    const float off = std::min(a, step - a);                 // angular distance to the nearest ray
+    return off >= kHalfPi ? r : r * std::sin(off);           // behind the ray's origin: full distance
+}
+
+Image eval_spokes(const json& p, const Ctx& ctx) {
+    const int count = std::max(1, param_int(p, "count", 8));
+    const float width = std::max(param_float(p, "width", 0.008f), 0.0f);
+    const float softness = std::max(param_float(p, "softness", 0.004f), 0.0f);
+    const float inner = std::max(param_float(p, "inner_radius", 0.03f), 0.0f);
+    const float outer = std::max(param_float(p, "outer_radius", 0.5f), inner);
+    const float rot = deg_to_rad(param_float(p, "rotation", 0.0f));
+    Image out(ctx.width, ctx.height);
+    for (int y = 0; y < ctx.height; ++y) {
+        const float v = uv_v(ctx, y);
+        for (int x = 0; x < ctx.width; ++x) {
+            const float u = uv_u(ctx, x);
+            const float dx = u - 0.5f, dy = v - 0.5f;
+            const float r = std::sqrt(dx * dx + dy * dy);
+            float value = 0.0f;
+            if (r >= inner && r <= outer) {
+                const float d = nearest_spoke_distance(dx, dy, count, rot);
+                value = soft_edge(width * 0.5f, softness, d);
+                // soft ends
+                value *= smoothstep(inner, inner + softness * 2.0f + 0.004f, r) * (1.0f - smoothstep(outer - softness * 2.0f - 0.004f, outer, r));
+            }
+            set_gray(out, x, y, saturate(value));
+        }
+    }
+    return out;
+}
+
+Image eval_star(const json& p, const Ctx& ctx) {
+    const int points = std::max(1, param_int(p, "points", 4));
+    const float width = std::max(param_float(p, "width", 0.02f), 0.0f);
+    const float outer = std::max(param_float(p, "outer_radius", 0.25f), 0.001f);
+    const float core = std::max(param_float(p, "core_radius", 0.04f), 0.0f);
+    const float softness = std::max(param_float(p, "softness", 0.006f), 0.0f);
+    const float rot = deg_to_rad(param_float(p, "rotation", 0.0f));
+    Image out(ctx.width, ctx.height);
+    for (int y = 0; y < ctx.height; ++y) {
+        const float v = uv_v(ctx, y);
+        for (int x = 0; x < ctx.width; ++x) {
+            const float u = uv_u(ctx, x);
+            const float dx = u - 0.5f, dy = v - 0.5f;
+            const float r = std::sqrt(dx * dx + dy * dy);
+            float value = 0.0f;
+            if (r <= outer) {
+                const float taper = 1.0f - r / outer;              // rays thin and dim towards the tips
+                const float half = width * 0.5f * (0.25f + 0.75f * taper);
+                const float d = nearest_spoke_distance(dx, dy, points, rot);
+                value = soft_edge(half, softness, d) * std::pow(taper, 0.7f);
+            }
+            if (core > 0.0f) {
+                const float glow = 1.0f - smoothstep(0.0f, core, r);
+                value = std::max(value, glow * glow);
+            }
+            set_gray(out, x, y, saturate(value));
         }
     }
     return out;
@@ -807,6 +892,8 @@ private:
         if (op == "gradient_linear") return eval_gradient_linear(p, ctx_);
         if (op == "gradient_radial") return eval_gradient_radial(p, ctx_);
         if (op == "ring") return eval_ring(p, ctx_);
+        if (op == "spokes") return eval_spokes(p, ctx_);
+        if (op == "star") return eval_star(p, ctx_);
         if (op == "cracks") return eval_cracks(p, ctx_, seed);
         if (op == "voronoi") return eval_voronoi(p, ctx_, seed);
         if (op == "constant") return eval_constant(p, ctx_);
