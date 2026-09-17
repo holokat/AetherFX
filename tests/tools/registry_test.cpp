@@ -31,6 +31,9 @@ const std::vector<std::string>& documented_tools() {
         // parameters
         "set_parameter", "set_parameters", "get_parameter", "reset_parameter", "set_keyframe", "remove_keyframe",
         "clear_track",
+        // controls
+        "list_controls", "set_control", "reset_controls", "add_control", "update_control", "remove_control",
+        "generate_default_controls",
         // timeline
         "set_timeline_phase", "remove_timeline_phase", "get_timeline",
         // simulate
@@ -55,6 +58,7 @@ const std::vector<std::string>& mcp_surface() {
         "describe_vocabulary", "create_effect",  "load_effect",     "save_effect",       "list_effects",
         "inspect_graph",       "inspect_node",   "create_layer",    "create_node",       "delete_node",
         "duplicate_layer",     "set_parameter",  "set_parameters",  "get_parameter",     "set_keyframe",
+        "list_controls",       "set_control",    "reset_controls",  "generate_default_controls",
         "connect_nodes",       "disconnect_nodes", "set_timeline_phase", "simulate",     "render_frame",
         "render_preview",      "inspect_statistics", "compare_reference", "evaluate_effect", "export_effect",
         "undo",                "redo",           "get_effect_json"};
@@ -89,8 +93,9 @@ TEST_CASE("the MCP surface is reachable", "[tools][registry]") {
 }
 
 TEST_CASE("every tool is documented for an agent", "[tools][registry]") {
-    const std::set<std::string> categories{"effect",  "graph",   "parameters", "timeline", "simulate",
-                                           "render",  "inspect", "evaluate",   "io",       "history"};
+    const std::set<std::string> categories{"effect",   "graph",  "parameters", "controls", "timeline",
+                                           "simulate", "render", "inspect",    "evaluate", "io",
+                                           "history"};
     for (const ToolSpec& spec : ToolRegistry::standard().list()) {
         INFO("tool: " << spec.name);
         CHECK(spec.description.size() >= 20);

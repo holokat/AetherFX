@@ -42,6 +42,11 @@ raymarched volume, see docs/VOLUMES.md), in `examples/effects/`; clicking one
 opens a working copy that auto-plays, every parameter is editable live, the
 camera orbits/zooms with the mouse, stage controls set ground/background/bloom,
 Random mutates values for exploration, and "Save as" adds a new library entry.
+The Style panel is the quick way to shape an effect without touching the graph:
+grouped sliders - Global first, then one group per layer - for intensity, size,
+density, opacity and hue, which scale the authored values non-destructively and
+update the viewport as you drag (docs/CONTROLS.md). An effect that ships none
+gets a sensible set generated for the working copy when you open it.
 The Generate box builds or modifies effects from a text prompt. Generation is done by an AI agent driving the same tool API and
 looking at its own renders; the backend is picked automatically: Anthropic
 API key, a logged-in Claude Code (Agent SDK), or a worker attached from an

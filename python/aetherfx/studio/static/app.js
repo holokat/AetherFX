@@ -170,6 +170,9 @@ var S = {
   frameUrl: null,
 
   paramMessage: null,    /* inline result of the last parameter commit */
+  controls: null,        /* the last GET /api/controls payload */
+  controlPending: 0,     /* in-flight control commits; > 0 means a slider is being dragged */
+  uiMutating: false,     /* suppress the status poll's external-change refresh */
   job: null,             /* {id, since, timer, refsShown} */
   statusTimer: null,
 
@@ -583,6 +586,7 @@ function refreshEffect() {
     if (glActive()) $('viewport-empty').hidden = true;
     renderPhases(data.timeline);
     renderGraph(data.graph);
+    guard(refreshControls(), 'controls');
     renderStatistics(data.statistics);
     renderDiagnostics(data.graph && data.graph.diagnostics);
     syncTransportRange();
@@ -595,8 +599,9 @@ function refreshEffect() {
     return data;
   }, function (err) {
     if (err && err.status === 404) {
-      S.data = null; S.selected = null; S.node = null;
+      S.data = null; S.selected = null; S.node = null; S.controls = null;
       renderPhases(null); renderGraph(null); renderStatistics(null); renderDiagnostics(null); renderParams();
+      renderControls();
       clearViewport();
       return null;
     }
@@ -1122,6 +1127,242 @@ function jsonWidget(name, value, commit, msg) {
     if (ev.key === 'Enter' && (ev.metaKey || ev.ctrlKey)) { ev.preventDefault(); area.blur(); }
   });
   return area;
+}
+
+/* ====================================================================== *
+ * the Style panel: the effect's controls
+ *
+ * A control is a named numeric knob stored in the document and bound to node
+ * parameters; the compiler folds it in, so moving one never rewrites what the
+ * author typed (docs/CONTROLS.md).  Dragging is debounced to ~100 ms and every
+ * commit re-opens the effect on the GPU stream through invalidatePreview(),
+ * which keeps playback running.
+ * ====================================================================== */
+
+var CONTROL_DEBOUNCE_MS = 100;
+var collapsedGroups = {};
+
+function controlsOf() { return (S.controls && S.controls.controls) || []; }
+
+function findControl(id) {
+  var list = controlsOf();
+  for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+  return null;
+}
+
+function refreshControls() {
+  return apiRaw('/api/controls').then(function (res) { return res.json(); }).then(function (data) {
+    S.controls = data;
+    renderControls();
+    return data;
+  }, function (err) {
+    if (err && err.status === 404) { S.controls = null; renderControls(); return null; }
+    throw err;
+  });
+}
+
+/* Groups in the order the engine lists them ("Global" first). */
+function controlGroups() {
+  var order = (S.controls && S.controls.groups) || [];
+  var seen = {};
+  var groups = [];
+  order.forEach(function (name) { seen[name] = []; groups.push(name); });
+  controlsOf().forEach(function (control) {
+    var group = control.group || 'Global';
+    if (!seen[group]) { seen[group] = []; groups.push(group); }
+    seen[group].push(control);
+  });
+  return groups.map(function (name) { return { name: name, controls: seen[name] || [] }; })
+    .filter(function (group) { return group.controls.length > 0; });
+}
+
+/* Which slider or number field has the keyboard, so nudging with the arrow
+ * keys survives the repaint that follows every commit. */
+function captureControlFocus() {
+  var active = document.activeElement;
+  if (!active || !active.dataset || !active.dataset.control) return null;
+  var body = $('controls-body');
+  if (!body || !body.contains(active)) return null;
+  return { control: active.dataset.control, field: active.dataset.field || '' };
+}
+
+function restoreControlFocus(saved) {
+  if (!saved || !/^[A-Za-z0-9_]+$/.test(saved.control)) return;
+  var selector = '[data-control="' + saved.control + '"]' +
+    (saved.field ? '[data-field="' + saved.field + '"]' : '');
+  var target = $('controls-body').querySelector(selector);
+  if (target && typeof target.focus === 'function') target.focus();
+}
+
+function renderControls() {
+  if (S.controlPending) return;                  /* never repaint under the user's thumb */
+  var focused = captureControlFocus();
+  var body = clear($('controls-body'));
+  var resetAll = $('btn-controls-reset');
+  if (!S.data) {
+    resetAll.hidden = true;
+    body.appendChild(el('p', { class: 'dim small', text: 'no effect loaded' }));
+    return;
+  }
+  var groups = controlGroups();
+  if (!groups.length) {
+    resetAll.hidden = true;
+    body.appendChild(el('p', { class: 'dim small', text: 'This effect has no controls yet.' }));
+    body.appendChild(el('button', {
+      type: 'button', class: 'sm', title: 'Build a Global group and one per layer for this effect',
+      onclick: generateControls
+    }, 'Generate controls'));
+    return;
+  }
+  resetAll.hidden = false;
+  groups.forEach(function (group) { body.appendChild(controlGroupNode(group)); });
+  restoreControlFocus(focused);
+}
+
+function controlGroupNode(group) {
+  var box = el('div', { class: 'ctl-list' });
+  group.controls.forEach(function (control) { box.appendChild(controlRow(control)); });
+
+  var changed = group.controls.some(function (c) { return c.value !== c.default; });
+  var details = el('details', { class: 'ctl-group' },
+    el('summary', {},
+      el('span', { class: 'name', text: group.name }),
+      changed ? el('i', { class: 'dot-changed', title: 'moved off its defaults' }) : null,
+      el('span', { class: 'count', text: String(group.controls.length) })),
+    box);
+  /* Global open, the layer groups folded away, so every part of the effect is
+   * on screen at once and the one being tuned is a click away. */
+  details.open = collapsedGroups[group.name] === undefined
+    ? group.name === 'Global'
+    : !collapsedGroups[group.name];
+  details.addEventListener('toggle', function () { collapsedGroups[group.name] = !details.open; });
+  return details;
+}
+
+function controlDigits(step) {
+  if (!(step > 0) || step >= 1) return 0;
+  return Math.min(4, Math.max(1, Math.ceil(-Math.log(step) / Math.LN10)));
+}
+
+function controlRow(control) {
+  var step = control.step > 0 ? control.step : 0.01;
+  var digits = controlDigits(step);
+  var isDefault = control.value === control.default;
+
+  var slider = el('input', {
+    type: 'range', min: String(control.min), max: String(control.max), step: String(step),
+    value: String(control.value), class: 'ctl-slider',
+    data: { control: control.id, field: 'slider' },
+    title: control.min + ' .. ' + control.max + '  (arrows step, shift x10)'
+  });
+  var number = el('input', {
+    type: 'number', min: String(control.min), max: String(control.max), step: String(step),
+    value: control.value.toFixed(digits), class: 'ctl-number mono',
+    data: { control: control.id, field: 'number' }
+  });
+  var dot = el('i', { class: 'dot-changed' + (isDefault ? ' off' : ''), title: 'moved off its default' });
+
+  function show(value) {
+    slider.value = String(value);
+    number.value = value.toFixed(digits);
+    dot.classList.toggle('off', value === control.default);
+  }
+  function clamp(value) {
+    if (isNaN(value)) return control.value;
+    return Math.min(control.max, Math.max(control.min, value));
+  }
+  function push(value, immediate) {
+    var next = clamp(value);
+    show(next);
+    control.value = next;
+    if (immediate) commitControl(control.id, next); else scheduleControl(control.id, next);
+  }
+  function nudge(direction, big) {
+    push(control.value + direction * step * (big ? 10 : 1), false);
+  }
+  function arrows(ev) {
+    var up = ev.key === 'ArrowUp' || ev.key === 'ArrowRight';
+    var down = ev.key === 'ArrowDown' || ev.key === 'ArrowLeft';
+    if (!up && !down) return;
+    ev.preventDefault();
+    nudge(up ? 1 : -1, ev.shiftKey);
+  }
+
+  slider.addEventListener('input', function () { push(parseFloat(slider.value), false); });
+  slider.addEventListener('change', function () { push(parseFloat(slider.value), true); });
+  slider.addEventListener('keydown', arrows);
+  number.addEventListener('change', function () { push(parseFloat(number.value), true); });
+  number.addEventListener('keydown', arrows);
+
+  var reset = el('button', {
+    type: 'button', class: 'ghost icon-btn xs ctl-reset', title: 'Reset to ' + control.default,
+    'aria-label': 'Reset ' + control.label,
+    onclick: function () { push(control.default, true); }
+  }, '↺');
+
+  var label = el('span', {
+    class: 'ctl-label',
+    title: control.label + '\nid: ' + control.id + '\nrange: ' + control.min + ' .. ' + control.max +
+      '\ndefault: ' + control.default + '\ndrives ' + (control.bindings || []).length + ' parameter(s)'
+  }, control.label || control.id,
+    control.unit ? el('em', { class: 'unit', text: control.unit }) : null);
+
+  return el('div', { class: 'ctl-row' }, label, dot, number, reset, slider);
+}
+
+/* Latest-wins, one timer per control: dragging sends at most one call per
+ * CONTROL_DEBOUNCE_MS and always ends on the value the user let go of. */
+var controlTimers = {};
+function scheduleControl(id, value) {
+  if (controlTimers[id]) clearTimeout(controlTimers[id]);
+  controlTimers[id] = setTimeout(function () {
+    controlTimers[id] = null;
+    commitControl(id, value);
+  }, CONTROL_DEBOUNCE_MS);
+}
+
+function commitControl(id, value) {
+  if (controlTimers[id]) { clearTimeout(controlTimers[id]); controlTimers[id] = null; }
+  S.controlPending = (S.controlPending || 0) + 1;
+  S.uiMutating = true;                       /* the status poll must not repaint mid-drag */
+  return api('/api/controls/' + encodeURIComponent(id), { body: { value: value } }).then(function (result) {
+    if (result && result.control) {
+      var known = findControl(id);
+      if (known) known.value = result.control.value;
+    }
+    invalidatePreview();                     /* GPU: re-open the stream; CPU: mark the preview stale */
+    return null;
+  }, function (err) {
+    toast('control ' + id + ': ' + (err && err.message ? err.message : 'failed'), 'error');
+    return null;
+  }).then(function () {
+    S.controlPending = Math.max(0, (S.controlPending || 1) - 1);
+    if (!S.controlPending) {
+      S.uiMutating = false;
+      renderControls();                      /* repaint once the hand is off the slider */
+      if (!S.playing) showCurrentFrame();
+    }
+    return null;
+  });
+}
+
+function resetAllControls() {
+  return guard(api('/api/controls/reset', { body: {} }).then(function (data) {
+    S.controls = data;
+    renderControls();
+    invalidatePreview();
+    if (!S.playing) showCurrentFrame();
+    return data;
+  }), 'reset controls');
+}
+
+function generateControls() {
+  return guard(api('/api/controls/generate', { body: {} }).then(function (data) {
+    S.controls = data;
+    renderControls();
+    toast('added ' + (data.added || 0) + ' control(s)', 'ok');
+    return data;
+  }), 'generate controls');
 }
 
 /* ====================================================================== *
@@ -2123,6 +2364,7 @@ function wire() {
     S.gl.snapshot(name.replace(/[^A-Za-z0-9_-]+/g, '_').toLowerCase() + '_' + currentTime().toFixed(2) + 's.png');
   });
   $('btn-random').addEventListener('click', randomizeEffect);
+  $('btn-controls-reset').addEventListener('click', resetAllControls);
   wireCamera();
   wireStage();
   $('sel-speed').addEventListener('change', function () {

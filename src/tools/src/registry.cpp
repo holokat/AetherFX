@@ -15,8 +15,9 @@ namespace {
 
 // docs/AGENT_API.md section order; unknown categories sort last, then by name.
 int category_rank(const std::string& category) {
-    static const std::array<const char*, 10> kOrder{"effect",  "graph",   "parameters", "timeline", "simulate",
-                                                    "render",  "inspect", "evaluate",   "io",       "history"};
+    static const std::array<const char*, 11> kOrder{"effect",   "graph",   "parameters", "controls", "timeline",
+                                                    "simulate", "render",  "inspect",    "evaluate", "io",
+                                                    "history"};
     for (size_t i = 0; i < kOrder.size(); ++i)
         if (category == kOrder[i]) return static_cast<int>(i);
     return static_cast<int>(kOrder.size());
@@ -157,6 +158,7 @@ const ToolRegistry& ToolRegistry::standard() {
         register_effect_tools(r);
         register_graph_tools(r);
         register_parameter_tools(r);
+        register_control_tools(r);
         register_timeline_tools(r);
         register_simulate_tools(r);
         register_render_tools(r);

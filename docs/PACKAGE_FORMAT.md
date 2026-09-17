@@ -105,6 +105,7 @@ export. Its grammar is docs/VOCABULARY.md.
   "sampling": {"fps": 30.0, "curve_samples": 32},
   "timeline": {"phases": [{"name": "peak", "start": 0.8, "end": 1.6}]},
   "layers": [...],
+  "controls": [...],
   "nodes": [...],
   "textures": [...],
   "meshes": [...],
@@ -361,7 +362,24 @@ the author's overrides applied, so it is a complete `RenderSettings` object:
 should treat `background`, `exposure` and the bloom values as "what this effect
 was tuned against" and ignore `width`/`height`.
 
-### 5.10 `diagnostics`
+### 5.10 `controls`
+
+The effect's named numeric knobs with the values this export was made at, in
+document order and in the same shape as `effect.json` (docs/CONTROLS.md):
+
+```json
+{"id": "flames_intensity", "label": "Intensity", "group": "Flames",
+ "min": 0.0, "max": 3.0, "default": 1.0, "value": 2.0, "step": 0.01, "unit": "x",
+ "bindings": [{"node": "flame_ps", "parameter": "emissive", "op": "multiply"}]}
+```
+
+An importer does **not** have to apply them: every `parameters` object in 5.4 is
+already resolved with the controls folded in, so the package describes the
+effect as it was exported. The list is there so an importer can surface the same
+sliders as instance parameters, and so a round trip through `effect.json` keeps
+them. The array is present and empty for an effect that has no controls.
+
+### 5.11 `diagnostics`
 
 The compile report: `{"ok", "errors", "warnings", "items": [{"code",
 "severity", "message", "node"?, "param"?}]}`. `ok: false` means the effect had

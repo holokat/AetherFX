@@ -682,6 +682,95 @@ TEST_CASE("parameters can be overridden before compiling", "[capi]") {
     CHECK(light.color[2] == Approx(0.3f).margin(1e-5));
 }
 
+// A tiny document with two controls, written out in full so this file keeps
+// needing nothing but the public header.
+const char* kControlledEffect = R"JSON({
+  "schema_version": "0.1.0",
+  "name": "Knobs",
+  "duration": 1.0,
+  "seed": 1,
+  "layers": [],
+  "nodes": [{"id": "glow", "type": "light",
+             "parameters": {"intensity": 10.0, "color": [1.0, 0.0, 0.0, 1.0], "radius": 4.0}}],
+  "controls": [
+    {"id": "brightness", "label": "Brightness", "group": "Global", "min": 0.0, "max": 3.0,
+     "default": 1.0, "value": 1.0, "step": 0.01, "unit": "x",
+     "bindings": [{"node": "glow", "parameter": "intensity", "op": "multiply"}]},
+    {"id": "hue", "label": "Hue", "group": "Global", "min": -180.0, "max": 180.0,
+     "default": 0.0, "value": 0.0, "step": 1.0, "unit": "deg",
+     "bindings": [{"node": "glow", "parameter": "color", "op": "hue_shift"}]}
+  ]
+})JSON";
+
+TEST_CASE("controls are enumerable and settable before compiling", "[capi][controls]") {
+    aetherfx_effect* effect = aetherfx_effect_load_json(kControlledEffect, 0);
+    REQUIRE(effect != nullptr);
+
+    REQUIRE(aetherfx_effect_control_count(effect) == 2);
+    struct aetherfx_control_info info;
+    REQUIRE(aetherfx_control_info(effect, 0, &info) == AETHERFX_OK);
+    CHECK(std::string(info.id) == "brightness");
+    CHECK(std::string(info.label) == "Brightness");
+    CHECK(std::string(info.group) == "Global");
+    CHECK(std::string(info.unit) == "x");
+    CHECK(info.min == Approx(0.0));
+    CHECK(info.max == Approx(3.0));
+    CHECK(info.default_value == Approx(1.0));
+    CHECK(info.value == Approx(1.0));
+    CHECK(info.step == Approx(0.01));
+    CHECK(info.binding_count == 1);
+
+    CHECK(aetherfx_effect_control_index(effect, "hue") == 1);
+    CHECK(aetherfx_effect_control_index(effect, "nope") == AETHERFX_ERROR_OUT_OF_RANGE);
+    CHECK(aetherfx_control_info(effect, 7, &info) == AETHERFX_ERROR_OUT_OF_RANGE);
+    CHECK(aetherfx_control_info(effect, 0, nullptr) == AETHERFX_ERROR_INVALID_ARGUMENT);
+    CHECK(aetherfx_effect_control_count(nullptr) == AETHERFX_ERROR_INVALID_ARGUMENT);
+
+    CHECK(aetherfx_effect_set_control(effect, "nope", 1.0) == AETHERFX_ERROR_INVALID_ARGUMENT);
+    CHECK(contains(aetherfx_last_error(), "nope"));
+    CHECK(aetherfx_effect_set_control(effect, "brightness", 9.0) == AETHERFX_ERROR_OUT_OF_RANGE);
+
+    // A stronger instance of the same effect: set the control, then compile.
+    REQUIRE(aetherfx_effect_set_control(effect, "brightness", 2.0) == AETHERFX_OK);
+    REQUIRE(aetherfx_effect_set_control(effect, "hue", 120.0) == AETHERFX_OK);
+    REQUIRE(aetherfx_control_info(effect, 0, &info) == AETHERFX_OK);
+    CHECK(info.value == Approx(2.0));
+
+    aetherfx_compiled* compiled = aetherfx_compile(effect, 1.0 / 60.0);
+    REQUIRE(compiled != nullptr);
+    REQUIRE(aetherfx_compiled_ok(compiled) == 1);
+    aetherfx_runtime* runtime = aetherfx_runtime_create(compiled);
+    REQUIRE(runtime != nullptr);
+    REQUIRE(aetherfx_runtime_simulate_to(runtime, 0.2) == AETHERFX_OK);
+
+    struct aetherfx_light_info light;
+    REQUIRE(aetherfx_runtime_light_count(runtime) == 1);
+    REQUIRE(aetherfx_light_info(runtime, 0, &light) == AETHERFX_OK);
+    CHECK(light.intensity == Approx(20.0f).margin(1e-4));   // 10 * 2
+    CHECK(light.color[0] == Approx(0.0f).margin(1e-5));     // red rotated to green
+    CHECK(light.color[1] == Approx(1.0f).margin(1e-5));
+    CHECK(light.color[2] == Approx(0.0f).margin(1e-5));
+
+    // The document keeps the authored value and carries the control values.
+    OwnedString json(aetherfx_effect_to_json(effect, 2));
+    REQUIRE(json.text != nullptr);
+    CHECK(json_parses(json.str()));
+    CHECK(contains(json.str(), "brightness"));
+    CHECK(contains(json.str(), "10.0"));
+
+    aetherfx_runtime_free(runtime);
+    aetherfx_compiled_free(compiled);
+    aetherfx_effect_free(effect);
+}
+
+TEST_CASE("an effect without controls reports none", "[capi][controls]") {
+    Effect effect(example("fireball.json"));
+    REQUIRE(effect.handle != nullptr);
+    CHECK(aetherfx_effect_control_count(effect) == 0);
+    CHECK(aetherfx_effect_control_index(effect, "anything") == AETHERFX_ERROR_OUT_OF_RANGE);
+    CHECK(aetherfx_effect_set_control(effect.handle, "anything", 1.0) == AETHERFX_ERROR_INVALID_ARGUMENT);
+}
+
 TEST_CASE("two runtimes of the same effect stay bit identical", "[capi]") {
     Effect effect(example("fireball.json"));
     REQUIRE(effect.handle != nullptr);

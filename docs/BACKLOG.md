@@ -65,9 +65,13 @@ simplified once the feature lands.
   (2D flame simulation flipbook) is being added.
 
 ## Schema / tests / studio
-- `schema/effect.schema.json` has `additionalProperties: false` at the effect level and no
-  `description` property, so a JSON-schema check rejects the top-level `description` the C++
-  validator accepts. Add `description` to the schema generator.
+- DONE: `schema/effect.schema.json` now has the top-level `description`, and the loader keeps it
+  instead of dropping it on a round trip.
+- Controls (docs/CONTROLS.md) follow-ups: the shipped examples have none of their own, so the
+  studio generates a default set per working copy - the library effects should ship 4-8 authored,
+  named controls each. The Unreal plugin should surface them as instance parameters
+  (docs/UNREAL.md section 9). `generate_default_controls` binds per layer only, so a material two
+  layers share is reachable from Global alone.
 - `tests/sim/analytic_test.cpp` pins Fire AOE camera values (position.y, target.y, fov) and
   `tests/compiler/compile_test.cpp` pins `mat_rock.base_color.r`; both should assert on tracks and
   structure, not on art values.

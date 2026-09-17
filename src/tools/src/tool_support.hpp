@@ -126,6 +126,7 @@ std::filesystem::path write_contact_sheet(const std::vector<Image>& frames, cons
 void register_effect_tools(ToolRegistry& registry);
 void register_graph_tools(ToolRegistry& registry);
 void register_parameter_tools(ToolRegistry& registry);
+void register_control_tools(ToolRegistry& registry);
 void register_timeline_tools(ToolRegistry& registry);
 void register_simulate_tools(ToolRegistry& registry);
 void register_render_tools(ToolRegistry& registry);

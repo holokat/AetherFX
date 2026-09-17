@@ -373,6 +373,45 @@ TEST_CASE("the package ships preview images of the intended look", "[tools][pack
     CHECK(frames == 3);
 }
 
+TEST_CASE("runtime.json carries the controls and the parameters they produce", "[tools][package]") {
+    const Package& package = fire();
+    // fire_aoe ships no controls, so the list is there and empty.
+    REQUIRE(package.runtime.contains("controls"));
+    CHECK(package.runtime["controls"].is_array());
+    CHECK(package.runtime["controls"].empty());
+
+    const std::filesystem::path dir = output_dir() / "package_controls.aetherfx";
+    std::error_code ec;
+    std::filesystem::remove_all(dir, ec);
+
+    Session session(output_dir());
+    const ToolRegistry& registry = ToolRegistry::standard();
+    registry.call(session, "load_effect", {{"path", example("fire_aoe.json").string()}});
+    registry.call(session, "generate_default_controls", nlohmann::json::object());
+    registry.call(session, "set_control", {{"id", "primary_intensity"}, {"value", 2.0}});
+    registry.call(session, "export_effect",
+                  {{"format", "package"},
+                   {"path", dir.string()},
+                   {"options", {{"preview", false}, {"obj", false}}}});
+
+    const nlohmann::json runtime = read_json(dir / "runtime.json");
+    const nlohmann::json* intensity = find_by_id(runtime["controls"], "primary_intensity");
+    REQUIRE(intensity != nullptr);
+    CHECK((*intensity)["value"].get<double>() == Approx(2.0));
+    CHECK((*intensity)["group"] == "Flames");
+    CHECK_FALSE((*intensity)["bindings"].empty());
+
+    // The resolved parameters already have the control folded in; the shipped
+    // effect.json still holds what the author typed.
+    const nlohmann::json* node = find_by_id(runtime["nodes"], "flame_ps");
+    REQUIRE(node != nullptr);
+    const nlohmann::json document = read_json(dir / "effect.json");
+    const nlohmann::json* source_node = find_by_id(document["nodes"], "flame_ps");
+    REQUIRE(source_node != nullptr);
+    const double authored = (*source_node)["parameters"]["emissive"].get<double>();
+    CHECK((*node)["parameters"]["emissive"].get<double>() == Approx(authored * 2.0));
+}
+
 TEST_CASE("exporting the same effect twice produces the same runtime.json", "[tools][package]") {
     const Package& first = fire();
     const Package second = export_package("fire_aoe.json", "package_fire_aoe_again.aetherfx");

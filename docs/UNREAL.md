@@ -374,6 +374,23 @@ parameter listed above -- a missing parameter makes
 `SetScalarParameterValue` a silent no-op, which is the kind of bug that only
 shows up as "why is it grey".
 
+### Controls (not implemented yet)
+
+An effect can ship named numeric knobs - "Intensity", "Flame height", "Hue" -
+that scale the parameters they are bound to without editing the graph
+(docs/CONTROLS.md). The C ABI already exposes them
+(`aetherfx_effect_control_count` / `aetherfx_control_info` /
+`aetherfx_effect_set_control`), and an imported package lists them in
+`runtime.json`.
+
+The plugin should surface them as **instance parameters** on
+`UAetherFXComponent`: one named float per control, defaulted and range-limited
+from `aetherfx_control_info`, editable in the details panel and settable from
+Blueprint, applied with `aetherfx_effect_set_control` before the component
+compiles its effect. Two components of the same asset with different control
+values are then two genuinely different instances that still share one authored
+document. Nothing in this section is built yet.
+
 ## 10. Lights
 
 ```

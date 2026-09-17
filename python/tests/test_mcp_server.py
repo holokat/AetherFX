@@ -44,8 +44,8 @@ class TestToolList:
         assert [tool.name for tool in server.tool_definitions()] == EXPECTED_ORDER
 
     def test_surface_stays_small(self) -> None:
-        assert len(MCP_TOOLS) == 28
-        assert len(EXPECTED_ORDER) == 30
+        assert len(MCP_TOOLS) == 32
+        assert len(EXPECTED_ORDER) == 34
 
     def test_non_curated_engine_tools_are_filtered_out(self, server: AetherMCPServer) -> None:
         names = [tool.name for tool in server.tool_definitions()]

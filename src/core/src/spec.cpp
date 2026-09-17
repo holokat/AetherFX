@@ -625,11 +625,17 @@ const std::vector<std::pair<std::string, std::string>>& validation_code_table() 
         {"E018", "keyframe time invalid"},
         {"E019", "curve/gradient keys not sorted or out of [0,1]"},
         {"E020", "schema version unsupported"},
+        {"E021", "invalid or duplicate control id"},
+        {"E022", "control binds to an unknown node or parameter"},
+        {"E023", "control op does not fit the parameter type"},
+        {"E024", "control range invalid (min>=max, value/default outside it, step<=0)"},
         {"W001", "unknown phase reference"},
         {"W002", "unused node (no consumer and not renderable)"},
         {"W003", "max_particles budget high"},
         {"W004", "node disabled but referenced"},
-        {"W005", "deprecated parameter"}};
+        {"W005", "deprecated parameter"},
+        {"W006", "keyframe set on a parameter not marked animatable"},
+        {"W007", "control has no bindings"}};
     return table;
 }
 
@@ -872,6 +878,33 @@ nlohmann::json SpecRegistry::effect_json_schema() const {
                         {"additionalProperties", false}};
     json roles = json::array();
     for (int i = 0; i <= static_cast<int>(LayerRole::Custom); ++i) roles.push_back(to_string(static_cast<LayerRole>(i)));
+    json control_ops = json::array();
+    for (int i = 0; i <= static_cast<int>(ControlOp::HueShift); ++i)
+        control_ops.push_back(to_string(static_cast<ControlOp>(i)));
+    defs["control_binding"] = {
+        {"type", "object"},
+        {"required", json::array({"node", "parameter"})},
+        {"properties", json{{"node", json{{"$ref", "#/$defs/node_id"}}},
+                            {"parameter", json{{"type", "string"}}},
+                            {"op", json{{"type", "string"}, {"enum", control_ops}}}}},
+        {"additionalProperties", false}};
+    defs["control"] = {
+        {"description", "a named numeric knob bound to node parameters, applied at compile time"},
+        {"type", "object"},
+        {"required", json::array({"id"})},
+        {"properties", json{{"id", json{{"$ref", "#/$defs/node_id"}}},
+                            {"label", json{{"type", "string"}}},
+                            {"group", json{{"type", "string"}}},
+                            {"min", json{{"type", "number"}}},
+                            {"max", json{{"type", "number"}}},
+                            {"default", json{{"type", "number"}}},
+                            {"value", json{{"type", "number"}}},
+                            {"step", json{{"type", "number"}, {"exclusiveMinimum", 0}}},
+                            {"unit", json{{"type", "string"}}},
+                            {"bindings", json{{"type", "array"},
+                                              {"items", json{{"$ref", "#/$defs/control_binding"}}}}}}},
+        {"additionalProperties", false}};
+
     defs["layer"] = {{"type", "object"},
                      {"required", json::array({"id"})},
                      {"properties", json{{"id", json{{"type", "string"}}},
@@ -936,11 +969,14 @@ nlohmann::json SpecRegistry::effect_json_schema() const {
             {"properties",
              json{{"schema_version", json{{"type", "string"}, {"const", "0.1.0"}}},
                   {"name", json{{"type", "string"}}},
+                  {"description", json{{"type", "string"},
+                                       {"description", "one line describing the effect, for humans and libraries"}}},
                   {"duration", json{{"type", "number"}, {"minimum", 0.01}}},
                   {"seed", json{{"type", "integer"}, {"minimum", 0}}},
                   {"timeline", json{{"$ref", "#/$defs/timeline"}}},
                   {"layers", json{{"type", "array"}, {"items", json{{"$ref", "#/$defs/layer"}}}}},
                   {"nodes", json{{"type", "array"}, {"items", json{{"$ref", "#/$defs/node"}}}}},
+                  {"controls", json{{"type", "array"}, {"items", json{{"$ref", "#/$defs/control"}}}}},
                   {"metadata", json{{"type", "object"}}}}},
             {"additionalProperties", false},
             {"$defs", defs}};

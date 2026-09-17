@@ -36,6 +36,9 @@ constexpr std::array<std::pair<LightType, std::string_view>, 3> kLight{{
     {LightType::Point, "point"}, {LightType::Spot, "spot"}, {LightType::Area, "area"}}};
 constexpr std::array<std::pair<Interp, std::string_view>, 3> kInterp{{
     {Interp::Linear, "linear"}, {Interp::Step, "step"}, {Interp::Smooth, "smooth"}}};
+constexpr std::array<std::pair<ControlOp, std::string_view>, 4> kControlOps{{
+    {ControlOp::Multiply, "multiply"}, {ControlOp::Add, "add"}, {ControlOp::Set, "set"},
+    {ControlOp::HueShift, "hue_shift"}}};
 }  // namespace
 
 std::string_view to_string(NodeType t) { return name_of(kNodeTypes, t); }
@@ -45,6 +48,7 @@ std::string_view to_string(RenderMode m) { return name_of(kRender, m); }
 std::string_view to_string(Shading s) { return name_of(kShading, s); }
 std::string_view to_string(LightType t) { return name_of(kLight, t); }
 std::string_view to_string(Interp i) { return name_of(kInterp, i); }
+std::string_view to_string(ControlOp o) { return name_of(kControlOps, o); }
 bool parse_node_type(std::string_view s, NodeType& out) { return parse_of(kNodeTypes, s, out); }
 bool parse_layer_role(std::string_view s, LayerRole& out) { return parse_of(kLayerRoles, s, out); }
 bool parse_blend_mode(std::string_view s, BlendMode& out) { return parse_of(kBlend, s, out); }
@@ -52,5 +56,6 @@ bool parse_render_mode(std::string_view s, RenderMode& out) { return parse_of(kR
 bool parse_shading(std::string_view s, Shading& out) { return parse_of(kShading, s, out); }
 bool parse_light_type(std::string_view s, LightType& out) { return parse_of(kLight, s, out); }
 bool parse_interp(std::string_view s, Interp& out) { return parse_of(kInterp, s, out); }
+bool parse_control_op(std::string_view s, ControlOp& out) { return parse_of(kControlOps, s, out); }
 
 }  // namespace aether

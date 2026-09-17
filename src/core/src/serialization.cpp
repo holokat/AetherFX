@@ -6,6 +6,7 @@
 #include <fstream>
 #include <stdexcept>
 
+#include "aether/core/controls.hpp"
 #include "aether/core/error.hpp"
 #include "aether/core/spec.hpp"
 
@@ -180,6 +181,10 @@ Effect effect_from_json(const nlohmann::json& j) {
         if (!j.at("name").is_string()) throw Error("E005", "\"name\" must be a string");
         e.name = j.at("name").get<std::string>();
     }
+    if (j.contains("description") && !j.at("description").is_null()) {
+        if (!j.at("description").is_string()) throw Error("E005", "\"description\" must be a string");
+        e.description = j.at("description").get<std::string>();
+    }
     if (j.contains("duration")) {
         if (!j.at("duration").is_number()) throw Error("E005", "\"duration\" must be a number");
         e.duration = j.at("duration").get<double>();
@@ -237,6 +242,14 @@ Effect effect_from_json(const nlohmann::json& j) {
         for (const auto& n : *nodes_it) e.nodes.push_back(node_from_json(n));
     }
 
+    auto controls_it = j.find("controls");
+    if (controls_it != j.end() && !controls_it->is_null()) {
+        if (!controls_it->is_array()) throw Error("E005", "\"controls\" must be an array");
+        // Duplicates and dangling bindings are kept so validate() can report
+        // E021/E022 against the document instead of the file failing to load.
+        for (const auto& c : *controls_it) e.controls.push_back(control_from_json(c));
+    }
+
     if (j.contains("metadata") && !j.at("metadata").is_null()) e.metadata = j.at("metadata");
     return e;
 }
@@ -263,6 +276,14 @@ nlohmann::json effect_to_json(const Effect& e) {
                      {"timeline", {{"phases", std::move(phases)}}},
                      {"layers", std::move(layers)},
                      {"nodes", std::move(nodes)}};
+    // Optional members are only written when they carry something, so a
+    // document without controls stays byte-for-byte what it was.
+    if (!e.description.empty()) j["description"] = e.description;
+    if (!e.controls.empty()) {
+        nlohmann::json controls = nlohmann::json::array();
+        for (const Control& c : e.controls) controls.push_back(control_to_json(c));
+        j["controls"] = std::move(controls);
+    }
     if (!e.metadata.is_null() && !(e.metadata.is_object() && e.metadata.empty())) j["metadata"] = e.metadata;
     return j;
 }

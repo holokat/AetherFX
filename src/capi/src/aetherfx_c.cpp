@@ -32,6 +32,7 @@
 #include <nlohmann/json.hpp>
 
 #include "aether/compiler/compiled_effect.hpp"
+#include "aether/core/controls.hpp"
 #include "aether/core/effect.hpp"
 #include "aether/core/error.hpp"
 #include "aether/core/frame_state.hpp"
@@ -419,6 +420,61 @@ char* aetherfx_effect_to_json(const aetherfx_effect* effect, int indent) {
     return guard_value<char*>(
         [&]() { return alloc_string(aether::effect_to_json(require(effect, "effect")->effect).dump(indent)); },
         nullptr);
+}
+
+// ---------------------------------------------------------------------------
+// controls
+// ---------------------------------------------------------------------------
+
+int aetherfx_effect_control_count(const aetherfx_effect* effect) {
+    return guard_status([&]() -> int { return to_count(require(effect, "effect")->effect.controls.size()); });
+}
+
+int aetherfx_control_info(const aetherfx_effect* effect, int index, struct aetherfx_control_info* out) {
+    return guard_status([&]() -> int {
+        const aetherfx_effect* handle = require(effect, "effect");
+        require_mutable(out, "out");
+        const std::vector<aether::Control>& controls = handle->effect.controls;
+        const aether::Control& control = controls[require_index(index, controls.size(), "control")];
+        out->id = c_str(control.id);
+        out->label = c_str(control.label);
+        out->group = c_str(control.group);
+        out->unit = c_str(control.unit);
+        out->min = control.min;
+        out->max = control.max;
+        out->default_value = control.default_value;
+        out->value = control.value;
+        out->step = control.step;
+        out->binding_count = to_count(control.bindings.size());
+        return AETHERFX_OK;
+    });
+}
+
+int aetherfx_effect_control_index(const aetherfx_effect* effect, const char* id) {
+    return guard_status([&]() -> int {
+        const aetherfx_effect* handle = require(effect, "effect");
+        require_text(id, "id");
+        const std::vector<aether::Control>& controls = handle->effect.controls;
+        for (size_t i = 0; i < controls.size(); ++i)
+            if (controls[i].id == id) return static_cast<int>(i);
+        throw CapiError(AETHERFX_ERROR_OUT_OF_RANGE, "no control with id \"" + std::string(id) + "\"");
+    });
+}
+
+int aetherfx_effect_set_control(aetherfx_effect* effect, const char* id, double value) {
+    return guard_status([&]() -> int {
+        aetherfx_effect* handle = require_mutable(effect, "effect");
+        require_text(id, "id");
+        aether::Control* control = handle->effect.find_control(id);
+        if (control == nullptr)
+            throw aether::Error("E021", "unknown control \"" + std::string(id) + "\"");
+        if (!(value >= control->min && value <= control->max))
+            throw CapiError(AETHERFX_ERROR_OUT_OF_RANGE,
+                            "control \"" + std::string(id) + "\" takes a value in [" + std::to_string(control->min) +
+                                ", " + std::to_string(control->max) + "], got " + std::to_string(value));
+        control->value = value;
+        return AETHERFX_OK;
+    });
 }
 
 // ---------------------------------------------------------------------------

@@ -11,6 +11,7 @@
 #include <string_view>
 #include <vector>
 
+#include "aether/core/controls.hpp"
 #include "aether/core/error.hpp"
 #include "aether/core/rng.hpp"
 #include "aether/core/serialization.hpp"
@@ -327,6 +328,7 @@ nlohmann::json CompiledEffect::plan_json() const {
     nlohmann::json j;
     j["fixed_dt"] = fixed_dt;
     j["source_hash"] = hex64(source_hash);
+    j["controls"] = {{"count", effect.controls.size()}, {"applied", controls_applied}};
 
     nlohmann::json node_array = nlohmann::json::array();
     std::map<std::string, size_t> backend_counts;
@@ -398,13 +400,21 @@ void resolve_window(const Effect& effect, const Node& node, double& start, doubl
 // compile
 // --------------------------------------------------------------------------
 
-CompiledEffect compile(const Effect& effect, const CompileOptions& options) {
+CompiledEffect compile(const Effect& source, const CompileOptions& options) {
     CompiledEffect compiled;
-    compiled.effect = effect;  // deep copy; `effect` is never mutated
+    compiled.effect = source;  // deep copy; `source` is never mutated
     compiled.fixed_dt = options.fixed_dt;
-    compiled.source_hash = effect_hash(effect);
-    compiled.diagnostics = validate(effect);
+    compiled.source_hash = effect_hash(source);
+    compiled.diagnostics = validate(source);
     if (!compiled.diagnostics.ok() && !options.allow_errors) return compiled;
+
+    // Controls fold into the copy, after validation and before anything reads a
+    // parameter, so every stage below (windows, resources, runtime, export)
+    // sees one already-resolved document. At their default values this is a
+    // no-op, which is what keeps a controlled effect bit-identical to the same
+    // effect without controls (docs/CONTROLS.md).
+    compiled.controls_applied = apply_controls(compiled.effect);
+    const Effect& effect = compiled.effect;
 
     std::vector<NodeId> order;
     try {

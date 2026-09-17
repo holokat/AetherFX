@@ -63,14 +63,42 @@ struct Timeline {
     TimelinePhase* find(std::string_view name);
 };
 
+// One binding of a control onto a node parameter. `op` decides how the
+// control's value folds into the authored value (docs/CONTROLS.md).
+struct ControlBinding {
+    NodeId node;
+    std::string parameter;
+    ControlOp op = ControlOp::Multiply;
+    bool operator==(const ControlBinding&) const = default;
+};
+
+// A named numeric knob on the document: non-destructive, applied at compile
+// time. `group` is the UI section - "Global" (or empty) for effect-wide,
+// otherwise the layer name the studio shows.
+struct Control {
+    std::string id;
+    std::string label;
+    std::string group;
+    double min = 0.0;
+    double max = 3.0;
+    double default_value = 1.0;
+    double value = 1.0;
+    double step = 0.01;
+    std::string unit;  // "x", "deg", ""
+    std::vector<ControlBinding> bindings;
+    bool operator==(const Control&) const = default;
+};
+
 struct Effect {
     std::string schema_version = "0.1.0";
     std::string name = "untitled";
+    std::string description;  // one line for humans and the library UI (optional)
     double duration = 2.0;
     uint32_t seed = 1;
     Timeline timeline;
     std::vector<Layer> layers;
     std::vector<Node> nodes;  // order is authoring order; compiler computes execution order
+    std::vector<Control> controls;  // applied at compile time, in this order
     nlohmann::json metadata = nlohmann::json::object();
 
     const Node* find_node(std::string_view id) const;
@@ -86,8 +114,12 @@ struct Effect {
     Node& add_node(Node n);
     // Removes the node and every reference to it (inputs, parent). Returns false if absent.
     bool remove_node(std::string_view id);
+    const Control* find_control(std::string_view id) const;
+    Control* find_control(std::string_view id);
     // Generates "<base>", "<base>_2", "<base>_3"... that is not in use.
     NodeId unique_id(std::string_view base) const;
+    // Generates a control id that is not in use, same scheme as unique_id.
+    std::string unique_control_id(std::string_view base) const;
     // World transform of a spatial node at `time`, composing `parent` chains
     // (position/rotation/scale parameters). Identity for non-spatial nodes.
     Mat4 world_transform(const Node& node, double time) const;

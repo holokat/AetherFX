@@ -61,6 +61,7 @@ struct CompiledEffect {
     Diagnostics diagnostics;
     double fixed_dt = 1.0 / 60.0;
     uint64_t source_hash = 0;           // effect_hash at compile time
+    int controls_applied = 0;           // bindings that changed a parameter in `effect`
 
     const CompiledNode* find(std::string_view id) const;
     std::vector<const CompiledNode*> of_type(NodeType t) const;
@@ -68,10 +69,12 @@ struct CompiledEffect {
     bool ok() const { return diagnostics.ok(); }
 };
 
-// Never mutates `effect`. Throws Error only for programmer errors; content
-// problems are reported in diagnostics (and, unless allow_errors, nodes is
-// left empty when there are validation errors).
-CompiledEffect compile(const Effect& effect, const CompileOptions& options = {});
+// Never mutates `source`. `CompiledEffect::effect` is a copy with the document's
+// controls folded in (docs/CONTROLS.md), which is what every later stage reads.
+// Throws Error only for programmer errors; content problems are reported in
+// diagnostics (and, unless allow_errors, nodes is left empty when there are
+// validation errors).
+CompiledEffect compile(const Effect& source, const CompileOptions& options = {});
 
 // Resolves a node's window using the effect timeline when `phase` is set.
 // Emits W001 when the phase is unknown. Exposed for tools/inspect.

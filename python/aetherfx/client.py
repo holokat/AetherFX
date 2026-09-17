@@ -754,6 +754,90 @@ class Client:
         return self.call("clear_track", node_id=node_id, name=name)
 
     # =====================================================================
+    # controls
+    # =====================================================================
+
+    def list_controls(self) -> JsonDict:
+        """The effect's named numeric knobs.
+
+        Returns ``{controls, groups, count}``; each control is
+        ``{id, label, group, min, max, default, value, step, unit, bindings}``
+        (docs/CONTROLS.md).
+        """
+        return self.call("list_controls")
+
+    def set_control(self, id: str, value: float) -> JsonDict:  # noqa: A002 - the tool argument is "id"
+        """Move one control inside its ``[min, max]``.
+
+        Non-destructive: the authored parameter values stay as they are and the
+        compiler folds the control into its own copy.  Returns
+        ``{ok, control, diagnostics}``.
+        """
+        return self.call("set_control", id=id, value=value)
+
+    def reset_controls(self, id: str | None = None) -> JsonDict:  # noqa: A002
+        """Put every control (or just ``id``) back to its default."""
+        return self.call("reset_controls", **self._args(id=id))
+
+    def add_control(
+        self,
+        label: str,
+        bindings: Sequence[Mapping[str, Any]] | None = None,
+        id: str | None = None,  # noqa: A002
+        group: str | None = None,
+        min: float | None = None,  # noqa: A002
+        max: float | None = None,  # noqa: A002
+        default: float | None = None,
+        value: float | None = None,
+        step: float | None = None,
+        unit: str | None = None,
+    ) -> JsonDict:
+        """Add a control bound to ``[{node, parameter, op}]``.
+
+        ``op`` is ``multiply``, ``add``, ``set`` or ``hue_shift``.  Returns
+        ``{ok, control, diagnostics}``.
+        """
+        return self.call(
+            "add_control",
+            **self._args(
+                label=label,
+                bindings=[dict(b) for b in bindings] if bindings is not None else None,
+                id=id, group=group, min=min, max=max, default=default, value=value, step=step, unit=unit,
+            ),
+        )
+
+    def update_control(
+        self,
+        id: str,  # noqa: A002
+        label: str | None = None,
+        bindings: Sequence[Mapping[str, Any]] | None = None,
+        group: str | None = None,
+        min: float | None = None,  # noqa: A002
+        max: float | None = None,  # noqa: A002
+        default: float | None = None,
+        value: float | None = None,
+        step: float | None = None,
+        unit: str | None = None,
+    ) -> JsonDict:
+        """Change a control's definition.  Omitted fields keep their value."""
+        return self.call(
+            "update_control",
+            **self._args(
+                id=id, label=label,
+                bindings=[dict(b) for b in bindings] if bindings is not None else None,
+                group=group, min=min, max=max, default=default, value=value, step=step, unit=unit,
+            ),
+        )
+
+    def remove_control(self, id: str) -> JsonDict:  # noqa: A002
+        """Delete a control.  The parameters keep their authored values."""
+        return self.call("remove_control", id=id)
+
+    def generate_default_controls(self, replace: bool = False) -> JsonDict:
+        """Build a Global group plus one group per layer for this effect."""
+        return self.call("generate_default_controls", replace=replace)
+
+    # =====================================================================
     # timeline
     # =====================================================================
 
