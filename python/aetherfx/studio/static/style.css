@@ -815,6 +815,17 @@ label.check, label.field, label.toggle-chip {
 }
 .lib-section .file-list { margin-top: 2px; }
 
+/* -- the one credit line in the studio view ----------------------- */
+
+.column-foot {
+  flex: none;
+  padding: 7px 14px;
+  border-top: 1px solid var(--line);
+  font-size: 10.5px; color: var(--text-3);
+}
+.column-foot a { color: var(--text-2); text-decoration: none; }
+.column-foot a:hover { color: var(--accent-hover); text-decoration: underline; text-underline-offset: 2px; }
+
 /* ---------------------------------------------------------------- *
  * 6. center column
  * ---------------------------------------------------------------- */
