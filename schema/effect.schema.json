@@ -64,7 +64,7 @@
       "additionalProperties": false,
       "properties": {
         "node": {
-          "$ref": "#/$defs/node_id"
+          "$ref": "#/$defs/control_target"
         },
         "op": {
           "enum": [
@@ -84,6 +84,11 @@
         "parameter"
       ],
       "type": "object"
+    },
+    "control_target": {
+      "description": "a node id, or \"$effect\" for the document's own properties",
+      "pattern": "^(\\$effect|[a-z][a-z0-9_]*)$",
+      "type": "string"
     },
     "curve": {
       "anyOf": [
@@ -4124,6 +4129,12 @@
     "seed": {
       "minimum": 0,
       "type": "integer"
+    },
+    "time_scale": {
+      "description": "playback speed; effect_time = wall_time * time_scale, so the effect lasts duration / time_scale seconds",
+      "maximum": 8.0,
+      "minimum": 0.1,
+      "type": "number"
     },
     "timeline": {
       "$ref": "#/$defs/timeline"

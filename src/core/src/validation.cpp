@@ -364,6 +364,22 @@ void check_controls(const Effect& effect, Diagnostics& d) {
             d.warning("W007", where + " has no bindings, so moving it does nothing");
 
         for (const ControlBinding& binding : control.bindings) {
+            // `$effect` addresses the document itself, not a node: today the
+            // only property it exposes is `time_scale` (docs/CONTROLS.md 2.1).
+            if (binding.node == kEffectBindingNode) {
+                if (binding.parameter != kTimeScaleParameter) {
+                    d.error("E022", where + " binds to \"" + std::string(kEffectBindingNode) + "." +
+                                        binding.parameter + "\"; the effect only exposes \"" +
+                                        std::string(kTimeScaleParameter) + "\"",
+                            binding.node, binding.parameter);
+                } else if (binding.op != ControlOp::Multiply && binding.op != ControlOp::Set) {
+                    d.error("E023", where + " applies \"" + std::string(to_string(binding.op)) + "\" to \"" +
+                                        std::string(kTimeScaleParameter) +
+                                        "\", which takes multiply or set",
+                            binding.node, binding.parameter);
+                }
+                continue;
+            }
             const Node* node = effect.find_node(binding.node);
             if (node == nullptr) {
                 d.error("E022", where + " binds to unknown node \"" + binding.node + "\"", binding.node,
@@ -461,6 +477,9 @@ Diagnostics validate(const Effect& effect) {
                             std::string(kSchemaVersion) + "\"");
     if (!(effect.duration > 0.0))
         d.error("E015", "effect duration must be > 0 (got " + std::to_string(effect.duration) + ")");
+    if (!(effect.time_scale >= kMinTimeScale && effect.time_scale <= kMaxTimeScale))
+        d.error("E015", "effect time_scale must be in [" + std::to_string(kMinTimeScale) + ", " +
+                            std::to_string(kMaxTimeScale) + "] (got " + std::to_string(effect.time_scale) + ")");
     for (const TimelinePhase& p : effect.timeline.phases) {
         if (p.end <= p.start)
             d.error("E016", "phase \"" + p.name + "\" ends at " + std::to_string(p.end) + " which is not after its start " +
