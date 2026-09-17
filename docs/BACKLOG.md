@@ -5,12 +5,17 @@ entry names the feature that was wanted and the workaround used, so the library 
 simplified once the feature lands.
 
 ## Renderer (GPU viewer) — in progress in the viewer-fidelity task
-- Flipbook frame chosen from a global time uniform: all sprites of a system show the same frame,
-  non-looping flipbooks pop. Wanted: per-particle frame from age + seed offset (CPU parity).
-- `material.temperature_gradient` ignored (CPU only). Workaround: bake the ramp with `colorize`.
-- `rotation` / `rotation_variance` ignored for `stretched_billboard`.
-- Trail UVs are cumulative world distance with clamp-to-edge; `uv_scroll` and tiling ribbon
-  textures are inert.
+- DONE (3ade142): per-particle flipbook frames (CPU parity; the stream carries `age` seconds),
+  `temperature_gradient` on sprites and mesh particles, tiling ribbon UVs with `uv_scroll`.
+- `rotation` / `rotation_variance` are ignored for `stretched_billboard` in BOTH renderers (the
+  velocity basis overwrites the roll); a spinning stretched sprite needs `render_mode: billboard`.
+- The C API `aetherfx_material` struct stops at `noise_texture`: `temperature_gradient`, `uv_scroll`,
+  `uv_rotate`, `gradient_texture` and `double_sided` never reach engine bridges (the studio viewer
+  tops materials up from /api/effect; mesh particles are always double sided). Extend the struct.
+- The CPU renderer's `draw_trail_segment` never samples a texture (ignores `u`, `twist`, and the
+  temperature gradient); the viewer is ahead of the reference here.
+- A trail header field for the tiling rate (`min_vertex_distance` or explicit) is missing; ribbons
+  tile once per metre.
 - Mesh particles ignore per-particle opacity (`opacity_over_life` does nothing; they pop).
   Workaround: `size_over_life`.
 - Mesh fresnel intensity floored at `max(emissive_intensity, 0.35) * 2`, added after tone mapping;
@@ -73,6 +78,8 @@ simplified once the feature lands.
 - Studio: after a stream reconnect the viewport is empty unless playback was running (no `open`
   is re-sent).
 - `app.js` declares `hexToLinear` twice with different signatures; the later wins.
+- `tools/gl_capture.py` selects effects by clicking a Library row, so hidden built-ins (Fireball)
+  cannot be captured by name.
 - The studio viewport is roughly square in the default layout; briefs assuming 16:10 framing put
   the action outside the frame.
 
