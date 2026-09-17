@@ -1,7 +1,7 @@
 # build
-build/
-build-*/
-cmake-build-*/
+/build/
+/build-*/
+/cmake-build-*/
 _deps/
 third_party/_fetched/
 *.o
