@@ -72,8 +72,8 @@ and modules to its right in the `<-` list. Every module is a CMake library
 
 ## 3. Data model (src/core)
 
-* `Effect` - name, `schema_version`, `duration`, `seed`, `Timeline`,
-  `layers`, `nodes`, `metadata`.
+* `Effect` - name, `description`, `schema_version`, `duration`, `seed`,
+  `Timeline`, `layers`, `nodes`, `controls`, `metadata`.
 * `Node` - `id`, `type` (enum, one of the vocabulary), `version`, `enabled`,
   optional `seed`, optional `parent` (spatial parent node), optional `layer`,
   `parameters` (name -> `Parameter`), `inputs` (port -> list of node refs),
@@ -84,6 +84,12 @@ and modules to its right in the `<-` list. Every module is a CMake library
 * `Curve` and `Gradient` are value types used for over-lifetime modulation
   (domain t in [0,1]). Keyframe tracks are for effect-time animation
   (domain seconds). These are different things and must not be conflated.
+* `Control` - a named numeric knob (`id`, `label`, `group`, `min`, `max`,
+  `default`, `value`, `step`, `unit`) bound to node parameters through
+  `{node, parameter, op}` with op `multiply`/`add`/`set`/`hue_shift`. The
+  compiler folds controls into its own copy of the document, so the authored
+  values never change and a control at its default is a no-op. See
+  docs/CONTROLS.md.
 * `Layer` - semantic group (`telegraph`, `ignition`, `primary`, `secondary`,
   `interaction`, `aftermath`, `custom`). Nodes reference their layer by id.
 * `Timeline` - named phases with absolute `[start, end]` in seconds:
@@ -103,9 +109,11 @@ See `docs/VOCABULARY.md` for the full node and parameter list.
 `compile(Effect, CompileOptions) -> CompiledEffect`:
 
 1. validate (fail on errors; warnings pass through)
-2. resolve `phase` bindings into absolute start/end
-3. resolve references, build the execution DAG, topological order
-4. select a **tier** per node, the cheapest capable implementation:
+2. fold the document's `controls` into the compiler's own copy of the effect,
+   so every step below reads one already-resolved document (docs/CONTROLS.md)
+3. resolve `phase` bindings into absolute start/end
+4. resolve references, build the execution DAG, topological order
+5. select a **tier** per node, the cheapest capable implementation:
    * Tier 0 Analytic: beam, trail, decal, light, mesh, curve, camera, post
    * Tier 1 Particles: emitter + particle_system (CPU now, GPU later)
    * Tier 2 Physics: particle_system with `physics: rigid` (Jolt later; V1
@@ -113,9 +121,9 @@ See `docs/VOCABULARY.md` for the full node and parameter list.
    * Tier 3 Volumetric: volume - `mode: procedural` is raymarched
      (backend `procedural_volume`, docs/VOLUMES.md); `mode: simulation` is
      still a stub backend, statistics only, warning W104
-5. bake resources: procedural textures -> `Image`, mesh primitives ->
+6. bake resources: procedural textures -> `Image`, mesh primitives ->
    `MeshData`, materials -> `MaterialDesc`, into a `ResourceSet`
-6. emit `Diagnostics` (what was downgraded, what is unsupported, budgets)
+7. emit `Diagnostics` (what was downgraded, what is unsupported, budgets)
 
 The compiler never mutates the source `Effect`.
 

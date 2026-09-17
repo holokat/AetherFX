@@ -50,6 +50,13 @@ RULES
 - Parameters are passed as plain JSON values; curves are [[t, v], ...] with t in 0..1, gradients are [[t, [r, g, b, a]], ...]. Keyframe tracks are set with set_keyframe (any parameter marked (A) below: rates, intensities, positions, opacity, size...).
 - create_node fields: {type, id, layer, parent, parameters, inputs, metadata}. Only vocabulary parameters go inside `parameters`.
 
+CONTROLS (ship them: they are how a player-facing effect is tuned without a second document)
+- A control is a named numeric knob bound to node parameters: {"id", "label", "group", "min", "max", "default", "value", "step", "unit", "bindings": [{"node", "parameter", "op"}]}. `op` is multiply (scalars, every component of a vector, the rgb of a colour), add, set, or hue_shift (degrees; colours and gradients). It is non-destructive: the authored values stay, the compiler folds the control in, so it is safe to move live and to undo.
+- Finish every effect with 4-8 meaningful controls, authored with add_control. Give them names an artist recognises - "Flame height", "Ember amount", "Core glow", "Ring size", "Smoke thickness" - not parameter names. Group them by layer: `group` is the layer's display name ("Flames", "Debris, sparks, smoke"), or "Global" for effect-wide.
+- Multipliers use min 0, max 3, default 1, step 0.01, unit "x"; a hue control uses min -180, max 180, default 0, step 1, unit "deg".
+- What actually moves the picture: brightness is the particle `color` magnitude plus `emissive` and the material's `emissive_intensity`, not `emissive` alone (it is usually 0.05-0.2). Scale is particle `size`, trail/beam `width`, decal `size`, light `radius`. Amount is emitter `rate` and `burst_count`. Bind one control to every node that makes up that idea, so one slider moves the whole look.
+- generate_default_controls builds a Global group and one per layer as a starting point; keep the ones that read well, rename them, and remove_control the rest. list_controls and set_control let you try a value and render it before you commit to the range.
+
 RECIPES (proven values from the shipped examples)
 - Soft puff sprite (fire, smoke, magic): texture node, width/height 128, graph {"nodes":[{"id":"r","op":"gradient_radial","params":{"radius":0.5,"falloff":"smooth"}},{"id":"n","op":"fbm","params":{"frequency":4,"octaves":4,"seed":3}},{"id":"m","op":"math","params":{"mode":"multiply"},"inputs":{"a":"r","b":"n"}},{"id":"l","op":"levels","params":{"in_low":0.05,"in_high":0.6},"inputs":{"a":"m"}}],"output":"l"}.
 - Spark sprite: 32x32, graph {"nodes":[{"id":"r","op":"gradient_radial","params":{"radius":0.5,"falloff":"quadratic"}}],"output":"r"}.

@@ -577,13 +577,38 @@ sheet is played once.
 ```
 schema_version: "0.1.0"
 name: string
+description: string   (one line for humans and the library; optional)
 duration: float [0.01..]
 seed: int
 timeline: {"phases": [{"name": "anticipation|activation|peak|sustain|decay|<custom>", "start": s, "end": s}]}
 layers: [{"id", "name", "role": telegraph|ignition|primary|secondary|interaction|aftermath|custom, "enabled", "metadata"}]
 nodes: [...]
+controls: [...]  (named numeric knobs; see below and docs/CONTROLS.md)
 metadata: json   (agents should record source prompt / reference / analysis id here)
 ```
+
+## Controls
+
+A control is a named numeric knob bound to node parameters and folded into the
+document by the compiler, so moving it never rewrites what the author typed.
+Full contract and heuristics: docs/CONTROLS.md.
+
+```
+controls: [{
+  "id": "flames_intensity",          ^[a-z][a-z0-9_]*$, unique
+  "label": "Flame height",           human words, shown on the slider
+  "group": "Flames",                 "Global" (or empty) for effect-wide, else the layer name
+  "min": 0.0, "max": 3.0,            the range the slider covers
+  "default": 1.0, "value": 1.0,      what a reset returns to / what compiles now
+  "step": 0.01, "unit": "x",
+  "bindings": [{"node": "flame_ps", "parameter": "emissive", "op": "multiply"}]
+}]
+```
+
+`op` is `multiply` (scalars, every component of a vector, the rgb of a colour),
+`add`, `set`, or `hue_shift` (degrees; colours and gradients). Constants and
+keyframe tracks are transformed alike, results are clamped into the parameter's
+own range, and a control at its default value changes nothing at all.
 
 ## Validation rules (implemented in `aether::validate`)
 
@@ -595,7 +620,11 @@ E012 cycle in parent chain, E013 cycle in input graph, E014 unknown layer,
 E015 effect duration invalid, E016 timeline phase invalid (end<=start or
 outside duration), E017 unknown port, E018 keyframe time invalid,
 E019 curve/gradient keys not sorted or out of [0,1], E020 schema version
-unsupported. W001 unknown phase reference, W002 unused node (no consumer and
+unsupported, E021 invalid or duplicate control id, E022 control binds to an
+unknown node or parameter, E023 control op does not fit the parameter type,
+E024 control range invalid (min>=max, value/default outside it, step<=0).
+W001 unknown phase reference, W002 unused node (no consumer and
 not renderable), W003 max_particles budget high, W004 node disabled but
 referenced, W005 deprecated parameter, W006 keyframe set on a parameter not
-marked animatable (stored, but runtimes may ignore the track).
+marked animatable (stored, but runtimes may ignore the track), W007 control
+with no bindings.

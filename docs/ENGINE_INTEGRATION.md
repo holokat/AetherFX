@@ -181,6 +181,9 @@ if (aetherfx_abi_version() != AETHERFX_ABI_VERSION) { /* bail out */ }
 
 /* 2. once per effect asset, at load time (this is the expensive step) */
 aetherfx_effect* effect = aetherfx_effect_load_file("effects/fireball.json");
+/* optional: a weaker or stronger instance of the same effect, set before the
+   compile (docs/CONTROLS.md) */
+aetherfx_effect_set_control(effect, "flames_intensity", 0.4);
 aetherfx_compiled* compiled = aetherfx_compile(effect, 1.0 / 60.0);
 if (!aetherfx_compiled_ok(compiled)) {
     char* why = aetherfx_compiled_diagnostics_json(compiled);   /* log and give up */
@@ -460,13 +463,18 @@ mismatch into a clear message.
 * `aetherfx_effect_set_parameter()` sets constants only: it clears any keyframe
   track on the parameter it touches, and it needs a recompile to take effect.
   It is for instance tuning, not for animating a value per frame.
+* Controls (`aetherfx_effect_control_count` / `aetherfx_control_info` /
+  `aetherfx_effect_control_index` / `aetherfx_effect_set_control`) are the
+  non-destructive version of that: they scale what the author wrote instead of
+  replacing it, and they also need a recompile. An effect only has the controls
+  its document declares; there is no way to add one through the C API.
 * Textures and meshes are baked at compile time and never change afterwards, so
   they can be uploaded once. There is no streaming or partial re-bake.
 
 ## 14. Python binding
 
 `python/aetherfx/native.py` is the same library through `ctypes`: every one of
-the 74 entry points is declared with its `argtypes`/`restype`, the structs
+the 80 entry points is declared with its `argtypes`/`restype`, the structs
 mirror the header field for field (their sizes are checked once at load time),
 and a small RAII layer turns handles into objects and statuses into
 `NativeError`.
@@ -493,7 +501,7 @@ paths it tried.
 
 | Python | C |
 |---|---|
-| `Effect.from_json` / `from_file`, `.name`, `.duration`, `.validate()`, `.set_parameter()`, `.to_json()` | `aetherfx_effect_*` |
+| `Effect.from_json` / `from_file`, `.name`, `.duration`, `.validate()`, `.set_parameter()`, `.controls()`, `.set_control()`, `.to_json()` | `aetherfx_effect_*` |
 | `Effect.compile(fixed_dt)` -> `Compiled`; `.ok`, `.diagnostics`, `.plan`, `.fixed_dt` | `aetherfx_compile`, `aetherfx_compiled_*` |
 | `Compiled.textures` -> `Texture(id, width, height, frames, frame_width, .pixels, .png_bytes())` | `aetherfx_texture_*` |
 | `Compiled.meshes` / `.mesh_variants("<base>")` -> `Mesh(.positions, .normals, .uvs, .indices)` | `aetherfx_mesh_*` |

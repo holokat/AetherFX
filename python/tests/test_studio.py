@@ -12,6 +12,7 @@ file, which keeps it well under ten seconds.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -117,6 +118,89 @@ def test_effect_has_nodes_layers_timeline_and_statistics(client: TestClient, loa
     assert "statistics" in payload
     # the per-node plan dump is trimmed away; the summary survives
     assert "nodes" not in (payload["statistics"].get("plan") or {})
+
+
+# =====================================================================
+# controls (the Style panel)
+# =====================================================================
+
+
+def test_loading_an_effect_gives_it_default_controls(client: TestClient, loaded: dict) -> None:
+    listed = client.get("/api/controls").json()
+    assert listed["count"] > 0
+    assert listed["groups"][0] == "Global"
+    by_id = {control["id"]: control for control in listed["controls"]}
+    assert "global_intensity" in by_id
+    assert by_id["global_intensity"]["value"] == pytest.approx(by_id["global_intensity"]["default"])
+    assert by_id["global_intensity"]["unit"] == "x"
+    assert by_id["global_hue"]["unit"] == "deg"
+    assert by_id["global_hue"]["min"] == pytest.approx(-180.0)
+    assert by_id["global_intensity"]["bindings"]
+
+    # Generating them is not an edit the user has to save: the working copy is
+    # still clean and the built-in file on disk was never touched.
+    assert client.get("/api/status").json()["active_effect"]["dirty"] is False
+    document = json.loads(Path(loaded["path"]).read_text(encoding="utf-8"))
+    assert "controls" not in document
+
+
+def test_setting_a_control_is_visible_and_undoable(client: TestClient, loaded: dict) -> None:
+    before = client.get("/api/node/flame_ps").json()["effective_parameters"]["emissive"]
+
+    response = client.post("/api/controls/global_intensity", json={"value": 2.0})
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["ok"] is True
+    assert body["control"]["value"] == pytest.approx(2.0)
+    assert body["diagnostics"]["ok"] is True
+
+    # the control moved; the authored parameter did not
+    assert client.get("/api/node/flame_ps").json()["effective_parameters"]["emissive"] == pytest.approx(before)
+    listed = {c["id"]: c for c in client.get("/api/controls").json()["controls"]}
+    assert listed["global_intensity"]["value"] == pytest.approx(2.0)
+    # ... and the document carries the value, which is what "Save as" writes
+    saved = {c["id"]: c for c in client.get("/api/effect").json()["effect"]["controls"]}
+    assert saved["global_intensity"]["value"] == pytest.approx(2.0)
+
+    assert client.post("/api/undo", json={}).json()["ok"] is True
+    listed = {c["id"]: c for c in client.get("/api/controls").json()["controls"]}
+    assert listed["global_intensity"]["value"] == pytest.approx(1.0)
+
+
+def test_a_control_out_of_range_is_a_client_error(client: TestClient, loaded: dict) -> None:
+    response = client.post("/api/controls/global_intensity", json={"value": 99.0})
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "E024"
+
+
+def test_an_unknown_control_is_a_client_error(client: TestClient, loaded: dict) -> None:
+    response = client.post("/api/controls/does_not_exist", json={"value": 1.0})
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "E021"
+
+
+def test_a_control_needs_a_numeric_value(client: TestClient, loaded: dict) -> None:
+    assert client.post("/api/controls/global_intensity", json={}).status_code == 400
+    assert client.post("/api/controls/global_intensity", json={"value": "loud"}).status_code == 400
+
+
+def test_reset_puts_every_control_back(client: TestClient, loaded: dict) -> None:
+    client.post("/api/controls/global_intensity", json={"value": 2.0})
+    client.post("/api/controls/global_size", json={"value": 0.5})
+
+    reset = client.post("/api/controls/reset", json={}).json()
+    assert reset["ok"] is True
+    assert reset["reset"] == 2
+    for control in reset["controls"]:
+        assert control["value"] == pytest.approx(control["default"])
+
+
+def test_generate_is_idempotent(client: TestClient, loaded: dict) -> None:
+    before = client.get("/api/controls").json()["count"]
+    generated = client.post("/api/controls/generate", json={}).json()
+    assert generated["added"] == 0
+    assert generated["count"] == before
+    assert generated["diagnostics"]["ok"] is True
 
 
 def test_missing_node_is_a_client_error(client: TestClient, loaded: dict) -> None:
