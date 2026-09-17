@@ -26,13 +26,9 @@ on:
       - 'python/aetherfx/community.py'
       - 'tools/build_community_index.py'
       - '.github/workflows/effects.yml'
-  push:
-    branches: [main]
-    paths:
-      - 'examples/effects/**'
-      - 'community/effects/**'
-      - 'python/aetherfx/community.py'
-      - 'tools/build_community_index.py'
+  # The publish job (index + previews to GitHub Pages) has not run yet: trigger it by hand until it
+  # has been verified once, then restore the push trigger on main for the same paths as above.
+  workflow_dispatch:
 
 concurrency:
   group: effects-${{ github.ref }}
@@ -215,7 +211,7 @@ jobs:
   # ---------------------------------------------------------------------------
   publish:
     name: publish index and previews
-    if: github.event_name == 'push'
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: write               # only to push the gh-pages branch
