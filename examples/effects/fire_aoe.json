@@ -73,7 +73,7 @@
         "position": [
           0.0,
           3.6,
-          8.8
+          10.2
         ],
         "target": [
           0.0,
@@ -160,14 +160,45 @@
               }
             },
             {
-              "id": "st",
-              "op": "star",
+              "id": "st0",
+              "op": "ring",
               "params": {
-                "points": 4,
-                "width": 0.06,
-                "outer_radius": 0.24,
-                "core_radius": 0.04,
-                "softness": 0.006
+                "radius": 0.235,
+                "thickness": 0.009,
+                "softness": 0.005
+              }
+            },
+            {
+              "id": "st1",
+              "op": "spokes",
+              "params": {
+                "count": 12,
+                "width": 0.005,
+                "softness": 0.004,
+                "inner_radius": 0.1,
+                "outer_radius": 0.235,
+                "rotation": 15.0
+              }
+            },
+            {
+              "id": "st2",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "st0",
+                "b": "st1"
+              }
+            },
+            {
+              "id": "st",
+              "op": "levels",
+              "params": {
+                "out_high": 0.7
+              },
+              "inputs": {
+                "a": "st2"
               }
             },
             {
@@ -341,61 +372,71 @@
       "type": "texture",
       "parameters": {
         "width": 128,
-        "height": 256,
-        "frames": 24,
+        "height": 192,
+        "frames": 32,
         "graph": {
           "nodes": [
             {
-              "id": "wp",
-              "op": "curl",
+              "id": "sim",
+              "op": "fire_sim",
               "params": {
-                "frequency": 1.8,
-                "octaves": 2,
-                "animate": 0.5,
-                "seed": 44
+                "seed": 5,
+                "fuel": 1.15,
+                "fuel_width": 0.46,
+                "buoyancy": 2.5,
+                "turbulence": 1.5,
+                "turbulence_scale": 3.2,
+                "cooling": 1.7,
+                "detail": 4,
+                "speed": 0.06,
+                "substeps": 5,
+                "loop": true,
+                "flicker": 0.5,
+                "sharpness": 1.15
               }
             },
             {
-              "id": "nz",
-              "op": "fbm",
+              "id": "half",
+              "op": "constant",
               "params": {
-                "frequency": 4.4,
-                "octaves": 4,
-                "lacunarity": 2.2,
-                "gain": 0.55,
-                "animate": 0.55,
-                "seed": 21
+                "color": [
+                  0.5,
+                  0.5,
+                  0.5,
+                  1.0
+                ]
               }
             },
             {
-              "id": "wn",
-              "op": "distort",
-              "params": {
-                "amount": 0.22
-              },
-              "inputs": {
-                "a": "nz",
-                "by": "wp"
-              }
-            },
-            {
-              "id": "h",
+              "id": "vgr",
               "op": "gradient_linear",
               "params": {
                 "angle": 90,
-                "start": 0.0,
-                "end": 1.08
+                "start": 1.0,
+                "end": 0.0
               }
             },
             {
-              "id": "s",
-              "op": "math",
+              "id": "byv",
+              "op": "channel_pack",
               "params": {
-                "mode": "subtract"
+                "channel": "luminance"
               },
               "inputs": {
-                "a": "wn",
-                "b": "h"
+                "r": "half",
+                "g": "vgr",
+                "b": "half"
+              }
+            },
+            {
+              "id": "flip",
+              "op": "distort",
+              "params": {
+                "amount": 2.0
+              },
+              "inputs": {
+                "a": "sim",
+                "by": "byv"
               }
             },
             {
@@ -429,31 +470,11 @@
               "id": "hm",
               "op": "levels",
               "params": {
-                "in_low": 0.0,
-                "in_high": 0.25
+                "in_high": 0.25,
+                "gamma": 0.8
               },
               "inputs": {
                 "a": "par"
-              }
-            },
-            {
-              "id": "vg",
-              "op": "gradient_linear",
-              "params": {
-                "angle": 90,
-                "start": 0.0,
-                "end": 1.0
-              }
-            },
-            {
-              "id": "vf",
-              "op": "levels",
-              "params": {
-                "in_low": 0.0,
-                "in_high": 0.18
-              },
-              "inputs": {
-                "a": "vg"
               }
             },
             {
@@ -463,8 +484,28 @@
                 "mode": "multiply"
               },
               "inputs": {
-                "a": "s",
+                "a": "flip",
                 "b": "hm"
+              }
+            },
+            {
+              "id": "vr0",
+              "op": "gradient_linear",
+              "params": {
+                "angle": 90,
+                "start": 1.0,
+                "end": 0.0
+              }
+            },
+            {
+              "id": "vr",
+              "op": "levels",
+              "params": {
+                "in_high": 0.3,
+                "gamma": 0.8
+              },
+              "inputs": {
+                "a": "vr0"
               }
             },
             {
@@ -475,87 +516,22 @@
               },
               "inputs": {
                 "a": "m1",
-                "b": "vf"
+                "b": "vr"
               }
             },
             {
               "id": "lv",
               "op": "levels",
               "params": {
-                "in_low": 0.0,
-                "in_high": 0.58
+                "in_low": 0.13,
+                "in_high": 0.95
               },
               "inputs": {
                 "a": "m2"
               }
-            },
-            {
-              "id": "cz",
-              "op": "colorize",
-              "params": {
-                "gradient": [
-                  [
-                    0.0,
-                    [
-                      0.02,
-                      0.0,
-                      0.0,
-                      1.0
-                    ]
-                  ],
-                  [
-                    0.2,
-                    [
-                      0.5,
-                      0.03,
-                      0.0,
-                      1.0
-                    ]
-                  ],
-                  [
-                    0.42,
-                    [
-                      1.0,
-                      0.18,
-                      0.01,
-                      1.0
-                    ]
-                  ],
-                  [
-                    0.62,
-                    [
-                      1.0,
-                      0.45,
-                      0.05,
-                      1.0
-                    ]
-                  ],
-                  [
-                    0.8,
-                    [
-                      1.0,
-                      0.74,
-                      0.22,
-                      1.0
-                    ]
-                  ],
-                  [
-                    1.0,
-                    [
-                      1.0,
-                      0.98,
-                      0.8,
-                      1.0
-                    ]
-                  ]
-                ]
-              },
-              "inputs": {
-                "a": "lv"
-              }
             }
           ],
-          "output": "cz"
+          "output": "lv"
         }
       }
     },
@@ -642,7 +618,63 @@
         "soft_particle": true,
         "depth_fade": 0.15,
         "dissolve": 0.55,
-        "erosion": 0.3
+        "erosion": 0.3,
+        "temperature_gradient": [
+          [
+            0.0,
+            [
+              0.3,
+              0.02,
+              0.0,
+              1.0
+            ]
+          ],
+          [
+            0.2,
+            [
+              0.72,
+              0.06,
+              0.0,
+              1.0
+            ]
+          ],
+          [
+            0.42,
+            [
+              1.0,
+              0.27,
+              0.025,
+              1.0
+            ]
+          ],
+          [
+            0.64,
+            [
+              1.0,
+              0.56,
+              0.12,
+              1.0
+            ]
+          ],
+          [
+            0.84,
+            [
+              1.0,
+              0.84,
+              0.44,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              1.0,
+              0.97,
+              0.84,
+              1.0
+            ]
+          ]
+        ]
       }
     },
     {
@@ -671,17 +703,17 @@
         "shading": "lit",
         "base_color": [
           0.09,
-          0.055,
-          0.045,
+          0.038,
+          0.028,
           1.0
         ],
         "emissive_color": [
           1.0,
-          0.26,
-          0.04,
+          0.22,
+          0.03,
           1.0
         ],
-        "emissive_intensity": 0.1,
+        "emissive_intensity": 0.06,
         "fresnel_power": 2.5
       }
     },
@@ -692,7 +724,7 @@
         "primitive": "rock",
         "visible": false,
         "radius": 0.5,
-        "segments": 8,
+        "segments": 12,
         "irregularity": 0.75,
         "variants": 8
       }
@@ -710,10 +742,10 @@
       "type": "force",
       "parameters": {
         "force_type": "curl_noise",
-        "strength": 2.2,
-        "frequency": 1.15,
+        "strength": 1.5,
+        "frequency": 0.9,
         "octaves": 3,
-        "speed": 1.6
+        "speed": 1.2
       }
     },
     {
@@ -721,10 +753,10 @@
       "type": "force",
       "parameters": {
         "force_type": "curl_noise",
-        "strength": 1.9,
-        "frequency": 2.3,
+        "strength": 1.0,
+        "frequency": 1.8,
         "octaves": 2,
-        "speed": 2.4
+        "speed": 2.0
       }
     },
     {
@@ -732,7 +764,7 @@
       "type": "force",
       "parameters": {
         "force_type": "vortex",
-        "strength": 1.3,
+        "strength": 0.85,
         "direction": [
           0,
           1,
@@ -752,7 +784,7 @@
       "type": "force",
       "parameters": {
         "force_type": "buoyancy",
-        "strength": 1.9
+        "strength": 2.7
       }
     },
     {
@@ -846,11 +878,11 @@
         ],
         "color": [
           1.0,
-          0.42,
-          0.1,
+          0.36,
+          0.08,
           1.0
         ],
-        "emissive": 0.55,
+        "emissive": 0.26,
         "blend": "additive",
         "opacity": {
           "value": 0.0,
@@ -994,10 +1026,10 @@
       "type": "particle_system",
       "parameters": {
         "max_particles": 1600,
-        "lifetime": 0.5,
-        "lifetime_variance": 0.22,
-        "size": 1.4,
-        "size_variance": 0.48,
+        "lifetime": 0.62,
+        "lifetime_variance": 0.3,
+        "size": 1.5,
+        "size_variance": 0.6,
         "rotation_variance": 12.0,
         "size_over_life": [
           [
@@ -1024,8 +1056,8 @@
             0.0,
             [
               1.0,
-              0.98,
-              0.9,
+              1.0,
+              1.0,
               1.0
             ]
           ],
@@ -1033,54 +1065,56 @@
             0.3,
             [
               1.0,
-              0.72,
-              0.35,
+              0.94,
+              0.86,
               1.0
             ]
           ],
           [
             0.68,
             [
-              0.95,
-              0.28,
-              0.06,
+              1.0,
+              0.82,
+              0.66,
               1.0
             ]
           ],
           [
             1.0,
             [
-              0.3,
-              0.03,
-              0.0,
+              0.95,
+              0.66,
+              0.5,
               1.0
             ]
           ]
         ],
+        "opacity": 0.4,
         "opacity_over_life": [
           [
             0.0,
             0.0
           ],
           [
-            0.1,
-            0.42
+            0.12,
+            1.0
           ],
           [
-            0.55,
-            0.28
+            0.6,
+            0.82
           ],
           [
             1.0,
             0.0
           ]
         ],
-        "emissive": 0.18,
+        "emissive": 0.25,
         "drag": 2.4,
         "blend": "additive",
+        "soft_particle_distance": 0.35,
         "render_mode": "stretched_billboard",
-        "velocity_stretch": 0.3,
-        "sprite_fps": 0.0
+        "velocity_stretch": 0.22,
+        "sprite_fps": 22.0
       },
       "inputs": {
         "sprite": "tex_flame",
@@ -1100,11 +1134,11 @@
         "radius": 3.4,
         "position": [
           0.0,
-          0.45,
+          0.7,
           0.0
         ],
         "rate": 0,
-        "burst_count": 520,
+        "burst_count": 420,
         "burst_times": [
           0.0
         ],
@@ -1128,15 +1162,15 @@
       "type": "particle_system",
       "parameters": {
         "max_particles": 6000,
-        "lifetime": 0.4,
-        "lifetime_variance": 0.15,
-        "size": 1.3,
-        "size_variance": 0.46,
+        "lifetime": 0.5,
+        "lifetime_variance": 0.24,
+        "size": 1.25,
+        "size_variance": 0.48,
         "rotation_variance": 12.0,
         "size_over_life": [
           [
             0.0,
-            0.42
+            0.5
           ],
           [
             0.3,
@@ -1144,7 +1178,7 @@
           ],
           [
             1.0,
-            0.45
+            0.85
           ]
         ],
         "color": [
@@ -1158,8 +1192,8 @@
             0.0,
             [
               1.0,
-              0.95,
-              0.85,
+              1.0,
+              1.0,
               1.0
             ]
           ],
@@ -1167,55 +1201,56 @@
             0.3,
             [
               1.0,
-              0.55,
-              0.16,
+              0.95,
+              0.88,
               1.0
             ]
           ],
           [
             0.62,
             [
-              0.75,
-              0.12,
-              0.02,
+              1.0,
+              0.86,
+              0.72,
               1.0
             ]
           ],
           [
             1.0,
             [
-              0.16,
-              0.015,
-              0.0,
+              0.92,
+              0.68,
+              0.52,
               1.0
             ]
           ]
         ],
+        "opacity": 0.32,
         "opacity_over_life": [
           [
             0.0,
             0.0
           ],
           [
-            0.1,
-            0.25
+            0.14,
+            1.0
           ],
           [
-            0.55,
-            0.15
+            0.62,
+            0.78
           ],
           [
             1.0,
             0.0
           ]
         ],
-        "emissive": 0.12,
-        "drag": 2.5,
+        "emissive": 0.2,
+        "drag": 2.2,
         "blend": "additive",
-        "soft_particle_distance": 0.05,
+        "soft_particle_distance": 0.35,
         "render_mode": "stretched_billboard",
-        "velocity_stretch": 0.34,
-        "sprite_fps": 0.0
+        "velocity_stretch": 0.26,
+        "sprite_fps": 22.0
       },
       "inputs": {
         "sprite": "tex_flame",
@@ -1234,10 +1269,10 @@
       "parameters": {
         "shape": "ring",
         "radius": 3.5,
-        "inner_radius": 1.6,
+        "inner_radius": 0.9,
         "position": [
           0.0,
-          0.55,
+          0.72,
           0.0
         ],
         "rate": {
@@ -1265,8 +1300,8 @@
             }
           ]
         },
-        "velocity": 2.3,
-        "velocity_variance": 0.9,
+        "velocity": 3.0,
+        "velocity_variance": 1.3,
         "direction": [
           0,
           1,
@@ -1285,23 +1320,23 @@
       "type": "particle_system",
       "parameters": {
         "max_particles": 3000,
-        "lifetime": 0.38,
-        "lifetime_variance": 0.14,
-        "size": 1.3,
-        "size_variance": 0.46,
-        "rotation_variance": 12.0,
+        "lifetime": 0.5,
+        "lifetime_variance": 0.2,
+        "size": 1.0,
+        "size_variance": 0.4,
+        "rotation_variance": 180.0,
         "size_over_life": [
           [
             0.0,
             0.5
           ],
           [
-            0.3,
+            0.35,
             1.05
           ],
           [
             1.0,
-            0.55
+            0.7
           ]
         ],
         "color": [
@@ -1315,8 +1350,8 @@
             0.0,
             [
               1.0,
-              1.0,
               0.95,
+              0.78,
               1.0
             ]
           ],
@@ -1324,8 +1359,8 @@
             0.35,
             [
               1.0,
-              0.82,
-              0.45,
+              0.88,
+              0.6,
               1.0
             ]
           ],
@@ -1333,48 +1368,51 @@
             0.75,
             [
               1.0,
-              0.38,
-              0.08,
+              0.78,
+              0.42,
               1.0
             ]
           ],
           [
             1.0,
             [
-              0.45,
-              0.06,
-              0.0,
+              1.0,
+              0.66,
+              0.3,
               1.0
             ]
           ]
         ],
+        "opacity": 0.135,
         "opacity_over_life": [
           [
             0.0,
             0.0
           ],
           [
-            0.12,
-            0.2
+            0.18,
+            1.0
           ],
           [
-            0.6,
-            0.15
+            0.55,
+            0.55
           ],
           [
             1.0,
             0.0
           ]
         ],
-        "emissive": 0.05,
+        "emissive": 0.5,
         "drag": 2.4,
         "blend": "additive",
-        "soft_particle_distance": 0.05,
+        "soft_particle_distance": 0.35,
         "render_mode": "billboard",
-        "sprite_fps": 0.0
+        "sprite_fps": 0.0,
+        "angular_velocity": 25.0,
+        "angular_velocity_variance": 40.0
       },
       "inputs": {
-        "sprite": "tex_flame",
+        "sprite": "tex_puff",
         "material": "mat_fire",
         "forces": [
           "base_curl",
@@ -1388,12 +1426,12 @@
       "type": "emitter",
       "parameters": {
         "shape": "ring",
-        "radius": 3.7,
-        "inner_radius": 1.0,
+        "radius": 3.3,
+        "inner_radius": 0.4,
         "position": [
           0.0,
-          0.4,
-          0.0
+          0.45,
+          0.5
         ],
         "rate": {
           "value": 0.0,
@@ -1404,15 +1442,15 @@
             },
             {
               "time": 0.65,
-              "value": 620.0
+              "value": 600.0
             },
             {
               "time": 1.0,
-              "value": 780.0
+              "value": 720.0
             },
             {
               "time": 2.0,
-              "value": 560.0
+              "value": 540.0
             },
             {
               "time": 2.6,
@@ -1420,7 +1458,7 @@
             }
           ]
         },
-        "velocity": 1.7,
+        "velocity": 1.4,
         "velocity_variance": 0.9,
         "direction": [
           0,
@@ -1440,15 +1478,15 @@
       "type": "particle_system",
       "parameters": {
         "max_particles": 2000,
-        "lifetime": 0.72,
-        "lifetime_variance": 0.24,
-        "size": 1.7,
-        "size_variance": 0.58,
+        "lifetime": 1.15,
+        "lifetime_variance": 0.55,
+        "size": 1.45,
+        "size_variance": 0.56,
         "rotation_variance": 12.0,
         "size_over_life": [
           [
             0.0,
-            0.35
+            0.4
           ],
           [
             0.28,
@@ -1456,7 +1494,7 @@
           ],
           [
             1.0,
-            0.4
+            0.7
           ]
         ],
         "color": [
@@ -1470,8 +1508,8 @@
             0.0,
             [
               1.0,
-              0.95,
-              0.8,
+              0.86,
+              0.62,
               1.0
             ]
           ],
@@ -1479,55 +1517,56 @@
             0.3,
             [
               1.0,
-              0.68,
-              0.28,
+              0.78,
+              0.5,
               1.0
             ]
           ],
           [
             0.66,
             [
-              0.9,
-              0.22,
-              0.04,
+              1.0,
+              0.62,
+              0.34,
               1.0
             ]
           ],
           [
             1.0,
             [
-              0.25,
-              0.02,
-              0.0,
+              0.9,
+              0.45,
+              0.22,
               1.0
             ]
           ]
         ],
+        "opacity": 0.36,
         "opacity_over_life": [
           [
             0.0,
             0.0
           ],
           [
-            0.1,
-            0.36
+            0.12,
+            1.0
           ],
           [
-            0.5,
-            0.24
+            0.55,
+            0.72
           ],
           [
             1.0,
             0.0
           ]
         ],
-        "emissive": 0.1,
-        "drag": 1.5,
+        "emissive": 0.18,
+        "drag": 1.3,
         "blend": "additive",
-        "soft_particle_distance": 0.05,
+        "soft_particle_distance": 0.35,
         "render_mode": "stretched_billboard",
-        "velocity_stretch": 0.42,
-        "sprite_fps": 0.0
+        "velocity_stretch": 0.3,
+        "sprite_fps": 22.0
       },
       "inputs": {
         "sprite": "tex_flame",
@@ -1545,12 +1584,12 @@
       "type": "emitter",
       "parameters": {
         "shape": "ring",
-        "radius": 3.6,
-        "inner_radius": 2.2,
+        "radius": 3.35,
+        "inner_radius": 1.1,
         "position": [
           0.0,
-          0.75,
-          0.0
+          0.95,
+          0.35
         ],
         "rate": {
           "value": 0.0,
@@ -1561,15 +1600,15 @@
             },
             {
               "time": 0.8,
-              "value": 330.0
+              "value": 230.0
             },
             {
               "time": 1.1,
-              "value": 400.0
+              "value": 280.0
             },
             {
               "time": 1.9,
-              "value": 280.0
+              "value": 200.0
             },
             {
               "time": 2.5,
@@ -1577,8 +1616,8 @@
             }
           ]
         },
-        "velocity": 4.3,
-        "velocity_variance": 1.5,
+        "velocity": 5.5,
+        "velocity_variance": 2.4,
         "direction": [
           0,
           1,
@@ -1597,15 +1636,15 @@
       "type": "particle_system",
       "parameters": {
         "max_particles": 1200,
-        "lifetime": 0.42,
-        "lifetime_variance": 0.15,
+        "lifetime": 0.55,
+        "lifetime_variance": 0.24,
         "size": 1.3,
-        "size_variance": 0.45,
+        "size_variance": 0.48,
         "rotation_variance": 12.0,
         "size_over_life": [
           [
             0.0,
-            0.4
+            0.5
           ],
           [
             0.3,
@@ -1613,7 +1652,7 @@
           ],
           [
             1.0,
-            0.5
+            0.8
           ]
         ],
         "color": [
@@ -1627,8 +1666,8 @@
             0.0,
             [
               1.0,
-              0.98,
-              0.88,
+              1.0,
+              1.0,
               1.0
             ]
           ],
@@ -1636,54 +1675,56 @@
             0.35,
             [
               1.0,
-              0.75,
-              0.38,
+              0.94,
+              0.85,
               1.0
             ]
           ],
           [
             0.7,
             [
-              0.92,
-              0.28,
-              0.06,
+              1.0,
+              0.84,
+              0.68,
               1.0
             ]
           ],
           [
             1.0,
             [
-              0.3,
-              0.03,
-              0.0,
+              0.92,
+              0.66,
+              0.48,
               1.0
             ]
           ]
         ],
+        "opacity": 0.3,
         "opacity_over_life": [
           [
             0.0,
             0.0
           ],
           [
-            0.12,
-            0.2
+            0.15,
+            1.0
           ],
           [
             0.6,
-            0.14
+            0.78
           ],
           [
             1.0,
             0.0
           ]
         ],
-        "emissive": 0.05,
-        "drag": 2.6,
+        "emissive": 0.22,
+        "drag": 2.2,
         "blend": "additive",
+        "soft_particle_distance": 0.35,
         "render_mode": "stretched_billboard",
-        "velocity_stretch": 0.24,
-        "sprite_fps": 0.0
+        "velocity_stretch": 0.2,
+        "sprite_fps": 22.0
       },
       "inputs": {
         "sprite": "tex_flame",
@@ -1704,8 +1745,8 @@
         "radius": 2.2,
         "position": [
           0.0,
-          0.35,
-          0.0
+          0.62,
+          1.5
         ],
         "rate": {
           "value": 0.0,
@@ -1716,11 +1757,11 @@
             },
             {
               "time": 0.95,
-              "value": 320.0
+              "value": 470.0
             },
             {
               "time": 1.6,
-              "value": 280.0
+              "value": 410.0
             },
             {
               "time": 2.3,
@@ -1728,14 +1769,14 @@
             }
           ]
         },
-        "velocity": 2.6,
-        "velocity_variance": 1.0,
+        "velocity": 3.4,
+        "velocity_variance": 1.4,
         "direction": [
           0,
           1,
           0
         ],
-        "spread": 40,
+        "spread": 24,
         "start_time": 0.7
       },
       "inputs": {
@@ -1750,8 +1791,8 @@
         "max_particles": 220,
         "lifetime": 2.4,
         "lifetime_variance": 0.4,
-        "size": 0.42,
-        "size_variance": 0.18,
+        "size": 0.29,
+        "size_variance": 0.13,
         "opacity_over_life": [
           [
             0.0,
@@ -1944,11 +1985,11 @@
             },
             {
               "time": 0.8,
-              "value": 420.0
+              "value": 300.0
             },
             {
               "time": 2.4,
-              "value": 250.0
+              "value": 190.0
             },
             {
               "time": 2.8,
@@ -1956,7 +1997,7 @@
             }
           ]
         },
-        "burst_count": 320,
+        "burst_count": 260,
         "burst_times": [
           0.0
         ],
@@ -1980,9 +2021,9 @@
       "type": "particle_system",
       "parameters": {
         "max_particles": 2200,
-        "lifetime": 1.7,
+        "lifetime": 1.9,
         "lifetime_variance": 0.5,
-        "size": 0.95,
+        "size": 1.0,
         "size_variance": 0.32,
         "size_over_life": [
           [
@@ -2000,7 +2041,7 @@
           0.082,
           1.0
         ],
-        "opacity": 0.52,
+        "opacity": 0.6,
         "opacity_over_life": [
           [
             0.0,
@@ -2040,8 +2081,8 @@
         "inner_radius": 0.0,
         "position": [
           0.0,
-          3.2,
-          0.0
+          3.5,
+          -0.9
         ],
         "rate": {
           "value": 0.0,
@@ -2052,11 +2093,11 @@
             },
             {
               "time": 1.2,
-              "value": 150.0
+              "value": 110.0
             },
             {
               "time": 2.4,
-              "value": 160.0
+              "value": 125.0
             },
             {
               "time": 2.95,
@@ -2087,8 +2128,8 @@
         "radius": 2.0,
         "position": [
           0.0,
-          4.3,
-          0.0
+          4.6,
+          -1.4
         ],
         "rate": {
           "value": 0.0,
@@ -2099,11 +2140,11 @@
             },
             {
               "time": 1.3,
-              "value": 110.0
+              "value": 75.0
             },
             {
               "time": 2.2,
-              "value": 90.0
+              "value": 65.0
             },
             {
               "time": 2.6,
@@ -2314,7 +2355,8 @@
   ],
   "metadata": {
     "reference": "Fire Area of Effect concept sheet: telegraph 0-0.4 (rune, embers gather), eruption 0.4-0.8 (flames burst across the whole disk, debris lifts), peak 0.8-1.6 (full AoE intensity, uniform sea of flames), sustain 1.6-2.4, fade 2.4-3.0 (flames recede, embers dissipate)",
-    "camera_note": "The studio GPU viewer frames from the `cam` node and pulls the eye back by 1.45x, so cam [0, 3.6, 8.8] target [0, 1.4, 0] fov 42 puts the eye at about [0, 4.6, 12.8] - the 3/4 angle of the concept sheet with the whole burning disk in frame. cam.position.y, cam.target.y and fov are pinned by tests/sim/analytic_test.cpp, so distance is the only free framing knob.",
+    "camera_note": "The studio GPU viewer frames from the `cam` node and pulls the eye back by 1.45x, so cam [0, 3.6, 10.2] target [0, 1.4, 0] fov 42 puts the eye at about [0, 4.6, 14.8] - the 3/4 angle of the concept sheet with the whole burning disk in frame. cam.position.y, cam.target.y and fov are pinned by tests/sim/analytic_test.cpp, so distance is the only free framing knob.",
+    "fire_note": "tex_flame is a baked `fire_sim` flipbook (32 frames, seamless loop), left grayscale so material.temperature_gradient colours every sprite over its own life - white hot at the fuel bed, blood red at the tip. Every fire system plays the sheet at sprite_fps 22 from its own birth, so no two sprites show the same frame. The half/vgr/byv/flip nodes in that graph mirror the sheet vertically: `fire_sim` bakes the flame root at v=0 (image row 0) but both renderers draw image row 0 at the TOP of the sprite, so an unmirrored sheet renders upside down. Delete those four nodes when that is fixed. base_ps deliberately uses tex_puff, not the fire sheet: a fire_sim tile is a bright fuel slab under its tongues and down at the bed the sprites are too sparse to overlap, so each slab read as a separate pale rectangle.",
     "render_settings": {
       "ground_albedo": 0.07,
       "background": [

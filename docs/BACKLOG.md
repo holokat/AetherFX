@@ -102,3 +102,15 @@ simplified once the feature lands.
 - The viewer multiplies light intensity by 3.2 with true inverse-square falloff while the docs
   describe `intensity / (d^2 + 1)`; a point light inside a mesh blows it out and `shading: lit`
   leaves a specular hotspot at roughness 0.55. Align the docs and the two renderers.
+
+## Flipbook orientation (found by the Fire AOE second pass)
+- `fire_sim` and `flame` sheets render upside down in BOTH renderers relative to docs/VOCABULARY.md
+  (the doc says root at v = 0 draws upright; three.js `flipY` and the CPU path both put image row 0
+  at the top of the sprite, so the fuel slab lands above the tongues). Fire AOE works around it by
+  mirroring V in the texture graph (`half` / `vgr` / `byv` / `flip` nodes: `distort` by a packed
+  (0.5, 1 - v) field with amount 2). Fix `fire_sim` to emit upright (it is new, nothing else depends on
+  it), document `flame` as is, then delete the four mirror nodes from fire_aoe.json.
+- `material.opacity` (not `particle_system.opacity`) drives the viewer shader's `uOpacity`;
+  `soft_particle_distance: 0.05` acts as a hard depth clip against the ground.
+- Library effects should each get 4-8 hand-named controls (the studio generates defaults per working
+  copy until then).
