@@ -452,8 +452,8 @@ class TestNativeFrameSource:
             resources = source.resources()
             public = public_resources(resources)
             assert public["meshes"]["rock_mesh"]["variants"] == 8
-            assert public["meshes"]["rock_mesh"]["url"] == "/api/stream/mesh/rock_mesh.json"
-            assert public["textures"]["tex_puff"]["url"] == "/api/stream/texture/tex_puff.png"
+            assert public["meshes"]["rock_mesh"]["url"].startswith("/api/stream/mesh/rock_mesh.json?v=")
+            assert public["textures"]["tex_puff"]["url"].startswith("/api/stream/texture/tex_puff.png?v=")
             assert "png" not in public["textures"]["tex_puff"]
             json.dumps(public)
 
@@ -475,7 +475,7 @@ class TestNativeFrameSource:
             mesh_system = next(s for s in header["systems"] if s["render_mode"] == "mesh")
             assert set(mesh_system["arrays"]) == {
                 "position", "velocity", "size", "rotation", "color", "emissive",
-                "age_norm", "orientation", "scale3", "variant",
+                "age_norm", "age", "orientation", "scale3", "variant",
             }
             assert mesh_system["arrays"]["variant"]["dtype"] == "u32"
             billboard = next(s for s in header["systems"] if s["render_mode"] != "mesh")

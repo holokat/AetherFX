@@ -9,6 +9,11 @@ import * as THREE from 'three';
 
 export const MAX_LIGHTS = 8;
 
+/* Keys a material.temperature_gradient may carry into the shader.  The ramps the
+ * vocabulary documents have five; a longer gradient is resampled onto this many
+ * evenly spaced taps by particles.js. */
+export const MAX_GRADIENT_KEYS = 8;
+
 /* ------------------------------------------------------------------ *
  * particles: one instanced camera-facing quad per particle
  * ------------------------------------------------------------------ */
@@ -24,44 +29,58 @@ attribute float iRotation;      // radians, screen space
 attribute vec4 iColor;
 attribute float iEmissive;
 attribute float iAge;           // age_norm 0..1
+attribute float iAgeSeconds;    // age in seconds; 0 when the stream omits it
 
-uniform float uStretch;         // velocity_stretch
-uniform float uStretched;       // 1 = stretched_billboard
+uniform float uStretch;         // velocity_stretch, 0 unless the mode stretches
+uniform float uAlignVelocity;   // 1 = stretched_billboard or align_to_velocity
 
 varying vec2 vLocal;            // corner, for the sphere normal and the mask
 varying vec2 vUv;               // 0..1 inside the sprite cell
 varying vec4 vColor;
 varying float vEmissive;
 varying float vAge;
+varying float vAgeSeconds;
 varying vec3 vViewPos;
 
 void main() {
   vec4 mv = modelViewMatrix * vec4(iPosition, 1.0);
-  vec2 offset;
 
-  if (uStretched > 0.5) {
-    // Align the quad to the velocity as it projects on screen and stretch it.
-    // The basis must keep the same handedness as the unrotated quad: build it
-    // basis as (axis rotated -90, axis) so its determinant stays +1, otherwise
-    // the corners wind backwards, the sprite mirrors and back-face culling
-    // throws the whole system away.
+  // The quad's two view-plane axes, built exactly the way draw_particle_quad()
+  // in src/render/src/software_renderer.cpp builds them: the particle's roll
+  // first, then the projected velocity when there is one to align to.  axisA
+  // spans corner.x, axisB spans corner.y.
+  float c = cos(iRotation), s = sin(iRotation);
+  vec2 axisA = vec2(c, s);
+  vec2 axisB = vec2(-s, c);
+  float sizeA = iSize;
+  float sizeB = iSize;
+
+  if (uAlignVelocity > 0.5) {
     vec3 velView = (modelViewMatrix * vec4(iVelocity, 0.0)).xyz;
     vec2 axis = velView.xy;
-    axis = (dot(axis, axis) > 1e-10) ? normalize(axis) : vec2(0.0, 1.0);
-    vec2 side = vec2(axis.y, -axis.x);
-    float stretched = iSize * (1.0 + uStretch * length(iVelocity));
-    offset = side * (corner.x * iSize) + axis * (corner.y * stretched);
-  } else {
-    float c = cos(iRotation), s = sin(iRotation);
-    offset = vec2(corner.x * c - corner.y * s, corner.x * s + corner.y * c) * iSize;
+    // The CPU renderer replaces the roll basis only when the velocity actually
+    // projects onto the screen; a particle flying straight at the camera keeps
+    // its roll, which is where rotation / rotation_variance survives for a
+    // stretched billboard.  Same 1e-5 length threshold.
+    if (dot(axis, axis) > 1e-10) {
+      axis = normalize(axis);
+      // The basis must keep the same handedness as the unrotated quad: (axis
+      // rotated -90, axis) has determinant +1, otherwise the corners wind
+      // backwards, the sprite mirrors and back-face culling throws the whole
+      // system away.
+      axisB = axis;
+      axisA = vec2(axis.y, -axis.x);
+      sizeB = iSize * (1.0 + uStretch * length(iVelocity));
+    }
   }
 
-  mv.xy += offset;
+  mv.xy += axisA * (corner.x * sizeA) + axisB * (corner.y * sizeB);
   vLocal = corner;
   vUv = corner + 0.5;
   vColor = iColor;
   vEmissive = iEmissive;
   vAge = iAge;
+  vAgeSeconds = iAgeSeconds;
   vViewPos = mv.xyz;
   gl_Position = projectionMatrix * mv;
 }
@@ -80,7 +99,12 @@ uniform float uPremultiply;
 uniform sampler2D uSprite;
 uniform float uHasSprite;
 uniform vec4 uSheet;            // columns, rows, texture frames, sprite fps
+uniform float uHasAgeSeconds;   // 1 = iAgeSeconds is real (see particles.js)
 uniform float uTime;
+
+uniform int uTempCount;                             // material.temperature_gradient
+uniform float uTempT[${MAX_GRADIENT_KEYS}];
+uniform vec3 uTempColor[${MAX_GRADIENT_KEYS}];
 
 uniform sampler2D uNoise;
 uniform float uDissolve;
@@ -104,26 +128,69 @@ varying vec2 vUv;
 varying vec4 vColor;
 varying float vEmissive;
 varying float vAge;
+varying float vAgeSeconds;
 varying vec3 vViewPos;
+
+/* Positive modulo, overflow-free for a large floor(age * fps) - the same shape
+ * as sprite_frame()'s "frame -= floor(frame / frames) * frames" on the CPU. */
+float wrapIndex(float index, float count) {
+  return index - floor(index / count) * count;
+}
+
+/* The flipbook clock is per particle, never a global time uniform: sprite_cell()
+ * and sprite_frame() in src/render/src/software_renderer.cpp read that
+ * particle's own age, so a system's sprites spread across the flipbook instead
+ * of stepping together and a non-looping strip never pops at wrap.
+ *
+ *   sprite_fps > 0 : floor(age_seconds * fps), wrapped  (playback from birth)
+ *   sprite_fps = 0 : floor(age_norm * n)                (once over the life)
+ *
+ * The cells of a sprite_columns x sprite_rows grid wrap in both cases; the
+ * texture's own frame strip clamps in the age-mapped one.  age_seconds only
+ * exists when the stream carries a per-particle "age" array, so without it the
+ * fps branch falls back to the age-mapped one - still per particle, and still
+ * monotonic, rather than one shared frame for the whole system. */
+float sheetIndex(float count) {
+  if (uSheet.w > 0.0 && uHasAgeSeconds > 0.5) return floor(vAgeSeconds * uSheet.w);
+  return floor(clamp(vAge, 0.0, 1.0) * count);
+}
 
 /* Flipbook: a sprite grid inside the cell, then the texture's own frame strip. */
 vec2 sheetUv(vec2 uv) {
   float cols = max(uSheet.x, 1.0);
   float rows = max(uSheet.y, 1.0);
   float texFrames = max(uSheet.z, 1.0);
-  float grid = cols * rows;
-  float total = max(grid, texFrames);
-  float index = (uSheet.w > 0.0) ? mod(floor(uTime * uSheet.w), total)
-                                 : floor(clamp(vAge, 0.0, 0.9999) * total);
-  if (grid > 1.0) {
-    float c = mod(index, cols);
-    float r = floor(index / cols);
+  float cells = cols * rows;
+  if (cells > 1.0) {
+    float cell = wrapIndex(sheetIndex(cells), cells);
+    float c = mod(cell, cols);
+    float r = floor(cell / cols);
     uv = (uv + vec2(c, rows - 1.0 - r)) / vec2(cols, rows);
-    index = 0.0;
   }
-  // Stay just inside the frame so bilinear filtering cannot fetch the next one.
-  if (texFrames > 1.0) uv.x = (index + clamp(uv.x, 0.002, 0.998)) / texFrames;
+  if (texFrames > 1.0) {
+    float frame = clamp(wrapIndex(sheetIndex(texFrames), texFrames), 0.0, texFrames - 1.0);
+    // Stay just inside the frame so bilinear filtering cannot fetch the next one.
+    uv.x = (frame + clamp(uv.x, 0.002, 0.998)) / texFrames;
+  }
   return uv;
+}
+
+/* material.temperature_gradient, evaluated the way aether::Gradient::eval does
+ * (src/core/src/curve.cpp): piecewise linear between keys, clamped outside the
+ * key range, white when the gradient is empty.  shade_particle() multiplies it
+ * into the particle colour at 1 - age/lifetime, so a puff is white-hot at birth
+ * and falls through orange to the ramp's dark end as it dies. */
+vec3 temperatureTint(float t) {
+  if (uTempCount <= 0) return vec3(1.0);
+  vec3 tint = uTempColor[0];
+  for (int i = 1; i < ${MAX_GRADIENT_KEYS}; i++) {
+    if (i >= uTempCount) break;
+    if (t <= uTempT[i - 1]) break;
+    float span = uTempT[i] - uTempT[i - 1];
+    float u = (t >= uTempT[i] || span <= 0.0) ? 1.0 : (t - uTempT[i - 1]) / span;
+    tint = mix(uTempColor[i - 1], uTempColor[i], u);
+  }
+  return tint;
 }
 
 void main() {
@@ -140,7 +207,7 @@ void main() {
     texel.a = falloff * falloff;
   }
 
-  vec3 rgb = texel.rgb * uBaseColor * vColor.rgb;
+  vec3 rgb = texel.rgb * uBaseColor * vColor.rgb * temperatureTint(1.0 - clamp(vAge, 0.0, 1.0));
   float alpha = texel.a * vColor.a * uOpacity;
   if (alpha <= 0.0) discard;
 

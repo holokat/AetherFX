@@ -261,7 +261,10 @@ def test_save_writes_into_the_output_directory(client: TestClient, output_dir: P
     listing = client.get("/api/effects").json()
     assert {item["name"] for item in listing["saved"]} == {"fireball_copy"}
     names = {(item["name"], item["builtin"]) for item in listing["library"]}
-    assert ("Fireball", True) in names and ("Fireball copy", False) in names
+    # the first-milestone Fireball is a hidden built-in (metadata.library.hidden): it stays loadable by
+    # path but is not offered in the Library; a saved copy of it is the user's own and is listed
+    assert ("Fireball", True) not in names and ("Fireball copy", False) in names
+    assert ("Fire Bolt", True) in names
 
 
 def test_builtin_library_entries_are_protected(client: TestClient, loaded: dict) -> None:
@@ -505,3 +508,17 @@ def test_export_refuses_a_destination_that_is_not_a_project(client: TestClient, 
 
     unknown = client.post("/api/export", json={"target": "nope"})
     assert unknown.status_code == 400
+
+
+def test_a_freshly_loaded_effect_is_not_dirty(client: TestClient, loaded: dict) -> None:
+    # Loading a second library entry discards the first working copy; that housekeeping must not
+    # mark the new working copy as edited (it made "unsaved changes were discarded" fire on every switch).
+    library = client.get("/api/effects").json()["library"]
+    other = next(item for item in library if item["builtin"] and item["path"] != loaded["path"])
+    assert client.post("/api/effects/load", json={"path": other["path"]}).status_code == 200
+    active = client.get("/api/status").json()["active_effect"]
+    assert active["name"] == other["name"]
+    assert active["dirty"] is False
+    # and again, back to the first
+    assert client.post("/api/effects/load", json={"path": loaded["path"]}).status_code == 200
+    assert client.get("/api/status").json()["active_effect"]["dirty"] is False

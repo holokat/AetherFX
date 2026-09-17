@@ -163,6 +163,14 @@ def endpoint(handler: Callable[[Request], Any]) -> Callable[[Request], Any]:
 # =========================================================================
 
 
+
+def _library_hidden(document: JsonDict) -> bool:
+    """True when an effect document opts out of the Library (``metadata.library.hidden``)."""
+    metadata = document.get("metadata")
+    library = metadata.get("library") if isinstance(metadata, dict) else None
+    return bool(isinstance(library, dict) and library.get("hidden"))
+
+
 class Studio:
     """The engine session, the lock protecting it, the generator and the jobs."""
 
@@ -281,6 +289,8 @@ class Studio:
                 entry: JsonDict = {"name": path.stem, "path": str(path), "builtin": builtin}
                 try:
                     raw = json.loads(path.read_text(encoding="utf-8"))
+                    if builtin and isinstance(raw, dict) and _library_hidden(raw):
+                        continue        # kept on disk (e.g. a test fixture) but not offered in the Library
                     if isinstance(raw, dict) and raw.get("name"):
                         entry["name"] = str(raw["name"])
                     entry["duration"] = raw.get("duration") if isinstance(raw, dict) else None
@@ -335,12 +345,14 @@ class Studio:
         previous = self.working_id
         self.working_id = new_id
         self.working_source = source
-        self.working_revision = self.revision
         if previous and previous != new_id:
             try:
                 await self.acall("delete_effect", effect_id=previous)
             except Exception:  # noqa: BLE001 - already gone
                 pass
+        # Record the clean revision LAST: discarding the previous working copy is itself a mutating
+        # call, and counting it made every freshly loaded effect look edited.
+        self.working_revision = self.revision
 
     def guard_tool(self, name: str, args: JsonDict | None) -> None:
         """Refuse tool calls that would overwrite a built-in library file."""

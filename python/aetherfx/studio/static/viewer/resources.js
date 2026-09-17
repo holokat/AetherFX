@@ -8,6 +8,17 @@
 
 import * as THREE from 'three';
 
+/* Material parameters the baked MaterialDesc carries but `struct
+ * aetherfx_material` does not, so they never reach the resources message.  The
+ * studio still has them in the authored document, and the renderers read the
+ * merged description, so they are filled in from `/api/effect`.  Anything the
+ * resources message does send wins: the day the C API grows a field, this
+ * fallback goes quiet on its own.
+ *
+ * `uv_scroll`, `uv_rotate`, `gradient_texture` and `double_sided` are dropped by
+ * the same struct; they are not listed here because nothing renders them yet. */
+const EFFECT_ONLY_MATERIAL_FIELDS = ['temperature_gradient'];
+
 export class ResourceSet {
   constructor(renderer) {
     this.renderer = renderer;
@@ -29,6 +40,7 @@ export class ResourceSet {
   load(message) {
     const generation = ++this.generation;
     this.materials = message.materials || {};
+    this.mergeAuthoredMaterials(generation);
     this.effect = message.effect || {};
     this.renderSettings = message.render_settings || {};
     this.camera = message.camera || null;
@@ -37,6 +49,12 @@ export class ResourceSet {
     const meshes = message.meshes || {};
     this.dropMissing(this.textures, textures, (texture) => texture.dispose());
     this.dropMissing(this.meshes, meshes, (list) => list.forEach((geometry) => geometry.dispose()));
+    // Effects reuse ids such as tex_flame and rock_mesh.  The URL is content addressed
+    // (?v=<hash>), so a changed URL means different pixels or geometry under the same id:
+    // drop the old asset now instead of drawing it with the new frame layout until the
+    // replacement arrives (a strip sliced with the wrong frame count draws as hard blades).
+    this.dropChanged(this.textures, textures, (texture) => texture.dispose());
+    this.dropChanged(this.meshes, meshes, (list) => list.forEach((geometry) => geometry.dispose()));
     this.infos.clear();
 
     Object.keys(textures).forEach((id) => {
@@ -47,7 +65,15 @@ export class ResourceSet {
       this.loader.load(info.url, (texture) => {
         if (generation !== this.generation) { texture.dispose(); return; }
         texture.colorSpace = THREE.SRGBColorSpace;
-        texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
+        // U repeats so a ribbon can tile: a trail vertex's u is cumulative world
+        // distance in metres plus uv_scroll * time (docs/RUNTIME.md section 7),
+        // which clamp-to-edge turned into one stretched smear of the last texel
+        // column.  Every other consumer keeps its UV inside [0,1] - billboards
+        // clamp into the frame rectangle, decals and meshes are unit-mapped - so
+        // repeating S changes nothing for them.  V still clamps, so a sprite
+        // sheet can never wrap into the row above.
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.ClampToEdgeWrapping;
         texture.magFilter = THREE.LinearFilter;
         // A frame strip must not be mipmapped: the engine lays its frames side by
         // side in one image, so mip level 2 and beyond average neighbouring frames
@@ -77,7 +103,47 @@ export class ResourceSet {
     });
   }
 
+  /* Top the material descriptions up from the authored document.
+   *
+   * The renderers read `context.materials`, which viewer.js re-reads from here
+   * every frame, so the fields land a frame or two after the resources message
+   * and nothing has to wait for them.  A studio that does not serve
+   * `/api/effect` (or a viewer embedded somewhere else) simply keeps the
+   * resources message's materials, which is what it had before. */
+  mergeAuthoredMaterials(generation) {
+    fetch('/api/effect', { cache: 'no-store' })
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
+      .then((payload) => {
+        if (generation !== this.generation) return;
+        const nodes = (payload && payload.effect && payload.effect.nodes) || [];
+        nodes.forEach((node) => {
+          if (!node || node.type !== 'material' || !node.id) return;
+          const desc = this.materials[node.id];
+          const parameters = node.parameters || {};
+          if (!desc) return;
+          EFFECT_ONLY_MATERIAL_FIELDS.forEach((name) => {
+            if (desc[name] === undefined && parameters[name] !== undefined) desc[name] = parameters[name];
+          });
+        });
+      })
+      .catch(() => { /* no studio behind the viewer: the stream's materials stand */ });
+  }
+
   /* Dispose what the new message no longer mentions. */
+  dropChanged(current, next, disposeOne) {
+    if (!this.urls) this.urls = new Map();
+    Object.keys(next).forEach((id) => {
+      const url = (next[id] || {}).url || '';
+      const key = (current === this.textures ? 't:' : 'm:') + id;
+      const before = this.urls.get(key);
+      if (before !== undefined && before !== url && current.has(id)) {
+        disposeOne(current.get(id));
+        current.delete(id);
+      }
+      this.urls.set(key, url);
+    });
+  }
+
   dropMissing(current, next, disposeOne) {
     [...current.keys()].forEach((id) => {
       if (Object.prototype.hasOwnProperty.call(next, id)) return;
