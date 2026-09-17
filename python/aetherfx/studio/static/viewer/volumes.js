@@ -267,6 +267,34 @@ void main() {
 }
 `;
 
+/* Volumes are marched into a buffer at VOLUME_SCALE of the drawing size and composited back, because
+ * the march is the most expensive thing the viewer draws and smoke has no detail at pixel scale: on a
+ * Retina display that is a quarter of the fragments for the same picture.  The boxes live on their own
+ * layer so the main pass never sees them; a full-screen triangle takes their place in the draw order. */
+export const LAYER_VOLUME = 2;
+const VOLUME_SCALE = 0.5;
+
+const COMPOSITE_VERTEX = `
+varying vec2 vUv;
+void main() {
+  vUv = position.xy * 0.5 + 0.5;
+  gl_Position = vec4(position.xy, 0.0, 1.0);
+}
+`;
+
+/* Four bilinear taps half a source texel apart: a tent filter that hides the doubled jitter grain. */
+const COMPOSITE_FRAGMENT = `
+uniform sampler2D uVolume;
+uniform vec2 uTexel;
+varying vec2 vUv;
+void main() {
+  vec2 d = uTexel * 0.5;
+  vec4 c = texture2D(uVolume, vUv + vec2(-d.x, -d.y)) + texture2D(uVolume, vUv + vec2(d.x, -d.y))
+         + texture2D(uVolume, vUv + vec2(-d.x, d.y)) + texture2D(uVolume, vUv + vec2(d.x, d.y));
+  gl_FragColor = c * 0.25;
+}
+`;
+
 const TMP_TRANSFORM = new THREE.Matrix4();
 const TMP_BOX = new THREE.Matrix4();
 
@@ -278,6 +306,80 @@ export class VolumeRenderer {
     this.geometry = new THREE.BoxGeometry(1, 1, 1);
     this.volumes = new Map();
     this.drawn = 0;
+    this.target = null;
+    this.savedResolution = new THREE.Vector2();
+    this.savedClear = new THREE.Color();
+
+    const triangle = new THREE.BufferGeometry();
+    triangle.setAttribute('position', new THREE.BufferAttribute(new Float32Array([-1, -1, 0, 3, -1, 0, -1, 3, 0]), 3));
+    this.compositeMaterial = new THREE.ShaderMaterial({
+      vertexShader: COMPOSITE_VERTEX,
+      fragmentShader: COMPOSITE_FRAGMENT,
+      uniforms: { uVolume: { value: null }, uTexel: { value: new THREE.Vector2(1, 1) } },
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+      blending: THREE.CustomBlending,          // the buffer holds premultiplied colour, like the march itself
+      blendEquation: THREE.AddEquation,
+      blendSrc: THREE.OneFactor,
+      blendDst: THREE.OneMinusSrcAlphaFactor,
+      blendSrcAlpha: THREE.OneFactor,
+      blendDstAlpha: THREE.OneMinusSrcAlphaFactor
+    });
+    this.composite = new THREE.Mesh(triangle, this.compositeMaterial);
+    this.composite.frustumCulled = false;
+    this.composite.renderOrder = VOLUME_ORDER;
+    this.composite.layers.set(LAYER_TRANSPARENT);
+    this.composite.visible = false;
+    this.scene.add(this.composite);
+  }
+
+  /* March every volume into the reduced buffer.  Call once per frame after the depth prepass (the march
+   * clamps against that depth texture) and before the main pass, which then draws the composite. */
+  renderOffscreen(renderer, camera, size) {
+    if (!this.drawn) {
+      this.composite.visible = false;
+      return;
+    }
+    const width = Math.max(4, Math.ceil(size.width * VOLUME_SCALE));
+    const height = Math.max(4, Math.ceil(size.height * VOLUME_SCALE));
+    if (!this.target || this.target.width !== width || this.target.height !== height) {
+      if (this.target) this.target.dispose();
+      this.target = new THREE.WebGLRenderTarget(width, height, {
+        type: THREE.HalfFloatType, colorSpace: THREE.LinearSRGBColorSpace, depthBuffer: false,
+        minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter
+      });
+      this.compositeMaterial.uniforms.uVolume.value = this.target.texture;
+      this.compositeMaterial.uniforms.uTexel.value.set(1 / width, 1 / height);
+    }
+
+    const resolution = this.shared.uResolution.value;
+    this.savedResolution.copy(resolution);
+    const background = this.scene.background;
+    const mask = camera.layers.mask;
+    const clearAlpha = renderer.getClearAlpha();
+    renderer.getClearColor(this.savedClear);
+
+    this.scene.background = null;
+    resolution.set(width, height);               // the march reads the depth texture at gl_FragCoord / uResolution
+    camera.layers.set(LAYER_VOLUME);
+    renderer.setRenderTarget(this.target);
+    renderer.setClearColor(0x000000, 0);
+    renderer.clear(true, false, false);
+    renderer.render(this.scene, camera);
+    renderer.setRenderTarget(null);
+
+    renderer.setClearColor(this.savedClear, clearAlpha);
+    camera.layers.mask = mask;
+    resolution.copy(this.savedResolution);
+    this.scene.background = background;
+    this.composite.visible = true;
+  }
+
+  disposeTarget() {
+    if (this.target) this.target.dispose();
+    this.target = null;
+    this.composite.visible = false;
   }
 
   makeEntry() {
@@ -322,7 +424,7 @@ export class VolumeRenderer {
     mesh.matrixAutoUpdate = false;
     mesh.frustumCulled = false;
     mesh.renderOrder = VOLUME_ORDER;
-    mesh.layers.set(LAYER_TRANSPARENT);
+    mesh.layers.set(LAYER_VOLUME);
     this.scene.add(mesh);
     return { mesh: mesh, material: material };
   }
@@ -399,5 +501,9 @@ export class VolumeRenderer {
     });
     this.volumes.clear();
     this.geometry.dispose();
+    this.disposeTarget();
+    this.scene.remove(this.composite);
+    this.composite.geometry.dispose();
+    this.compositeMaterial.dispose();
   }
 }

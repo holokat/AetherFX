@@ -254,6 +254,10 @@ async def run(args: argparse.Namespace) -> int:
             await send("Emulation.setDeviceMetricsOverride",
                        {"width": width, "height": height, "deviceScaleFactor": args.scale, "mobile": False})
             await send("Page.enable")
+            # a persistent profile would otherwise serve cached viewer modules after an edit, and a probe would
+            # silently measure the old code
+            await send("Network.enable")
+            await send("Network.setCacheDisabled", {"cacheDisabled": True})
             await send("Page.navigate", {"url": args.url})
             await asyncio.sleep(args.page_wait)
             status = await evaluate(SELECT_SCRIPT % {"effect": json.dumps(args.effect), "load_ms": int(args.load_wait * 1000)})

@@ -398,6 +398,7 @@ export class GLViewer {
       if (this.contextLost) return;
       this.contextLost = true;
       this.stopLoop();
+      this.volumes.disposeTarget();      // the reduced volume buffer died with the context; it is rebuilt on demand
       console.warn('[aetherfx viewer] WebGL context lost - render loop paused until the browser restores it');
       this.onStatus({ kind: 'context_lost' });
     }, false);
@@ -589,6 +590,7 @@ export class GLViewer {
 
     this.renderer.info.reset();
     this.renderDepthPrepass();
+    this.volumes.renderOffscreen(this.renderer, this.camera, this.drawingSize());
     this.composer.render();
     this.reportStats(now);
   }
@@ -629,6 +631,7 @@ export class GLViewer {
     // more first so the canvas is guaranteed to hold the current frame.
     this.renderer.info.reset();
     this.renderDepthPrepass();
+    this.volumes.renderOffscreen(this.renderer, this.camera, this.drawingSize());
     this.composer.render();
     const url = this.canvas.toDataURL('image/png');
     const link = document.createElement('a');
