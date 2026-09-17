@@ -1382,11 +1382,11 @@
    "type": "particle_system",
    "layer": "cast",
    "parameters": {
-    "max_particles": 220,
+    "max_particles": 260,
     "lifetime": 0.22,
     "lifetime_variance": 0.05,
-    "size": 0.036,
-    "size_variance": 0.014,
+    "size": 0.05,
+    "size_variance": 0.018,
     "color": [
      0.7,
      0.58,
@@ -1935,6 +1935,96 @@
    }
   },
   {
+   "id": "o_ripple",
+   "type": "mesh",
+   "layer": "warp",
+   "parent": "origin_body",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 4,
+    "visible": false,
+    "position": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     90.0
+    ],
+    "scale": {
+     "value": [
+      0.918,
+      0.9,
+      0.702
+     ],
+     "track": [
+      {
+       "time": 0.2,
+       "value": [
+        0.918,
+        0.9,
+        0.702
+       ]
+      },
+      {
+       "time": 0.3,
+       "value": [
+        1.785,
+        1.75,
+        1.365
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "o_ripple_ring",
+   "type": "emitter",
+   "layer": "warp",
+   "parent": "o_ripple",
+   "parameters": {
+    "shape": "ring",
+    "radius": 1.0,
+    "inner_radius": 1.0,
+    "direction": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "velocity": 0.1,
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.2,
+       "value": 0.0
+      },
+      {
+       "time": 0.2167,
+       "value": 2200.0
+      },
+      {
+       "time": 0.2667,
+       "value": 1300.0
+      },
+      {
+       "time": 0.3,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.2,
+    "duration": 0.1
+   },
+   "inputs": {
+    "particle": "ring_soft_ps"
+   }
+  },
+  {
    "id": "o_ring_spin",
    "type": "mesh",
    "layer": "warp",
@@ -2127,19 +2217,19 @@
      "value": 0.0,
      "track": [
       {
-       "time": 0.0833,
+       "time": 0.1333,
        "value": 0.0
       },
       {
-       "time": 0.1167,
+       "time": 0.15,
+       "value": 0.22
+      },
+      {
+       "time": 0.2,
        "value": 0.22
       },
       {
        "time": 0.2167,
-       "value": 0.22
-      },
-      {
-       "time": 0.25,
        "value": 0.0
       }
      ]
@@ -2148,25 +2238,25 @@
      "value": 0.1,
      "track": [
       {
-       "time": 0.0833,
+       "time": 0.1333,
        "value": 0.1
       },
       {
-       "time": 0.1167,
+       "time": 0.1667,
        "value": 0.45
       },
       {
-       "time": 0.2333,
+       "time": 0.2,
        "value": 0.5
       },
       {
-       "time": 0.25,
+       "time": 0.2167,
        "value": 0.0
       }
      ]
     },
-    "start_time": 0.0833,
-    "duration": 0.2667
+    "start_time": 0.1333,
+    "duration": 0.1167
    },
    "inputs": {
     "source": "o_bead_1",
@@ -2241,19 +2331,19 @@
      "value": 0.0,
      "track": [
       {
-       "time": 0.0833,
+       "time": 0.1333,
        "value": 0.0
       },
       {
-       "time": 0.1167,
+       "time": 0.15,
+       "value": 0.22
+      },
+      {
+       "time": 0.2,
        "value": 0.22
       },
       {
        "time": 0.2167,
-       "value": 0.22
-      },
-      {
-       "time": 0.25,
        "value": 0.0
       }
      ]
@@ -2262,25 +2352,25 @@
      "value": 0.1,
      "track": [
       {
-       "time": 0.0833,
+       "time": 0.1333,
        "value": 0.1
       },
       {
-       "time": 0.1167,
+       "time": 0.1667,
        "value": 0.45
       },
       {
-       "time": 0.2333,
+       "time": 0.2,
        "value": 0.5
       },
       {
-       "time": 0.25,
+       "time": 0.2167,
        "value": 0.0
       }
      ]
     },
-    "start_time": 0.0833,
-    "duration": 0.2667
+    "start_time": 0.1333,
+    "duration": 0.1167
    },
    "inputs": {
     "source": "o_bead_2",
@@ -2497,6 +2587,96 @@
    }
   },
   {
+   "id": "d_ripple",
+   "type": "mesh",
+   "layer": "warp",
+   "parent": "destination_body",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.01,
+    "segments": 4,
+    "visible": false,
+    "position": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     90.0
+    ],
+    "scale": {
+     "value": [
+      0.918,
+      0.9,
+      0.702
+     ],
+     "track": [
+      {
+       "time": 0.4167,
+       "value": [
+        0.918,
+        0.9,
+        0.702
+       ]
+      },
+      {
+       "time": 0.5167,
+       "value": [
+        1.785,
+        1.75,
+        1.365
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "d_ripple_ring",
+   "type": "emitter",
+   "layer": "warp",
+   "parent": "d_ripple",
+   "parameters": {
+    "shape": "ring",
+    "radius": 1.0,
+    "inner_radius": 1.0,
+    "direction": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "velocity": 0.1,
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.4167,
+       "value": 0.0
+      },
+      {
+       "time": 0.4333,
+       "value": 2200.0
+      },
+      {
+       "time": 0.4833,
+       "value": 1300.0
+      },
+      {
+       "time": 0.5167,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.4167,
+    "duration": 0.1
+   },
+   "inputs": {
+    "particle": "ring_soft_ps"
+   }
+  },
+  {
    "id": "d_ring_spin",
    "type": "mesh",
    "layer": "warp",
@@ -2705,19 +2885,19 @@
      "value": 0.0,
      "track": [
       {
-       "time": 0.3833,
+       "time": 0.4333,
        "value": 0.0
       },
       {
-       "time": 0.4167,
+       "time": 0.45,
        "value": 0.22
       },
       {
-       "time": 0.5667,
+       "time": 0.5167,
        "value": 0.22
       },
       {
-       "time": 0.6,
+       "time": 0.55,
        "value": 0.0
       }
      ]
@@ -2726,25 +2906,25 @@
      "value": 0.1,
      "track": [
       {
-       "time": 0.3833,
+       "time": 0.4333,
        "value": 0.1
       },
       {
-       "time": 0.4167,
+       "time": 0.45,
        "value": 0.45
       },
       {
-       "time": 0.5667,
+       "time": 0.5167,
        "value": 0.5
       },
       {
-       "time": 0.6,
+       "time": 0.55,
        "value": 0.0
       }
      ]
     },
-    "start_time": 0.3833,
-    "duration": 0.3167
+    "start_time": 0.4333,
+    "duration": 0.1334
    },
    "inputs": {
     "source": "d_bead_1",
@@ -2819,19 +2999,19 @@
      "value": 0.0,
      "track": [
       {
-       "time": 0.3833,
+       "time": 0.4333,
        "value": 0.0
       },
       {
-       "time": 0.4167,
+       "time": 0.45,
        "value": 0.22
       },
       {
-       "time": 0.5667,
+       "time": 0.5167,
        "value": 0.22
       },
       {
-       "time": 0.6,
+       "time": 0.55,
        "value": 0.0
       }
      ]
@@ -2840,25 +3020,25 @@
      "value": 0.1,
      "track": [
       {
-       "time": 0.3833,
+       "time": 0.4333,
        "value": 0.1
       },
       {
-       "time": 0.4167,
+       "time": 0.45,
        "value": 0.45
       },
       {
-       "time": 0.5667,
+       "time": 0.5167,
        "value": 0.5
       },
       {
-       "time": 0.6,
+       "time": 0.55,
        "value": 0.0
       }
      ]
     },
-    "start_time": 0.3833,
-    "duration": 0.3167
+    "start_time": 0.4333,
+    "duration": 0.1334
    },
    "inputs": {
     "source": "d_bead_2",
@@ -4359,10 +4539,10 @@
    "layer": "afterimage",
    "parameters": {
     "max_particles": 220,
-    "lifetime": 0.1,
-    "lifetime_variance": 0.02,
+    "lifetime": 0.09,
+    "lifetime_variance": 0.025,
     "size": 0.62,
-    "size_variance": 0.12,
+    "size_variance": 0.2,
     "color": [
      0.54,
      0.308,
@@ -4389,19 +4569,19 @@
       ]
      ]
     ],
-    "opacity": 0.24,
+    "opacity": 0.26,
     "opacity_over_life": [
      [
       0.0,
       0.0
      ],
      [
-      0.12,
+      0.08,
       1.0
      ],
      [
-      0.5,
-      0.5
+      0.3,
+      0.45
      ],
      [
       1.0,
@@ -4620,6 +4800,34 @@
    }
   },
   {
+   "id": "wake_1_front",
+   "type": "emitter",
+   "layer": "afterimage",
+   "parent": "wake_1_body",
+   "parameters": {
+    "shape": "line",
+    "length": 0.6,
+    "position": [
+     -0.3,
+     0.92,
+     0.0
+    ],
+    "direction": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "velocity": 0.33,
+    "velocity_variance": 0.05,
+    "rate": 110.0,
+    "start_time": 0.2667,
+    "duration": 0.1
+   },
+   "inputs": {
+    "particle": "ghost_column_ps"
+   }
+  },
+  {
    "id": "wake_1_afterimage",
    "type": "emitter",
    "layer": "afterimage",
@@ -4670,7 +4878,7 @@
      0.0,
      0.0
     ],
-    "spread": 2.0,
+    "spread": 5.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
     "rate": 30.0,
@@ -4699,7 +4907,7 @@
      0.0,
      0.0
     ],
-    "spread": 2.0,
+    "spread": 5.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
     "rate": 30.0,
@@ -4728,7 +4936,7 @@
      0.0,
      0.0
     ],
-    "spread": 2.0,
+    "spread": 5.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
     "rate": 30.0,
@@ -4757,7 +4965,7 @@
      0.0,
      0.0
     ],
-    "spread": 2.0,
+    "spread": 5.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
     "rate": 30.0,
@@ -4786,7 +4994,7 @@
      0.0,
      0.0
     ],
-    "spread": 2.0,
+    "spread": 5.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
     "rate": 30.0,
@@ -4815,7 +5023,7 @@
      0.0,
      0.0
     ],
-    "spread": 2.0,
+    "spread": 5.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
     "rate": 30.0,
@@ -4844,7 +5052,7 @@
      0.0,
      0.0
     ],
-    "spread": 2.0,
+    "spread": 5.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
     "rate": 30.0,
@@ -5117,6 +5325,34 @@
    }
   },
   {
+   "id": "wake_2_front",
+   "type": "emitter",
+   "layer": "afterimage",
+   "parent": "wake_2_body",
+   "parameters": {
+    "shape": "line",
+    "length": 0.6,
+    "position": [
+     -0.3,
+     0.92,
+     0.0
+    ],
+    "direction": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "velocity": 0.33,
+    "velocity_variance": 0.05,
+    "rate": 110.0,
+    "start_time": 0.3167,
+    "duration": 0.1
+   },
+   "inputs": {
+    "particle": "ghost_column_ps"
+   }
+  },
+  {
    "id": "wake_2_afterimage",
    "type": "emitter",
    "layer": "afterimage",
@@ -5167,7 +5403,7 @@
      0.0,
      0.0
     ],
-    "spread": 2.0,
+    "spread": 5.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
     "rate": 30.0,
@@ -5196,7 +5432,7 @@
      0.0,
      0.0
     ],
-    "spread": 2.0,
+    "spread": 5.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
     "rate": 30.0,
@@ -5225,7 +5461,7 @@
      0.0,
      0.0
     ],
-    "spread": 2.0,
+    "spread": 5.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
     "rate": 30.0,
@@ -5254,7 +5490,7 @@
      0.0,
      0.0
     ],
-    "spread": 2.0,
+    "spread": 5.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
     "rate": 30.0,
@@ -5283,7 +5519,7 @@
      0.0,
      0.0
     ],
-    "spread": 2.0,
+    "spread": 5.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
     "rate": 30.0,
@@ -5312,7 +5548,7 @@
      0.0,
      0.0
     ],
-    "spread": 2.0,
+    "spread": 5.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
     "rate": 30.0,
@@ -5341,7 +5577,7 @@
      0.0,
      0.0
     ],
-    "spread": 2.0,
+    "spread": 5.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
     "rate": 30.0,
@@ -5614,6 +5850,34 @@
    }
   },
   {
+   "id": "wake_3_front",
+   "type": "emitter",
+   "layer": "afterimage",
+   "parent": "wake_3_body",
+   "parameters": {
+    "shape": "line",
+    "length": 0.6,
+    "position": [
+     -0.3,
+     0.92,
+     0.0
+    ],
+    "direction": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "velocity": 0.33,
+    "velocity_variance": 0.05,
+    "rate": 110.0,
+    "start_time": 0.3667,
+    "duration": 0.1
+   },
+   "inputs": {
+    "particle": "ghost_column_ps"
+   }
+  },
+  {
    "id": "wake_3_afterimage",
    "type": "emitter",
    "layer": "afterimage",
@@ -5664,7 +5928,7 @@
      0.0,
      0.0
     ],
-    "spread": 2.0,
+    "spread": 5.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
     "rate": 30.0,
@@ -5693,7 +5957,7 @@
      0.0,
      0.0
     ],
-    "spread": 2.0,
+    "spread": 5.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
     "rate": 30.0,
@@ -5722,7 +5986,7 @@
      0.0,
      0.0
     ],
-    "spread": 2.0,
+    "spread": 5.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
     "rate": 30.0,
@@ -5751,7 +6015,7 @@
      0.0,
      0.0
     ],
-    "spread": 2.0,
+    "spread": 5.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
     "rate": 30.0,
@@ -5780,7 +6044,7 @@
      0.0,
      0.0
     ],
-    "spread": 2.0,
+    "spread": 5.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
     "rate": 30.0,
@@ -5809,7 +6073,7 @@
      0.0,
      0.0
     ],
-    "spread": 2.0,
+    "spread": 5.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
     "rate": 30.0,
@@ -5838,7 +6102,7 @@
      0.0,
      0.0
     ],
-    "spread": 2.0,
+    "spread": 5.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
     "rate": 30.0,
@@ -6066,6 +6330,108 @@
    }
   },
   {
+   "id": "o_rising_wisps",
+   "type": "emitter",
+   "layer": "cast",
+   "parent": "origin_body",
+   "parameters": {
+    "shape": "ring",
+    "radius": 1.02,
+    "inner_radius": 0.7,
+    "position": [
+     0.0,
+     0.05,
+     0.0
+    ],
+    "direction": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "spread": 6.0,
+    "velocity": 1.5,
+    "velocity_variance": 0.6,
+    "radial_velocity": -0.4,
+    "rate": {
+     "value": 60.0,
+     "track": [
+      {
+       "time": 0.0,
+       "value": 60.0
+      },
+      {
+       "time": 0.0833,
+       "value": 150.0
+      },
+      {
+       "time": 0.2,
+       "value": 120.0
+      },
+      {
+       "time": 0.25,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.0,
+    "duration": 0.25
+   },
+   "inputs": {
+    "particle": "ghost_wisp_ps"
+   }
+  },
+  {
+   "id": "d_rising_wisps",
+   "type": "emitter",
+   "layer": "aftermath",
+   "parent": "destination_body",
+   "parameters": {
+    "shape": "ring",
+    "radius": 1.02,
+    "inner_radius": 0.7,
+    "position": [
+     0.0,
+     0.05,
+     0.0
+    ],
+    "direction": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "spread": 6.0,
+    "velocity": 1.5,
+    "velocity_variance": 0.6,
+    "radial_velocity": -0.4,
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.4,
+       "value": 0.0
+      },
+      {
+       "time": 0.45,
+       "value": 160.0
+      },
+      {
+       "time": 0.5667,
+       "value": 90.0
+      },
+      {
+       "time": 0.6167,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.4,
+    "duration": 0.2167
+   },
+   "inputs": {
+    "particle": "ghost_wisp_ps"
+   }
+  },
+  {
    "id": "path_residue",
    "type": "emitter",
    "layer": "afterimage",
@@ -6278,7 +6644,7 @@
      0.85,
      0.0
     ],
-    "fov": 38.0
+    "fov": 41.0
    }
   }
  ],
@@ -6336,6 +6702,11 @@
     },
     {
      "node": "wake_1_column",
+     "parameter": "length",
+     "op": "multiply"
+    },
+    {
+     "node": "wake_1_front",
      "parameter": "length",
      "op": "multiply"
     },
@@ -6405,6 +6776,11 @@
      "op": "multiply"
     },
     {
+     "node": "wake_2_front",
+     "parameter": "length",
+     "op": "multiply"
+    },
+    {
      "node": "wake_2_smear_1",
      "parameter": "length",
      "op": "multiply"
@@ -6466,6 +6842,11 @@
     },
     {
      "node": "wake_3_column",
+     "parameter": "length",
+     "op": "multiply"
+    },
+    {
+     "node": "wake_3_front",
      "parameter": "length",
      "op": "multiply"
     },
@@ -6754,7 +7135,7 @@
      "op": "multiply"
     },
     {
-     "node": "wake_1_afterimage",
+     "node": "wake_1_front",
      "parameter": "rate",
      "op": "multiply"
     },
@@ -6834,7 +7215,7 @@
      "op": "multiply"
     },
     {
-     "node": "wake_2_afterimage",
+     "node": "wake_2_front",
      "parameter": "rate",
      "op": "multiply"
     },
@@ -6914,7 +7295,7 @@
      "op": "multiply"
     },
     {
-     "node": "wake_3_afterimage",
+     "node": "wake_3_front",
      "parameter": "rate",
      "op": "multiply"
     },
@@ -6986,6 +7367,21 @@
     {
      "node": "wake_3_wisps_down",
      "parameter": "rate",
+     "op": "multiply"
+    },
+    {
+     "node": "wake_1_afterimage",
+     "parameter": "burst_count",
+     "op": "multiply"
+    },
+    {
+     "node": "wake_2_afterimage",
+     "parameter": "burst_count",
+     "op": "multiply"
+    },
+    {
+     "node": "wake_3_afterimage",
+     "parameter": "burst_count",
      "op": "multiply"
     }
    ]

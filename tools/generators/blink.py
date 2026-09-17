@@ -363,7 +363,7 @@ def build_cast() -> None:
     }, {"texture": "tex_pool", "material": "mat_ground"}, layer, parent="origin_body")
 
     node("gather_ps", "particle_system", {
-        "max_particles": 220, "lifetime": 0.22, "lifetime_variance": 0.05, "size": 0.036, "size_variance": 0.014,
+        "max_particles": 260, "lifetime": 0.22, "lifetime_variance": 0.05, "size": 0.05, "size_variance": 0.018,
         "color": tint(LILAC, 1.0), "color_over_life": [[0.0, tint(VIOLET, 1.0)], [0.7, tint(LILAC, 1.0)],
                                                        [1.0, tint(WHITE_HOT, 1.0)]],
         "opacity_over_life": [[0.0, 0.0], [0.2, 1.0], [0.85, 1.0], [1.0, 0.0]], "emissive": 2.2, "drag": 0.6,
@@ -399,6 +399,12 @@ ENV_O = [(0.083, 0.02), (0.1, 0.3), (0.125, 0.8), (0.15, 1.0), (0.17, 1.05), (0.
          (0.233, 0.72), (0.245, 0.3), (0.255, 0.04), (0.267, 0.02)]
 ENV_D = [(0.383, 0.02), (0.4, 0.2), (0.417, 0.74), (0.433, 1.12), (0.467, 1.02), (0.5, 1.0), (0.533, 0.86),
          (0.567, 0.52), (0.583, 0.24), (0.6, 0.02)]
+
+
+#: (start, end) of the ripple that runs out of each ring: the implosion and the flare
+RIPPLES = {"o": (0.2, 0.3), "d": (0.417, 0.517)}
+#: (start, end) of the comet arcs on each ring: only while the envelope is near full size
+ARCS = {"o": (0.133, 0.222), "d": (0.425, 0.545)}
 
 
 def ring_scale(env: list[tuple[float, float]]) -> dict[str, Any]:
@@ -452,7 +458,18 @@ def build_rings() -> None:
             "shape": "ring", "radius": 1.0, "inner_radius": 1.0, "direction": [0.0, 0.0, 0.0], "velocity": 0.12,
             "rate": track(soft_rate), **window(w0, w1),
         }, {"particle": "ring_soft_ps"}, layer, parent=rig)
+        # space ripple: a faint ellipse in the same plane that runs outward from the ring and fades
+        r0, r1 = RIPPLES[p]
+        ripple = hub(f"{p}_ripple", {"position": [0.0, RING_Y, 0.0], "rotation": [0.0, 0.0, 90.0],
+                                     "scale": ring_scale([(r0, 0.9), (r1, 1.75)])}, layer, parent=body)
+        node(f"{p}_ripple_ring", "emitter", {
+            "shape": "ring", "radius": 1.0, "inner_radius": 1.0, "direction": [0.0, 0.0, 0.0], "velocity": 0.1,
+            "rate": track([(r0, 0.0), (r0 + 0.02, 2200.0), (r1 - 0.04, 1300.0), (r1, 0.0)]), **window(r0, r1),
+        }, {"particle": "ring_soft_ps"}, layer, parent=ripple)
         spin = hub(f"{p}_ring_spin", {"rotation": spin_track(s0, s1, revs, direction)}, layer, parent=rig)
+        # The arcs only draw while the ring is open: a bead riding the growing or collapsing envelope would
+        # lay a straight spoke through the centre.
+        a0, a1 = ARCS[p]
         for i, x in ((1, 1.0), (2, -1.0)):
             bead = hub(f"{p}_bead_{i}", {"position": [x, 0.0, 0.0]}, layer, parent=spin)
             node(f"{p}_arc_{i}", "trail", {
@@ -460,9 +477,9 @@ def build_rings() -> None:
                 "taper": [[0.0, 0.0], [0.12, 1.0], [0.5, 0.7], [1.0, 0.0]],
                 "opacity_over_life": [[0.0, 0.8], [0.6, 0.45], [1.0, 0.0]],
                 "color": tint(mix(VIOLET, LILAC, 0.45), 1.0), "blend": "additive",
-                "width": track([(w0, 0.0), (w0 + 0.03, 0.22), (w1 - 0.04, 0.22), (w1, 0.0)]),
-                "emissive": track([(w0, 0.1), (w0 + 0.04, 0.45), (w1 - 0.03, 0.5), (w1, 0.0)]),
-                **window(w0, w1 + 0.1),
+                "width": track([(a0, 0.0), (a0 + 0.025, 0.22), (a1 - 0.03, 0.22), (a1, 0.0)]),
+                "emissive": track([(a0, 0.1), (a0 + 0.03, 0.45), (a1 - 0.03, 0.5), (a1, 0.0)]),
+                **window(a0, a1 + 0.02),
             }, {"source": bead, "material": "mat_ribbon"}, layer)
 
 
@@ -595,10 +612,10 @@ def build_afterimage() -> tuple[list[str], list[str]]:
     }, {"sprite": "tex_column", "material": "mat_glow"}, layer)
     # The smear: body-high stacks of soft light stretched along the path by a third of the runner's speed.
     node("ghost_smear_ps", "particle_system", {
-        "max_particles": 220, "lifetime": 0.1, "lifetime_variance": 0.02, "size": 0.62, "size_variance": 0.12,
+        "max_particles": 220, "lifetime": 0.09, "lifetime_variance": 0.025, "size": 0.62, "size_variance": 0.2,
         "color": tint(mix(VIOLET, LILAC, 0.2), 1.0), "color_over_life": [[0.0, tint(mix(VIOLET, LILAC, 0.35), 1.0)],
                                                                           [1.0, tint(INDIGO, 1.0)]],
-        "opacity": 0.24, "opacity_over_life": [[0.0, 0.0], [0.12, 1.0], [0.5, 0.5], [1.0, 0.0]], "emissive": 0.8,
+        "opacity": 0.26, "opacity_over_life": [[0.0, 0.0], [0.08, 1.0], [0.3, 0.45], [1.0, 0.0]], "emissive": 0.8,
         "drag": 8.0, "render_mode": "stretched_billboard", "velocity_stretch": 0.2, "blend": "additive",
     }, {"sprite": "tex_haze", "material": "mat_glow"}, layer)
     # Horizontal speed lines filling the column; they inherit a third of the runner's speed and brake hard.
@@ -636,6 +653,12 @@ def build_afterimage() -> tuple[list[str], list[str]]:
             "velocity": 0.33, "velocity_variance": 0.05, "rate": 240.0, **w,
         }, {"particle": "ghost_column_ps"}, layer, parent=tail))
         amount.append(lines[-1])
+        # the leading edge: the last half metre gets a denser share of the columns, so the head is brightest
+        lines.append(node(f"{wid}_front", "emitter", {
+            "shape": "line", "length": 0.6, "position": [-0.3, 0.92, 0.0], "direction": [0.0, 1.0, 0.0],
+            "velocity": 0.33, "velocity_variance": 0.05, "rate": 110.0, **w,
+        }, {"particle": "ghost_column_ps"}, layer, parent=body))
+        amount.append(lines[-1])
         # one afterimage copy per wake, left at its own fraction of the path (the runner's position at
         # that frame, so it scales with blink_distance): lingers ~0.3 s, drifts after the runner, fades
         stamp = STAMPS[k]
@@ -647,7 +670,7 @@ def build_afterimage() -> tuple[list[str], list[str]]:
         for j, y in enumerate((0.2, 0.46, 0.72, 0.97, 1.22, 1.46, 1.68)):
             lines.append(node(f"{wid}_smear_{j + 1}", "emitter", {
                 "shape": "line", "length": seg, "position": [0.0, r4(y + 0.05 * ((j + k) % 3 - 1)), 0.0],
-                "direction": [1.0, 0.0, 0.0], "spread": 2.0, "velocity": 0.0, "inherit_velocity": 0.35,
+                "direction": [1.0, 0.0, 0.0], "spread": 5.0, "velocity": 0.0, "inherit_velocity": 0.35,
                 "rate": 30.0, **w,
             }, {"particle": "ghost_smear_ps"}, layer, parent=tail))
             amount.append(lines[-1])
@@ -663,6 +686,15 @@ def build_afterimage() -> tuple[list[str], list[str]]:
                 "shape": "box", "size": [seg, 1.5, 0.3], "position": [0.0, 0.92, 0.0], "direction": direction,
                 "spread": 10.0, "velocity": 0.9, "velocity_variance": 0.5, "rate": 90.0, **w,
             }, {"particle": "ghost_wisp_ps"}, layer, parent=tail))
+    for p, body, keys, lay in (
+        ("o", "origin_body", [(0.0, 60.0), (0.08, 150.0), (0.2, 120.0), (0.25, 0.0)], "cast"),
+        ("d", "destination_body", [(0.4, 0.0), (0.45, 160.0), (0.56, 90.0), (0.62, 0.0)], "aftermath"),
+    ):
+        node(f"{p}_rising_wisps", "emitter", {
+            "shape": "ring", "radius": 1.02, "inner_radius": 0.7, "position": [0.0, 0.05, 0.0],
+            "direction": [0.0, 1.0, 0.0], "spread": 6.0, "velocity": 1.5, "velocity_variance": 0.6,
+            "radial_velocity": -0.4, "rate": track(keys), **window(keys[0][0], keys[-1][0]),
+        }, {"particle": "ghost_wisp_ps"}, lay, parent=body)
     # After the wakes: a faint residue of motes along the whole path. `path_mid` is the midpoint hub and
     # the line's length is bound to blink_distance, so it always spans origin -> destination.
     lines.append(node("path_residue", "emitter", {
@@ -783,7 +815,8 @@ def build_controls(glint_emitters: list[str], wake_emitters: list[str], path_lin
                    bind(systems, "color") + bind(of_type("trail") + decals, "color")
                    + bind(of_type("light"), "intensity"), hi=2.5),
         multiplier("afterimage", "Afterimage strength", "Afterimage",
-                   bind(wake_emitters, "rate"), hi=2.0),
+                   bind([e for e in wake_emitters if authored(e, "rate")], "rate")
+                   + bind([e for e in wake_emitters if authored(e, "burst_count")], "burst_count"), hi=2.0),
         multiplier("shard_amount", "Shard amount", "Crystal shards",
                    bind(glint_bursts, "burst_count") + bind(glint_rates, "rate"), hi=2.5, step=0.05),
         {"id": "hue", "label": "Hue", "group": "Global", "min": -180.0, "max": 180.0, "default": 0.0, "value": 0.0,
@@ -814,7 +847,7 @@ def build() -> dict[str, Any]:
     # Three-quarter view from in front of the destination: travel runs left to right towards the camera,
     # both anchors 8 m apart, and the warp rings (standing across the travel axis) read as vertical
     # ellipses. The studio frames ~1.45x wider.
-    node("cam", "camera", {"position": [11.6, 3.6, 7.3], "target": [4.5, 0.85, 0.0], "fov": 38.0})
+    node("cam", "camera", {"position": [11.6, 3.6, 7.3], "target": [4.5, 0.85, 0.0], "fov": 41.0})
     controls = build_controls(glint_emitters, wake_emitters, path_lines)
 
     return {
