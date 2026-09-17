@@ -1,0 +1,4 @@
+# Symbols exported from libaetherfx (macOS, ld64 -exported_symbols_list).
+# The C ABI and nothing else: the engine C++ libraries are linked in
+# statically and must not leak out of the dynamic symbol table.
+_aetherfx_*

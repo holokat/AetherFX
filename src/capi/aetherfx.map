@@ -1,0 +1,9 @@
+/* Symbols exported from libaetherfx (ELF, GNU ld/lld --version-script).
+   The C ABI and nothing else: the engine C++ libraries are linked in
+   statically and must not leak out of the dynamic symbol table. */
+AETHERFX_1 {
+  global:
+    aetherfx_*;
+  local:
+    *;
+};

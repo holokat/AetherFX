@@ -13,6 +13,7 @@ reference / prompt -> analysis (EAD) -> VFX graph -> validate -> compile
 * `docs/ARCHITECTURE.md` - the contract every module follows
 * `docs/VOCABULARY.md` - node types and parameters
 * `docs/AGENT_API.md` - the tool API (CLI / JSON-RPC / Python / MCP)
+* `docs/ENGINE_INTEGRATION.md` - the C ABI for game engines (libaetherfx)
 * `docs/EAD.md` - the Effect Analysis Document
 * `docs/DEPENDENCIES.md` - every dependency, version and license
 * `docs/ROADMAP.md`
@@ -51,6 +52,14 @@ python/.venv/bin/aetherfx-studio --port 8770 --output-dir out/studio
 ```bash
 cmake --preset default && cmake --build --preset default && ctest --preset default
 ```
+
+The build also produces `libaetherfx`, the C ABI game engines link against
+(`build/src/capi/libaetherfx.dylib|.so|.dll`, plus `libaetherfx_static.a` for
+static linking). It exposes the same deterministic simulation the studio uses -
+load, compile, step, read the per-frame particle/light/beam/trail/decal/mesh
+buffers - behind one C99 header, `src/capi/include/aetherfx/aetherfx.h`, with
+`aetherfx_*` as its only exported symbols. The engine renders; the library
+simulates. See `docs/ENGINE_INTEGRATION.md` for Unreal, Unity and Godot.
 
 ## Quick start
 

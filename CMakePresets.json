@@ -21,6 +21,12 @@
       "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
     },
     {
+      "name": "capi",
+      "displayName": "C ABI shared library (libaetherfx)",
+      "inherits": "default",
+      "binaryDir": "${sourceDir}/build-capi"
+    },
+    {
       "name": "gpu",
       "inherits": "default",
       "binaryDir": "${sourceDir}/build-gpu",
@@ -31,11 +37,13 @@
     { "name": "default", "configurePreset": "default" },
     { "name": "debug", "configurePreset": "debug" },
     { "name": "release", "configurePreset": "release" },
+    { "name": "capi", "configurePreset": "capi" },
     { "name": "gpu", "configurePreset": "gpu" }
   ],
   "testPresets": [
     { "name": "default", "configurePreset": "default", "output": { "outputOnFailure": true } },
     { "name": "debug", "configurePreset": "debug", "output": { "outputOnFailure": true } },
+    { "name": "capi", "configurePreset": "capi", "output": { "outputOnFailure": true } },
     { "name": "gpu", "configurePreset": "gpu", "output": { "outputOnFailure": true } }
   ]
 }

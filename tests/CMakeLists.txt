@@ -2,7 +2,7 @@
 # linking only that module (and transitively its dependencies). This lets
 # modules be developed and tested independently.
 include(Catch)
-foreach(module core procedural compiler sim render tools)
+foreach(module core imageio procedural compiler sim render tools capi)
   file(GLOB _srcs CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${module}/*.cpp")
   if(_srcs)
     set(_target aether_${module}_tests)
@@ -16,6 +16,21 @@ foreach(module core procedural compiler sim render tools)
     catch_discover_tests(${_target} TEST_PREFIX "${module}.")
   endif()
 endforeach()
+# The C ABI is also driven from pure C: it proves the public header is valid C99
+# and that the shared library alone (no C++ headers, no static engine modules)
+# is enough to build against.
+if(TARGET aether::capi)
+  file(GLOB _capi_c_srcs CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/capi/*.c")
+  if(_capi_c_srcs)
+    add_executable(aether_capi_c_smoke ${_capi_c_srcs})
+    target_link_libraries(aether_capi_c_smoke PRIVATE aether::capi)
+    target_compile_definitions(aether_capi_c_smoke PRIVATE AETHER_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    set_target_properties(aether_capi_c_smoke PROPERTIES
+      C_STANDARD 99 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
+    aether_set_warnings(aether_capi_c_smoke)
+    add_test(NAME capi.c_smoke COMMAND aether_capi_c_smoke)
+  endif()
+endif()
 # Integration tests (whole pipeline) link the tools module.
 file(GLOB _int_srcs CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/integration/*.cpp")
 if(_int_srcs)
