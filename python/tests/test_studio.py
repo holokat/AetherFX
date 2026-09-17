@@ -424,3 +424,17 @@ def test_export_refuses_a_destination_that_is_not_a_project(client: TestClient, 
 
     unknown = client.post("/api/export", json={"target": "nope"})
     assert unknown.status_code == 400
+
+
+def test_a_freshly_loaded_effect_is_not_dirty(client: TestClient, loaded: dict) -> None:
+    # Loading a second library entry discards the first working copy; that housekeeping must not
+    # mark the new working copy as edited (it made "unsaved changes were discarded" fire on every switch).
+    library = client.get("/api/effects").json()["library"]
+    other = next(item for item in library if item["builtin"] and item["path"] != loaded["path"])
+    assert client.post("/api/effects/load", json={"path": other["path"]}).status_code == 200
+    active = client.get("/api/status").json()["active_effect"]
+    assert active["name"] == other["name"]
+    assert active["dirty"] is False
+    # and again, back to the first
+    assert client.post("/api/effects/load", json={"path": loaded["path"]}).status_code == 200
+    assert client.get("/api/status").json()["active_effect"]["dirty"] is False

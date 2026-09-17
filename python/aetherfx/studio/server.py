@@ -322,12 +322,14 @@ class Studio:
         previous = self.working_id
         self.working_id = new_id
         self.working_source = source
-        self.working_revision = self.revision
         if previous and previous != new_id:
             try:
                 await self.acall("delete_effect", effect_id=previous)
             except Exception:  # noqa: BLE001 - already gone
                 pass
+        # Record the clean revision LAST: discarding the previous working copy is itself a mutating
+        # call, and counting it made every freshly loaded effect look edited.
+        self.working_revision = self.revision
 
     def guard_tool(self, name: str, args: JsonDict | None) -> None:
         """Refuse tool calls that would overwrite a built-in library file."""
