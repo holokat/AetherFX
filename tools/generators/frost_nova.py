@@ -107,8 +107,8 @@ CLASSES = {c.id: c for c in [
 #: Hero spikes, one point emitter each: (azimuth deg, foot radius m, lean deg from vertical, yaw off radial deg).
 #: Azimuth 90 faces the camera. Leans alternate steep / shallow so the crown is a burst, not a cone.
 CROWN = [
-    (8, 0.62, 30, 6), (49, 0.8, 49, -9), (88, 0.58, 25, 4), (131, 0.84, 53, 8), (167, 0.66, 35, -5),
-    (209, 0.76, 45, 7), (247, 0.6, 27, -8), (289, 0.82, 51, 3), (327, 0.7, 39, -6),
+    (14, 0.64, 38, 6), (52, 0.8, 50, -9), (99, 0.7, 56, 12), (139, 0.84, 47, 8), (172, 0.66, 35, -5),
+    (211, 0.76, 28, 7), (249, 0.6, 20, -8), (287, 0.8, 31, 3), (326, 0.72, 44, -6),
 ]
 #: The rim: (azimuth, foot radius, lean, yaw, class). The tips reach about 4.9 m.
 RIM = [
@@ -349,15 +349,15 @@ def build_textures() -> None:
     # Radial fractures: 11 + 7 + 17 rays warped off their even spacing and broken along their
     # length. The decal scales with the wave front, which for a radial pattern reads as growth.
     node("tex_rays", "texture", {"width": 384, "height": 384, "graph": {"nodes": [
-        *warp_field("w", 1.4, 517),
-        g("s1", "spokes", {"count": 11, "width": 0.008, "softness": 0.005, "inner_radius": 0.03, "outer_radius": 0.5}),
-        g("s1d", "distort", {"amount": 0.06}, {"a": "s1", "by": "w"}),
-        g("s2", "spokes", {"count": 7, "width": 0.013, "softness": 0.008, "inner_radius": 0.02, "outer_radius": 0.47,
+        *warp_field("w", 2.1, 517),
+        g("s1", "spokes", {"count": 11, "width": 0.005, "softness": 0.004, "inner_radius": 0.03, "outer_radius": 0.5}),
+        g("s1d", "distort", {"amount": 0.032}, {"a": "s1", "by": "w"}),
+        g("s2", "spokes", {"count": 7, "width": 0.0075, "softness": 0.006, "inner_radius": 0.02, "outer_radius": 0.47,
                            "rotation": 13.0}),
-        g("s2d", "distort", {"amount": 0.09}, {"a": "s2", "by": "w"}),
-        g("s3", "spokes", {"count": 17, "width": 0.0045, "softness": 0.003, "inner_radius": 0.1, "outer_radius": 0.5,
+        g("s2d", "distort", {"amount": 0.045}, {"a": "s2", "by": "w"}),
+        g("s3", "spokes", {"count": 17, "width": 0.003, "softness": 0.0025, "inner_radius": 0.1, "outer_radius": 0.5,
                            "rotation": 7.0}),
-        g("s3d", "distort", {"amount": 0.12}, {"a": "s3", "by": "w"}),
+        g("s3d", "distort", {"amount": 0.06}, {"a": "s3", "by": "w"}),
         g("s3l", "levels", {"out_high": 0.6}, {"a": "s3d"}),
         g("u1", "math", {"mode": "max"}, {"a": "s1d", "b": "s2d"}),
         g("u2", "math", {"mode": "max"}, {"a": "u1", "b": "s3l"}),
@@ -413,11 +413,11 @@ def build_shared() -> None:
     # opacity under 1 lets the glowing fractures show through. Single sided: the crystals are closed
     # and convex, and a double-sided glass mesh is drawn twice.
     node("mat_ice", "material", {"blend": "alpha", "shading": "lit", "base_color": [0.5, 0.74, 1.0, 1.0],
-                                 "opacity": 0.88, "emissive_color": [0.45, 0.8, 1.0, 1.0], "emissive_intensity": 0.1,
+                                 "opacity": 0.88, "emissive_color": [0.3, 0.68, 1.0, 1.0], "emissive_intensity": 0.1,
                                  "fresnel_power": 4.2, "double_sided": False})
-    node("mat_mist", "material", {"blend": "alpha", "shading": "lit", "base_color": [0.8, 0.9, 1.0, 1.0],
-                                  "emissive_color": [0.5, 0.72, 1.0, 1.0], "emissive_intensity": 0.8,
-                                  "soft_particle": True, "depth_fade": 0.4, "dissolve": 0.36, "erosion": 0.3})
+    node("mat_mist", "material", {"blend": "alpha", "shading": "lit", "base_color": [0.66, 0.82, 1.0, 1.0],
+                                  "emissive_color": [0.36, 0.62, 1.0, 1.0], "emissive_intensity": 0.9,
+                                  "soft_particle": True, "depth_fade": 0.45, "dissolve": 0.24, "erosion": 0.42})
     node("mat_glow", "material", {"blend": "additive", "shading": "unlit", "emissive_color": [0.5, 0.8, 1.0, 1.0],
                                   "emissive_intensity": 0.6, "soft_particle": True, "depth_fade": 0.2})
 
@@ -431,7 +431,7 @@ def build_shared() -> None:
     node("gravity", "force", {"force_type": "gravity", "strength": 9.81})
     node("chip_gravity", "force", {"force_type": "gravity", "strength": 5.5})
     node("drift", "force", {"force_type": "turbulence", "strength": 0.8, "frequency": 0.8, "octaves": 2})
-    node("gather_pull", "force", {"force_type": "attractor", "strength": 16.0, "position": [0.0, 0.35, 0.0],
+    node("gather_pull", "force", {"force_type": "attractor", "strength": 22.0, "position": [0.0, 0.35, 0.0],
                                   "radius": 5.0, "falloff": "smooth", "start_time": 0.0, "duration": 0.45})
     node("ground", "collider", {"collider_type": "plane", "normal": [0, 1, 0], "bounce": 0.22, "friction": 0.55})
 
@@ -449,50 +449,51 @@ def build_cast() -> None:
                                           (0.52, [3.5, 3.5])]),
         "rotation": track([(0.0, [0.0, 0.0, 0.0]), (0.55, [0.0, 38.0, 0.0])]),
         "color": tint(ICE, 1.0), "blend": "additive",
-        "emissive": track([(0.0, 0.0), (0.1, 1.6), (0.2, 1.3), (0.4, 3.2), (0.46, 3.4), (0.56, 0.0)]),
-        "opacity": track([(0.0, 0.0), (0.06, 1.0), (0.46, 1.0), (0.56, 0.0)]),
-        "fade_in": 0.0, "fade_out": 0.0, "start_time": 0.0, "duration": 0.58,
+        "emissive": track([(0.0, 0.0), (0.1, 1.6), (0.2, 1.3), (0.4, 2.8), (0.45, 2.4), (0.52, 0.0)]),
+        "opacity": track([(0.0, 0.0), (0.06, 1.0), (0.45, 1.0), (0.52, 0.0)]),
+        "fade_in": 0.0, "fade_out": 0.0, "start_time": 0.0, "duration": 0.54,
     }, {"texture": "tex_rune"}, layer)
 
-    # A soft cold glow on the ground under the caster: wide, never a disc with an edge.
+    # A soft cold glow on the ground under the caster: wide and dim, a falloff and never a plate.
     node("cast_glow", "decal", {
-        "shape": "circle", "size": track([(0.0, [2.2, 2.2]), (0.4, [4.4, 4.4]), (0.5, [7.0, 7.0]), (1.2, [8.0, 8.0])]),
+        "shape": "circle", "size": track([(0.0, [3.0, 3.0]), (0.4, [5.6, 5.6]), (0.5, [7.6, 7.6]), (1.2, [8.4, 8.4])]),
         "color": tint(BLUE, 1.0), "blend": "additive", "position": [0.0, 0.01, 0.0],
-        "emissive": track([(0.0, 0.0), (0.2, 0.5), (0.4, 1.1), (0.46, 1.4), (0.62, 0.5), (1.2, 0.3), (1.8, 0.2),
+        "emissive": track([(0.0, 0.0), (0.2, 0.15), (0.4, 0.5), (0.46, 1.0), (0.62, 0.45), (1.2, 0.3), (1.8, 0.2),
                            (2.15, 0.0)]),
-        "opacity": track([(0.0, 0.0), (0.15, 0.7), (0.46, 1.0), (1.8, 0.6), (2.15, 0.0)]),
+        "opacity": track([(0.0, 0.0), (0.15, 0.6), (0.46, 1.0), (1.8, 0.6), (2.15, 0.0)]),
         "fade_in": 0.0, "fade_out": 0.0,
     }, {"texture": "tex_glow"}, layer)
 
-    # The rising cold glow: big soft sprites climbing and thinning - a wide column of light with
-    # no edge, in place of the sheet's thin beam (house style: no ruler-straight light rods).
+    # The rising cold glow: big soft sprites born on the ground, climbing slowly and thinning, so
+    # they overlap into one wide column of light that is brightest at its foot - in place of the
+    # sheet's thin beam (house style: no ruler-straight light rods).
     node("column_ps", "particle_system", {
-        "max_particles": 40, "lifetime": 0.62, "lifetime_variance": 0.12, "size": 1.25, "size_variance": 0.3,
-        "size_over_life": [[0.0, 0.75], [0.35, 1.0], [1.0, 0.4]],
-        "color": tint(ICE, 1.0), "color_over_life": [[0.0, tint(CYAN, 1.0)], [0.5, tint(ICE, 1.0)], [1.0, tint(DEEP, 1.0)]],
-        "opacity": 0.2, "opacity_over_life": [[0.0, 0.0], [0.25, 1.0], [0.6, 0.6], [1.0, 0.0]],
-        "emissive": 0.6, "drag": 1.4, "blend": "additive",
+        "max_particles": 48, "lifetime": 0.6, "lifetime_variance": 0.12, "size": 1.15, "size_variance": 0.3,
+        "size_over_life": [[0.0, 1.0], [1.0, 0.42]],
+        "color": tint(ICE, 1.0), "color_over_life": [[0.0, tint(CYAN, 1.0)], [0.45, tint(ICE, 1.0)], [1.0, tint(DEEP, 1.0)]],
+        "opacity": 0.3, "opacity_over_life": [[0.0, 0.0], [0.12, 1.0], [0.5, 0.55], [1.0, 0.0]],
+        "emissive": 0.8, "drag": 1.0, "blend": "additive",
     }, {"sprite": "tex_glow", "material": "mat_glow"}, layer)
     node("column", "emitter", {
-        "shape": "disc", "radius": 0.28, "position": [0.0, 0.35, 0.0],
-        "rate": track([(0.0, 0.0), (0.06, 26.0), (0.34, 34.0), (0.42, 0.0)]),
-        "velocity": 3.6, "velocity_variance": 1.2, "direction": [0, 1, 0], "spread": 7.0,
+        "shape": "disc", "radius": 0.3, "position": [0.0, 0.3, 0.0],
+        "rate": track([(0.0, 0.0), (0.05, 34.0), (0.2, 40.0), (0.36, 52.0), (0.42, 0.0)]),
+        "velocity": 2.3, "velocity_variance": 0.9, "direction": [0, 1, 0], "spread": 6.0,
         "start_time": 0.0, "duration": 0.44,
     }, {"particle": "column_ps"}, layer)
 
-    # Motes and frost pulled inward: short streaks that accelerate into the centre.
+    # Motes and frost pulled inward: streaks thrown at the centre and accelerated into it.
     node("mote_ps", "particle_system", {
-        "max_particles": 220, "lifetime": 0.42, "lifetime_variance": 0.08, "size": 0.05, "size_variance": 0.02,
-        "color": tint(CYAN, 1.2), "color_over_life": [[0.0, tint(ICE, 1.0)], [0.7, tint(WHITE, 1.0)], [1.0, tint(WHITE, 1.0)]],
-        "opacity_over_life": [[0.0, 0.0], [0.25, 1.0], [0.85, 1.0], [1.0, 0.0]],
-        "emissive": 3.2, "drag": 0.3, "blend": "additive",
-        "render_mode": "stretched_billboard", "velocity_stretch": 0.22,
+        "max_particles": 260, "lifetime": 0.4, "lifetime_variance": 0.08, "size": 0.06, "size_variance": 0.025,
+        "color": tint(WHITE, 1.3), "color_over_life": [[0.0, tint(ICE, 1.0)], [0.6, tint(CYAN, 1.0)], [1.0, tint(WHITE, 1.0)]],
+        "opacity_over_life": [[0.0, 0.0], [0.2, 1.0], [0.85, 1.0], [1.0, 0.0]],
+        "emissive": 3.0, "drag": 0.2, "blend": "additive",
+        "render_mode": "stretched_billboard", "velocity_stretch": 0.5,
     }, {"sprite": "tex_spark", "forces": ["gather_pull"]}, layer)
     node("motes", "emitter", {
-        "shape": "ring", "radius": 3.4, "inner_radius": 1.9, "position": [0.0, 0.45, 0.0], "scale": [1.0, 1.0, 1.0],
-        "rate": track([(0.0, 0.0), (0.05, 160.0), (0.2, 320.0), (0.34, 380.0), (0.37, 0.0)]),
-        "velocity": 0.5, "velocity_variance": 0.3, "direction": [0, 1, 0], "spread": 60.0,
-        "start_time": 0.0, "duration": 0.38,
+        "shape": "ring", "radius": 3.6, "inner_radius": 2.0, "position": [0.0, 0.5, 0.0], "scale": [1.0, 1.0, 1.0],
+        "rate": track([(0.0, 0.0), (0.04, 200.0), (0.2, 420.0), (0.33, 520.0), (0.36, 0.0)]),
+        "velocity": 0.6, "velocity_variance": 0.4, "direction": [0, 1, 0], "spread": 70.0, "radial_velocity": -4.2,
+        "start_time": 0.0, "duration": 0.37,
     }, {"particle": "mote_ps"}, layer)
 
     # Cold mist creeping over the rune and drawn towards the centre.
@@ -530,11 +531,11 @@ def build_burst() -> None:
     # Wide blue flash: soft, short, mostly colour. The white lives in the small core only.
     single("flash", layer, BURST_T, 0.24, 3.4, {
         "size_over_life": [[0.0, 0.35], [0.25, 1.0], [1.0, 1.25]],
-        "color": tint(ICE, 1.0), "opacity": 0.6, "opacity_over_life": [[0.0, 0.0], [0.15, 1.0], [0.45, 0.5], [1.0, 0.0]],
+        "color": tint(ICE, 1.0), "opacity": 0.45, "opacity_over_life": [[0.0, 0.0], [0.15, 1.0], [0.4, 0.4], [1.0, 0.0]],
         "emissive": 0.6, "blend": "additive"}, [0.0, 0.7, 0.0], {"sprite": "tex_glow", "material": "mat_glow"})
-    single("flash_core", layer, BURST_T, 0.14, 0.9, {
+    single("flash_core", layer, BURST_T, 0.12, 0.7, {
         "size_over_life": [[0.0, 0.4], [0.3, 1.0], [1.0, 0.7]],
-        "color": tint(WHITE, 1.5), "opacity_over_life": [[0.0, 0.0], [0.2, 1.0], [1.0, 0.0]],
+        "color": tint(WHITE, 1.25), "opacity_over_life": [[0.0, 0.0], [0.2, 1.0], [1.0, 0.0]],
         "emissive": 1.0, "blend": "additive"}, [0.0, 0.6, 0.0], {"sprite": "tex_glow", "material": "mat_glow"})
 
     # ~60 streaks of uneven speed thrown from a small sphere: a many-pointed irregular burst.
@@ -543,7 +544,7 @@ def build_burst() -> None:
         "size_over_life": [[0.0, 1.0], [1.0, 0.5]],
         "color": tint(CYAN, 1.5), "color_over_life": [[0.0, tint(WHITE, 1.0)], [0.4, tint(CYAN, 1.0)], [1.0, tint(BLUE, 1.0)]],
         "opacity_over_life": [[0.0, 0.0], [0.12, 1.0], [0.55, 0.7], [1.0, 0.0]],
-        "emissive": 1.3, "drag": 5.5, "blend": "additive",
+        "emissive": 1.0, "drag": 5.5, "blend": "additive",
         "render_mode": "stretched_billboard", "velocity_stretch": 1.05,
     }, {"sprite": "tex_spark"}, layer)
     node("rays", "emitter", {
@@ -575,8 +576,9 @@ def build_spike_systems() -> None:
             "opacity_over_life": [[0.0, 1.0], [1.0, 1.0]],
             "render_mode": "mesh", "blend": "alpha", "drag": 0.0,
             "orientation": "velocity", "tilt": 4.0,
-            "mesh_scale": [r4(c.girth / (0.3 * c.length)), 2.0, r4(c.girth / (0.3 * c.length))],
-            "mesh_scale_variance": [0.12, 0.22, 0.12],
+            # a blade, not a cone: wide one way, thin the other, each axis with its own variance
+            "mesh_scale": [r4(1.3 * c.girth / (0.3 * c.length)), 2.0, r4(0.62 * c.girth / (0.3 * c.length))],
+            "mesh_scale_variance": [r4(0.36 * c.girth / (0.3 * c.length)), 0.22, r4(0.16 * c.girth / (0.3 * c.length))],
         }, {"mesh": c.mesh, "material": "mat_ice"}, "spikes")
 
 
@@ -629,22 +631,23 @@ def build_ground() -> list[str]:
     for nid, size, when, rise, y in (("web_inner", 3.3, 0.24, 0.2, 0.012), ("web_mid", 6.2, 0.58, 0.16, 0.014),
                                      ("web_outer", 9.7, 0.74, 0.18, 0.016)):
         early = nid == "web_inner"
-        keys = [(when, 0.0), (when + rise, 0.34 if early else 1.0)]
+        keys = [(when, 0.0), (when + rise, 0.55 if early else 1.0)]
         if early:
-            keys += [(BURST_T, 0.4), (BURST_T + 0.05, 1.0)]
+            keys += [(BURST_T, 0.6), (BURST_T + 0.05, 1.0)]
         peak = max(when + rise, BURST_T + 0.05)
-        keys += [(max(peak + 0.02, 0.95), 1.0), (1.25, 0.62), (SINK_T, 0.42), (2.16, 0.0)]
+        hold = 0.6 if early else 1.0      # the copies overlap in the middle: the inner one steps back
+        keys += [(max(peak + 0.02, 0.95), hold), (1.25, 0.62 * hold), (SINK_T, 0.42 * hold), (2.16, 0.0)]
         cracks.append(node(nid, "decal", {
             "shape": "circle", "size": track([(when, [size * 0.9, size * 0.9]), (when + rise + 0.1, [size, size])]),
             "position": [0.0, y, 0.0], "rotation": [0.0, {"web_inner": 0.0, "web_mid": 73.0, "web_outer": 151.0}[nid], 0.0],
-            "color": tint(ICE, 1.0), "emissive": 2.4, "blend": "additive", "opacity": track(keys),
+            "color": [0.16, 0.46, 1.0, 1.0], "emissive": 2.0, "blend": "additive", "opacity": track(keys),
             "fade_in": 0.0, "fade_out": 0.0, "start_time": fr(when),
         }, {"texture": "tex_web"}, layer))
 
     # radial fractures racing out with the front (the rays end at uv 0.5)
     cracks.append(node("fractures", "decal", {
         "shape": "circle", "size": front_track(0.47, lead=0.35, floor=0.6), "position": [0.0, 0.018, 0.0],
-        "color": tint(CYAN, 1.0), "emissive": 2.8, "blend": "additive",
+        "color": [0.3, 0.66, 1.0, 1.0], "emissive": 2.0, "blend": "additive",
         "opacity": track([(BURST_T, 0.0), (BURST_T + 0.04, 1.0), (1.0, 1.0), (1.3, 0.55), (SINK_T, 0.36), (2.16, 0.0)]),
         "fade_in": 0.0, "fade_out": 0.0, "start_time": fr(BURST_T),
     }, {"texture": "tex_rays"}, layer))
@@ -704,7 +707,7 @@ def build_shards() -> tuple[list[str], list[str]]:
         "angular_velocity": 0.0, "angular_velocity_variance": 520.0,
         "color": tint(CYAN, 1.3), "color_over_life": [[0.0, tint(WHITE, 1.0)], [0.5, tint(CYAN, 1.0)], [1.0, tint(BLUE, 1.0)]],
         "opacity_over_life": [[0.0, 1.0], [0.75, 1.0], [1.0, 0.0]],
-        "emissive": 1.6, "drag": 1.1, "blend": "additive",
+        "emissive": 1.1, "drag": 1.1, "blend": "additive",
     }, {"sprite": "tex_chip", "forces": ["chip_gravity"], "colliders": ["ground"]}, layer)
     node("chips_burst", "emitter", {
         "shape": "hemisphere", "radius": 0.5, "position": [0.0, 0.3, 0.0],
@@ -814,17 +817,24 @@ def build_mist() -> list[str]:
 
 def build_lights() -> None:
     layer = "light"
-    # key: from the left, so every crystal has lit facets and shadowed ones (the stage ground takes
-    # no light, so lights this strong leave no pools on it; the ground glow is the cast_glow decal)
+    # key: from the left, so every crystal has lit facets and shadowed ones. The stage ground has no
+    # albedo (the ground glow is the cast_glow decal) but it keeps a specular sheen, so every light
+    # sits high: a low one, above all one behind the effect facing the camera, hazes the floor grey.
     node("key_light", "light", {
-        "light_type": "point", "position": [-9.0, 8.0, 6.0], "color": [0.8, 0.92, 1.0, 1.0], "radius": 40.0,
+        "light_type": "point", "position": [-7.0, 12.0, 6.0], "color": [0.8, 0.92, 1.0, 1.0], "radius": 40.0,
         "intensity": track([(0.0, 0.0), (0.3, 20.0), (BURST_T, 50.0), (0.5, 150.0), (1.2, 140.0), (SINK_T, 95.0),
                             (2.18, 0.0)]),
     }, None, layer)
     # fill: deep blue from behind on the right, the colour of the shadows
     node("fill_light", "light", {
-        "light_type": "point", "position": [8.0, 7.0, -7.0], "color": [0.12, 0.3, 1.0, 1.0], "radius": 40.0,
+        "light_type": "point", "position": [8.0, 10.0, -6.0], "color": [0.12, 0.3, 1.0, 1.0], "radius": 40.0,
         "intensity": track([(0.3, 0.0), (0.5, 60.0), (1.2, 55.0), (SINK_T, 36.0), (2.18, 0.0)]),
+        "start_time": 0.3,
+    }, None, layer)
+    # rim: behind and high above, so facet edges and the far mist catch a highlight
+    node("rim_light", "light", {
+        "light_type": "point", "position": [0.0, 13.0, -8.0], "color": [0.7, 0.9, 1.0, 1.0], "radius": 40.0,
+        "intensity": track([(0.3, 0.0), (0.5, 170.0), (1.2, 160.0), (SINK_T, 100.0), (2.18, 0.0)]),
         "start_time": 0.3,
     }, None, layer)
     # the burst: a flash that settles into a cold glow above the crown
@@ -908,7 +918,7 @@ def build() -> dict[str, Any]:
     build_lights()
     # Raised three-quarter view: the disc reads as a circle with depth and the rim spikes stand
     # against the black. The studio frames about 1.45x wider than this camera.
-    node("cam", "camera", {"position": [0.0, 7.4, 11.6], "target": [0.0, 0.35, 0.0], "fov": 40.0})
+    node("cam", "camera", {"position": [0.0, 8.0, 12.6], "target": [0.0, 0.3, 0.0], "fov": 40.0})
     controls = build_controls(heroes, fills, cracks, shard_emitters, sprite_emitters, mist_emitters)
 
     return {
