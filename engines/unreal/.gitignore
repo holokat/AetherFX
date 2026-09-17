@@ -1,0 +1,9 @@
+# Unreal build artefacts (the plugin and the test project are both built in place)
+Binaries/
+Intermediate/
+Saved/
+DerivedDataCache/
+Build/
+*.xcworkspace/
+*.xcodeproj/
+.vs/

@@ -34,3 +34,6 @@ dist/
 .vscode/
 .idea/
 *.swp
+
+# unreal plugin third-party binaries (populated by engines/unreal/scripts/sync_libs.sh)
+engines/unreal/AetherFX/Source/ThirdParty/AetherFXLib/lib/
