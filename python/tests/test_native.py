@@ -420,6 +420,49 @@ class TestRuntime:
                     assert flare["radius"] > 0.0 and len(flare["position"]) == 3
                 runtime.close()
 
+    def test_life_drain_strands_flow_and_close_over_the_sustain_loop(self):
+        """docs/VOCABULARY.md beam flow: `noise_scroll` makes a strand undulate a
+        little every frame (no re-roll jumps), `noise_taper` keeps it on both
+        anchors, and `noise_loop` makes the sustain window repeat exactly - which
+        is what `metadata.loop` promises a game that holds the channel."""
+        document = effect_document("life_drain")
+        loop = document["metadata"]["loop"]
+        layout = document["metadata"]["layout"]
+        strands = {node["id"]: node["parameters"] for node in document["nodes"]
+                   if node["type"] == "beam" and node.get("enabled", True)}
+        assert strands, "the drain is built from beams"
+        for parameters in strands.values():
+            assert parameters["noise_scroll"] > 0.0          # origin (the victim) -> target (the caster)
+            assert parameters["jitter_rate"] == 0.0 and parameters["detail"] == 0
+            assert parameters["noise_loop"] == pytest.approx(loop["end"] - loop["start"])
+            assert parameters["target"] == layout["source"]   # life flows INTO the caster's hand
+            pulses = parameters["pulse_speed"] * parameters["noise_loop"]
+            assert pulses == pytest.approx(round(pulses), abs=1e-3)  # whole pulses per loop
+
+        with native.Effect.from_file(EXAMPLES_DIR / "life_drain.json") as effect:
+            with effect.compile(1.0 / 60.0) as compiled:
+                runtime = compiled.runtime()
+
+                def paths(time: float) -> dict[str, np.ndarray]:
+                    runtime.simulate_to(time)
+                    return {beam["id"]: beam["polylines"][0].copy() for beam in runtime.frame().beams}
+
+                start = paths(loop["start"])
+                next_frame = paths(loop["start"] + 1.0 / 60.0)
+                middle = paths(0.5 * (loop["start"] + loop["end"]))
+                end = paths(loop["end"])
+                runtime.close()
+
+        assert set(start) == set(strands)
+        source, target = np.array(layout["source"]), np.array(layout["target"])
+        for beam_id, path in start.items():
+            assert np.allclose(path[0], target, atol=1e-4), beam_id     # pinned to the victim's chest ...
+            assert np.allclose(path[-1], source, atol=1e-4), beam_id    # ... and to the caster's hand
+            step = np.linalg.norm(next_frame[beam_id] - path, axis=1).max()
+            assert 1e-5 < step < 0.05, (beam_id, step)                  # it flows, and it never jumps
+            assert np.linalg.norm(middle[beam_id] - path, axis=1).max() > 0.01, beam_id
+            assert np.allclose(end[beam_id], path, atol=2e-4), beam_id  # the loop closes
+
     def test_fireball_trail_ribbons_use_the_wire_layout(self, fireball: native.Compiled):
         runtime = fireball.runtime()
         runtime.simulate_to(1.0)

@@ -88,12 +88,12 @@ LIFE = {
     "mid": [1.00, 0.055, 0.045],    # the signature hue: saturated blood red
     "deep": [0.36, 0.004, 0.012],   # dark red glow, haze, ground pools
     "smoke": [0.060, 0.004, 0.007], # black-red smoke body
-    "rim": [0.80, 0.030, 0.040],    # lit edge of the smoke tendrils
+    "rim": [0.46, 0.014, 0.022],    # lit edge of the smoke tendrils
     "ember": [1.00, 0.20, 0.10],    # embers and droplets
     "light": [1.00, 0.10, 0.08],    # point lights
     "sign": [0.85, 0.02, 0.03],     # signature element: blood droplets
     "beam_gain": 1.0, "sheath_gain": 1.0, "tendril_gain": 1.0, "tendril_width": 1.0,
-    "tendril_opacity": 0.78, "smoke_gain": 1.0, "turbulence": 1.0, "haze_always": False,
+    "tendril_opacity": 0.7, "smoke_gain": 1.0, "turbulence": 1.0, "haze_always": False,
     "sign_kind": "droplets",
 }
 
@@ -131,68 +131,75 @@ SOUL = {
 # styles - how much stream there is
 # ---------------------------------------------------------------------------
 #
-# strands: (width m, noise_amplitude m, noise_frequency 1/m, noise_scroll m/s,
+# wave:    (noise_frequency 1/m, noise_amplitude m) of the shared spine.  Every
+#          strand reads the SAME displacement field (`noise_seed`), so the stream
+#          is one slow S-curve in 3D, and each strand is a scaled, phase-shifted
+#          copy of that travelling wave: they separate and re-cross like a braid.
+# strands: (width m, amplitude x, noise_offset m, noise_scroll m/s,
 #           pulses per loop, emissive, core_width, glow_width)
-# A strand with core_width 0 is a "silk band": glow only, a soft red ribbon with
-# no white line in it (it carries no pulse - a pulse on a glow-only band burns
-# out).  A strand with a core is a thin hot filament, and its `pulses per loop`
-# becomes pulse_speed = n / LOOP so every pulse train closes over the sustain
-# window.  A width of 0 disables the strand.
+# A strand with core_width 0 is a "silk band": glow only, a soft ribbon of pure
+# colour with no white line in it (it carries no pulse - a pulse on a glow-only
+# band burns out).  A strand with a core is a thin hot filament, and its
+# `pulses per loop` becomes pulse_speed = n / LOOP so every pulse train closes
+# over the sustain window.  A width of 0 disables the strand.
 
 STYLES: dict[str, dict[str, Any]] = {
     "standard": {
+        "wave": (0.17, 1.45),
         "strands": [
-            (0.44, 0.10, 0.16, 2.2, 0, 13.0, 0.0, 1.0),
-            (0.27, 0.22, 0.22, 2.8, 0, 12.0, 0.0, 1.0),
-            (0.18, 0.33, 0.27, 1.8, 0, 11.0, 0.0, 1.0),
-            (0.085, 0.13, 0.18, 2.4, 2, 1.5, 0.20, 3.0),
-            (0.065, 0.24, 0.25, 3.2, 3, 1.3, 0.22, 3.0),
-            (0.0, 0.0, 0.0, 0.0, 0, 0.0, 0.2, 2.6),
-            (0.0, 0.0, 0.0, 0.0, 0, 0.0, 0.2, 2.6),
+            (0.52, 1.00, 0.00, 2.4, 0, 11.0, 0.0, 1.0),     # the spine: wide soft silk
+            (0.30, 1.20, 0.95, 2.6, 0, 10.5, 0.0, 1.0),     # silk that swings wider and crosses it
+            (0.20, 0.72, -0.85, 2.2, 0, 10.0, 0.0, 1.0),    # silk on the inside of the curve
+            (0.085, 1.06, 0.30, 2.4, 2, 0.6, 0.20, 3.0),    # thin hot filament riding the spine
+            (0.062, 1.26, -1.35, 2.7, 3, 0.5, 0.22, 3.0),   # thin hot filament weaving round it
+            (0.0, 1.0, 0.0, 2.4, 0, 0.0, 0.0, 1.0),
+            (0.0, 1.0, 0.0, 2.4, 0, 0.0, 0.2, 3.0),
         ],
-        "sheath": (0.95, 4.5),           # width m, emissive
-        "filaments": 7.0, "filament_width": 0.07,
-        "tendrils": 8.0, "tendril_width": 0.17, "tendril_spread": 15.0,
-        "streaks": 70.0, "motes": 46.0, "droplets": 14.0, "smoke": 9.0,
-        "rays": 80.0, "ray_size": 0.075, "sparks": 26.0, "flare": 0.95,
-        "shower": 110, "hand": 0.8, "arcs": 22.0,
-        "sign": 1.0, "body": 0.0, "haze": 0.0, "circle": 1.0, "light": 1.0,
+        "sheath": (1.15, 3.6),           # width m, emissive
+        "filaments": 6.0, "filament_width": 0.075, "filament_spread": 24.0,
+        "tendrils": 8.0, "tendril_width": 0.2, "tendril_spread": 34.0,
+        "streaks": 110.0, "streak_radius": 0.5, "motes": 46.0, "droplets": 14.0, "smoke": 14.0,
+        "rays": 70.0, "ray_size": 0.075, "soft_rays": 20.0, "sparks": 26.0, "flare": 1.0,
+        "shower": 120, "hand": 0.9, "arcs": 24.0,
+        "sign": 1.0, "body": 0.5, "body_extras": False, "haze": 0.0, "circle": 1.0, "light": 1.0,
     },
     "thin": {
+        "wave": (0.19, 0.8),
         "strands": [
-            (0.15, 0.10, 0.17, 2.4, 0, 12.0, 0.0, 1.0),
-            (0.0, 0.0, 0.0, 0.0, 0, 0.0, 0.0, 1.0),
-            (0.0, 0.0, 0.0, 0.0, 0, 0.0, 0.0, 1.0),
-            (0.07, 0.10, 0.17, 2.4, 3, 1.5, 0.20, 3.0),
-            (0.045, 0.17, 0.26, 3.2, 2, 1.0, 0.24, 2.8),
-            (0.0, 0.0, 0.0, 0.0, 0, 0.0, 0.2, 2.6),
-            (0.0, 0.0, 0.0, 0.0, 0, 0.0, 0.2, 2.6),
+            (0.17, 1.00, 0.00, 2.4, 0, 10.5, 0.0, 1.0),     # one slender strand of silk ...
+            (0.0, 1.0, 0.0, 2.4, 0, 0.0, 0.0, 1.0),
+            (0.0, 1.0, 0.0, 2.4, 0, 0.0, 0.0, 1.0),
+            (0.07, 1.00, 0.00, 2.4, 3, 0.75, 0.20, 3.0),    # ... with its hot core on the same path
+            (0.04, 1.30, 0.55, 2.6, 2, 0.5, 0.24, 2.8),     # and one faint companion winding round it
+            (0.0, 1.0, 0.0, 2.4, 0, 0.0, 0.0, 1.0),
+            (0.0, 1.0, 0.0, 2.4, 0, 0.0, 0.2, 3.0),
         ],
-        "sheath": (0.4, 3.4),
-        "filaments": 2.5, "filament_width": 0.05,
-        "tendrils": 0.0, "tendril_width": 0.12, "tendril_spread": 7.0,
-        "streaks": 16.0, "motes": 12.0, "droplets": 0.0, "smoke": 0.0,
-        "rays": 40.0, "ray_size": 0.05, "sparks": 8.0, "flare": 0.55,
+        "sheath": (0.42, 2.8),
+        "filaments": 0.0, "filament_width": 0.05, "filament_spread": 12.0,
+        "tendrils": 0.0, "tendril_width": 0.12, "tendril_spread": 16.0,
+        "streaks": 24.0, "streak_radius": 0.2, "motes": 12.0, "droplets": 0.0, "smoke": 0.0,
+        "rays": 34.0, "ray_size": 0.05, "soft_rays": 8.0, "sparks": 8.0, "flare": 0.55,
         "shower": 36, "hand": 0.55, "arcs": 10.0,
-        "sign": 0.0, "body": 0.0, "haze": 0.0, "circle": 0.8, "light": 0.6,
+        "sign": 0.0, "body": 0.14, "body_extras": False, "haze": 0.0, "circle": 0.8, "light": 0.6,
     },
     "thick": {
+        "wave": (0.16, 1.55),
         "strands": [
-            (0.66, 0.12, 0.15, 2.2, 0, 13.0, 0.0, 1.0),
-            (0.42, 0.26, 0.20, 2.8, 0, 12.0, 0.0, 1.0),
-            (0.30, 0.38, 0.25, 1.8, 0, 11.0, 0.0, 1.0),
-            (0.12, 0.15, 0.17, 2.4, 2, 1.6, 0.18, 3.0),
-            (0.095, 0.28, 0.23, 3.2, 3, 1.4, 0.2, 3.0),
-            (0.22, 0.46, 0.30, 2.5, 0, 10.0, 0.0, 1.0),
-            (0.075, 0.40, 0.30, 2.0, 1, 1.2, 0.22, 3.0),
+            (0.80, 1.00, 0.00, 2.4, 0, 11.0, 0.0, 1.0),
+            (0.50, 1.28, 0.95, 2.6, 0, 10.5, 0.0, 1.0),
+            (0.36, 0.70, -0.85, 2.2, 0, 10.0, 0.0, 1.0),
+            (0.125, 1.06, 0.30, 2.4, 2, 0.65, 0.18, 3.0),
+            (0.095, 1.30, -1.35, 2.7, 3, 0.55, 0.2, 3.0),
+            (0.28, 1.55, 1.9, 2.5, 0, 9.5, 0.0, 1.0),
+            (0.08, 0.80, -2.1, 2.3, 1, 0.5, 0.22, 3.0),
         ],
-        "sheath": (1.5, 4.5),
-        "filaments": 11.0, "filament_width": 0.09,
-        "tendrils": 13.0, "tendril_width": 0.24, "tendril_spread": 19.0,
-        "streaks": 110.0, "motes": 70.0, "droplets": 24.0, "smoke": 16.0,
-        "rays": 110.0, "ray_size": 0.09, "sparks": 38.0, "flare": 1.2,
-        "shower": 160, "hand": 1.0, "arcs": 30.0,
-        "sign": 1.6, "body": 1.0, "haze": 1.0, "circle": 1.15, "light": 1.25,
+        "sheath": (1.8, 3.8),
+        "filaments": 10.0, "filament_width": 0.095, "filament_spread": 28.0,
+        "tendrils": 13.0, "tendril_width": 0.28, "tendril_spread": 38.0,
+        "streaks": 170.0, "streak_radius": 0.68, "motes": 70.0, "droplets": 24.0, "smoke": 22.0,
+        "rays": 96.0, "ray_size": 0.09, "soft_rays": 28.0, "sparks": 38.0, "flare": 1.25,
+        "shower": 170, "hand": 1.05, "arcs": 30.0,
+        "sign": 1.6, "body": 1.0, "body_extras": True, "haze": 1.0, "circle": 1.15, "light": 1.25,
     },
 }
 
@@ -403,21 +410,19 @@ def rel(value: float, reference: float) -> float:
 
 def tendril_texture(p: dict[str, Any], seed: int) -> dict[str, Any]:
     """The smoke ribbon: a bundle of wisps, never a tape.  Tiling noise eats the
-    band into separate streaks (several across the width, gaps along the length)
-    and the colour follows the alpha, so every wisp is dark at its heart and lit
-    along its edge - which is what lets black smoke read on a black stage.  u
-    runs along the ribbon (one tile per metre, scrolled by the trail's
-    uv_scroll), v across it."""
-    wide, wide_id = band("w", 0.5, 1.7)
+    band into separate streaks (several across the width) and the colour follows
+    the alpha, so every wisp is dark at its heart and lit along its edge - which
+    is what lets black smoke read on a black stage.  u runs along the ribbon (one
+    tile per metre, scrolled by the trail's uv_scroll), v across it; the texture
+    is only eight texels long, so the wisps run on for decimetres and wander
+    slowly instead of repeating a pattern every metre like the links of a chain."""
+    wide, wide_id = band("w", 0.5, 1.6)
     smoke, rim = p["smoke"], p["rim"]
     nodes = wide + [
-        op("n", "fbm", {"frequency": 4.0, "octaves": 4, "seed": seed % 997, "tile": True}),
-        op("nl", "levels", {"in_low": 0.40, "in_high": 0.70}, {"a": "n"}),
-        op("g", "fbm", {"frequency": 1.0, "octaves": 2, "seed": (seed + 31) % 997, "tile": True}),
-        op("gl", "levels", {"in_low": 0.30, "in_high": 0.62, "out_low": 0.25, "out_high": 1.0}, {"a": "g"}),
+        op("n", "fbm", {"frequency": 4.0, "octaves": 3, "seed": seed % 997, "tile": True}),
+        op("nl", "levels", {"in_low": 0.36, "in_high": 0.72, "out_low": 0.12, "out_high": 1.0}, {"a": "n"}),
         op("w1", "math", {"mode": "multiply"}, {"a": wide_id, "b": "nl"}),
-        op("w2", "math", {"mode": "multiply"}, {"a": "w1", "b": "gl"}),
-        op("al", "levels", {"in_low": 0.03, "in_high": 0.62, "gamma": 1.15}, {"a": "w2"}),
+        op("al", "levels", {"in_low": 0.02, "in_high": 0.7, "gamma": 1.1}, {"a": "w1"}),
         # rim -> heart colour, one grey image per channel, driven by the alpha itself.
         # Stored relative to the rim colour (1 = rim): the trail's own `color` is the
         # rim, so a renderer that does not texture ribbons still draws the right hue.
@@ -426,7 +431,7 @@ def tendril_texture(p: dict[str, Any], seed: int) -> dict[str, Any]:
         op("cb", "levels", {"in_low": 0.1, "in_high": 0.75, "out_low": 1.0, "out_high": rel(smoke[2], rim[2])}, {"a": "al"}),
         op("out", "channel_pack", {"channel": "luminance"}, {"r": "cr", "g": "cg", "b": "cb", "a": "al"}),
     ]
-    return tex("tex_tendril", 256, 96, nodes, "out")
+    return tex("tex_tendril", 8, 128, nodes, "out")
 
 
 def circle_texture(seed: int) -> dict[str, Any]:
@@ -508,8 +513,8 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
         op("lv", "levels", {"in_low": 0.07, "in_high": 0.6}, {"a": "m"}),
     ], "lv"))
     add(tex("tex_pool", 128, 128, [
-        op("r", "gradient_radial", {"radius": 0.5, "inner_radius": 0.02, "falloff": "smooth"}),
-        op("lv", "levels", {"in_low": 0.0, "in_high": 1.0, "gamma": 0.6}, {"a": "r"}),
+        op("r", "gradient_radial", {"radius": 0.5, "falloff": "smooth"}),
+        op("lv", "levels", {"in_low": 0.0, "in_high": 1.0, "gamma": 0.8}, {"a": "r"}),
     ], "lv"))
     add(circle_texture(seed))
 
@@ -541,8 +546,11 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
         "force_type": "attractor", "position": list(SOURCE), "strength": 80.0}))
     add(node("f_pull_soft", "force", {
         "force_type": "attractor", "position": list(SOURCE), "strength": 27.0}))
-    add(node("f_meander", "force", {
-        "force_type": "curl_noise", "strength": r4(11.0 * turb), "frequency": 1.0, "octaves": 2, "speed": 0.6}))
+    add(node("f_meander", "force", {       # big slow eddies: no ribbon flies a straight line
+        "force_type": "curl_noise", "strength": r4(26.0 * turb), "frequency": 0.33, "octaves": 2, "speed": 0.5}))
+    add(node("f_funnel", "force", {        # the last metre: a steep well, so every ribbon lands in the palm
+        "force_type": "attractor", "position": list(SOURCE), "strength": 260.0, "radius": 1.3,
+        "falloff": "smooth"}))
     add(node("f_flutter", "force", {
         "force_type": "curl_noise", "strength": r4(2.4 * turb), "frequency": 1.7, "octaves": 2, "speed": 0.9}))
     add(node("f_braid", "force", {         # twist about the stream axis: strands wind round each other
@@ -555,7 +563,7 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
         "force_type": "vortex", "direction": [1.0, 0.1, 0.6], "position": list(SOURCE), "strength": 17.0,
         "radius": 1.0, "falloff": "smooth"}))
     add(node("f_hand_hold", "force", {
-        "force_type": "attractor", "position": list(SOURCE), "strength": 58.0, "radius": 1.2,
+        "force_type": "attractor", "position": list(SOURCE), "strength": 44.0, "radius": 1.2,
         "falloff": "smooth"}))
     add(node("f_rise", "force", {"force_type": "buoyancy", "strength": 0.7}))
     add(node("f_gravity", "force", {"force_type": "gravity", "strength": 5.5}))
@@ -579,13 +587,13 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
         ("tgt", TARGET, 2.3, T_CONNECT - 0.04, 0.62),
     ):
         x = centre[0]
-        add(node(f"d_pool_{key}", "decal", {
-            "shape": "circle", "size": [r4(size * 1.5), r4(size * 1.5)], "position": [x, 0.0, 0.0],
-            "color": c(mid), "emissive": r4(0.5 * g * circle), "blend": "additive",
+        add(node(f"d_pool_{key}", "decal", {      # a faint inner glow, never a disc
+            "shape": "circle", "size": [r4(size * 2.0), r4(size * 2.0)], "position": [x, 0.0, 0.0],
+            "color": c(mid), "emissive": r4(0.35 * g * circle), "blend": "additive",
             "fade_in": 0.05, "fade_out": 0.2,
-            "opacity": env([(t_on, 0.0), (t_on + 0.14, 0.10 * level), (t_on + 0.3, 0.12 * level),
-                            (T_PEAK, 0.12 * level), (T_PEAK + 0.2, 0.22 * level), (T_RELEASE, 0.14 * level),
-                            (T_GONE, 0.07 * level), (T_END - 0.04, 0.0)]),
+            "opacity": env([(t_on, 0.0), (t_on + 0.14, 0.035 * level), (t_on + 0.3, 0.045 * level),
+                            (T_PEAK, 0.045 * level), (T_PEAK + 0.2, 0.09 * level), (T_RELEASE, 0.05 * level),
+                            (T_GONE, 0.025 * level), (T_END - 0.04, 0.0)]),
         }, layer="ground", inputs={"texture": "tex_pool", "material": "mat_circle"}))
         add(node(f"d_circle_{key}", "decal", {
             "shape": "circle", "position": [x, 0.0, 0.0],
@@ -603,23 +611,26 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
     # ---------------- the strands (beams, TARGET -> SOURCE) ----------------
     tip = tip_track()
     beam_gain = p["beam_gain"]
-    for i, (width, amp, freq, scroll, pulses, emissive, core_w, glow_w) in enumerate(s["strands"], start=1):
+    wave_freq, wave_amp = s["wave"]
+    for i, (width, amp, phase, scroll, pulses, emissive, core_w, glow_w) in enumerate(s["strands"], start=1):
         on = width > 0.0
         if not on:   # keep the node (identical ids across the nine documents), switched off
-            width, amp, freq, scroll, pulses, emissive = 0.03, 0.3, 0.6, 2.0, 1, 1.0
+            width, emissive = 0.05, 1.0
+        silk = core_w <= 0.0
         sid = f"strand_{i}"
         add(node(sid, "beam", {
             "origin": tip, "target": list(SOURCE),
             "start_time": T_SHOOT, "duration": r4(T_GONE + 0.04 - T_SHOOT),
-            "width": env(stream_envelope(1.2, 1.5, 0.05), width),
+            "width": env(stream_envelope(1.15, 1.7, 0.05), width),
             "segments": 56, "detail": 0, "jitter_rate": 0.0,
-            "noise_amplitude": r4(amp * turb), "noise_frequency": freq,
-            "noise_scroll": scroll, "noise_loop": LOOP, "noise_taper": 0.3,
+            "noise_amplitude": r4(wave_amp * amp * turb), "noise_frequency": wave_freq,
+            "noise_seed": 1, "noise_offset": phase,
+            "noise_scroll": scroll, "noise_loop": LOOP, "noise_taper": 0.32,
             "width_profile": "taper_both", "width_variance": 0.0, "intensity_noise": 0.0,
-            "flicker": 0.1, "flicker_frequency": 11.0,
-            "pulse_speed": r4(pulses / LOOP) if core_w > 0.0 else 0.0,
-            "color": c(mix(mid, hot, 0.2)) if core_w > 0.0 else c(mix(mid, deep, 0.12 * (i - 1))),
-            "emissive": env(stream_envelope(1.7, 1.55, 0.07), emissive * beam_gain * g),
+            "flicker": 0.06 if silk else 0.22, "flicker_frequency": 9.0 if silk else 13.0,
+            "pulse_speed": 0.0 if silk else r4(pulses / LOOP),
+            "color": c(mix(mid, deep, 0.10 * (i - 1))) if silk else c(mix(mid, hot, 0.2)),
+            "emissive": env(stream_envelope(1.6, 1.7, 0.07), emissive * beam_gain * g),
             "core_width": core_w, "glow_width": glow_w, "blend": "additive",
         }, layer="stream", enabled=on))
         drive("stream_intensity", sid, "emissive")
@@ -628,18 +639,19 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
         drive("flow_speed", sid, "pulse_speed")
         drive("turbulence", sid, "noise_amplitude")
 
-    # the soft glow body round the strands: glow only, no core
+    # the soft glow body round the strands: glow only, no core, on the spine itself
     sheath_w, sheath_e = s["sheath"]
     add(node("stream_sheath", "beam", {
         "origin": tip, "target": list(SOURCE),
         "start_time": T_SHOOT, "duration": r4(T_GONE + 0.04 - T_SHOOT),
-        "width": env(stream_envelope(1.1, 1.45, 0.06), sheath_w),
+        "width": env(stream_envelope(1.1, 1.6, 0.06), sheath_w),
         "segments": 40, "detail": 0, "jitter_rate": 0.0,
-        "noise_amplitude": r4(0.13 * turb), "noise_frequency": 0.26,
-        "noise_scroll": 2.2, "noise_loop": LOOP, "noise_taper": 0.3,
+        "noise_amplitude": r4(wave_amp * turb), "noise_frequency": wave_freq,
+        "noise_seed": 1, "noise_offset": 0.25,
+        "noise_scroll": 2.4, "noise_loop": LOOP, "noise_taper": 0.32,
         "width_profile": "taper_both", "flicker": 0.08, "flicker_frequency": 7.0,
         "color": c(mix(mid, deep, 0.35)),
-        "emissive": env(stream_envelope(1.5, 1.6, 0.08), sheath_e * p["sheath_gain"] * g),
+        "emissive": env(stream_envelope(1.5, 1.7, 0.08), sheath_e * p["sheath_gain"] * g),
         "core_width": 0.0, "glow_width": 1.0, "blend": "additive",
     }, layer="stream"))
     drive("stream_intensity", "stream_sheath", "emissive")
@@ -656,7 +668,7 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
         "emissive": r4(2.6 * gh), "render_mode": "billboard", "blend": "additive",
         "drag": 6.0, "bounce": 0.0, "friction": 1.0, "collision_radius": 0.01,
     }, inputs={"sprite": "tex_dot", "material": "mat_spark",
-               "forces": ["f_pull", "f_meander", "f_braid"], "colliders": ["hand_hold"]}, enabled=fil_on))
+               "forces": ["f_pull", "f_funnel", "f_meander", "f_braid"], "colliders": ["hand_hold"]}, enabled=fil_on))
     add(node("trail_filament", "trail", {
         "lifetime": 0.34, "max_segments": 40, "min_vertex_distance": 0.05,
         "taper": [[0.0, 0.0], [0.1, 1.0], [0.45, 0.7], [1.0, 0.0]],
@@ -670,8 +682,8 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
     }, layer="stream", inputs={"source": "ps_filament", "material": "mat_filament"}, enabled=fil_on))
     add(node("e_filament", "emitter", {
         "shape": "sphere", "radius": 0.07, "position": list(TARGET), "start_time": T_CONNECT,
-        "direction": list(AXIS), "spread": 9.0, "velocity": 11.0, "velocity_variance": 3.0,
-        "rate": channel_rate(max(s["filaments"], 0.1), 1.8),
+        "direction": list(AXIS), "spread": s["filament_spread"], "velocity": 10.0, "velocity_variance": 3.0,
+        "rate": channel_rate(max(s["filaments"], 0.1), 2.2),
     }, layer="stream", inputs={"particle": "ps_filament"}, enabled=fil_on))
     drive("stream_intensity", "trail_filament", "emissive")
     drive("stream_width", "trail_filament", "width")
@@ -684,7 +696,7 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
         "max_particles": 96, "lifetime": 1.3, "lifetime_variance": 0.05,
         "size": 0.02, "render_mode": "none", "drag": 6.0, "bounce": 0.0, "friction": 1.0,
         "collision_radius": 0.01,
-    }, inputs={"forces": ["f_pull", "f_meander", "f_braid"], "colliders": ["hand_hold"]}, enabled=ten_on))
+    }, inputs={"forces": ["f_pull", "f_funnel", "f_meander", "f_braid"], "colliders": ["hand_hold"]}, enabled=ten_on))
     add(node("trail_tendril", "trail", {
         "lifetime": 0.46, "max_segments": 64, "min_vertex_distance": 0.04,
         "taper": [[0.0, 0.0], [0.1, 0.6], [0.32, 1.0], [0.7, 0.7], [1.0, 0.0]],
@@ -697,8 +709,8 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
     }, layer="tendrils", inputs={"source": "ps_tendril", "material": "mat_tendril"}, enabled=ten_on))
     add(node("e_tendril", "emitter", {
         "shape": "sphere", "radius": 0.12, "position": list(TARGET), "start_time": T_CONNECT,
-        "direction": list(AXIS), "spread": s["tendril_spread"], "velocity": 9.0, "velocity_variance": 3.0,
-        "rate": channel_rate(max(s["tendrils"], 0.1), 1.7),
+        "direction": list(AXIS), "spread": s["tendril_spread"], "velocity": 8.5, "velocity_variance": 3.0,
+        "rate": channel_rate(max(s["tendrils"], 0.1), 2.0),
     }, layer="tendrils", inputs={"particle": "ps_tendril"}, enabled=ten_on))
     drive("stream_width", "trail_tendril", "width")
     drive("flow_speed", "e_tendril", "velocity")
@@ -706,22 +718,22 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
 
     # ---------------- streaks riding the stream ----------------
     add(node("ps_streak", "particle_system", {
-        "max_particles": 260, "lifetime": 0.42, "lifetime_variance": 0.16,
-        "size": 0.05, "size_variance": 0.028,
+        "max_particles": 320, "lifetime": 0.46, "lifetime_variance": 0.16,
+        "size": 0.062, "size_variance": 0.034,
         "size_over_life": [[0.0, 0.3], [0.25, 1.0], [1.0, 0.2]],
         "color": c(mix(hot, mid, 0.35)),
         "color_over_life": [[0.0, c(hot)], [0.4, c(mix(hot, mid, 0.6))], [1.0, c(mid, 1.0, 0.6)]],
         "opacity_over_life": [[0.0, 0.0], [0.2, 1.0], [0.7, 0.8], [1.0, 0.0]],
-        "emissive": r4(2.4 * gh), "render_mode": "stretched_billboard", "velocity_stretch": 0.55,
+        "emissive": r4(2.6 * gh), "render_mode": "stretched_billboard", "velocity_stretch": 0.85,
         "blend": "additive", "drag": 0.6, "soft_particle_distance": 0.05,
     }, inputs={"sprite": "tex_dot", "material": "mat_spark", "forces": ["f_flutter", "f_braid"],
                "colliders": ["hand_sink"]}))
-    add(node("e_streak", "emitter", {
+    add(node("e_streak", "emitter", {      # a spindle round the axis, as wide as the stream swings
         "shape": "sphere", "radius": 1.0, "position": list(MID),
-        "scale": [2.75, r4(0.16 + sheath_w * 0.13), r4(0.16 + sheath_w * 0.13)],
-        "start_time": T_CONNECT - 0.06, "direction": list(AXIS), "spread": 5.0,
+        "scale": [2.75, s["streak_radius"], s["streak_radius"]],
+        "start_time": T_CONNECT - 0.06, "direction": list(AXIS), "spread": 6.0,
         "velocity": 7.0, "velocity_variance": 2.6,
-        "rate": channel_rate(s["streaks"], 2.0, start=T_CONNECT - 0.06, stop=T_RELEASE + 0.02),
+        "rate": channel_rate(s["streaks"], 2.4, start=T_CONNECT - 0.06, stop=T_RELEASE + 0.02),
     }, layer="flow", inputs={"particle": "ps_streak"}))
     drive("particles", "e_streak", "rate")
     drive("flow_speed", "e_streak", "velocity")
@@ -793,19 +805,19 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
     smoke_on = s["smoke"] > 0.0
     add(node("ps_smoke", "particle_system", {
         "max_particles": 120, "lifetime": 1.1, "lifetime_variance": 0.3,
-        "size": 0.62, "size_variance": 0.22, "size_over_life": [[0.0, 0.45], [0.5, 1.0], [1.0, 1.35]],
-        "color": c(mix(smoke, deep, 0.3)), "opacity": r4(min(1.0, 0.36 * p["smoke_gain"])),
+        "size": 0.7, "size_variance": 0.25, "size_over_life": [[0.0, 0.45], [0.5, 1.0], [1.0, 1.35]],
+        "color": c(mix(smoke, deep, 0.5)), "opacity": r4(min(1.0, 0.5 * p["smoke_gain"])),
         "opacity_over_life": [[0.0, 0.0], [0.25, 1.0], [0.7, 0.6], [1.0, 0.0]],
-        "emissive": 0.1, "render_mode": "billboard", "blend": "alpha", "sort": True, "drag": 1.4,
-        "rotation_variance": 180.0, "angular_velocity": 10.0, "angular_velocity_variance": 24.0,
-        "soft_particle_distance": 0.3,
+        "emissive": 0.2, "render_mode": "stretched_billboard", "velocity_stretch": 0.22, "blend": "alpha",
+        "sort": True, "drag": 1.2, "rotation_variance": 180.0, "soft_particle_distance": 0.3,
     }, inputs={"sprite": "tex_puff", "material": "mat_smoke", "forces": ["f_pull_soft", "f_flutter", "f_rise"]},
         enabled=smoke_on))
-    add(node("e_smoke", "emitter", {
+    add(node("e_smoke", "emitter", {       # dark wisps travelling along the stream, round its outside
         "shape": "sphere", "radius": 1.0, "position": offset(MID, 0.6),
-        "scale": [2.3, 0.22, 0.22], "start_time": T_CONNECT, "direction": list(AXIS), "spread": 20.0,
-        "velocity": 1.2, "velocity_variance": 0.6,
-        "rate": channel_rate(max(s["smoke"], 0.1), 1.6),
+        "scale": [2.3, r4(s["streak_radius"] * 1.15), r4(s["streak_radius"] * 1.15)],
+        "start_time": T_CONNECT, "direction": list(AXIS), "spread": 20.0,
+        "velocity": 2.4, "velocity_variance": 1.0,
+        "rate": channel_rate(max(s["smoke"], 0.1), 1.8),
     }, layer="tendrils", inputs={"particle": "ps_smoke"}, enabled=smoke_on))
     # what lingers when the channel has gone: wisps at both anchors
     add(node("ps_linger", "particle_system", {
@@ -827,23 +839,24 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
 
     # ---------------- the target: a wound of light ----------------
     flare = s["flare"]
-    add(node("ps_flare", "particle_system", {     # two or three overlapping quads, never a particle cloud
-        "max_particles": 12, "lifetime": 0.55, "lifetime_variance": 0.1,
-        "size": r4(1.25 * flare), "size_variance": r4(0.2 * flare),
-        "size_over_life": [[0.0, 0.7], [0.4, 1.0], [1.0, 0.85]],
-        "color": c(mix(mid, hot, 0.3)), "opacity": 0.5,
+    add(node("ps_flare", "particle_system", {     # a ragged red glow: a few overlapping torn quads
+        "max_particles": 16, "lifetime": 0.3, "lifetime_variance": 0.08,
+        "size": r4(1.5 * flare), "size_variance": r4(0.3 * flare),
+        "size_over_life": [[0.0, 0.65], [0.4, 1.0], [1.0, 0.9]],
+        "color": c(mix(mid, hot, 0.2)), "opacity": 0.55,
         "opacity_over_life": [[0.0, 0.0], [0.3, 1.0], [0.7, 0.8], [1.0, 0.0]],
-        "emissive": r4(1.5 * g), "render_mode": "billboard", "blend": "additive",
-        "soft_particle_distance": 0.4,
-    }, inputs={"sprite": "tex_glow", "material": "mat_glow"}))
+        "emissive": r4(1.6 * g), "render_mode": "billboard", "blend": "additive",
+        "rotation_variance": 180.0, "angular_velocity_variance": 40.0, "soft_particle_distance": 0.4,
+    }, inputs={"sprite": "tex_puff", "material": "mat_glow"}))
     add(node("e_flare", "emitter", {
-        "shape": "point", "position": list(TARGET), "velocity": 0.0, "start_time": T_CONNECT - 0.03,
-        "rate": env([(T_CONNECT - 0.03, 0.0), (T_CONNECT, 14.0), (T_SUSTAIN, 5.0), (T_PEAK, 5.0),
-                     (T_PEAK + 0.1, 11.0), (T_PEAK + 0.3, 9.0), (T_RELEASE, 4.0), (T_RELEASE + 0.1, 0.0)]),
+        "shape": "sphere", "radius": 0.06, "position": list(TARGET), "velocity": 0.0,
+        "start_time": T_CONNECT - 0.03,
+        "rate": env([(T_CONNECT - 0.03, 0.0), (T_CONNECT, 24.0), (T_SUSTAIN, 11.0), (T_PEAK, 11.0),
+                     (T_PEAK + 0.1, 22.0), (T_PEAK + 0.3, 18.0), (T_RELEASE - 0.06, 9.0), (T_RELEASE - 0.02, 0.0)]),
     }, layer="target", inputs={"particle": "ps_flare"}))
     add(node("ps_flare_core", "particle_system", {   # the small hot heart of the wound
-        "max_particles": 12, "lifetime": 0.4, "lifetime_variance": 0.1,
-        "size": r4(0.42 * flare), "size_variance": r4(0.08 * flare),
+        "max_particles": 12, "lifetime": 0.24, "lifetime_variance": 0.06,
+        "size": r4(0.4 * flare), "size_variance": r4(0.08 * flare),
         "size_over_life": [[0.0, 0.7], [0.4, 1.0], [1.0, 0.8]],
         "color": c(hot), "opacity": 0.7,
         "opacity_over_life": [[0.0, 0.0], [0.3, 1.0], [0.7, 0.8], [1.0, 0.0]],
@@ -852,9 +865,29 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
     }, inputs={"sprite": "tex_glow", "material": "mat_spark"}))
     add(node("e_flare_core", "emitter", {
         "shape": "point", "position": list(TARGET), "velocity": 0.0, "start_time": T_CONNECT - 0.03,
-        "rate": env([(T_CONNECT - 0.03, 0.0), (T_CONNECT, 16.0), (T_SUSTAIN, 6.0), (T_PEAK, 6.0),
-                     (T_PEAK + 0.1, 13.0), (T_PEAK + 0.3, 10.0), (T_RELEASE, 5.0), (T_RELEASE + 0.1, 0.0)]),
+        "rate": env([(T_CONNECT - 0.03, 0.0), (T_CONNECT, 24.0), (T_SUSTAIN, 11.0), (T_PEAK, 11.0),
+                     (T_PEAK + 0.1, 22.0), (T_PEAK + 0.3, 18.0), (T_RELEASE - 0.06, 9.0), (T_RELEASE - 0.02, 0.0)]),
     }, layer="target", inputs={"particle": "ps_flare_core"}))
+    # broad soft rays under the thin ones: irregular wedges of glow, slower to change
+    add(node("ps_ray_soft", "particle_system", {
+        "max_particles": 48, "lifetime": 0.4, "lifetime_variance": 0.15,
+        "size": r4(s["ray_size"] * 3.0), "size_variance": r4(s["ray_size"] * 1.4),
+        "size_over_life": [[0.0, 0.4], [0.35, 1.0], [1.0, 0.6]],
+        "color": c(mix(mid, hot, 0.15)), "opacity": 0.6,
+        "opacity_over_life": [[0.0, 0.0], [0.3, 1.0], [0.65, 0.7], [1.0, 0.0]],
+        "emissive": r4(1.1 * g), "render_mode": "stretched_billboard", "velocity_stretch": 3.2,
+        "blend": "additive", "drag": 1.0,
+    }, inputs={"sprite": "tex_glow", "material": "mat_glow"}))
+    add(node("e_ray_soft", "emitter", {
+        "shape": "sphere", "radius": r4(0.3 * flare), "surface_only": True, "position": list(TARGET),
+        "direction": [0.0, 0.0, 0.0], "start_time": T_CONNECT - 0.02,
+        "velocity": env([(T_CONNECT - 0.02, 1.4), (T_SUSTAIN, 0.8), (T_PEAK, 0.8), (T_PEAK + 0.1, 1.7),
+                         (T_PEAK + 0.3, 1.5), (T_RELEASE, 0.7)]),
+        "velocity_variance": 0.5,
+        "rate": env([(T_CONNECT - 0.02, 0.0), (T_CONNECT, 2.0), (T_SUSTAIN, 1.0), (T_PEAK, 1.0),
+                     (T_PEAK + 0.08, 2.6), (T_PEAK + 0.3, 2.2), (T_RELEASE - 0.04, 0.8), (T_RELEASE, 0.0)],
+                    s["soft_rays"]),
+    }, layer="target", inputs={"particle": "ps_ray_soft"}))
     # the rays: short-lived, velocity-stretched, random in length, direction and brightness
     add(node("ps_ray", "particle_system", {
         "max_particles": 90, "lifetime": 0.24, "lifetime_variance": 0.12,
@@ -873,7 +906,7 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
                          (T_PEAK + 0.3, 1.7), (T_RELEASE, 0.8)]),
         "velocity_variance": 0.6,
         "rate": env([(T_CONNECT - 0.02, 0.0), (T_CONNECT, 2.2), (T_SUSTAIN, 1.0), (T_PEAK, 1.0),
-                     (T_PEAK + 0.08, 3.0), (T_PEAK + 0.3, 2.6), (T_RELEASE, 0.8), (T_RELEASE + 0.08, 0.0)],
+                     (T_PEAK + 0.08, 3.0), (T_PEAK + 0.3, 2.6), (T_RELEASE - 0.04, 0.8), (T_RELEASE, 0.0)],
                     s["rays"]),
     }, layer="target", inputs={"particle": "ps_ray"}))
     add(node("ps_spark", "particle_system", {
@@ -896,7 +929,9 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
     drive("target_burst", "ps_flare", "size")
     drive("target_burst", "ps_flare_core", "size")
     drive("target_burst", "ps_ray", "size")
+    drive("target_burst", "ps_ray_soft", "size")
     drive("target_burst", "e_ray", "rate")
+    drive("target_burst", "e_ray_soft", "rate")
     drive("target_burst", "e_spark", "rate")
     drive("particles", "e_spark", "burst_count")
 
@@ -936,15 +971,15 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
         "render_mode": "none", "drag": 5.5,
     }, inputs={"forces": ["f_hand_swirl", "f_hand_swirl2", "f_hand_hold"]}))
     add(node("trail_arc", "trail", {
-        "lifetime": 0.13, "max_segments": 14, "min_vertex_distance": 0.02,
+        "lifetime": 0.19, "max_segments": 18, "min_vertex_distance": 0.02,
         "taper": [[0.0, 0.0], [0.25, 1.0], [1.0, 0.0]],
         "opacity_over_life": [[0.0, 1.0], [0.6, 0.7], [1.0, 0.0]],
-        "color": c(mix(hot, mid, 0.3)), "blend": "additive", "width": r4(0.045 * (0.6 + 0.4 * hand)),
+        "color": c(mix(hot, mid, 0.3)), "blend": "additive", "width": r4(0.06 * (0.6 + 0.4 * hand)),
         "emissive": env([(0.0, 0.6), (T_SHOOT, 1.6), (T_PEAK, 1.5), (T_PEAK + 0.15, 2.4), (T_GONE, 1.4),
                          (T_END, 0.0)], gh),
     }, layer="hand", inputs={"source": "ps_arc", "material": "mat_filament"}))
     add(node("e_arc", "emitter", {
-        "shape": "sphere", "radius": 0.26, "surface_only": True, "position": list(SOURCE),
+        "shape": "sphere", "radius": 0.34, "surface_only": True, "position": list(SOURCE),
         "direction": [0.0, 0.0, 0.0], "velocity": 0.5, "velocity_variance": 0.4,
         "rate": env([(0.0, 0.0), (0.05, 0.6), (T_SHOOT, 1.0), (T_PEAK, 1.0), (T_PEAK + 0.15, 1.6),
                      (T_GONE, 0.9), (T_GONE + 0.16, 0.0)], s["arcs"]),
@@ -1004,7 +1039,7 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
     add(node("ps_wisp", "particle_system", {
         "max_particles": 48, "lifetime": 1.6, "lifetime_variance": 0.08, "size": 0.02,
         "render_mode": "none", "drag": 3.6, "bounce": 0.0, "friction": 1.0, "collision_radius": 0.01,
-    }, inputs={"forces": ["f_pull_soft", "f_meander", "f_flutter", "f_braid"], "colliders": ["hand_hold"]},
+    }, inputs={"forces": ["f_pull_soft", "f_funnel", "f_meander", "f_flutter", "f_braid"], "colliders": ["hand_hold"]},
         enabled=wisp_on))
     add(node("trail_wisp", "trail", {
         "lifetime": 0.55, "max_segments": 48, "min_vertex_distance": 0.05,
@@ -1021,23 +1056,27 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
     for eid in ("e_spore", "e_blood", "e_wisp"):
         drive("particles", eid, "rate")
 
-    # ---------------- thick: particle elements ripped off the whole target ----------------
-    body_on = s["body"] > 0.0
+    # ---------------- particle elements ripped off the whole target ----------------
+    # The victim is a capsule about 0.5 m in radius standing 0.4 .. 1.9 m high; it is
+    # never drawn, only emitted from.  Every style tears motes off it; the thick
+    # beam adds droplets and smoke.
+    body = s["body"]
+    extras = bool(s["body_extras"])
     add(node("e_body_mote", "emitter", {
         "shape": "sphere", "radius": 0.5, "scale": [1.0, 1.5, 1.0], "surface_only": True,
         "position": list(BODY), "start_time": T_CONNECT, "direction": [0.0, 0.0, 0.0],
-        "velocity": 0.8, "velocity_variance": 0.5, "rate": channel_rate(60.0, 2.0),
-    }, layer="motes", inputs={"particle": "ps_mote"}, enabled=body_on))
+        "velocity": 0.8, "velocity_variance": 0.5, "rate": channel_rate(64.0 * body, 2.4),
+    }, layer="motes", inputs={"particle": "ps_mote"}))
     add(node("e_body_droplet", "emitter", {
         "shape": "sphere", "radius": 0.45, "scale": [1.0, 1.5, 1.0], "surface_only": True,
         "position": list(BODY), "start_time": T_CONNECT, "direction": [0.0, 0.0, 0.0],
         "velocity": 0.6, "velocity_variance": 0.4, "rate": channel_rate(18.0, 2.0),
-    }, layer="motes", inputs={"particle": "ps_droplet"}, enabled=body_on))
+    }, layer="motes", inputs={"particle": "ps_droplet"}, enabled=extras))
     add(node("e_body_smoke", "emitter", {
         "shape": "sphere", "radius": 0.45, "scale": [1.0, 1.5, 1.0], "position": list(BODY),
         "start_time": T_CONNECT, "direction": [-0.6, 0.5, 0.0], "spread": 50.0, "velocity": 0.7,
         "velocity_variance": 0.4, "rate": channel_rate(11.0, 1.6),
-    }, layer="tendrils", inputs={"particle": "ps_smoke"}, enabled=body_on))
+    }, layer="tendrils", inputs={"particle": "ps_smoke"}, enabled=extras))
     for eid in ("e_body_mote", "e_body_droplet", "e_body_smoke", "e_smoke"):
         drive("particles", eid, "rate")
 
@@ -1070,22 +1109,22 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
     light = s["light"]
     add(node("l_hand", "light", {
         "light_type": "point", "position": offset(SOURCE, 0.25, 0.1, 0.55), "color": c(p["light"]),
-        "radius": 5.0, "flicker_amplitude": 0.12, "flicker_frequency": 9.0,
-        "intensity": env([(0.0, 0.0), (0.12, 1.4), (T_SHOOT, 3.0), (T_SUSTAIN, 3.4), (T_PEAK, 3.4),
-                          (T_PEAK + 0.2, 5.6), (T_RELEASE, 4.0), (T_GONE, 2.4), (T_END - 0.04, 0.0)], g * light),
+        "radius": 3.6, "flicker_amplitude": 0.12, "flicker_frequency": 9.0,
+        "intensity": env([(0.0, 0.0), (0.12, 0.8), (T_SHOOT, 1.6), (T_SUSTAIN, 1.8), (T_PEAK, 1.8),
+                          (T_PEAK + 0.2, 3.6), (T_RELEASE, 2.4), (T_GONE, 1.4), (T_END - 0.04, 0.0)], g * light),
     }, layer="light"))
     add(node("l_target", "light", {
         "light_type": "point", "position": offset(TARGET, -0.25, 0.1, 0.6), "color": c(p["light"]),
-        "radius": 5.5, "flicker_amplitude": 0.16, "flicker_frequency": 11.0,
-        "intensity": env([(T_CONNECT - 0.04, 0.0), (T_CONNECT + 0.02, 7.0), (T_SUSTAIN, 3.6), (T_PEAK, 3.6),
-                          (T_PEAK + 0.12, 9.0), (T_PEAK + 0.3, 7.0), (T_RELEASE, 3.0), (T_GONE, 0.8),
+        "radius": 3.8, "flicker_amplitude": 0.16, "flicker_frequency": 11.0,
+        "intensity": env([(T_CONNECT - 0.04, 0.0), (T_CONNECT + 0.02, 4.0), (T_SUSTAIN, 2.0), (T_PEAK, 2.0),
+                          (T_PEAK + 0.12, 6.0), (T_PEAK + 0.3, 4.6), (T_RELEASE, 1.8), (T_GONE, 0.5),
                           (T_END - 0.06, 0.0)], g * light),
     }, layer="light"))
     add(node("l_stream", "light", {
-        "light_type": "point", "position": offset(MID, 0.0, -0.35, 0.5), "color": c(p["light"]),
-        "radius": 5.0,
-        "intensity": env([(T_SHOOT, 0.0), (T_SUSTAIN, 1.6), (T_PEAK, 1.6), (T_PEAK + 0.2, 2.8),
-                          (T_RELEASE, 1.6), (T_GONE, 0.0)], g * light),
+        "light_type": "point", "position": offset(MID, 0.0, -0.2, 0.5), "color": c(p["light"]),
+        "radius": 3.6,
+        "intensity": env([(T_SHOOT, 0.0), (T_SUSTAIN, 0.7), (T_PEAK, 0.7), (T_PEAK + 0.2, 1.5),
+                          (T_RELEASE, 0.8), (T_GONE, 0.0)], g * light),
     }, layer="light"))
     for lid in ("l_hand", "l_stream"):
         drive("stream_intensity", lid, "intensity")
@@ -1169,7 +1208,7 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
             },
             "render_settings": {
                 "background": [0.0, 0.0, 0.0, 1.0],
-                "ground_albedo": 0.05,
+                "ground_albedo": 0.035,
                 "bloom_intensity": 0.2,
                 "bloom_radius": 0.04,
                 "exposure": 0.85,
