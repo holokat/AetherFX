@@ -1476,15 +1476,15 @@
     "velocity": 0.0,
     "radial_velocity": -5.2,
     "rate": {
-     "value": 60.0,
+     "value": 220.0,
      "track": [
       {
        "time": 0.0,
-       "value": 60.0
+       "value": 220.0
       },
       {
        "time": 0.05,
-       "value": 260.0
+       "value": 320.0
       },
       {
        "time": 0.1667,
@@ -1527,15 +1527,15 @@
     "velocity_variance": 0.6,
     "radial_velocity": -1.8,
     "rate": {
-     "value": 0.0,
+     "value": 90.0,
      "track": [
       {
        "time": 0.0,
-       "value": 0.0
+       "value": 90.0
       },
       {
        "time": 0.0333,
-       "value": 140.0
+       "value": 180.0
       },
       {
        "time": 0.1833,
@@ -1592,11 +1592,11 @@
    "type": "particle_system",
    "layer": "warp",
    "parameters": {
-    "max_particles": 900,
+    "max_particles": 1100,
     "lifetime": 0.07,
     "lifetime_variance": 0.012,
-    "size": 0.1,
-    "size_variance": 0.015,
+    "size": 0.15,
+    "size_variance": 0.02,
     "color": [
      0.7,
      0.58,
@@ -1607,17 +1607,17 @@
      [
       0.0,
       [
-       0.7,
-       0.58,
+       0.595,
+       0.573,
        1.0,
        1.0
       ]
      ],
      [
-      0.5,
+      0.45,
       [
-       0.6,
-       0.41,
+       0.62,
+       0.444,
        1.0,
        1.0
       ]
@@ -1632,7 +1632,7 @@
       ]
      ]
     ],
-    "opacity": 0.7,
+    "opacity": 0.46,
     "opacity_over_life": [
      [
       0.0,
@@ -1662,10 +1662,10 @@
    "type": "particle_system",
    "layer": "warp",
    "parameters": {
-    "max_particles": 300,
+    "max_particles": 420,
     "lifetime": 0.09,
     "lifetime_variance": 0.02,
-    "size": 0.3,
+    "size": 0.46,
     "size_variance": 0.06,
     "color": [
      0.5,
@@ -1693,7 +1693,7 @@
       ]
      ]
     ],
-    "opacity": 0.3,
+    "opacity": 0.19,
     "opacity_over_life": [
      [
       0.0,
@@ -1860,19 +1860,19 @@
       },
       {
        "time": 0.1,
-       "value": 1800.0
-      },
-      {
-       "time": 0.15,
        "value": 2600.0
       },
       {
+       "time": 0.15,
+       "value": 3800.0
+      },
+      {
        "time": 0.2167,
-       "value": 3000.0
+       "value": 4400.0
       },
       {
        "time": 0.25,
-       "value": 2000.0
+       "value": 3000.0
       },
       {
        "time": 0.25,
@@ -1911,15 +1911,15 @@
       },
       {
        "time": 0.1167,
-       "value": 700.0
+       "value": 1100.0
       },
       {
        "time": 0.2167,
-       "value": 900.0
+       "value": 1400.0
       },
       {
        "time": 0.25,
-       "value": 500.0
+       "value": 800.0
       },
       {
        "time": 0.25,
@@ -2105,11 +2105,11 @@
     "opacity_over_life": [
      [
       0.0,
-      1.0
+      0.8
      ],
      [
       0.6,
-      0.6
+      0.45
      ],
      [
       1.0,
@@ -2117,8 +2117,8 @@
      ]
     ],
     "color": [
-     0.62,
-     0.444,
+     0.59,
+     0.393,
      1.0,
      1.0
     ],
@@ -2132,11 +2132,11 @@
       },
       {
        "time": 0.1167,
-       "value": 0.13
+       "value": 0.22
       },
       {
        "time": 0.2167,
-       "value": 0.13
+       "value": 0.22
       },
       {
        "time": 0.25,
@@ -2145,19 +2145,19 @@
      ]
     },
     "emissive": {
-     "value": 0.3,
+     "value": 0.1,
      "track": [
       {
        "time": 0.0833,
-       "value": 0.3
+       "value": 0.1
       },
       {
        "time": 0.1167,
-       "value": 1.0
+       "value": 0.45
       },
       {
        "time": 0.2333,
-       "value": 1.1
+       "value": 0.5
       },
       {
        "time": 0.25,
@@ -2219,11 +2219,11 @@
     "opacity_over_life": [
      [
       0.0,
-      1.0
+      0.8
      ],
      [
       0.6,
-      0.6
+      0.45
      ],
      [
       1.0,
@@ -2231,8 +2231,8 @@
      ]
     ],
     "color": [
-     0.62,
-     0.444,
+     0.59,
+     0.393,
      1.0,
      1.0
     ],
@@ -2246,11 +2246,11 @@
       },
       {
        "time": 0.1167,
-       "value": 0.13
+       "value": 0.22
       },
       {
        "time": 0.2167,
-       "value": 0.13
+       "value": 0.22
       },
       {
        "time": 0.25,
@@ -2259,19 +2259,19 @@
      ]
     },
     "emissive": {
-     "value": 0.3,
+     "value": 0.1,
      "track": [
       {
        "time": 0.0833,
-       "value": 0.3
+       "value": 0.1
       },
       {
        "time": 0.1167,
-       "value": 1.0
+       "value": 0.45
       },
       {
        "time": 0.2333,
-       "value": 1.1
+       "value": 0.5
       },
       {
        "time": 0.25,
@@ -2422,19 +2422,19 @@
       },
       {
        "time": 0.4,
-       "value": 2200.0
+       "value": 3200.0
       },
       {
        "time": 0.4333,
-       "value": 3400.0
+       "value": 5000.0
       },
       {
        "time": 0.5,
-       "value": 2600.0
+       "value": 3800.0
       },
       {
        "time": 0.5667,
-       "value": 1600.0
+       "value": 2400.0
       },
       {
        "time": 0.6,
@@ -2473,15 +2473,15 @@
       },
       {
        "time": 0.4167,
-       "value": 1000.0
+       "value": 1500.0
       },
       {
        "time": 0.4667,
-       "value": 900.0
+       "value": 1400.0
       },
       {
        "time": 0.55,
-       "value": 500.0
+       "value": 800.0
       },
       {
        "time": 0.6,
@@ -2683,11 +2683,11 @@
     "opacity_over_life": [
      [
       0.0,
-      1.0
+      0.8
      ],
      [
       0.6,
-      0.6
+      0.45
      ],
      [
       1.0,
@@ -2695,8 +2695,8 @@
      ]
     ],
     "color": [
-     0.62,
-     0.444,
+     0.59,
+     0.393,
      1.0,
      1.0
     ],
@@ -2710,11 +2710,11 @@
       },
       {
        "time": 0.4167,
-       "value": 0.13
+       "value": 0.22
       },
       {
        "time": 0.5667,
-       "value": 0.13
+       "value": 0.22
       },
       {
        "time": 0.6,
@@ -2723,19 +2723,19 @@
      ]
     },
     "emissive": {
-     "value": 0.3,
+     "value": 0.1,
      "track": [
       {
        "time": 0.3833,
-       "value": 0.3
+       "value": 0.1
       },
       {
        "time": 0.4167,
-       "value": 1.0
+       "value": 0.45
       },
       {
        "time": 0.5667,
-       "value": 1.1
+       "value": 0.5
       },
       {
        "time": 0.6,
@@ -2797,11 +2797,11 @@
     "opacity_over_life": [
      [
       0.0,
-      1.0
+      0.8
      ],
      [
       0.6,
-      0.6
+      0.45
      ],
      [
       1.0,
@@ -2809,8 +2809,8 @@
      ]
     ],
     "color": [
-     0.62,
-     0.444,
+     0.59,
+     0.393,
      1.0,
      1.0
     ],
@@ -2824,11 +2824,11 @@
       },
       {
        "time": 0.4167,
-       "value": 0.13
+       "value": 0.22
       },
       {
        "time": 0.5667,
-       "value": 0.13
+       "value": 0.22
       },
       {
        "time": 0.6,
@@ -2837,19 +2837,19 @@
      ]
     },
     "emissive": {
-     "value": 0.3,
+     "value": 0.1,
      "track": [
       {
        "time": 0.3833,
-       "value": 0.3
+       "value": 0.1
       },
       {
        "time": 0.4167,
-       "value": 1.0
+       "value": 0.45
       },
       {
        "time": 0.5667,
-       "value": 1.1
+       "value": 0.5
       },
       {
        "time": 0.6,
@@ -3383,6 +3383,117 @@
    }
   },
   {
+   "id": "shard_ps",
+   "type": "particle_system",
+   "layer": "shards",
+   "parameters": {
+    "max_particles": 160,
+    "lifetime": 0.6,
+    "lifetime_variance": 0.2,
+    "size": 0.16,
+    "size_variance": 0.06,
+    "size_over_life": [
+     [
+      0.0,
+      0.2
+     ],
+     [
+      0.08,
+      1.0
+     ],
+     [
+      0.3,
+      0.8
+     ],
+     [
+      0.5,
+      1.0
+     ],
+     [
+      0.75,
+      0.75
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "rotation_variance": 180.0,
+    "angular_velocity": 260.0,
+    "angular_velocity_variance": 220.0,
+    "color": [
+     0.7,
+     0.58,
+     1.0,
+     1.0
+    ],
+    "color_over_life": [
+     [
+      0.0,
+      [
+       0.75,
+       0.77,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      0.3,
+      [
+       0.7,
+       0.58,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      1.0,
+      [
+       0.5,
+       0.24,
+       1.0,
+       1.0
+      ]
+     ]
+    ],
+    "opacity": 0.9,
+    "opacity_over_life": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.06,
+      1.0
+     ],
+     [
+      0.7,
+      0.8
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 1.5,
+    "drag": 3.2,
+    "render_mode": "billboard",
+    "blend": "additive",
+    "bounce": 0.12,
+    "friction": 0.8
+   },
+   "inputs": {
+    "sprite": "tex_glint",
+    "material": "mat_glow",
+    "forces": [
+     "f_fall"
+    ],
+    "colliders": [
+     "ground"
+    ]
+   }
+  },
+  {
    "id": "o_ring_glints",
    "type": "emitter",
    "layer": "shards",
@@ -3407,11 +3518,11 @@
       },
       {
        "time": 0.15,
-       "value": 70.0
+       "value": 55.0
       },
       {
        "time": 0.2333,
-       "value": 70.0
+       "value": 55.0
       },
       {
        "time": 0.25,
@@ -3423,7 +3534,7 @@
     "duration": 0.1333
    },
    "inputs": {
-    "particle": "glint_ps"
+    "particle": "shard_ps"
    }
   },
   {
@@ -3451,11 +3562,11 @@
       },
       {
        "time": 0.4333,
-       "value": 80.0
+       "value": 60.0
       },
       {
        "time": 0.5333,
-       "value": 80.0
+       "value": 60.0
       },
       {
        "time": 0.55,
@@ -3467,7 +3578,7 @@
     "duration": 0.15
    },
    "inputs": {
-    "particle": "glint_ps"
+    "particle": "shard_ps"
    }
   },
   {
@@ -3499,7 +3610,7 @@
     "duration": 0.05
    },
    "inputs": {
-    "particle": "glint_ps"
+    "particle": "shard_ps"
    }
   },
   {
@@ -3531,7 +3642,7 @@
     "duration": 0.05
    },
    "inputs": {
-    "particle": "glint_ps"
+    "particle": "shard_ps"
    }
   },
   {
@@ -4069,11 +4180,11 @@
    "type": "particle_system",
    "layer": "afterimage",
    "parameters": {
-    "max_particles": 60,
-    "lifetime": 0.065,
+    "max_particles": 80,
+    "lifetime": 0.055,
     "lifetime_variance": 0.015,
     "size": 0.78,
-    "size_variance": 0.1,
+    "size_variance": 0.12,
     "size_over_life": [
      [
       0.0,
@@ -4123,7 +4234,7 @@
       ]
      ]
     ],
-    "opacity": 0.42,
+    "opacity": 0.34,
     "opacity_over_life": [
      [
       0.0,
@@ -4278,7 +4389,7 @@
       ]
      ]
     ],
-    "opacity": 0.16,
+    "opacity": 0.24,
     "opacity_over_life": [
      [
       0.0,
@@ -4328,8 +4439,8 @@
      [
       0.0,
       [
-       0.7,
        0.58,
+       0.572,
        1.0,
        1.0
       ]
@@ -4474,7 +4585,7 @@
     "segments": 4,
     "visible": false,
     "position": [
-     -0.75,
+     -1.2,
      0.0,
      0.0
     ]
@@ -4487,7 +4598,7 @@
    "parent": "wake_1_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      0.92,
@@ -4500,7 +4611,7 @@
     ],
     "velocity": 0.33,
     "velocity_variance": 0.05,
-    "rate": 150.0,
+    "rate": 240.0,
     "start_time": 0.2667,
     "duration": 0.1
    },
@@ -4548,7 +4659,7 @@
    "parent": "wake_1_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      0.15,
@@ -4562,7 +4673,7 @@
     "spread": 2.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
-    "rate": 22.0,
+    "rate": 30.0,
     "start_time": 0.2667,
     "duration": 0.1
    },
@@ -4577,7 +4688,7 @@
    "parent": "wake_1_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      0.46,
@@ -4591,7 +4702,7 @@
     "spread": 2.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
-    "rate": 22.0,
+    "rate": 30.0,
     "start_time": 0.2667,
     "duration": 0.1
    },
@@ -4606,7 +4717,7 @@
    "parent": "wake_1_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      0.77,
@@ -4620,7 +4731,7 @@
     "spread": 2.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
-    "rate": 22.0,
+    "rate": 30.0,
     "start_time": 0.2667,
     "duration": 0.1
    },
@@ -4635,7 +4746,7 @@
    "parent": "wake_1_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      0.92,
@@ -4649,7 +4760,7 @@
     "spread": 2.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
-    "rate": 22.0,
+    "rate": 30.0,
     "start_time": 0.2667,
     "duration": 0.1
    },
@@ -4664,7 +4775,7 @@
    "parent": "wake_1_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      1.22,
@@ -4678,7 +4789,7 @@
     "spread": 2.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
-    "rate": 22.0,
+    "rate": 30.0,
     "start_time": 0.2667,
     "duration": 0.1
    },
@@ -4693,7 +4804,7 @@
    "parent": "wake_1_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      1.51,
@@ -4707,7 +4818,7 @@
     "spread": 2.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
-    "rate": 22.0,
+    "rate": 30.0,
     "start_time": 0.2667,
     "duration": 0.1
    },
@@ -4722,7 +4833,7 @@
    "parent": "wake_1_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      1.63,
@@ -4736,7 +4847,7 @@
     "spread": 2.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
-    "rate": 22.0,
+    "rate": 30.0,
     "start_time": 0.2667,
     "duration": 0.1
    },
@@ -4751,7 +4862,7 @@
    "parent": "wake_1_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      0.22,
@@ -4766,7 +4877,7 @@
     "velocity": 2.0,
     "velocity_variance": 1.5,
     "inherit_velocity": 0.3,
-    "rate": 95.0,
+    "rate": 120.0,
     "start_time": 0.2667,
     "duration": 0.1
    },
@@ -4781,7 +4892,7 @@
    "parent": "wake_1_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      0.55,
@@ -4796,7 +4907,7 @@
     "velocity": 2.0,
     "velocity_variance": 1.5,
     "inherit_velocity": 0.3,
-    "rate": 95.0,
+    "rate": 120.0,
     "start_time": 0.2667,
     "duration": 0.1
    },
@@ -4811,7 +4922,7 @@
    "parent": "wake_1_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      0.9,
@@ -4826,7 +4937,7 @@
     "velocity": 2.0,
     "velocity_variance": 1.5,
     "inherit_velocity": 0.3,
-    "rate": 95.0,
+    "rate": 120.0,
     "start_time": 0.2667,
     "duration": 0.1
    },
@@ -4841,7 +4952,7 @@
    "parent": "wake_1_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      1.24,
@@ -4856,7 +4967,7 @@
     "velocity": 2.0,
     "velocity_variance": 1.5,
     "inherit_velocity": 0.3,
-    "rate": 95.0,
+    "rate": 120.0,
     "start_time": 0.2667,
     "duration": 0.1
    },
@@ -4871,7 +4982,7 @@
    "parent": "wake_1_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      1.58,
@@ -4886,7 +4997,7 @@
     "velocity": 2.0,
     "velocity_variance": 1.5,
     "inherit_velocity": 0.3,
-    "rate": 95.0,
+    "rate": 120.0,
     "start_time": 0.2667,
     "duration": 0.1
    },
@@ -4902,7 +5013,7 @@
    "parameters": {
     "shape": "box",
     "size": [
-     1.5,
+     2.4,
      1.5,
      0.3
     ],
@@ -4919,7 +5030,7 @@
     "spread": 10.0,
     "velocity": 0.9,
     "velocity_variance": 0.5,
-    "rate": 70.0,
+    "rate": 90.0,
     "start_time": 0.2667,
     "duration": 0.1
    },
@@ -4935,7 +5046,7 @@
    "parameters": {
     "shape": "box",
     "size": [
-     1.5,
+     2.4,
      1.5,
      0.3
     ],
@@ -4952,7 +5063,7 @@
     "spread": 10.0,
     "velocity": 0.9,
     "velocity_variance": 0.5,
-    "rate": 70.0,
+    "rate": 90.0,
     "start_time": 0.2667,
     "duration": 0.1
    },
@@ -4971,7 +5082,7 @@
     "segments": 4,
     "visible": false,
     "position": [
-     -0.75,
+     -1.2,
      0.0,
      0.0
     ]
@@ -4984,7 +5095,7 @@
    "parent": "wake_2_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      0.92,
@@ -4997,7 +5108,7 @@
     ],
     "velocity": 0.33,
     "velocity_variance": 0.05,
-    "rate": 150.0,
+    "rate": 240.0,
     "start_time": 0.3167,
     "duration": 0.1
    },
@@ -5045,7 +5156,7 @@
    "parent": "wake_2_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      0.2,
@@ -5059,7 +5170,7 @@
     "spread": 2.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
-    "rate": 22.0,
+    "rate": 30.0,
     "start_time": 0.3167,
     "duration": 0.1
    },
@@ -5074,7 +5185,7 @@
    "parent": "wake_2_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      0.51,
@@ -5088,7 +5199,7 @@
     "spread": 2.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
-    "rate": 22.0,
+    "rate": 30.0,
     "start_time": 0.3167,
     "duration": 0.1
    },
@@ -5103,7 +5214,7 @@
    "parent": "wake_2_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      0.67,
@@ -5117,7 +5228,7 @@
     "spread": 2.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
-    "rate": 22.0,
+    "rate": 30.0,
     "start_time": 0.3167,
     "duration": 0.1
    },
@@ -5132,7 +5243,7 @@
    "parent": "wake_2_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      0.97,
@@ -5146,7 +5257,7 @@
     "spread": 2.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
-    "rate": 22.0,
+    "rate": 30.0,
     "start_time": 0.3167,
     "duration": 0.1
    },
@@ -5161,7 +5272,7 @@
    "parent": "wake_2_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      1.27,
@@ -5175,7 +5286,7 @@
     "spread": 2.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
-    "rate": 22.0,
+    "rate": 30.0,
     "start_time": 0.3167,
     "duration": 0.1
    },
@@ -5190,7 +5301,7 @@
    "parent": "wake_2_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      1.41,
@@ -5204,7 +5315,7 @@
     "spread": 2.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
-    "rate": 22.0,
+    "rate": 30.0,
     "start_time": 0.3167,
     "duration": 0.1
    },
@@ -5219,7 +5330,7 @@
    "parent": "wake_2_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      1.68,
@@ -5233,7 +5344,7 @@
     "spread": 2.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
-    "rate": 22.0,
+    "rate": 30.0,
     "start_time": 0.3167,
     "duration": 0.1
    },
@@ -5248,7 +5359,7 @@
    "parent": "wake_2_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      0.22,
@@ -5263,7 +5374,7 @@
     "velocity": 2.0,
     "velocity_variance": 1.5,
     "inherit_velocity": 0.3,
-    "rate": 95.0,
+    "rate": 120.0,
     "start_time": 0.3167,
     "duration": 0.1
    },
@@ -5278,7 +5389,7 @@
    "parent": "wake_2_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      0.55,
@@ -5293,7 +5404,7 @@
     "velocity": 2.0,
     "velocity_variance": 1.5,
     "inherit_velocity": 0.3,
-    "rate": 95.0,
+    "rate": 120.0,
     "start_time": 0.3167,
     "duration": 0.1
    },
@@ -5308,7 +5419,7 @@
    "parent": "wake_2_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      0.9,
@@ -5323,7 +5434,7 @@
     "velocity": 2.0,
     "velocity_variance": 1.5,
     "inherit_velocity": 0.3,
-    "rate": 95.0,
+    "rate": 120.0,
     "start_time": 0.3167,
     "duration": 0.1
    },
@@ -5338,7 +5449,7 @@
    "parent": "wake_2_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      1.24,
@@ -5353,7 +5464,7 @@
     "velocity": 2.0,
     "velocity_variance": 1.5,
     "inherit_velocity": 0.3,
-    "rate": 95.0,
+    "rate": 120.0,
     "start_time": 0.3167,
     "duration": 0.1
    },
@@ -5368,7 +5479,7 @@
    "parent": "wake_2_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      1.58,
@@ -5383,7 +5494,7 @@
     "velocity": 2.0,
     "velocity_variance": 1.5,
     "inherit_velocity": 0.3,
-    "rate": 95.0,
+    "rate": 120.0,
     "start_time": 0.3167,
     "duration": 0.1
    },
@@ -5399,7 +5510,7 @@
    "parameters": {
     "shape": "box",
     "size": [
-     1.5,
+     2.4,
      1.5,
      0.3
     ],
@@ -5416,7 +5527,7 @@
     "spread": 10.0,
     "velocity": 0.9,
     "velocity_variance": 0.5,
-    "rate": 70.0,
+    "rate": 90.0,
     "start_time": 0.3167,
     "duration": 0.1
    },
@@ -5432,7 +5543,7 @@
    "parameters": {
     "shape": "box",
     "size": [
-     1.5,
+     2.4,
      1.5,
      0.3
     ],
@@ -5449,7 +5560,7 @@
     "spread": 10.0,
     "velocity": 0.9,
     "velocity_variance": 0.5,
-    "rate": 70.0,
+    "rate": 90.0,
     "start_time": 0.3167,
     "duration": 0.1
    },
@@ -5468,7 +5579,7 @@
     "segments": 4,
     "visible": false,
     "position": [
-     -0.75,
+     -1.2,
      0.0,
      0.0
     ]
@@ -5481,7 +5592,7 @@
    "parent": "wake_3_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      0.92,
@@ -5494,7 +5605,7 @@
     ],
     "velocity": 0.33,
     "velocity_variance": 0.05,
-    "rate": 150.0,
+    "rate": 240.0,
     "start_time": 0.3667,
     "duration": 0.1
    },
@@ -5542,7 +5653,7 @@
    "parent": "wake_3_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      0.25,
@@ -5556,7 +5667,7 @@
     "spread": 2.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
-    "rate": 22.0,
+    "rate": 30.0,
     "start_time": 0.3667,
     "duration": 0.1
    },
@@ -5571,7 +5682,7 @@
    "parent": "wake_3_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      0.41,
@@ -5585,7 +5696,7 @@
     "spread": 2.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
-    "rate": 22.0,
+    "rate": 30.0,
     "start_time": 0.3667,
     "duration": 0.1
    },
@@ -5600,7 +5711,7 @@
    "parent": "wake_3_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      0.72,
@@ -5614,7 +5725,7 @@
     "spread": 2.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
-    "rate": 22.0,
+    "rate": 30.0,
     "start_time": 0.3667,
     "duration": 0.1
    },
@@ -5629,7 +5740,7 @@
    "parent": "wake_3_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      1.02,
@@ -5643,7 +5754,7 @@
     "spread": 2.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
-    "rate": 22.0,
+    "rate": 30.0,
     "start_time": 0.3667,
     "duration": 0.1
    },
@@ -5658,7 +5769,7 @@
    "parent": "wake_3_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      1.17,
@@ -5672,7 +5783,7 @@
     "spread": 2.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
-    "rate": 22.0,
+    "rate": 30.0,
     "start_time": 0.3667,
     "duration": 0.1
    },
@@ -5687,7 +5798,7 @@
    "parent": "wake_3_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      1.46,
@@ -5701,7 +5812,7 @@
     "spread": 2.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
-    "rate": 22.0,
+    "rate": 30.0,
     "start_time": 0.3667,
     "duration": 0.1
    },
@@ -5716,7 +5827,7 @@
    "parent": "wake_3_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      1.73,
@@ -5730,7 +5841,7 @@
     "spread": 2.0,
     "velocity": 0.0,
     "inherit_velocity": 0.35,
-    "rate": 22.0,
+    "rate": 30.0,
     "start_time": 0.3667,
     "duration": 0.1
    },
@@ -5745,7 +5856,7 @@
    "parent": "wake_3_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      0.22,
@@ -5760,7 +5871,7 @@
     "velocity": 2.0,
     "velocity_variance": 1.5,
     "inherit_velocity": 0.3,
-    "rate": 95.0,
+    "rate": 120.0,
     "start_time": 0.3667,
     "duration": 0.1
    },
@@ -5775,7 +5886,7 @@
    "parent": "wake_3_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      0.55,
@@ -5790,7 +5901,7 @@
     "velocity": 2.0,
     "velocity_variance": 1.5,
     "inherit_velocity": 0.3,
-    "rate": 95.0,
+    "rate": 120.0,
     "start_time": 0.3667,
     "duration": 0.1
    },
@@ -5805,7 +5916,7 @@
    "parent": "wake_3_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      0.9,
@@ -5820,7 +5931,7 @@
     "velocity": 2.0,
     "velocity_variance": 1.5,
     "inherit_velocity": 0.3,
-    "rate": 95.0,
+    "rate": 120.0,
     "start_time": 0.3667,
     "duration": 0.1
    },
@@ -5835,7 +5946,7 @@
    "parent": "wake_3_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      1.24,
@@ -5850,7 +5961,7 @@
     "velocity": 2.0,
     "velocity_variance": 1.5,
     "inherit_velocity": 0.3,
-    "rate": 95.0,
+    "rate": 120.0,
     "start_time": 0.3667,
     "duration": 0.1
    },
@@ -5865,7 +5976,7 @@
    "parent": "wake_3_tail",
    "parameters": {
     "shape": "line",
-    "length": 1.5,
+    "length": 2.4,
     "position": [
      0.0,
      1.58,
@@ -5880,7 +5991,7 @@
     "velocity": 2.0,
     "velocity_variance": 1.5,
     "inherit_velocity": 0.3,
-    "rate": 95.0,
+    "rate": 120.0,
     "start_time": 0.3667,
     "duration": 0.1
    },
@@ -5896,7 +6007,7 @@
    "parameters": {
     "shape": "box",
     "size": [
-     1.5,
+     2.4,
      1.5,
      0.3
     ],
@@ -5913,7 +6024,7 @@
     "spread": 10.0,
     "velocity": 0.9,
     "velocity_variance": 0.5,
-    "rate": 70.0,
+    "rate": 90.0,
     "start_time": 0.3667,
     "duration": 0.1
    },
@@ -5929,7 +6040,7 @@
    "parameters": {
     "shape": "box",
     "size": [
-     1.5,
+     2.4,
      1.5,
      0.3
     ],
@@ -5946,7 +6057,7 @@
     "spread": 10.0,
     "velocity": 0.9,
     "velocity_variance": 0.5,
-    "rate": 70.0,
+    "rate": 90.0,
     "start_time": 0.3667,
     "duration": 0.1
    },
@@ -6159,15 +6270,15 @@
    "parameters": {
     "position": [
      11.6,
-     3.4,
+     3.6,
      7.3
     ],
     "target": [
-     4.3,
-     0.95,
+     4.5,
+     0.85,
      0.0
     ],
-    "fov": 44.0
+    "fov": 38.0
    }
   }
  ],
@@ -6531,6 +6642,11 @@
     },
     {
      "node": "glint_ps",
+     "parameter": "color",
+     "op": "multiply"
+    },
+    {
+     "node": "shard_ps",
      "parameter": "color",
      "op": "multiply"
     },
@@ -7040,6 +7156,16 @@
     },
     {
      "node": "glint_ps",
+     "parameter": "color_over_life",
+     "op": "hue_shift"
+    },
+    {
+     "node": "shard_ps",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "shard_ps",
      "parameter": "color_over_life",
      "op": "hue_shift"
     },
