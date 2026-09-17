@@ -13,7 +13,12 @@ foreach(module core imageio procedural compiler sim render tools capi)
       AETHER_TEST_OUTPUT_DIR="${CMAKE_BINARY_DIR}/test_output/${module}")
     aether_set_warnings(${_target})
     file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/test_output/${module}")
-    catch_discover_tests(${_target} TEST_PREFIX "${module}.")
+    if(module STREQUAL "tools")
+      # the package-export cases share one fixture directory: never run them side by side
+      catch_discover_tests(${_target} TEST_PREFIX "${module}." PROPERTIES RESOURCE_LOCK aether_tools_package)
+    else()
+      catch_discover_tests(${_target} TEST_PREFIX "${module}.")
+    endif()
   endif()
 endforeach()
 # The C ABI is also driven from pure C: it proves the public header is valid C99

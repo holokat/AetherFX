@@ -144,7 +144,11 @@ async def run(args: argparse.Namespace) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--url", default="http://127.0.0.1:8770/")
+    parser.add_argument("--url", required=True,
+                        help="studio URL of YOUR OWN instance, e.g. http://127.0.0.1:8781/ (port 8770 is the user's "
+                             "live studio: capturing there would switch the effect under them)")
+    parser.add_argument("--allow-user-studio", action="store_true",
+                        help="permit --url on port 8770 (the user's live studio); off by default")
     parser.add_argument("--effect", required=True, help="Library display name prefix, e.g. 'Fire AOE'")
     parser.add_argument("--times", default="1.0", help="comma-separated effect times in seconds")
     parser.add_argument("--out", required=True, help="output path prefix; _t<time>.png is appended")
@@ -158,6 +162,9 @@ def main() -> int:
     parser.add_argument("--duration", type=float, default=3.0, help="fallback effect duration if the readout is unparsable")
     parser.add_argument("--camera", default=None, help='optional JSON {"position":[x,y,z],"target":[x,y,z]} applied to the three.js camera before capture')
     args = parser.parse_args()
+    if ":8770" in args.url and not args.allow_user_studio:
+        parser.error("refusing to drive the user's live studio on port 8770; start your own instance "
+                     "and pass its --url (or --allow-user-studio if you really mean it)")
     return asyncio.run(run(args))
 
 
