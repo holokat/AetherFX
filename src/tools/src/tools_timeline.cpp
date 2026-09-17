@@ -78,7 +78,11 @@ nlohmann::json get_timeline(Session& session, const nlohmann::json& args) {
         }
         bound[phase].push_back(node.id);
     }
+    // Phases and durations are effect seconds; `wall_duration` is how long the
+    // effect takes to play at its own `time_scale` (docs/RUNTIME.md 11).
     return {{"duration", doc.effect.duration},
+            {"time_scale", doc.effect.time_scale},
+            {"wall_duration", doc.effect.wall_duration()},
             {"phases", timeline_json(doc.effect.timeline)["phases"]},
             {"bound_nodes", std::move(bound)},
             {"unknown_phases", std::move(unknown)}};
@@ -105,7 +109,8 @@ void register_timeline_tools(ToolRegistry& registry) {
                  remove_timeline_phase);
 
     registry.add({"get_timeline",
-                  "Return the effect duration, the timeline phases and, per phase, the ids of the nodes bound to it "
+                  "Return the effect duration, its time_scale and wall_duration (duration / time_scale: how long "
+                  "it takes to play), the timeline phases and, per phase, the ids of the nodes bound to it "
                   "(nodes whose `phase` parameter names it). Use it to see how the effect is staged in time.",
                   make_schema({}), false, "timeline"},
                  get_timeline);
