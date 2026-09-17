@@ -114,4 +114,10 @@ MCP configuration for Claude Code / Claude Desktop is in `python/README.md`.
 The `AETHERFX_ANALYZER` environment variable selects the reference-analysis
 adapter (`mock` by default, `claude` with `ANTHROPIC_API_KEY`).
 
-License: Apache-2.0 (see LICENSE). Third-party licenses in docs/DEPENDENCIES.md.
+## License and credits
+
+MIT (see `LICENSE`): free for any use, including commercial games. Every dependency is permissive and
+nothing proprietary is bundled; the audit is in `THIRD_PARTY_NOTICES.md`.
+
+Started by [Gene](https://x.com/cogentgene1). Built with and for AI agents: see `/mcp` on a running
+studio for the agent documentation.

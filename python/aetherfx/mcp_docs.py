@@ -372,6 +372,9 @@ command = "aetherfx-mcp"</code></pre>
 
 <h2>Tools ({len(records)})</h2>
 <table><tr><th>tool</th><th>what it does</th></tr>{''.join(rows)}</table>
+
+<p class="args" style="margin-top:48px">AetherFX is open source under the MIT license.
+Started by <a href="https://x.com/cogentgene1" target="_blank" rel="noopener noreferrer">Gene</a>.</p>
 </main></body></html>"""
 
 
