@@ -48,9 +48,18 @@ from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
 from ..client import BINARY_ENV_VAR, Client
+from ..community import (
+    GITHUB_REPO_URL,
+    REMOTE_INDEX_URL,
+    AuthorError,
+    effect_description,
+    parse_author,
+    parse_tags,
+)
 from ..jsonrpc import ERROR_METHOD_NOT_FOUND, AetherError, JsonDict, TransportError
 from .attachments import MAX_BYTES as ATTACHMENT_MAX_BYTES
 from .attachments import AttachmentError, AttachmentStore
+from .community_index import RemoteIndex, RemoteIndexError
 from .export_targets import ExportError, describe_targets, export_to_target, read_settings, write_settings
 from .generator import Generator, get_generator
 from .jobs import CANCELLED, DONE, ERROR, JobBusy, JobManager
@@ -100,10 +109,18 @@ class StudioConfig:
     client: Client | None = None
     #: Serve the MCP endpoint at /mcp on the same engine session (Claude Code / Desktop attach by URL).
     mcp: bool = True
+    #: Contributed effects (docs/COMMUNITY.md).  ``None`` -> ``<repo>/community/effects`` when it exists.
+    community_dir: Path | None = None
+    #: Optional published index for the Community view.  ``None`` -> $AETHERFX_COMMUNITY_INDEX, else off.
+    community_index: str | None = None
+    #: Permit a non-https index URL.  Tests only; a real deployment leaves this false.
+    community_index_allow_insecure: bool = False
 
     def __post_init__(self) -> None:
         self.output_dir = Path(self.output_dir).expanduser()
         self.examples_dir = Path(self.examples_dir).expanduser()
+        if self.community_dir is not None:
+            self.community_dir = Path(self.community_dir).expanduser()
 
 
 class StudioError(Exception):
@@ -171,6 +188,29 @@ def _library_hidden(document: JsonDict) -> bool:
     return bool(isinstance(library, dict) and library.get("hidden"))
 
 
+def _credit(document: JsonDict) -> JsonDict | None:
+    """``metadata.author`` as the browser sees it, or ``None``.
+
+    A contributed document is untrusted input: a malformed credit block is
+    dropped rather than shown, and everything that survives has been validated
+    by :func:`aetherfx.community.parse_author`.
+    """
+    try:
+        author = parse_author(document)
+    except AuthorError:
+        return None
+    return author.to_json() if author else None
+
+
+def _search_fields(document: JsonDict) -> JsonDict:
+    """The extra fields the Library search matches on: tags and a description."""
+    try:
+        tags = parse_tags(document)
+    except AuthorError:
+        tags = []
+    return {"tags": tags, "description": effect_description(document)}
+
+
 class Studio:
     """The engine session, the lock protecting it, the generator and the jobs."""
 
@@ -179,6 +219,13 @@ class Studio:
         self.output_dir = Path(config.output_dir).resolve()
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.examples_dir = Path(config.examples_dir)
+        self.community_dir = self._resolve_community_dir(config)
+        #: Effects downloaded from a remote index; protected exactly like the repository's own.
+        self.community_cache_dir = self.output_dir / "community_cache"
+        self.remote_index = RemoteIndex(
+            url=config.community_index or os.environ.get("AETHERFX_COMMUNITY_INDEX") or None,
+            allow_insecure=config.community_index_allow_insecure,
+        )
         self.effects_dir = self.output_dir / "effects"
         self.frames_dir = self.output_dir / "studio_frames"
         self.preview_dir = self.output_dir / "preview"
@@ -271,54 +318,133 @@ class Studio:
             out["dirty"] = self.working_dirty()
         return out
 
-    def is_builtin_path(self, path: Path | str | None) -> bool:
+    @staticmethod
+    def _resolve_community_dir(config: StudioConfig) -> Path | None:
+        """``--community-dir``, else ``<repo>/community/effects`` when the checkout has one."""
+        if config.community_dir is not None:
+            return Path(config.community_dir)
+        default = _repo_root() / "community" / "effects"
+        return default if default.is_dir() else None
+
+    def _under(self, path: Path | str | None, *bases: Path | None) -> bool:
         if not path:
             return False
         try:
-            return Path(path).expanduser().resolve().is_relative_to(self.examples_dir.resolve())
+            resolved = Path(path).expanduser().resolve()
         except (OSError, ValueError):
             return False
+        for base in bases:
+            if base is None:
+                continue
+            try:
+                if resolved.is_relative_to(base.resolve()):
+                    return True
+            except (OSError, ValueError):
+                continue
+        return False
+
+    def is_builtin_path(self, path: Path | str | None) -> bool:
+        """A Core library file: shipped in ``examples/effects``, never overwritten."""
+        return self._under(path, self.examples_dir)
+
+    def is_community_path(self, path: Path | str | None) -> bool:
+        """A contributed effect, in the repository or downloaded from the index."""
+        return self._under(path, self.community_dir, self.community_cache_dir)
+
+    def is_protected_path(self, path: Path | str | None) -> bool:
+        """Anything the studio refuses to write over: Core and Community alike."""
+        return self.is_builtin_path(path) or self.is_community_path(path)
+
+    def section_of(self, path: Path | str | None) -> str:
+        """``"core"``, ``"community"`` or ``"mine"`` for a library path."""
+        if self.is_builtin_path(path):
+            return "core"
+        if self.is_community_path(path):
+            return "community"
+        return "mine"
+
+    def _listing(self, directory: Path | None, section: str) -> list[JsonDict]:
+        """One library section, read off disk.  Blocking: run it in a threadpool."""
+        items: list[JsonDict] = []
+        if directory is None or not directory.is_dir():
+            return items
+        protected = section in ("core", "community")
+        for path in sorted(directory.glob("*.json")):
+            entry: JsonDict = {
+                "name": path.stem,
+                "path": str(path),
+                "section": section,
+                "builtin": protected,       # kept: older clients read `builtin` as "read-only"
+                "protected": protected,
+                "author": None,
+                "tags": [],
+                "description": "",
+            }
+            try:
+                raw = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                raw = None
+            if isinstance(raw, dict):
+                if protected and _library_hidden(raw):
+                    continue    # kept on disk (e.g. a test fixture) but not offered in the Library
+                if raw.get("name"):
+                    entry["name"] = str(raw["name"])
+                entry["duration"] = raw.get("duration")
+                entry["author"] = _credit(raw)
+                entry.update(_search_fields(raw))
+            try:
+                entry["modified"] = path.stat().st_mtime
+            except OSError:
+                entry["modified"] = None
+            items.append(entry)
+        return items
 
     async def library(self) -> list[JsonDict]:
-        """Built-in effects (protected) followed by the user's own effects."""
-        def listing(directory: Path, builtin: bool) -> list[JsonDict]:
-            items: list[JsonDict] = []
-            if not directory.is_dir():
-                return items
-            for path in sorted(directory.glob("*.json")):
-                entry: JsonDict = {"name": path.stem, "path": str(path), "builtin": builtin}
-                try:
-                    raw = json.loads(path.read_text(encoding="utf-8"))
-                    if builtin and isinstance(raw, dict) and _library_hidden(raw):
-                        continue        # kept on disk (e.g. a test fixture) but not offered in the Library
-                    if isinstance(raw, dict) and raw.get("name"):
-                        entry["name"] = str(raw["name"])
-                    entry["duration"] = raw.get("duration") if isinstance(raw, dict) else None
-                except (OSError, ValueError):
-                    pass
-                try:
-                    entry["modified"] = path.stat().st_mtime
-                except OSError:
-                    entry["modified"] = None
-                items.append(entry)
-            return items
+        """Every library entry: Core, then Community, then the user's own."""
+        sections = [(self.examples_dir, "core"), (self.community_dir, "community"),
+                    (self.community_cache_dir, "community"), (self.effects_dir, "mine")]
+        out: list[JsonDict] = []
+        for directory, section in sections:
+            out.extend(await run_in_threadpool(self._listing, directory, section))
+        return out
 
-        builtin = await run_in_threadpool(listing, self.examples_dir, True)
-        mine = await run_in_threadpool(listing, self.effects_dir, False)
-        return builtin + mine
+    async def community_library(self) -> list[JsonDict]:
+        """The Community view's own listing (local entries only)."""
+        entries = await run_in_threadpool(self._listing, self.community_dir, "community")
+        entries.extend(await run_in_threadpool(self._listing, self.community_cache_dir, "community"))
+        known = set()
+        unique = []
+        for entry in entries:
+            if entry["name"] in known:
+                continue
+            known.add(entry["name"])
+            unique.append(entry)
+        return unique
 
     async def open_working_copy(self, path: Path) -> JsonDict:
         """Open a library entry as a fresh working document (never the file itself)."""
+        raw: JsonDict | None = None
         try:
-            raw = json.loads(path.read_text(encoding="utf-8"))
-            name = str(raw.get("name") or path.stem) if isinstance(raw, dict) else path.stem
+            loaded = json.loads(path.read_text(encoding="utf-8"))
+            raw = loaded if isinstance(loaded, dict) else None
         except (OSError, ValueError):
-            name = path.stem
+            raw = None
+        name = str(raw.get("name") or path.stem) if raw else path.stem
         result = await self.acall("create_effect", name=name, template=str(path))
         # A library effect that ships no controls still gets sliders: the
         # defaults land on the working copy only, before it counts as clean.
         await self.ensure_controls()
-        await self._replace_working(result.get("effect_id"), {"path": str(path), "builtin": self.is_builtin_path(path), "name": name})
+        await self._replace_working(
+            result.get("effect_id"),
+            {
+                "path": str(path),
+                "builtin": self.is_protected_path(path),
+                "protected": self.is_protected_path(path),
+                "section": self.section_of(path),
+                "name": name,
+                "author": _credit(raw) if raw else None,
+            },
+        )
         return result
 
     async def ensure_controls(self) -> int:
@@ -355,7 +481,12 @@ class Studio:
         self.working_revision = self.revision
 
     def guard_tool(self, name: str, args: JsonDict | None) -> None:
-        """Refuse tool calls that would overwrite a built-in library file."""
+        """Refuse tool calls that would overwrite a Core or Community library file.
+
+        Every write path goes through here: the UI's Save as, ``/api/tool`` and
+        the MCP endpoint, so a contributed effect cannot be edited in place by
+        anyone - the studio, an agent, or a generation job.
+        """
         if name not in ("save_effect", "export_effect"):
             return
         args = args or {}
@@ -364,9 +495,14 @@ class Studio:
         target = args.get("path")
         if not target and name == "save_effect":
             src = self.working_source or {}
-            target = src.get("path") if src.get("builtin") else None
-        if target and self.is_builtin_path(target):
-            raise StudioError(403, "protected", "built-in library effects are protected; save under a new name in your own library")
+            target = src.get("path") if src.get("protected") or src.get("builtin") else None
+        if target and self.is_protected_path(target):
+            raise StudioError(
+                403,
+                "protected",
+                f"{self.section_of(target)} library effects are protected (read-only); save under a new "
+                "name in your own library",
+            )
 
     async def stage_defaults(self) -> JsonDict:
         """Per-effect render defaults stored in effect.metadata.render_settings (may be empty)."""
@@ -737,6 +873,9 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
             "generator": studio.generator_status(),
             "output_dir": str(studio.output_dir),
             "examples_dir": str(studio.examples_dir),
+            "community_dir": str(studio.community_dir) if studio.community_dir else None,
+            "community_index": studio.remote_index.status(),
+            "repository": GITHUB_REPO_URL,
             "studio_url": studio.studio_url,
             "active_effect": active,
             "active_job": job.job_id if job else None,
@@ -761,6 +900,8 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
 
         examples = await run_in_threadpool(listing, studio.examples_dir, False)
         saved = await run_in_threadpool(listing, studio.effects_dir, True)
+        community = await run_in_threadpool(listing, studio.community_dir, False) \
+            if studio.community_dir else []
         try:
             listed = await studio.acall("list_effects")
         except (AetherError, TransportError):
@@ -779,8 +920,53 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
         working = dict(active) if active else None
         if working is not None:
             working["source"] = studio.working_source
-        return {"examples": examples, "saved": saved, "open": open_effects,
+        return {"examples": examples, "saved": saved, "community": community, "open": open_effects,
                 "library": await studio.library(), "working": working}
+
+    @endpoint
+    async def api_community(request: Request) -> JsonDict:
+        """The Community view: contributed effects on disk, plus the remote index when enabled."""
+        local = await studio.community_library()
+        known = {entry["name"] for entry in local}
+        remote: list[JsonDict] = []
+        error: str | None = None
+        if studio.remote_index.enabled:
+            force = request.query_params.get("refresh") in ("1", "true", "yes")
+            entries, error = await run_in_threadpool(studio.remote_index.fetch, force=force)
+            remote = [entry for entry in entries if entry["name"] not in known]
+        return {
+            "local": local,
+            "remote": remote,
+            "index": {**studio.remote_index.status(), "error": error or studio.remote_index.status()["error"]},
+            "dir": str(studio.community_dir) if studio.community_dir else None,
+            "repository": GITHUB_REPO_URL,
+        }
+
+    @endpoint
+    async def api_community_remote(request: Request) -> JsonDict:
+        """The published index on its own (``AETHERFX_COMMUNITY_INDEX`` / ``--community-index``)."""
+        if not studio.remote_index.enabled:
+            raise StudioError(
+                404, "not_configured",
+                "no community index is configured; set AETHERFX_COMMUNITY_INDEX or pass --community-index",
+            )
+        force = request.query_params.get("refresh") in ("1", "true", "yes")
+        entries, error = await run_in_threadpool(studio.remote_index.fetch, force=force)
+        return {"effects": entries, "error": error, "index": studio.remote_index.status()}
+
+    @endpoint
+    async def api_community_download(request: Request) -> JsonDict:
+        """Download one remote effect into the local cache, after the contribution check."""
+        if not studio.remote_index.enabled:
+            raise StudioError(404, "not_configured", "no community index is configured")
+        data = await read_json(request)
+        slug = _string(data, "slug", required=True)
+        try:
+            path = await run_in_threadpool(studio.remote_index.download, slug, studio.community_cache_dir)
+        except RemoteIndexError as exc:
+            raise StudioError(400, "download_failed", str(exc)) from exc
+        LOGGER.info("community download %s -> %s", slug, path)
+        return {"ok": True, "slug": slug, "path": str(path), "section": "community"}
 
     @endpoint
     async def api_effect_load(request: Request) -> JsonDict:
@@ -788,9 +974,11 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
         raw = _string(data, "path", required=True)
         path = Path(raw).expanduser()
         if not path.is_absolute():
-            for base in (studio.examples_dir, studio.effects_dir, studio.output_dir):
-                candidate = base / raw
-                if candidate.is_file():
+            bases = (studio.examples_dir, studio.community_dir, studio.community_cache_dir,
+                     studio.effects_dir, studio.output_dir)
+            for base in bases:
+                candidate = (base / raw) if base else None
+                if candidate is not None and candidate.is_file():
                     path = candidate
                     break
         if not path.is_file():
@@ -799,7 +987,11 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
         LOGGER.info("opened working copy %s of %s", result.get("effect_id"), path)
         summary = effect_summary(result.get("effect"), result.get("effect_id"), result.get("diagnostics"))
         summary["path"] = str(path)
-        summary["builtin"] = studio.is_builtin_path(path)
+        summary["builtin"] = studio.is_protected_path(path)
+        summary["protected"] = studio.is_protected_path(path)
+        summary["section"] = studio.section_of(path)
+        source = studio.working_source or {}
+        summary["author"] = source.get("author")
         return summary
 
     @endpoint
@@ -836,10 +1028,19 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
                 path = studio.effects_dir / path
         else:
             path = studio.effects_dir / f"{slugify(name)}.json"
-        if studio.is_builtin_path(path):
-            raise StudioError(403, "protected", "built-in library effects are protected; save under a new name")
-        # never shadow a built-in name: "Fireball" saved from the library becomes "Fireball copy"
-        while (studio.examples_dir / path.name).exists():
+        if studio.is_protected_path(path):
+            raise StudioError(
+                403, "protected",
+                f"{studio.section_of(path)} library effects are protected (read-only); save under a new name",
+            )
+        # never shadow a library name: "Fireball" saved from the library becomes "Fireball copy"
+        def taken(candidate: Path) -> bool:
+            for base in (studio.examples_dir, studio.community_dir, studio.community_cache_dir):
+                if base is not None and (base / candidate.name).exists():
+                    return True
+            return False
+
+        while taken(path):
             name = name + " copy"
             path = studio.effects_dir / f"{slugify(name)}.json"
         await run_in_threadpool(lambda: path.parent.mkdir(parents=True, exist_ok=True))
@@ -847,7 +1048,8 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
             await studio.acall("set_effect_property", name=name)
         result = await studio.acall("save_effect", path=str(path))
         saved = result.get("path") or str(path)
-        studio.working_source = {"path": saved, "builtin": False, "name": name}
+        studio.working_source = {"path": saved, "builtin": False, "protected": False,
+                                 "section": "mine", "name": name, "author": None}
         studio.working_revision = studio.revision
         LOGGER.info("saved effect %s as %s (%s)", active.get("effect_id"), name, saved)
         return {"path": saved, "effect_id": active.get("effect_id"), "name": name}
@@ -1293,6 +1495,9 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
         Route("/", index),
         Route("/api/status", api_status),
         Route("/api/effects", api_effects),
+        Route("/api/community", api_community),
+        Route("/api/community/remote", api_community_remote),
+        Route("/api/community/download", api_community_download, methods=["POST"]),
         Route("/api/effects/load", api_effect_load, methods=["POST"]),
         Route("/api/effects/new", api_effect_new, methods=["POST"]),
         Route("/api/effects/activate", api_effect_activate, methods=["POST"]),
@@ -1416,6 +1621,9 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
     async def lifespan(_app: Starlette) -> AsyncIterator[None]:
         LOGGER.info("output dir: %s", studio.output_dir)
         LOGGER.info("examples dir: %s", studio.examples_dir)
+        LOGGER.info("community dir: %s", studio.community_dir or "(none)")
+        if studio.remote_index.enabled:
+            LOGGER.info("community index: %s", studio.remote_index.url)
         status = await run_in_threadpool(studio.engine_status)
         if status.get("ok"):
             LOGGER.info("engine ready: %s", status.get("binary"))
@@ -1472,6 +1680,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="directory scanned for example effects.",
     )
     parser.add_argument(
+        "--community-dir",
+        default=None,
+        help="directory of contributed effects (default: <repo>/community/effects when it exists).",
+    )
+    parser.add_argument("--no-community", action="store_true",
+                        help="hide the Community view and load no contributed effects.")
+    parser.add_argument(
+        "--community-index",
+        default=None,
+        metavar="URL",
+        help=f"published community index to list alongside the local one, https only "
+             f"(default: $AETHERFX_COMMUNITY_INDEX; the project's own is {REMOTE_INDEX_URL}).",
+    )
+    parser.add_argument("--community-index-insecure", action="store_true",
+                        help="allow an http:// or file:// index URL (local testing only).")
+    parser.add_argument(
         "--generator",
         default=None,
         choices=["auto", "api", "claude-code", "session", "none"],
@@ -1491,9 +1715,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
         datefmt="%H:%M:%S",
     )
+    community_dir: Path | None = None
+    if not args.no_community:
+        community_dir = Path(args.community_dir) if args.community_dir else None
+    else:
+        community_dir = Path(args.output_dir) / "no_community"       # an empty, ignored directory
     config = StudioConfig(
         output_dir=Path(args.output_dir),
         examples_dir=Path(args.examples_dir),
+        community_dir=community_dir,
+        community_index=None if args.no_community else args.community_index,
+        community_index_allow_insecure=args.community_index_insecure,
         binary=args.binary,
         generator=args.generator,
         host=args.host,
