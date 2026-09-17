@@ -1511,7 +1511,7 @@ function schedulePreviewRefresh() {
  * stage: render settings for the preview (ground, background, bloom, exposure)
  * ====================================================================== */
 
-var STAGE_DEFAULTS = { ground_albedo: 0.18, background: [0.02, 0.02, 0.025, 1], bloom_intensity: 0.35, bloom_radius: 0.04, exposure: 1.0, grid: true, light_scale: 3.2 };
+var STAGE_DEFAULTS = { ground_albedo: 0.18, background: [0, 0, 0, 1], bloom_intensity: 0.35, bloom_radius: 0.04, exposure: 1.0, grid: true, light_scale: 3.2 };
 function hexToLinear(hex) {
   var n = parseInt(hex.slice(1), 16); var c = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
   return c.map(function (v) { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }).concat([1]);

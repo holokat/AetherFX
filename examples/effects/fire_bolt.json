@@ -5362,9 +5362,9 @@
     "render_settings": {
       "ground_albedo": 0.014,
       "background": [
-        0.004,
-        0.0035,
-        0.004,
+        0.0,
+        0.0,
+        0.0,
         1.0
       ],
       "bloom_intensity": 0.22,

@@ -1142,7 +1142,7 @@ effect = {
                   "erupt in the end (on the target)",
         "render_settings": {
             "ground_albedo": 0.13,
-            "background": [0.011, 0.0085, 0.0075, 1.0],
+            "background": [0.0, 0.0, 0.0, 1.0],
             "bloom_intensity": 0.18,
             "bloom_radius": 0.05,
             "exposure": 0.92,

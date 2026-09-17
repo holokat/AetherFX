@@ -3135,9 +3135,9 @@
       },
       "ground_albedo": 0.02,
       "background": [
-        0.002,
-        0.004,
-        0.002,
+        0.0,
+        0.0,
+        0.0,
         1.0
       ],
       "bloom_intensity": 0.2,
