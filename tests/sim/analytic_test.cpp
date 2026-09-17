@@ -124,13 +124,13 @@ TEST_CASE("a light with zero flicker amplitude is steady, and temperature tints 
 
 TEST_CASE("a light outside its window is not emitted", "[sim][analytic]") {
     std::unique_ptr<sim::IRuntime> rt = runtime_for(load_example("fire_aoe.json"));
-    rt->simulate_to(0.5);
-    CHECK(light_of(rt->state(), "flash") == nullptr);  // phase activation = [0.8, 1.0]
-    rt->simulate_to(0.9);
+    rt->simulate_to(0.25);
+    CHECK(light_of(rt->state(), "flash") == nullptr);  // phase activation = [0.4, 0.8]
+    rt->simulate_to(0.6);
     CHECK(light_of(rt->state(), "flash") != nullptr);
-    rt->simulate_to(1.2);
+    rt->simulate_to(0.95);
     CHECK(light_of(rt->state(), "flash") == nullptr);
-    CHECK(light_of(rt->state(), "fire_light") != nullptr);  // start_time 0.9, unbounded
+    CHECK(light_of(rt->state(), "fire_light") != nullptr);  // start_time 0.3, unbounded
 }
 
 // ---------------------------------------------------------------------------
@@ -241,23 +241,23 @@ TEST_CASE("the fire_aoe rune decal follows its opacity track and fade-in", "[sim
     rt->simulate_to(0.15);
     const DecalState* rune = decal_of(rt->state(), "rune");
     REQUIRE(rune != nullptr);
-    // track(0.15) = 0.3, fade_in = smoothstep(0, 0.3, 0.15) = 0.5
-    CHECK(rune->opacity == Approx(0.15f).margin(0.01));
-    CHECK(rune->size.x == Approx(6.0f));
+    // track: 0 at 0, 1 at 0.35 -> 0.43 at 0.15; fade_in is 0 in this example
+    CHECK(rune->opacity == Approx(0.43f).margin(0.03));
+    CHECK(rune->size.x == Approx(7.2f));
     CHECK(rune->circle);
     CHECK(rune->blend == BlendMode::Additive);
     CHECK(rune->texture_id == "tex_rune");
     CHECK(rune->normal.y == Approx(1.0f));
 
     rt->simulate_to(0.6);
-    CHECK(decal_of(rt->state(), "rune")->opacity == Approx(1.0f).margin(0.02));  // track 1.0, fade complete
-    rt->simulate_to(1.3);
-    CHECK(decal_of(rt->state(), "rune")->opacity == Approx(0.2f).margin(0.02));
+    CHECK(decal_of(rt->state(), "rune")->opacity == Approx(1.0f).margin(0.02));  // track holds 1.0 until 2.4
+    rt->simulate_to(2.9);
+    CHECK(decal_of(rt->state(), "rune")->opacity == Approx(0.29f).margin(0.03));  // fading towards 0.15 at 3.0
 
     // the scorch decal only appears from its start_time
     rt->reset();
-    rt->simulate_to(0.5);
-    CHECK(decal_of(rt->state(), "scorch") == nullptr);
+    rt->simulate_to(0.3);
+    CHECK(decal_of(rt->state(), "scorch") == nullptr);  // scorch starts at 0.4
     rt->simulate_to(1.3);
     const DecalState* scorch = decal_of(rt->state(), "scorch");
     REQUIRE(scorch != nullptr);
@@ -306,22 +306,22 @@ TEST_CASE("the fireball core mesh instance follows its keyframe track", "[sim][a
 TEST_CASE("the camera comes from the first camera node", "[sim][analytic]") {
     std::unique_ptr<sim::IRuntime> rt = runtime_for(load_example("fire_aoe.json"));
     REQUIRE(rt->state().camera.has_value());
-    CHECK(rt->state().camera->position.y == Approx(3.2f));
-    CHECK(rt->state().camera->fov_deg == Approx(50.0f));
+    CHECK(rt->state().camera->position.y == Approx(3.6f));
+    CHECK(rt->state().camera->fov_deg == Approx(42.0f));
     rt->simulate_to(2.0);
     REQUIRE(rt->state().camera.has_value());
-    CHECK(rt->state().camera->target.y == Approx(0.8f));
+    CHECK(rt->state().camera->target.y == Approx(1.4f));
 }
 
 TEST_CASE("post effects appear inside their window", "[sim][analytic]") {
     std::unique_ptr<sim::IRuntime> rt = runtime_for(load_example("fire_aoe.json"));
-    rt->simulate_to(0.5);
-    CHECK(rt->state().post_effects.empty());  // haze starts at 0.9
+    rt->simulate_to(0.4);
+    CHECK(rt->state().post_effects.empty());  // haze starts at 0.5
     rt->simulate_to(1.5);
     REQUIRE(rt->state().post_effects.size() == 1u);
     CHECK(rt->state().post_effects[0].id == "haze");
     CHECK(rt->state().post_effects[0].post_type == "heat_haze");
-    CHECK(rt->state().post_effects[0].intensity == Approx(0.5f));
+    CHECK(rt->state().post_effects[0].intensity == Approx(0.4f));
     CHECK(rt->state().post_effects[0].time == Approx(1.5).margin(0.02));
     rt->simulate_to(4.0);
     CHECK(rt->state().post_effects.empty());  // duration 3.0 -> ends at 3.9
@@ -480,21 +480,22 @@ TEST_CASE("fire_aoe phases populate their systems in order", "[sim][examples]") 
         return static_cast<size_t>(0);
     };
 
-    rt->simulate_to(0.7);  // anticipation only
+    rt->simulate_to(0.3);  // anticipation only
     CHECK(spawned("gather_ps") > 0u);
     CHECK(spawned("burst_ps") == 0u);
-    CHECK(spawned("wall_ps") == 0u);
+    CHECK(spawned("flame_ps") == 0u);
     CHECK(spawned("ember_ps") == 0u);
 
-    rt->simulate_to(0.95);  // activation
+    rt->simulate_to(0.6);  // activation (eruption)
     CHECK(spawned("burst_ps") > 0u);
     CHECK(spawned("rock_ps") > 0u);
 
     rt->simulate_to(1.8);  // peak / sustain
-    CHECK(spawned("wall_ps") > 0u);
+    CHECK(spawned("flame_ps") > 0u);
+    CHECK(spawned("column_ps") > 0u);
     CHECK(spawned("smoke_ps") > 0u);
 
-    rt->simulate_to(3.4);  // decay
+    rt->simulate_to(2.7);  // decay
     CHECK(spawned("ember_ps") > 0u);
     CHECK(rt->state().total_particles() > 0u);
 }

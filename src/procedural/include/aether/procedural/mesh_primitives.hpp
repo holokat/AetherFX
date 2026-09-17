@@ -21,6 +21,26 @@ MeshData make_tube(const std::vector<Vec3>& path, float radius, int segments);
 MeshData make_ribbon(const std::vector<Vec3>& path, float width, Vec3 up = Vec3::up());
 MeshData load_obj(const std::filesystem::path& path);  // positions/normals/uvs/triangles; throws Error
 
+// --- seeded organic primitives ---------------------------------------------
+// Flat-shaded (one set of vertices per facet, so normals are per-face) and a
+// pure function of (parameters, seed): the same seed always produces the exact
+// same mesh, different seeds produce visibly different ones. `irregularity` in
+// [0,1] is how far the generator strays from the ideal shape (0 = regular).
+// Like every other primitive these are centred on the origin: the bounding box
+// is contained in x,z in [-radius, radius] and y in [-height/2, +height/2]
+// (rock: y in [-radius, radius]), so a crystal's apex is at +height/2 and its
+// base at -height/2.
+
+// A faceted spike: irregular n-gon base, laterally offset apex and, with
+// probability `irregularity`, a shorter twin spike fused at the base.
+MeshData make_crystal(float radius, float height, int segments, float irregularity, uint32_t seed);
+// A low-poly boulder: icosphere (20 facets for segments < 10, else 80) pushed
+// along its normals by seeded fbm and squashed by per-axis random factors.
+MeshData make_rock(float radius, int segments, float irregularity, uint32_t seed);
+// A thin angular flake: irregular 4..6 sided outline with one sharp end,
+// extruded to a thickness of 0.12 * radius.
+MeshData make_shard(float radius, float height, float irregularity, uint32_t seed);
+
 // Uniform area-weighted surface sample. Builds the area table on first use.
 Vec3 sample_surface(MeshData& mesh, Pcg32& rng, Vec3* normal = nullptr);
 // Rejection-sampled point inside a closed mesh's bounds (V1: bounds only, documented limitation).

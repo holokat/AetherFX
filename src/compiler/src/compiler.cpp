@@ -72,7 +72,8 @@ std::string hex64(uint64_t v) {
 // resources
 // --------------------------------------------------------------------------
 
-MeshData build_mesh(const Node& n, Diagnostics& diag) {
+// `variant_seed` only matters for the seeded primitives (crystal/rock/shard).
+MeshData build_mesh(const Node& n, uint32_t variant_seed, Diagnostics& diag) {
     const std::string source = param_string(n, "source");
     const float radius = param_float(n, "radius");
     const float inner_radius = param_float(n, "inner_radius");
@@ -97,6 +98,10 @@ MeshData build_mesh(const Node& n, Diagnostics& diag) {
     }
 
     const std::string primitive = param_string(n, "primitive");
+    const float irregularity = param_float(n, "irregularity");
+    if (primitive == "crystal") return procedural::make_crystal(radius, height, segments, irregularity, variant_seed);
+    if (primitive == "rock") return procedural::make_rock(radius, segments, irregularity, variant_seed);
+    if (primitive == "shard") return procedural::make_shard(radius, height, irregularity, variant_seed);
     if (primitive == "cube") return procedural::make_cube(size);
     if (primitive == "plane") return procedural::make_plane(Vec2{size.x, size.z}, 1);
     if (primitive == "disc") return procedural::make_disc(radius, inner_radius, segments);
@@ -110,6 +115,14 @@ MeshData build_mesh(const Node& n, Diagnostics& diag) {
                                    : procedural::make_ribbon(path, radius * 2.0f);
     }
     return procedural::make_sphere(radius, segments);
+}
+
+// crystal/rock/shard are the only seeded primitives, so they are the only ones
+// for which `variants` means anything; every other primitive ignores it.
+bool bakes_variants(const Node& n) {
+    if (param_string(n, "source") != "primitive") return false;
+    const std::string primitive = param_string(n, "primitive");
+    return primitive == "crystal" || primitive == "rock" || primitive == "shard";
 }
 
 MaterialDesc build_material(const Effect& effect, const Node& n) {
@@ -201,6 +214,7 @@ nlohmann::json CompiledNode::to_json() const {
     j["material_id"] = material_id;
     j["sprite_id"] = sprite_id;
     j["mesh_id"] = mesh_id;
+    j["mesh_variants"] = mesh_variants;
     j["texture_id"] = texture_id;
     j["shape_curve"] = shape_curve;
     j["shape_mesh"] = shape_mesh;
@@ -448,7 +462,7 @@ CompiledEffect compile(const Effect& effect, const CompileOptions& options) {
     }
 
     // --- resources ----------------------------------------------------------
-    for (const CompiledNode& cn : compiled.nodes) {
+    for (CompiledNode& cn : compiled.nodes) {
         const Node* node = effect.find_node(cn.id);
         if (node == nullptr) continue;
         switch (node->type) {
@@ -456,9 +470,14 @@ CompiledEffect compile(const Effect& effect, const CompileOptions& options) {
                 if (options.bake_textures) bake_texture(*node, cn.seed, compiled.resources, diag);
                 break;
             case NodeType::Mesh: {
-                MeshData mesh = build_mesh(*node, diag);
-                mesh.build_area_table();
-                compiled.resources.meshes[node->id] = std::move(mesh);
+                // Seeded primitives bake `variants` meshes under "<id>", "<id>#1", ...
+                // "<id>#N-1", each from derive_seed(node stream, i).
+                cn.mesh_variants = bakes_variants(*node) ? clamp(param_int(*node, "variants"), 1, 16) : 1;
+                for (int i = 0; i < cn.mesh_variants; ++i) {
+                    MeshData mesh = build_mesh(*node, seed32_of(derive_seed(cn.seed, static_cast<uint64_t>(i))), diag);
+                    mesh.build_area_table();
+                    compiled.resources.meshes[i == 0 ? node->id : node->id + "#" + std::to_string(i)] = std::move(mesh);
+                }
                 break;
             }
             case NodeType::Material:

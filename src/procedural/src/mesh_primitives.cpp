@@ -18,6 +18,7 @@
 #include <unordered_map>
 
 #include "aether/core/error.hpp"
+#include "aether/procedural/noise.hpp"
 
 namespace aether::procedural {
 namespace {
@@ -41,6 +42,115 @@ void add_quad(MeshData& mesh, uint32_t a, uint32_t b, uint32_t c, uint32_t d) {
 }
 
 int sane_segments(int segments, int minimum) { return std::max(minimum, segments); }
+
+// --- helpers for the faceted seeded primitives ----------------------------
+// These build "one set of vertices per triangle" meshes: positions are pushed
+// first with placeholder normals/UVs, and finalize_faceted fills both in once
+// the geometry is final.
+
+void add_facet(MeshData& mesh, Vec3 a, Vec3 b, Vec3 c) {
+    const uint32_t base = static_cast<uint32_t>(mesh.positions.size());
+    add_vertex(mesh, a, Vec3::up(), Vec2{});
+    add_vertex(mesh, b, Vec3::up(), Vec2{});
+    add_vertex(mesh, c, Vec3::up(), Vec2{});
+    add_triangle(mesh, base, base + 1, base + 2);
+}
+
+// Shrinks (never grows) the mesh about the origin so its bounding box fits in
+// x,z in [-radius, radius] and y in [-height/2, height/2]. Jitter can overshoot
+// either limit; this keeps the documented bounds contract exact.
+void fit_in_cylinder(MeshData& mesh, float radius, float height) {
+    float max_radial = 0.0f, max_y = 0.0f;
+    for (const Vec3& p : mesh.positions) {
+        max_radial = std::max(max_radial, std::sqrt(p.x * p.x + p.z * p.z));
+        max_y = std::max(max_y, std::fabs(p.y));
+    }
+    const float half_h = height * 0.5f;
+    const float sxz = (radius > 0.0f && max_radial > radius) ? radius / max_radial : 1.0f;
+    const float sy = (half_h > 0.0f && max_y > half_h) ? half_h / max_y : 1.0f;
+    if (sxz == 1.0f && sy == 1.0f) return;
+    for (Vec3& p : mesh.positions) {
+        p.x *= sxz;
+        p.z *= sxz;
+        p.y *= sy;
+    }
+}
+
+// Per-face normals (the vertices are already unique per triangle) and a
+// cylindrical UV map over the mesh height.
+void finalize_faceted(MeshData& mesh, float height) {
+    for (size_t i = 0; i < mesh.positions.size(); ++i) {
+        const Vec3& p = mesh.positions[i];
+        mesh.uvs[i] = Vec2{std::atan2(p.z, p.x) * (1.0f / kTwoPi) + 0.5f,
+                           height > 1e-6f ? saturate(p.y / height + 0.5f) : 0.5f};
+    }
+    for (size_t t = 0; t + 2 < mesh.indices.size(); t += 3) {
+        const Vec3 a = mesh.positions[mesh.indices[t]];
+        const Vec3 b = mesh.positions[mesh.indices[t + 1]];
+        const Vec3 c = mesh.positions[mesh.indices[t + 2]];
+        const Vec3 face = cross(b - a, c - a);
+        const Vec3 n = length(face) > 1e-12f ? normalize(face) : Vec3::up();
+        mesh.normals[mesh.indices[t]] = n;
+        mesh.normals[mesh.indices[t + 1]] = n;
+        mesh.normals[mesh.indices[t + 2]] = n;
+    }
+}
+
+// One crystal spike: an irregular n-gon base at y = -half_h fanned up to a
+// single apex, plus the base cap. Winding matches make_cone.
+void add_spike(MeshData& mesh, Pcg32& rng, int slices, float radius, float half_h, float apex_y, float irregularity,
+               Vec2 centre) {
+    std::vector<Vec3> ring(static_cast<size_t>(slices));
+    const float gap = kTwoPi / static_cast<float>(slices);
+    for (int j = 0; j < slices; ++j) {
+        // angular jitter stays under a quarter of the gap, so the ring keeps its winding order
+        const float angle = static_cast<float>(j) * gap + rng.signed_unit() * gap * 0.25f * irregularity;
+        const float r = radius * (1.0f + rng.signed_unit() * 0.5f * irregularity);
+        ring[static_cast<size_t>(j)] = Vec3{centre.x + r * std::cos(angle), -half_h, centre.y + r * std::sin(angle)};
+    }
+    const Vec3 apex{centre.x + rng.signed_unit() * 0.35f * irregularity * radius, apex_y,
+                    centre.y + rng.signed_unit() * 0.35f * irregularity * radius};
+    const Vec3 base_centre{centre.x, -half_h, centre.y};
+    for (int j = 0; j < slices; ++j) {
+        const Vec3 a = ring[static_cast<size_t>(j)];
+        const Vec3 b = ring[static_cast<size_t>((j + 1) % slices)];
+        add_facet(mesh, a, apex, b);        // side
+        add_facet(mesh, base_centre, a, b); // base cap, facing -Y
+    }
+}
+
+// Unit icosahedron: 12 vertices, 20 outward-wound faces.
+void icosahedron(std::vector<Vec3>& positions, std::vector<uint32_t>& indices) {
+    const float t = (1.0f + std::sqrt(5.0f)) * 0.5f;
+    positions = {{-1, t, 0}, {1, t, 0},  {-1, -t, 0}, {1, -t, 0}, {0, -1, t},  {0, 1, t},
+                 {0, -1, -t}, {0, 1, -t}, {t, 0, -1},  {t, 0, 1},  {-t, 0, -1}, {-t, 0, 1}};
+    for (Vec3& p : positions) p = normalize(p);
+    indices = {0, 11, 5, 0, 5,  1, 0, 1, 7, 0, 7,  10, 0,  10, 11, 1, 5, 9, 5, 11, 4, 11, 10, 2, 10, 7, 6, 7, 1, 8,
+               3, 9,  4, 3, 4,  2, 3, 2, 6, 3, 6,  8,  3,  8,  9,  4, 9, 5, 2, 4,  11, 6, 2,  10, 8, 6, 7, 9, 8, 1};
+}
+
+// One Loop-style split of every triangle, new vertices pushed back onto the
+// unit sphere. Shared edges reuse one midpoint so the surface stays closed.
+void subdivide_unit(std::vector<Vec3>& positions, std::vector<uint32_t>& indices) {
+    std::unordered_map<uint64_t, uint32_t> midpoints;
+    std::vector<uint32_t> out;
+    out.reserve(indices.size() * 4);
+    auto midpoint = [&](uint32_t a, uint32_t b) {
+        const uint64_t key = (static_cast<uint64_t>(std::min(a, b)) << 32) | std::max(a, b);
+        const auto it = midpoints.find(key);
+        if (it != midpoints.end()) return it->second;
+        const uint32_t index = static_cast<uint32_t>(positions.size());
+        positions.push_back(normalize((positions[a] + positions[b]) * 0.5f));
+        midpoints.emplace(key, index);
+        return index;
+    };
+    for (size_t t = 0; t + 2 < indices.size(); t += 3) {
+        const uint32_t a = indices[t], b = indices[t + 1], c = indices[t + 2];
+        const uint32_t ab = midpoint(a, b), bc = midpoint(b, c), ca = midpoint(c, a);
+        for (uint32_t v : {a, ab, ca, b, bc, ab, c, ca, bc, ab, bc, ca}) out.push_back(v);
+    }
+    indices.swap(out);
+}
 
 // Parallel-transport frames: rotate the previous frame by the minimal rotation
 // that maps the previous tangent onto the current one. Avoids the flipping that
@@ -607,6 +717,104 @@ MeshData load_obj(const std::filesystem::path& path) {
 // ---------------------------------------------------------------------------
 // Sampling
 // ---------------------------------------------------------------------------
+
+MeshData make_crystal(float radius, float height, int segments, float irregularity, uint32_t seed) {
+    // 5..8 facets read as a crystal; more just looks like a cone, so the
+    // vocabulary's `segments` is clamped into that range (3 is still allowed).
+    const int slices = clamp(sane_segments(segments, 3), 3, 8);
+    const float r = std::max(0.0f, radius);
+    const float h = std::max(0.0f, height);
+    const float irr = saturate(irregularity);
+    const float half_h = h * 0.5f;
+    Pcg32 rng(seed);
+
+    MeshData mesh;
+    // The apex is jittered downwards only, so a crystal never exceeds `height`.
+    const float apex_y = half_h * (1.0f - 0.3f * irr * rng.next_float());
+    add_spike(mesh, rng, slices, r, half_h, apex_y, irr, Vec2{0.0f, 0.0f});
+    // With probability `irregularity`, a shorter twin spike fused at the base.
+    if (rng.chance(irr)) {
+        const float azimuth = rng.next_float() * kTwoPi;
+        const float offset = r * (0.45f + 0.35f * rng.next_float());
+        const Vec2 centre{offset * std::cos(azimuth), offset * std::sin(azimuth)};
+        const float twin_apex = -half_h + (apex_y + half_h) * 0.6f;
+        add_spike(mesh, rng, std::max(3, slices - 1), r * 0.5f, half_h, twin_apex, irr, centre);
+    }
+    fit_in_cylinder(mesh, r, h);
+    finalize_faceted(mesh, h);
+    return mesh;
+}
+
+MeshData make_rock(float radius, int segments, float irregularity, uint32_t seed) {
+    const float r = std::max(0.0f, radius);
+    const float irr = saturate(irregularity);
+    Pcg32 rng(seed);
+
+    std::vector<Vec3> unit;
+    std::vector<uint32_t> indices;
+    icosahedron(unit, indices);
+    if (segments >= 10) subdivide_unit(unit, indices);  // 20 -> 80 facets
+
+    // Displacement is sampled on the *unit* sphere, so vertices shared by
+    // several facets always move by the same amount and the hull stays closed.
+    const FbmParams fbm{2, 2.0f, 0.5f, NoiseBasis::Simplex};
+    const Vec3 offset{rng.signed_unit() * 8.0f, rng.signed_unit() * 8.0f, rng.signed_unit() * 8.0f};
+    std::vector<Vec3> positions(unit.size());
+    for (size_t i = 0; i < unit.size(); ++i) {
+        const float n = fbm3(unit[i] * 1.7f + offset, seed, fbm);
+        positions[i] = unit[i] * std::max(r * 0.25f, r + n * irr * r * 0.6f);
+    }
+    const Vec3 squash{1.0f + rng.signed_unit() * 0.4f * irr, 1.0f + rng.signed_unit() * 0.4f * irr,
+                      1.0f + rng.signed_unit() * 0.4f * irr};
+    for (Vec3& p : positions) p *= squash;
+
+    MeshData mesh;
+    for (size_t t = 0; t + 2 < indices.size(); t += 3)
+        add_facet(mesh, positions[indices[t]], positions[indices[t + 1]], positions[indices[t + 2]]);
+    fit_in_cylinder(mesh, r, 2.0f * r);
+    finalize_faceted(mesh, 2.0f * r);
+    return mesh;
+}
+
+MeshData make_shard(float radius, float height, float irregularity, uint32_t seed) {
+    const float r = std::max(0.0f, radius);
+    const float h = std::max(0.0f, height);
+    const float irr = saturate(irregularity);
+    const float half_h = h * 0.5f;
+    const float half_t = 0.06f * r;  // thickness = 0.12 * radius
+    Pcg32 rng(seed);
+
+    // Outline in XY, walking counter-clockwise from the sharp end at +Y.
+    const int n = rng.range_int(4, 6);
+    const float gap = kTwoPi / static_cast<float>(n);
+    std::vector<Vec2> outline(static_cast<size_t>(n));
+    for (int i = 0; i < n; ++i) {
+        const float jitter = rng.signed_unit() * gap * 0.25f * irr;
+        const float angle = kHalfPi + static_cast<float>(i) * gap + (i == 0 ? 0.0f : jitter);
+        // the apex's two neighbours are pulled in, which is what makes the tip sharp
+        float k = (i == 1 || i == n - 1) ? 0.55f : 1.0f;
+        k *= 1.0f - 0.45f * irr * rng.next_float();
+        outline[static_cast<size_t>(i)] = Vec2{r * std::cos(angle) * k, half_h * std::sin(angle) * k};
+    }
+    outline[0].x += rng.signed_unit() * 0.2f * irr * r;
+
+    MeshData mesh;
+    const Vec3 front_centre{0.0f, 0.0f, half_t};
+    const Vec3 back_centre{0.0f, 0.0f, -half_t};
+    for (int i = 0; i < n; ++i) {
+        const Vec2 a2 = outline[static_cast<size_t>(i)];
+        const Vec2 b2 = outline[static_cast<size_t>((i + 1) % n)];
+        const Vec3 af{a2.x, a2.y, half_t}, bf{b2.x, b2.y, half_t};
+        const Vec3 ab{a2.x, a2.y, -half_t}, bb{b2.x, b2.y, -half_t};
+        add_facet(mesh, front_centre, af, bf);  // +Z face
+        add_facet(mesh, back_centre, bb, ab);   // -Z face
+        add_facet(mesh, af, ab, bb);            // rim
+        add_facet(mesh, af, bb, bf);
+    }
+    fit_in_cylinder(mesh, r, h);
+    finalize_faceted(mesh, h);
+    return mesh;
+}
 
 Vec3 sample_surface(MeshData& mesh, Pcg32& rng, Vec3* normal) {
     if (mesh.indices.size() < 3 || mesh.positions.empty()) {

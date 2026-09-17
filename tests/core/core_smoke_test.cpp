@@ -79,3 +79,62 @@ TEST_CASE("frame state: particle buffer and hash", "[core][frame_state]") {
     b.particles[0].position[0].x += 1.0f;
     REQUIRE(a.hash() != b.hash());
 }
+
+TEST_CASE("frame state: mesh particle orientation, scale and variant", "[core][frame_state]") {
+    ParticleBuffer pb;
+    pb.resize(3);
+    // Defaults reproduce the pre-orientation behaviour: identity rotation, unit
+    // scale, variant 0.
+    for (size_t i = 0; i < pb.count(); ++i) {
+        REQUIRE(pb.orientation[i] == Vec4{0, 0, 0, 1});
+        REQUIRE(pb.scale3[i] == Vec3{1, 1, 1});
+        REQUIRE(pb.variant[i] == 0u);
+    }
+
+    SECTION("the hash covers the new arrays") {
+        FrameState a, b;
+        a.particles.push_back(pb);
+        b.particles.push_back(pb);
+        REQUIRE(a.hash() == b.hash());
+
+        b.particles[0].orientation[1] = Vec4{0.0f, 0.7071068f, 0.0f, 0.7071068f};
+        REQUIRE(a.hash() != b.hash());
+
+        FrameState c = a;
+        c.particles[0].scale3[2] = Vec3{1.0f, 3.0f, 1.0f};
+        REQUIRE(c.hash() != a.hash());
+
+        FrameState d = a;
+        d.particles[0].variant[0] = 2u;
+        REQUIRE(d.hash() != a.hash());
+    }
+
+    SECTION("compaction keeps every array aligned") {
+        for (size_t i = 0; i < pb.count(); ++i) {
+            pb.position[i] = Vec3{static_cast<float>(i), 0.0f, 0.0f};
+            pb.orientation[i] = Vec4{static_cast<float>(i), 0.0f, 0.0f, 1.0f};
+            pb.scale3[i] = Vec3{static_cast<float>(i), 1.0f, 1.0f};
+            pb.variant[i] = static_cast<uint32_t>(i);
+        }
+        pb.swap_remove(0);  // particle 2 is moved into slot 0
+        REQUIRE(pb.count() == 2);
+        REQUIRE(pb.orientation.size() == 2);
+        REQUIRE(pb.scale3.size() == 2);
+        REQUIRE(pb.variant.size() == 2);
+        for (size_t i = 0; i < pb.count(); ++i) {
+            const float k = pb.position[i].x;
+            REQUIRE(pb.orientation[i].x == k);
+            REQUIRE(pb.scale3[i].x == k);
+            REQUIRE(pb.variant[i] == static_cast<uint32_t>(k));
+        }
+
+        pb.clear();
+        REQUIRE(pb.orientation.empty());
+        REQUIRE(pb.scale3.empty());
+        REQUIRE(pb.variant.empty());
+        pb.push_default();
+        REQUIRE(pb.orientation.size() == 1);
+        REQUIRE(pb.orientation[0] == Vec4{0, 0, 0, 1});
+        REQUIRE(pb.scale3[0] == Vec3{1, 1, 1});
+    }
+}

@@ -95,7 +95,7 @@ TEST_CASE("tiers and backends", "[compiler][plan]") {
         CHECK(spark->tier == Tier::Particles);
         CHECK(spark->backend == "cpu_particles_collision");
 
-        const CompiledNode* wall = c.find("wall_ps");  // no colliders
+        const CompiledNode* wall = c.find("flame_ps");  // no colliders
         REQUIRE(wall != nullptr);
         CHECK(wall->tier == Tier::Particles);
         CHECK(wall->backend == "cpu_particles");
@@ -104,7 +104,7 @@ TEST_CASE("tiers and backends", "[compiler][plan]") {
         REQUIRE(emitter != nullptr);
         CHECK(emitter->tier == Tier::Particles);
         CHECK(emitter->backend == "cpu_particles");
-        CHECK(emitter->particle_system == "wall_ps");
+        CHECK(emitter->particle_system == "flame_ps");
 
         for (const char* analytic : {"cam", "rune", "fire_light", "haze", "mat_fire", "tex_puff", "ground", "gravity"}) {
             const CompiledNode* n = c.find(analytic);
@@ -146,22 +146,22 @@ TEST_CASE("resolved windows", "[compiler][window]") {
     const CompiledNode* gather = aoe.find("gather");
     REQUIRE(gather != nullptr);
     CHECK(gather->start_time == 0.0);
-    CHECK(gather->end_time == 0.8);
+    CHECK(gather->end_time == 0.4);
 
     const CompiledNode* burst = aoe.find("burst");
     REQUIRE(burst != nullptr);
-    CHECK(burst->start_time == 0.8);
-    CHECK(burst->end_time == 1.0);
+    CHECK(burst->start_time == 0.4);
+    CHECK(burst->end_time == 0.8);
 
-    const CompiledNode* embers = aoe.find("embers");
+    const CompiledNode* embers = aoe.find("embers");  // start_time 2.1, unbounded
     REQUIRE(embers != nullptr);
-    CHECK(embers->start_time == 3.0);
-    CHECK(embers->end_time == 4.5);
+    CHECK(embers->start_time == Catch::Approx(2.1));
+    CHECK(embers->end_time < 0.0);
 
-    const CompiledNode* haze = aoe.find("haze");  // start_time 0.9, duration 3.0
+    const CompiledNode* haze = aoe.find("haze");  // start_time 0.5, duration 2.1
     REQUIRE(haze != nullptr);
-    CHECK(haze->start_time == Catch::Approx(0.9));
-    CHECK(haze->end_time == Catch::Approx(3.9));
+    CHECK(haze->start_time == Catch::Approx(0.5));
+    CHECK(haze->end_time == Catch::Approx(2.6));
 
     const CompiledEffect fire = compiler::compile(load_example("fireball.json"));
     const CompiledNode* heat = fire.find("heat");  // no window parameters at all
@@ -201,19 +201,21 @@ TEST_CASE("baked resources", "[compiler][resources]") {
         const TextureResource* tex = aoe.resources.texture(id);
         INFO("texture " << id);
         REQUIRE(tex != nullptr);
-        CHECK(tex->frames == 1);
         CHECK(!tex->image.empty());
     }
-    CHECK(aoe.resources.texture("tex_puff")->image.width == 128);
+    CHECK(aoe.resources.texture("tex_puff")->frames == 8);  // animated puff strip
+    CHECK(aoe.resources.texture("tex_puff")->image.width == 128 * 8);
     CHECK(aoe.resources.texture("tex_puff")->image.height == 128);
     CHECK(aoe.resources.texture("tex_spark")->image.width == 32);
-    CHECK(aoe.resources.texture("tex_rune")->image.width == 256);
+    CHECK(aoe.resources.texture("tex_rune")->image.width == 512);
     CHECK(aoe.resources.texture("tex_scorch")->image.width == 256);
 
-    const MeshData* rock = aoe.resources.mesh("rock_mesh");
+    const MeshData* rock = aoe.resources.mesh("rock_mesh");  // procedural rock with variants
     REQUIRE(rock != nullptr);
-    CHECK(rock->triangle_count() == 12);
+    CHECK(rock->triangle_count() > 12);
     CHECK(rock->total_area() > 0.0f);  // area table pre-built by the compiler
+    CHECK(aoe.find("rock_mesh")->mesh_variants == 8);
+    CHECK(aoe.resources.mesh("rock_mesh#7") != nullptr);
 
     for (const char* id : {"mat_fire", "mat_smoke", "mat_rock"}) {
         const MaterialDesc* mat = aoe.resources.material(id);
@@ -222,13 +224,14 @@ TEST_CASE("baked resources", "[compiler][resources]") {
         CHECK(mat->id == id);
     }
     CHECK(aoe.resources.material("mat_fire")->blend == BlendMode::Additive);
-    CHECK(!aoe.resources.material("mat_fire")->temperature_gradient.empty());
+    CHECK(aoe.resources.material("mat_fire")->dissolve == Catch::Approx(0.55f));
     CHECK(aoe.resources.material("mat_smoke")->shading == Shading::Lit);
-    CHECK(aoe.resources.material("mat_rock")->base_color.r == Catch::Approx(0.15f));
+    CHECK(aoe.resources.material("mat_rock")->base_color.r == Catch::Approx(0.09f));
+    CHECK(aoe.resources.material("mat_rock")->fresnel_power == Catch::Approx(2.5f));
 
     // texture ids reach the systems that use them
-    CHECK(aoe.find("wall_ps")->sprite_id == "tex_puff");
-    CHECK(aoe.find("wall_ps")->material_id == "mat_fire");
+    CHECK(aoe.find("flame_ps")->sprite_id == "tex_puff");
+    CHECK(aoe.find("flame_ps")->material_id == "mat_fire");
     CHECK(aoe.find("rock_ps")->mesh_id == "rock_mesh");
     CHECK(aoe.find("rune")->texture_id == "tex_rune");
 
@@ -338,15 +341,15 @@ TEST_CASE("validation errors stop compilation unless allow_errors", "[compiler][
 TEST_CASE("execution order respects dependencies", "[compiler][order]") {
     const CompiledEffect c = compiler::compile(load_example("fire_aoe.json"));
     // an emitter depends on its particle system
-    CHECK(index_of(c, "wall_ps") < index_of(c, "fire_wall"));
-    CHECK(index_of(c, "wall_ps") < index_of(c, "eruption"));
+    CHECK(index_of(c, "flame_ps") < index_of(c, "fire_wall"));
+    CHECK(index_of(c, "column_ps") < index_of(c, "column"));
     // forces, colliders, materials and sprites come before the system using them
-    CHECK(index_of(c, "flame_curl") < index_of(c, "wall_ps"));
-    CHECK(index_of(c, "buoyancy") < index_of(c, "wall_ps"));
-    CHECK(index_of(c, "gravity") < index_of(c, "rock_ps"));
+    CHECK(index_of(c, "flame_curl") < index_of(c, "flame_ps"));
+    CHECK(index_of(c, "buoyancy_fire") < index_of(c, "flame_ps"));
+    CHECK(index_of(c, "lift") < index_of(c, "rock_ps"));
     CHECK(index_of(c, "ground") < index_of(c, "rock_ps"));
-    CHECK(index_of(c, "mat_fire") < index_of(c, "wall_ps"));
-    CHECK(index_of(c, "tex_puff") < index_of(c, "wall_ps"));
+    CHECK(index_of(c, "mat_fire") < index_of(c, "flame_ps"));
+    CHECK(index_of(c, "tex_puff") < index_of(c, "flame_ps"));
     CHECK(index_of(c, "rock_mesh") < index_of(c, "rock_ps"));
     // a parent comes before its child
     const CompiledEffect fireball = compiler::compile(load_example("fireball.json"));
@@ -386,7 +389,7 @@ TEST_CASE("the particle budget is reported as I001", "[compiler][diagnostics]") 
                                  [](const Diagnostic& d) { return d.code == "I001"; });
     REQUIRE(it != c.diagnostics.items.end());
     CHECK(it->severity == Severity::Info);
-    CHECK(it->message.find("15200") != std::string::npos);
+    CHECK(it->message.find("21120") != std::string::npos);  // sum of max_particles in fire_aoe.json
 }
 
 TEST_CASE("mesh and sdf colliders warn W101", "[compiler][diagnostics]") {
@@ -422,4 +425,97 @@ TEST_CASE("volume nodes compile to the stub backend with W104", "[compiler][diag
     CHECK(n->backend == "volume_stub");
     CHECK(has_code_for(c.diagnostics, "W104", "smoke_volume"));
     CHECK(c.plan_json().at("tiers").at("volumetric").get<int>() == 1);
+}
+
+TEST_CASE("seeded mesh primitives bake one resource per variant", "[compiler][mesh][variants]") {
+    Effect effect = load_example("fireball.json");
+    Node crystal;
+    crystal.id = "spike";
+    crystal.type = NodeType::Mesh;
+    crystal.parameters["primitive"] = Parameter{std::string("crystal")};
+    crystal.parameters["variants"] = Parameter{4};
+    crystal.parameters["irregularity"] = Parameter{0.6f};
+    crystal.parameters["segments"] = Parameter{6};
+    crystal.parameters["radius"] = Parameter{0.2f};
+    crystal.parameters["height"] = Parameter{0.8f};
+    effect.add_node(crystal);
+
+    const CompiledEffect c = compiler::compile(effect);
+    INFO(c.diagnostics.summary());
+    CHECK(c.diagnostics.error_count() == 0);
+
+    const CompiledNode* node = c.find("spike");
+    REQUIRE(node != nullptr);
+    CHECK(node->mesh_variants == 4);
+    CHECK(node->to_json().at("mesh_variants").get<int>() == 4);
+
+    // Variant 0 keeps the plain node id; the rest are suffixed "#1".."#N-1".
+    REQUIRE(c.resources.mesh("spike") != nullptr);
+    for (int i = 1; i < 4; ++i) REQUIRE(c.resources.mesh("spike#" + std::to_string(i)) != nullptr);
+    CHECK(c.resources.mesh("spike#4") == nullptr);
+
+    // Each variant is seeded from derive_seed(node stream, i), so they differ.
+    for (int i = 0; i < 4; ++i)
+        for (int j = i + 1; j < 4; ++j) {
+            const MeshData* a = c.resources.mesh(i == 0 ? "spike" : "spike#" + std::to_string(i));
+            const MeshData* b = c.resources.mesh(j == 0 ? "spike" : "spike#" + std::to_string(j));
+            INFO("variants " << i << " and " << j);
+            CHECK(a->positions != b->positions);
+        }
+
+    // Every variant is still usable as an emitter shape (area table built).
+    for (int i = 0; i < 4; ++i) {
+        const MeshData* m = c.resources.mesh(i == 0 ? "spike" : "spike#" + std::to_string(i));
+        CHECK(m->triangle_count() > 0);
+        CHECK(m->total_area() > 0.0f);
+    }
+
+    SECTION("compilation is reproducible") {
+        const CompiledEffect again = compiler::compile(effect);
+        CHECK(again.resources.mesh("spike#2")->positions == c.resources.mesh("spike#2")->positions);
+    }
+
+    SECTION("the effect seed changes the variants") {
+        Effect reseeded = effect;
+        reseeded.seed += 1;
+        const CompiledEffect other = compiler::compile(reseeded);
+        CHECK(other.resources.mesh("spike")->positions != c.resources.mesh("spike")->positions);
+    }
+}
+
+TEST_CASE("variants are ignored by the non-seeded primitives", "[compiler][mesh][variants]") {
+    Effect effect = load_example("fireball.json");
+    Node sphere;
+    sphere.id = "ball";
+    sphere.type = NodeType::Mesh;
+    sphere.parameters["primitive"] = Parameter{std::string("sphere")};
+    sphere.parameters["variants"] = Parameter{8};
+    effect.add_node(sphere);
+
+    const CompiledEffect c = compiler::compile(effect);
+    INFO(c.diagnostics.summary());
+    CHECK(c.diagnostics.error_count() == 0);
+    CHECK(c.find("ball")->mesh_variants == 1);
+    CHECK(c.resources.mesh("ball") != nullptr);
+    CHECK(c.resources.mesh("ball#1") == nullptr);
+    // and no warning is emitted for the ignored parameter
+    CHECK(!has_code_for(c.diagnostics, "W005", "ball"));
+}
+
+TEST_CASE("rock and shard primitives compile", "[compiler][mesh]") {
+    for (const std::string& primitive : {"rock", "shard"}) {
+        Effect effect = load_example("fireball.json");
+        Node mesh;
+        mesh.id = "debris";
+        mesh.type = NodeType::Mesh;
+        mesh.parameters["primitive"] = Parameter{primitive};
+        mesh.parameters["variants"] = Parameter{3};
+        effect.add_node(mesh);
+
+        const CompiledEffect c = compiler::compile(effect);
+        INFO(primitive << ": " << c.diagnostics.summary());
+        CHECK(c.diagnostics.error_count() == 0);
+        CHECK(c.find("debris")->mesh_variants == 3);
+        CHECK(c.resources.mesh("debris#2") != nullptr);
+    }
 }

@@ -2035,6 +2035,16 @@
           "type": "float",
           "units": "m"
         },
+        "irregularity": {
+          "animatable": false,
+          "default": 0.35,
+          "description": "crystal/rock/shard: how far the generator strays from the ideal shape",
+          "enum": [],
+          "max": 1,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
         "path": {
           "animatable": false,
           "default": "",
@@ -2072,7 +2082,7 @@
         "primitive": {
           "animatable": false,
           "default": "sphere",
-          "description": "built-in primitive",
+          "description": "built-in primitive; crystal/rock/shard are procedural and seeded",
           "enum": [
             "sphere",
             "cube",
@@ -2083,7 +2093,10 @@
             "cylinder",
             "capsule",
             "ribbon",
-            "tube"
+            "tube",
+            "crystal",
+            "rock",
+            "shard"
           ],
           "max": null,
           "min": null,
@@ -2177,6 +2190,16 @@
           "min": 0,
           "type": "float",
           "units": "s"
+        },
+        "variants": {
+          "animatable": false,
+          "default": 1,
+          "description": "crystal/rock/shard: how many seeded variants to bake; other primitives ignore it",
+          "enum": [],
+          "max": 16,
+          "min": 1,
+          "type": "int",
+          "units": ""
         },
         "visible": {
           "animatable": false,
@@ -2562,6 +2585,34 @@
           "type": "int",
           "units": ""
         },
+        "mesh_scale": {
+          "animatable": false,
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "description": "render_mode=mesh: per-axis multipliers on top of size",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": ""
+        },
+        "mesh_scale_variance": {
+          "animatable": false,
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "description": "+/- uniform per axis on mesh_scale (result clamped to >= 0.05)",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "vec3",
+          "units": ""
+        },
         "opacity": {
           "animatable": false,
           "default": 1.0,
@@ -2589,6 +2640,21 @@
           "max": null,
           "min": null,
           "type": "curve",
+          "units": ""
+        },
+        "orientation": {
+          "animatable": false,
+          "default": "upright",
+          "description": "render_mode=mesh: how the instanced mesh is oriented in 3D",
+          "enum": [
+            "upright",
+            "random",
+            "velocity",
+            "tumble"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
           "units": ""
         },
         "physics": {
@@ -2728,6 +2794,16 @@
           "min": 1,
           "type": "int",
           "units": ""
+        },
+        "tilt": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "orientation=upright|velocity: per-particle random lean of the up axis, uniform in [0, tilt] around a random azimuth",
+          "enum": [],
+          "max": 180,
+          "min": 0,
+          "type": "float",
+          "units": "deg"
         },
         "velocity_stretch": {
           "animatable": false,

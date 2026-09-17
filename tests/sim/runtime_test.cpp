@@ -1100,3 +1100,379 @@ TEST_CASE("lightning collision counts stay close to one per particle", "[sim][ex
     CHECK(sparks.collisions < 1000u);  // was one contact per resting particle per step
     CHECK(debris.collisions < 200u);
 }
+
+// ---------------------------------------------------------------------------
+// mesh particle orientation (docs/VOCABULARY.md, "Mesh particle orientation")
+// ---------------------------------------------------------------------------
+
+namespace {
+
+Vec3 quat_rotate(Vec4 q, Vec3 v) {
+    const Vec3 u{q.x, q.y, q.z};
+    const Vec3 t = cross(u, v) * 2.0f;
+    return v + t * q.w + cross(u, t);
+}
+
+float quat_length(Vec4 q) { return std::sqrt(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w); }
+
+// Angle between a particle's mesh up axis and world up, in degrees.
+float lean_degrees(Vec4 q) {
+    return rad_to_deg(std::acos(clamp(dot(quat_rotate(q, Vec3::up()), Vec3::up()), -1.0f, 1.0f)));
+}
+
+// A burst of `count` mesh particles from a point emitter, spread over a cone so
+// their velocities differ. `mesh` is wired to the system, so render_mode=mesh
+// has something to instance.
+Effect mesh_burst_effect(const std::string& orientation, int count = 48, float spread_deg = 60.0f) {
+    Effect e;
+    e.name = "mesh_orientation";
+    e.duration = 5.0;
+    e.seed = 12;
+
+    Node geo = node_of(NodeType::Mesh, "geo");
+    geo.parameters["primitive"] = Parameter{std::string("cone")};
+    geo.parameters["radius"] = Parameter{0.2f};
+    geo.parameters["height"] = Parameter{1.0f};
+    geo.parameters["visible"] = Parameter{false};
+    e.add_node(geo);
+
+    Node ps = node_of(NodeType::ParticleSystem, "ps");
+    ps.parameters["lifetime"] = Parameter{9.0f};
+    ps.parameters["max_particles"] = Parameter{512};
+    ps.parameters["size"] = Parameter{0.2f};
+    ps.parameters["render_mode"] = Parameter{std::string("mesh")};
+    ps.parameters["orientation"] = Parameter{orientation};
+    ps.parameters["opacity_over_life"] = Parameter{Curve::constant(1.0f)};
+    ps.inputs["mesh"] = {NodeRef::parse("geo")};
+    e.add_node(ps);
+
+    Node em = node_of(NodeType::Emitter, "em");
+    em.parameters["shape"] = Parameter{std::string("point")};
+    em.parameters["rate"] = Parameter{0.0f};
+    em.parameters["burst_count"] = Parameter{count};
+    em.parameters["burst_times"] = Parameter{std::vector<float>{0.0f}};
+    em.parameters["velocity"] = Parameter{2.0f};
+    em.parameters["direction"] = Parameter{Vec3{0, 1, 0}};
+    em.parameters["spread"] = Parameter{spread_deg};
+    em.inputs["particle"] = {NodeRef::parse("ps")};
+    e.add_node(em);
+    return e;
+}
+
+}  // namespace
+
+TEST_CASE("mesh particles carry a unit orientation quaternion", "[sim][orientation]") {
+    const Effect effect = mesh_burst_effect("upright");
+    auto rt = runtime_for(effect);
+    rt->reset();
+    rt->step();
+    const ParticleBuffer& b = buffer_of(*rt, "ps");
+    REQUIRE(b.count() == 48);
+    REQUIRE(b.orientation.size() == b.count());
+    REQUIRE(b.scale3.size() == b.count());
+    REQUIRE(b.variant.size() == b.count());
+    for (size_t i = 0; i < b.count(); ++i) {
+        CHECK(quat_length(b.orientation[i]) == Approx(1.0f).margin(1e-4));
+        CHECK(b.scale3[i] == Vec3{1, 1, 1});
+        CHECK(b.variant[i] == 0u);
+    }
+}
+
+TEST_CASE("billboard systems leave the orientation at identity", "[sim][orientation]") {
+    Effect effect = mesh_burst_effect("tumble");
+    effect.find_node("ps")->parameters["render_mode"] = Parameter{std::string("billboard")};
+    effect.find_node("ps")->parameters["angular_velocity"] = Parameter{180.0f};
+    auto rt = runtime_for(effect);
+    rt->simulate_to(0.5);
+    const ParticleBuffer& b = buffer_of(*rt, "ps");
+    REQUIRE(b.count() > 0);
+    for (size_t i = 0; i < b.count(); ++i) {
+        CHECK(b.orientation[i] == Vec4{0, 0, 0, 1});
+        CHECK(b.scale3[i] == Vec3{1, 1, 1});
+    }
+    // `rotation` keeps its billboard roll meaning.
+    CHECK(b.rotation[0] == Approx(deg_to_rad(180.0f) * 0.5f).margin(1e-4));
+}
+
+TEST_CASE("orientation: upright is yaw only until tilt is set", "[sim][orientation]") {
+    SECTION("no tilt keeps every mesh perfectly upright") {
+        Effect effect = mesh_burst_effect("upright");
+        effect.find_node("ps")->parameters["rotation_variance"] = Parameter{180.0f};
+        auto rt = runtime_for(effect);
+        rt->reset();
+        rt->step();
+        const ParticleBuffer& b = buffer_of(*rt, "ps");
+        bool any_yaw = false;
+        for (size_t i = 0; i < b.count(); ++i) {
+            CHECK(lean_degrees(b.orientation[i]) == Approx(0.0f).margin(1e-3));
+            // the yaw is still there, folded into the quaternion
+            const Vec3 side = quat_rotate(b.orientation[i], Vec3::right());
+            if (std::fabs(side.x - 1.0f) > 1e-3f) any_yaw = true;
+        }
+        CHECK(any_yaw);
+    }
+
+    SECTION("tilt bounds the lean and spreads it over the cone") {
+        const float tilt = 40.0f;
+        Effect effect = mesh_burst_effect("upright", 200);
+        effect.find_node("ps")->parameters["tilt"] = Parameter{tilt};
+        auto rt = runtime_for(effect);
+        rt->reset();
+        rt->step();
+        const ParticleBuffer& b = buffer_of(*rt, "ps");
+        REQUIRE(b.count() == 200);
+        float worst = 0.0f, smallest = 1e9f;
+        for (size_t i = 0; i < b.count(); ++i) {
+            const float lean = lean_degrees(b.orientation[i]);
+            CHECK(lean <= tilt + 1e-2f);
+            CHECK(lean >= -1e-3f);
+            worst = std::max(worst, lean);
+            smallest = std::min(smallest, lean);
+        }
+        CHECK(worst > tilt * 0.8f);      // the whole cone is used
+        CHECK(smallest < tilt * 0.2f);
+    }
+
+    SECTION("angular_velocity keeps precessing a tilted mesh") {
+        Effect effect = mesh_burst_effect("upright", 8);
+        effect.find_node("ps")->parameters["tilt"] = Parameter{30.0f};
+        effect.find_node("ps")->parameters["angular_velocity"] = Parameter{360.0f};
+        auto rt = runtime_for(effect);
+        rt->reset();
+        rt->step();
+        const Vec4 first = buffer_of(*rt, "ps").orientation[0];
+        const float lean_before = lean_degrees(first);
+        rt->step();
+        rt->step();
+        const Vec4 later = buffer_of(*rt, "ps").orientation[0];
+        CHECK(!(later == first));
+        // spinning about world up never changes how far the mesh leans
+        CHECK(lean_degrees(later) == Approx(lean_before).margin(1e-3));
+    }
+}
+
+TEST_CASE("orientation: random is a fixed per-particle rotation", "[sim][orientation]") {
+    const Effect effect = mesh_burst_effect("random", 64);
+    auto rt = runtime_for(effect);
+    rt->reset();
+    rt->step();
+    const std::vector<Vec4> first = buffer_of(*rt, "ps").orientation;
+    REQUIRE(first.size() == 64);
+
+    // Different particles get different rotations, and they really are 3D
+    // (the up axis is not stuck near +Y the way `upright` leaves it).
+    size_t distinct = 0;
+    float max_lean = 0.0f;
+    for (size_t i = 0; i < first.size(); ++i) {
+        max_lean = std::max(max_lean, lean_degrees(first[i]));
+        bool unique = true;
+        for (size_t j = 0; j < i; ++j)
+            if (first[j] == first[i]) unique = false;
+        if (unique) ++distinct;
+    }
+    CHECK(distinct == first.size());
+    CHECK(max_lean > 120.0f);
+
+    SECTION("it does not drift over time") {
+        rt->simulate_to(1.0);
+        const ParticleBuffer& b = buffer_of(*rt, "ps");
+        for (size_t i = 0; i < b.count(); ++i) CHECK(b.orientation[i] == first[i]);
+    }
+
+    SECTION("it is identical across runs and changes with the effect seed") {
+        auto again = runtime_for(effect);
+        again->reset();
+        again->step();
+        CHECK(buffer_of(*again, "ps").orientation == first);
+
+        Effect reseeded = effect;
+        reseeded.seed += 1;
+        auto other = runtime_for(reseeded);
+        other->reset();
+        other->step();
+        CHECK(buffer_of(*other, "ps").orientation != first);
+    }
+}
+
+TEST_CASE("orientation: velocity aims the mesh +Y along the velocity", "[sim][orientation]") {
+    const Effect effect = mesh_burst_effect("velocity", 64, 80.0f);
+    auto rt = runtime_for(effect);
+    rt->reset();
+    rt->step();
+    const ParticleBuffer& b = buffer_of(*rt, "ps");
+    REQUIRE(b.count() == 64);
+    bool any_off_axis = false;
+    for (size_t i = 0; i < b.count(); ++i) {
+        const Vec3 aim = quat_rotate(b.orientation[i], Vec3::up());
+        const Vec3 dir = normalize(b.velocity[i]);
+        CHECK(dot(aim, dir) == Approx(1.0f).margin(1e-4));
+        if (dot(dir, Vec3::up()) < 0.98f) any_off_axis = true;
+    }
+    CHECK(any_off_axis);  // the cone spread really did produce varied directions
+
+    SECTION("a force turns the mesh with the velocity") {
+        Effect falling = effect;
+        attach_force(falling, "g", "gravity", 30.0f, Vec3{0, -1, 0});
+        auto sim = runtime_for(falling);
+        sim->simulate_to(1.0);
+        const ParticleBuffer& fb = buffer_of(*sim, "ps");
+        REQUIRE(fb.count() > 0);
+        for (size_t i = 0; i < fb.count(); ++i) {
+            const Vec3 aim = quat_rotate(fb.orientation[i], Vec3::up());
+            CHECK(dot(aim, normalize(fb.velocity[i])) == Approx(1.0f).margin(1e-4));
+        }
+        CHECK(dot(quat_rotate(fb.orientation[0], Vec3::up()), Vec3::up()) < 0.0f);  // now falling
+    }
+
+    SECTION("slow particles fall back to upright") {
+        Effect still = mesh_burst_effect("velocity", 8, 0.0f);
+        still.find_node("em")->parameters["velocity"] = Parameter{0.0f};
+        auto sim = runtime_for(still);
+        sim->reset();
+        sim->step();
+        const ParticleBuffer& sb = buffer_of(*sim, "ps");
+        for (size_t i = 0; i < sb.count(); ++i) CHECK(lean_degrees(sb.orientation[i]) == Approx(0.0f).margin(1e-3));
+    }
+}
+
+TEST_CASE("orientation: tumble spins about a random per-particle axis", "[sim][orientation]") {
+    Effect effect = mesh_burst_effect("tumble", 32);
+    effect.find_node("ps")->parameters["angular_velocity"] = Parameter{270.0f};
+    effect.find_node("ps")->parameters["angular_velocity_variance"] = Parameter{90.0f};
+    auto rt = runtime_for(effect);
+    rt->reset();
+    rt->step();
+    const std::vector<Vec4> first = buffer_of(*rt, "ps").orientation;
+    REQUIRE(first.size() == 32);
+
+    for (int i = 0; i < 12; ++i) rt->step();
+    const ParticleBuffer& b = buffer_of(*rt, "ps");
+    float worst_travel = 0.0f;
+    for (size_t i = 0; i < b.count(); ++i) {
+        CHECK(quat_length(b.orientation[i]) == Approx(1.0f).margin(1e-4));
+        const Vec3 before = quat_rotate(first[i], Vec3::up());
+        const Vec3 after = quat_rotate(b.orientation[i], Vec3::up());
+        worst_travel = std::max(worst_travel, length(after - before));
+    }
+    CHECK(worst_travel > 0.2f);  // the meshes really turned in 3D
+
+    SECTION("zero angular velocity is a fixed random orientation") {
+        Effect frozen = mesh_burst_effect("tumble", 16);
+        frozen.find_node("ps")->parameters["angular_velocity"] = Parameter{0.0f};
+        auto sim = runtime_for(frozen);
+        sim->reset();
+        sim->step();
+        const std::vector<Vec4> start = buffer_of(*sim, "ps").orientation;
+        sim->simulate_to(1.0);
+        CHECK(buffer_of(*sim, "ps").orientation == start);
+    }
+
+    SECTION("it is deterministic across runs") {
+        auto again = runtime_for(effect);
+        again->simulate_to(13.0 / 60.0);
+        CHECK(buffer_of(*again, "ps").orientation == b.orientation);
+    }
+}
+
+TEST_CASE("mesh_scale and mesh_scale_variance give per-axis scale", "[sim][orientation]") {
+    Effect effect = mesh_burst_effect("upright", 128);
+    effect.find_node("ps")->parameters["mesh_scale"] = Parameter{Vec3{0.4f, 2.5f, 0.4f}};
+    effect.find_node("ps")->parameters["mesh_scale_variance"] = Parameter{Vec3{0.2f, 0.8f, 0.2f}};
+    auto rt = runtime_for(effect);
+    rt->reset();
+    rt->step();
+    const ParticleBuffer& b = buffer_of(*rt, "ps");
+    REQUIRE(b.count() == 128);
+
+    bool axes_differ = false, particles_differ = false;
+    for (size_t i = 0; i < b.count(); ++i) {
+        const Vec3 s = b.scale3[i];
+        CHECK(s.x >= 0.4f - 0.2f - 1e-5f);
+        CHECK(s.x <= 0.4f + 0.2f + 1e-5f);
+        CHECK(s.y >= 2.5f - 0.8f - 1e-5f);
+        CHECK(s.y <= 2.5f + 0.8f + 1e-5f);
+        if (std::fabs(s.x - s.y) > 1e-4f && std::fabs(s.x - s.z) > 1e-4f) axes_differ = true;
+        if (i > 0 && !(b.scale3[i] == b.scale3[0])) particles_differ = true;
+    }
+    CHECK(axes_differ);
+    CHECK(particles_differ);
+
+    SECTION("scale never collapses below the 0.05 floor") {
+        Effect crushed = mesh_burst_effect("upright", 64);
+        crushed.find_node("ps")->parameters["mesh_scale"] = Parameter{Vec3{0.1f, 0.1f, 0.1f}};
+        crushed.find_node("ps")->parameters["mesh_scale_variance"] = Parameter{Vec3{2.0f, 2.0f, 2.0f}};
+        auto sim = runtime_for(crushed);
+        sim->reset();
+        sim->step();
+        const ParticleBuffer& cb = buffer_of(*sim, "ps");
+        for (size_t i = 0; i < cb.count(); ++i) {
+            CHECK(cb.scale3[i].x >= 0.05f);
+            CHECK(cb.scale3[i].y >= 0.05f);
+            CHECK(cb.scale3[i].z >= 0.05f);
+        }
+    }
+
+    SECTION("it survives compaction alongside the other arrays") {
+        Effect dying = mesh_burst_effect("random", 64);
+        dying.find_node("ps")->parameters["lifetime"] = Parameter{0.2f};
+        dying.find_node("ps")->parameters["lifetime_variance"] = Parameter{0.15f};
+        dying.find_node("ps")->parameters["mesh_scale_variance"] = Parameter{Vec3{0.5f, 0.5f, 0.5f}};
+        dying.find_node("em")->parameters["rate"] = Parameter{240.0f};
+        auto sim = runtime_for(dying);
+        sim->simulate_to(0.6);
+        const ParticleBuffer& db = buffer_of(*sim, "ps");
+        REQUIRE(db.count() > 0);
+        CHECK(db.orientation.size() == db.count());
+        CHECK(db.scale3.size() == db.count());
+        CHECK(db.variant.size() == db.count());
+        // every surviving particle still has its own (valid) orientation
+        for (size_t i = 0; i < db.count(); ++i) CHECK(quat_length(db.orientation[i]) == Approx(1.0f).margin(1e-4));
+    }
+}
+
+TEST_CASE("mesh variant indices span the baked variants", "[sim][orientation][variants]") {
+    Effect effect = mesh_burst_effect("random", 256);
+    Node* geo = effect.find_node("geo");
+    geo->parameters["primitive"] = Parameter{std::string("crystal")};
+    geo->parameters["variants"] = Parameter{4};
+    geo->parameters["segments"] = Parameter{6};
+
+    auto rt = runtime_for(effect);
+    rt->reset();
+    rt->step();
+    const ParticleBuffer& b = buffer_of(*rt, "ps");
+    REQUIRE(b.count() == 256);
+
+    std::vector<int> seen(4, 0);
+    for (size_t i = 0; i < b.count(); ++i) {
+        REQUIRE(b.variant[i] < 4u);
+        ++seen[b.variant[i]];
+    }
+    for (int k = 0; k < 4; ++k) {
+        INFO("variant " << k << " used " << seen[k] << " times");
+        CHECK(seen[k] > 0);
+    }
+
+    SECTION("a single-variant mesh always uses variant 0") {
+        Effect single = effect;
+        single.find_node("geo")->parameters["variants"] = Parameter{1};
+        auto sim = runtime_for(single);
+        sim->reset();
+        sim->step();
+        const ParticleBuffer& sb = buffer_of(*sim, "ps");
+        for (size_t i = 0; i < sb.count(); ++i) CHECK(sb.variant[i] == 0u);
+    }
+}
+
+TEST_CASE("orientation does not disturb the billboard determinism contract", "[sim][orientation][determinism]") {
+    // Particle state for a billboard system must be bit-identical between two
+    // fresh runtimes; the orientation draws happen after every existing draw.
+    const Effect effect = load_example("fireball.json");
+    auto a = runtime_for(effect);
+    auto b = runtime_for(effect);
+    for (int i = 0; i < 60; ++i) {
+        a->step();
+        b->step();
+        REQUIRE(a->state().hash() == b->state().hash());
+    }
+}

@@ -104,10 +104,53 @@ bounce: float = 0.3 [0..1]
 friction: float = 0.2 [0..1]
 kill_on_collision: bool = false
 collision_radius: float = 0            0 = use size*0.5
+orientation: enum = upright [upright, random, velocity, tumble]   mesh particles only
+tilt: float = 0 [0..180]               upright/velocity: random lean of the up axis (deg)
+mesh_scale: vec3 = 1,1,1               per-axis multipliers on top of `size` (mesh particles)
+mesh_scale_variance: vec3 = 0,0,0      +/- uniform per axis (result clamped to >= 0.05)
 ```
 inputs: `material: material`, `sprite: texture`, `mesh: mesh` (render_mode=mesh),
 `forces: force[]`, `colliders: collider[]`, `trail: trail` (per-particle trail).
 outputs: `particles`, `on_spawn`, `on_death`, `on_collision` (event sources).
+
+#### Mesh particle orientation
+
+`orientation`, `tilt`, `mesh_scale` and `mesh_scale_variance` apply only to
+`render_mode: mesh`. Billboard systems ignore them entirely and keep the
+identity orientation, so `rotation` and `angular_velocity` keep their billboard
+roll meaning and existing effects are untouched.
+
+The runtime writes a rotation quaternion per particle every step; the renderer
+draws each mesh particle as `translate(position) * rotation(quaternion) *
+scale(size * mesh_scale)`. The yaw from `rotation` is folded into the
+quaternion, so the renderer only ever reads the quaternion.
+
+| orientation | per-particle rotation |
+|---|---|
+| `upright` | yaw of `rotation` about world +Y, composed with the tilt: `yaw * tilt`. This is the old behaviour when `tilt = 0`. |
+| `random` | one uniformly random 3D rotation, fixed at spawn, never updated. |
+| `velocity` | the shortest rotation taking mesh +Y onto `normalize(velocity)`, composed with the tilt. Below 0.05 m/s it falls back to `upright`. |
+| `tumble` | a random orientation at spawn, then spun by `angular_velocity` (+/- `angular_velocity_variance`, deg/s) about one random axis per particle. |
+
+`tilt` leans the up axis by a per-particle angle uniform in `[0, tilt]` around a
+random azimuth - a cone of leans, which is what stops a field of spikes looking
+like a row of fence posts. It is applied in mesh space, so `angular_velocity`
+under `upright` makes a tilted mesh precess rather than wobble.
+
+`mesh_scale` multiplies `size` per axis and is applied in mesh space (before the
+rotation), so a stretch turns with the mesh. Each axis draws its own variance:
+`mesh_scale.axis + U(-1,1) * mesh_scale_variance.axis`, clamped to at least
+0.05. Tall thin crystals are `mesh_scale: 0.4,2.5,0.4`; squashed rocks are
+`mesh_scale: 1.2,0.7,1.1`.
+
+When the instanced `mesh` node bakes several variants, each particle picks one
+with `variant = seed32 % variants` and keeps it for life.
+
+Determinism: the orientation draws happen **after** every pre-existing spawn
+draw (docs/RUNTIME.md section 3), in the order tilt angle, tilt azimuth, random
+orientation, tumble axis, `mesh_scale_variance` x/y/z. Billboard systems skip
+them. Every value is a pure function of the particle seed, so an effect written
+before these parameters existed produces exactly the state it did before.
 
 ### force
 ```
@@ -159,12 +202,15 @@ outputs: `volume`.
 transform, plus:
 ```
 source: enum = primitive [primitive, imported, procedural, generated, particle_instanced]
-primitive: enum = sphere [sphere, cube, plane, disc, ring, cone, cylinder, capsule, ribbon, tube]
+primitive: enum = sphere [sphere, cube, plane, disc, ring, cone, cylinder, capsule, ribbon, tube,
+                          crystal, rock, shard]
 radius: float = 0.5 [0..]
 inner_radius: float = 0 [0..]      ring
-height: float = 1 [0..]            cone/cylinder/capsule/tube
+height: float = 1 [0..]            cone/cylinder/capsule/tube/crystal/shard
 size: vec3 = 1,1,1                 cube/plane
 segments: int = 24 [3..256]
+variants: int = 1 [1..16]          crystal/rock/shard: seeded variants to bake
+irregularity: float = 0.35 [0..1]  crystal/rock/shard: deviation from the ideal shape
 path: string = ""                  imported (obj) - V1 loads OBJ only
 color: color = 1,1,1,1 (A)
 emissive: float = 0 [0..] (A)
@@ -174,6 +220,32 @@ duration: float = -1
 phase: string = ""
 ```
 inputs: `material: material`. outputs: `mesh`.
+
+#### Seeded primitives (`crystal`, `rock`, `shard`)
+
+Procedural, flat-shaded and a pure function of `(parameters, seed)`. Like every
+other primitive they are centred on the origin with +Y up, and their bounds fit
+inside `x,z` in `[-radius, radius]` and `y` in `[-height/2, height/2]` (`rock`
+uses `[-radius, radius]` on all three axes). A crystal's apex is therefore at
+`+height/2` and its base at `-height/2`.
+
+* `crystal` - an irregular n-gon spike. `segments` is clamped to 3..8 facets
+  (5..8 reads best); vertices jitter by up to `irregularity * 0.5` in radius and
+  a quarter of a facet in angle, the apex is offset laterally by up to
+  `irregularity * 0.35 * radius`, and with probability `irregularity` a shorter
+  twin spike is fused at the base at 60% of the height.
+* `rock` - a low-poly boulder: an icosphere (20 facets, or 80 when
+  `segments >= 10`) pushed along its normals by seeded fbm scaled by
+  `irregularity * radius * 0.6`, then squashed by per-axis random factors in
+  `[1 - 0.4*irregularity, 1 + 0.4*irregularity]`.
+* `shard` - a thin angular flake: an irregular 4..6 sided outline with one sharp
+  end, extruded to a thickness of `0.12 * radius`.
+
+`variants` bakes that many meshes from `derive_seed(node stream, i)` under the
+resource keys `"<mesh id>"`, `"<mesh id>#1"` ... `"<mesh id>#N-1"`. A
+`particle_system` instancing the node spreads its particles across them (see
+"Mesh particle orientation"); anything else uses variant 0. Other primitives
+ignore `variants` and `irregularity` without a warning.
 
 ### curve  (Tier 0; paths for emitters, trails, beams, motion)
 transform, plus:

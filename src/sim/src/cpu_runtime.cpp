@@ -54,6 +54,65 @@ using compiler::CompiledNode;
 // ---------------------------------------------------------------------------
 
 constexpr float kTiny = 1e-12f;
+
+// ---------------------------------------------------------------------------
+// quaternions (x, y, z, w), local to the runtime: only mesh particle
+// orientation needs them, so core/math.hpp stays untouched. `quat_mul(a, b)`
+// is "apply b, then a", matching matrix composition R(a) * R(b).
+// ---------------------------------------------------------------------------
+
+constexpr Vec4 kIdentityQuat{0.0f, 0.0f, 0.0f, 1.0f};
+
+Vec4 quat_mul(Vec4 a, Vec4 b) {
+    return {a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y, a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x,
+            a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w, a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z};
+}
+
+Vec4 quat_normalize(Vec4 q) {
+    const float l = std::sqrt(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w);
+    return l > kEpsilon ? Vec4{q.x / l, q.y / l, q.z / l, q.w / l} : kIdentityQuat;
+}
+
+Vec4 quat_axis_angle(Vec3 axis, float radians) {
+    const Vec3 a = normalize(axis);
+    if (length_squared(a) < kTiny) return kIdentityQuat;
+    const float h = radians * 0.5f;
+    const float s = std::sin(h);
+    return {a.x * s, a.y * s, a.z * s, std::cos(h)};
+}
+
+// Shortest rotation taking `from` to `to` (both assumed unit length).
+Vec4 quat_from_to(Vec3 from, Vec3 to) {
+    const float d = clamp(dot(from, to), -1.0f, 1.0f);
+    if (d > 1.0f - 1e-6f) return kIdentityQuat;
+    if (d < -1.0f + 1e-6f) return quat_axis_angle(orthogonal(from), kPi);  // antiparallel: any perpendicular axis
+    return quat_normalize(Vec4{cross(from, to), 1.0f + d});
+}
+
+// Uniform random rotation (Shoemake): three uniform draws -> one quaternion
+// with no bias towards any axis.
+Vec4 random_quat(Pcg32& rng) {
+    const float u1 = rng.next_float(), u2 = rng.next_float(), u3 = rng.next_float();
+    const float r1 = std::sqrt(1.0f - u1), r2 = std::sqrt(u1);
+    return {r1 * std::sin(kTwoPi * u2), r1 * std::cos(kTwoPi * u2), r2 * std::sin(kTwoPi * u3),
+            r2 * std::cos(kTwoPi * u3)};
+}
+
+// Mesh particle orientation modes (docs/VOCABULARY.md particle_system.orientation).
+enum class Orientation { Upright, Random, Velocity, Tumble };
+
+Orientation parse_orientation(const std::string& s) {
+    if (s == "random") return Orientation::Random;
+    if (s == "velocity") return Orientation::Velocity;
+    if (s == "tumble") return Orientation::Tumble;
+    return Orientation::Upright;
+}
+
+// Below this speed `orientation: velocity` falls back to upright
+// (docs/VOCABULARY.md, particle_system.orientation).
+constexpr float kVelocityOrientMin = 0.05f;
+// Per-axis mesh scale can never collapse a mesh to nothing.
+constexpr float kMinMeshScale = 0.05f;
 // Normal approach speed above which an existing contact reports again
 // (docs/RUNTIME.md section 5).
 constexpr float kImpactSpeed = 0.1f;
@@ -303,6 +362,12 @@ struct SystemRuntime {
     bool kill_on_collision = false;
     float collision_radius = 0.0f;
     float bounce = 0.3f, friction = 0.2f;
+    // mesh particle orientation / per-axis scale
+    Orientation orientation = Orientation::Upright;
+    bool mesh_particles = false;   // render_mode == mesh; billboards skip all orientation work
+    float tilt_rad = 0.0f;
+    Vec3 mesh_scale{1, 1, 1}, mesh_scale_variance{0, 0, 0};
+    uint32_t mesh_variants = 1;
     std::vector<size_t> forces, colliders;
     std::vector<size_t> spawn_events, death_events, collision_events, distance_events;
     std::vector<size_t> trails;
@@ -312,6 +377,11 @@ struct SystemRuntime {
     std::vector<Vec3> spawn_position;
     std::vector<uint64_t> seed64;
     std::vector<uint32_t> distance_mask;
+    // orientation state fixed at spawn: the tilt cone rotation (upright /
+    // velocity) or the random initial orientation (random / tumble), plus the
+    // tumble spin axis.
+    std::vector<Vec4> spawn_quat;
+    std::vector<Vec3> tumble_axis;
     // bit j = "was in contact with colliders[j] at the end of the previous
     // step" (docs/RUNTIME.md section 5, resting contacts); colliders beyond
     // the first 32 on one system are not contact-tracked.
@@ -375,6 +445,7 @@ private:
     void accumulate_forces(SystemRuntime& s, ParticleBuffer& b, double t1);
     void collide(SystemRuntime& s, ParticleBuffer& b, std::vector<uint8_t>& dead, size_t& dead_count);
     void modulate(SystemRuntime& s, ParticleBuffer& b);
+    void orient(SystemRuntime& s, ParticleBuffer& b);
     void remove_dead(SystemRuntime& s, const std::vector<uint8_t>& dead);
     void fire_particle_event(EventRuntime& ev, Vec3 position, Vec3 velocity, uint64_t particle_seed);
     void queue_event_bursts(EventRuntime& ev, Vec3 position, Vec3 velocity, bool has_position);
@@ -499,6 +570,13 @@ void CpuRuntime::build() {
             s.collision_radius = param_float(*n, "collision_radius");
             s.bounce = param_float(*n, "bounce");
             s.friction = param_float(*n, "friction");
+            s.orientation = parse_orientation(param_string(*n, "orientation"));
+            s.tilt_rad = deg_to_rad(clamp(param_float(*n, "tilt"), 0.0f, 180.0f));
+            s.mesh_scale = param_vec3(*n, "mesh_scale");
+            s.mesh_scale_variance = param_vec3(*n, "mesh_scale_variance");
+            s.mesh_particles = param_string(*n, "render_mode") == "mesh";
+            if (const CompiledNode* mesh_node = compiled_.find(cn.mesh_id))
+                s.mesh_variants = static_cast<uint32_t>(std::max(1, mesh_node->mesh_variants));
             for (const NodeId& id : cn.forces) {
                 auto it = force_of_node_.find(id);
                 if (it != force_of_node_.end()) s.forces.push_back(it->second);
@@ -699,6 +777,8 @@ void CpuRuntime::rebuild_state() {
         s.seed64.clear();
         s.distance_mask.clear();
         s.contact_mask.clear();
+        s.spawn_quat.clear();
+        s.tumble_axis.clear();
         s.emitter_batches.clear();
         s.event_batches.clear();
         s.spawned_total = s.died_total = s.peak_alive = s.dropped = s.collisions = 0;
@@ -1281,6 +1361,32 @@ void CpuRuntime::spawn_one(SystemRuntime& s, EmitterRuntime& em, const SpawnBatc
     b.custom1.push_back(0.0f);
     b.seed.push_back(seed32_of(particle_seed));
 
+    // (8)..(12) mesh orientation draws, after every pre-existing draw so that
+    // billboard effects keep the exact particle state they had before:
+    // (8) tilt angle, (9) tilt azimuth, (10) random orientation,
+    // (11) tumble axis, (12) mesh_scale variance (x, y, z).
+    Vec4 spawn_quat = kIdentityQuat;
+    Vec3 tumble_axis = Vec3::up();
+    Vec3 scale3 = Vec3::one();
+    if (s.mesh_particles) {
+        const float tilt = s.tilt_rad * rng.next_float();
+        const float azimuth = rng.next_float() * kTwoPi;
+        // Lean the +Y axis by `tilt` around a random azimuth: a cone of leans.
+        const Vec3 tilt_axis{-std::sin(azimuth), 0.0f, std::cos(azimuth)};
+        const Vec4 tilt_quat = tilt > 0.0f ? quat_axis_angle(tilt_axis, tilt) : kIdentityQuat;
+        const Vec4 random_orientation = random_quat(rng);
+        tumble_axis = rng.unit_vector();
+        scale3 = Vec3{std::max(kMinMeshScale, s.mesh_scale.x + rng.signed_unit() * s.mesh_scale_variance.x),
+                      std::max(kMinMeshScale, s.mesh_scale.y + rng.signed_unit() * s.mesh_scale_variance.y),
+                      std::max(kMinMeshScale, s.mesh_scale.z + rng.signed_unit() * s.mesh_scale_variance.z)};
+        spawn_quat = (s.orientation == Orientation::Random || s.orientation == Orientation::Tumble)
+                         ? random_orientation
+                         : tilt_quat;
+    }
+    b.orientation.push_back(spawn_quat);
+    b.scale3.push_back(scale3);
+    b.variant.push_back(s.mesh_variants > 1 ? seed32_of(particle_seed) % s.mesh_variants : 0u);
+
     s.base_size.push_back(size);
     s.base_opacity.push_back(s.opacity);
     s.base_emissive.push_back(s.emissive);
@@ -1289,6 +1395,8 @@ void CpuRuntime::spawn_one(SystemRuntime& s, EmitterRuntime& em, const SpawnBatc
     s.seed64.push_back(particle_seed);
     s.distance_mask.push_back(0u);
     s.contact_mask.push_back(0u);
+    s.spawn_quat.push_back(spawn_quat);
+    s.tumble_axis.push_back(tumble_axis);
     ++s.spawned_total;
     ++em.emitted;
 
@@ -1531,6 +1639,41 @@ void CpuRuntime::modulate(SystemRuntime& s, ParticleBuffer& b) {
     }
 }
 
+// Mesh particle orientation (docs/VOCABULARY.md, "Mesh particle orientation").
+// Billboard systems keep the identity quaternion, so the renderer's mesh path
+// is a no-op for them and `rotation` keeps its billboard-roll meaning.
+void CpuRuntime::orient(SystemRuntime& s, ParticleBuffer& b) {
+    if (!s.mesh_particles) return;
+    const size_t n = b.count();
+    for (size_t i = 0; i < n; ++i) {
+        switch (s.orientation) {
+            case Orientation::Random:
+                b.orientation[i] = s.spawn_quat[i];
+                break;
+            case Orientation::Tumble:
+                // `rotation` already accumulates angular_velocity * dt, so the
+                // spin is a pure function of the particle state, not of the
+                // number of steps taken.
+                b.orientation[i] = quat_normalize(
+                    quat_mul(quat_axis_angle(s.tumble_axis[i], b.rotation[i]), s.spawn_quat[i]));
+                break;
+            case Orientation::Velocity: {
+                const Vec3 v = b.velocity[i];
+                const float speed = length(v);
+                const Vec4 aim = speed >= kVelocityOrientMin ? quat_from_to(Vec3::up(), v / speed)
+                                                             : quat_axis_angle(Vec3::up(), b.rotation[i]);
+                b.orientation[i] = quat_normalize(quat_mul(aim, s.spawn_quat[i]));
+                break;
+            }
+            case Orientation::Upright:
+            default:
+                b.orientation[i] =
+                    quat_normalize(quat_mul(quat_axis_angle(Vec3::up(), b.rotation[i]), s.spawn_quat[i]));
+                break;
+        }
+    }
+}
+
 void CpuRuntime::remove_dead(SystemRuntime& s, const std::vector<uint8_t>& dead) {
     ParticleBuffer& b = state_.particles[s.buffer];
     const size_t n = b.count();
@@ -1554,6 +1697,9 @@ void CpuRuntime::remove_dead(SystemRuntime& s, const std::vector<uint8_t>& dead)
             b.custom0[w] = b.custom0[r];
             b.custom1[w] = b.custom1[r];
             b.seed[w] = b.seed[r];
+            b.orientation[w] = b.orientation[r];
+            b.scale3[w] = b.scale3[r];
+            b.variant[w] = b.variant[r];
             s.base_size[w] = s.base_size[r];
             s.base_opacity[w] = s.base_opacity[r];
             s.base_emissive[w] = s.base_emissive[r];
@@ -1562,6 +1708,8 @@ void CpuRuntime::remove_dead(SystemRuntime& s, const std::vector<uint8_t>& dead)
             s.seed64[w] = s.seed64[r];
             s.distance_mask[w] = s.distance_mask[r];
             s.contact_mask[w] = s.contact_mask[r];
+            s.spawn_quat[w] = s.spawn_quat[r];
+            s.tumble_axis[w] = s.tumble_axis[r];
         }
         ++w;
     }
@@ -1581,6 +1729,9 @@ void CpuRuntime::remove_dead(SystemRuntime& s, const std::vector<uint8_t>& dead)
     b.custom0.resize(w);
     b.custom1.resize(w);
     b.seed.resize(w);
+    b.orientation.resize(w);
+    b.scale3.resize(w);
+    b.variant.resize(w);
     s.base_size.resize(w);
     s.base_opacity.resize(w);
     s.base_emissive.resize(w);
@@ -1589,6 +1740,8 @@ void CpuRuntime::remove_dead(SystemRuntime& s, const std::vector<uint8_t>& dead)
     s.seed64.resize(w);
     s.distance_mask.resize(w);
     s.contact_mask.resize(w);
+    s.spawn_quat.resize(w);
+    s.tumble_axis.resize(w);
 }
 
 // ---------------------------------------------------------------------------
@@ -1736,6 +1889,7 @@ void CpuRuntime::update_system(SystemRuntime& s, double t1) {
 
     // (f) over-life modulation
     modulate(s, b);
+    orient(s, b);
 }
 
 // ---------------------------------------------------------------------------

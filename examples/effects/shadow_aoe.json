@@ -579,24 +579,30 @@
       "id": "spike_mesh",
       "type": "mesh",
       "parameters": {
-        "primitive": "cone",
-        "radius": 0.085,
-        "height": 1.35,
-        "segments": 8,
-        "visible": false
+        "primitive": "crystal",
+        "radius": 0.22,
+        "height": 1.0,
+        "segments": 6,
+        "visible": false,
+        "irregularity": 0.7,
+        "variants": 8
       }
     },
     {
       "id": "rock_mesh",
       "type": "mesh",
       "parameters": {
-        "primitive": "cube",
+        "primitive": "rock",
         "size": [
           1.0,
           0.7,
           0.8
         ],
-        "visible": false
+        "visible": false,
+        "radius": 0.5,
+        "segments": 12,
+        "irregularity": 0.65,
+        "variants": 8
       }
     },
     {
@@ -1089,8 +1095,8 @@
         "max_particles": 120,
         "lifetime": 2.3,
         "lifetime_variance": 0.15,
-        "size": 1.25,
-        "size_variance": 0.7,
+        "size": 1.05,
+        "size_variance": 0.4,
         "size_over_life": [
           [
             0.0,
@@ -1131,7 +1137,20 @@
         ],
         "render_mode": "mesh",
         "blend": "alpha",
-        "drag": 20.0
+        "drag": 20.0,
+        "orientation": "upright",
+        "tilt": 24.0,
+        "rotation_variance": 180.0,
+        "mesh_scale": [
+          0.75,
+          1.5,
+          0.75
+        ],
+        "mesh_scale_variance": [
+          0.25,
+          0.6,
+          0.25
+        ]
       },
       "inputs": {
         "mesh": "spike_mesh",
@@ -1196,8 +1215,8 @@
         "max_particles": 200,
         "lifetime": 2.4,
         "lifetime_variance": 0.3,
-        "size": 0.17,
-        "size_variance": 0.09,
+        "size": 0.32,
+        "size_variance": 0.16,
         "opacity_over_life": [
           [
             0.0,
@@ -1221,7 +1240,18 @@
         "render_mode": "mesh",
         "blend": "alpha",
         "drag": 1.4,
-        "mass": 2.0
+        "mass": 2.0,
+        "orientation": "tumble",
+        "mesh_scale": [
+          1.0,
+          0.7,
+          1.05
+        ],
+        "mesh_scale_variance": [
+          0.3,
+          0.2,
+          0.3
+        ]
       },
       "inputs": {
         "mesh": "rock_mesh",

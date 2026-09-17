@@ -466,3 +466,150 @@ TEST_CASE("curve tangents, tessellation and length", "[procedural][curve]") {
                 Catch::Approx(3.0f).margin(1e-4));
     }
 }
+
+// ---------------------------------------------------------------------------
+// seeded organic primitives (crystal / rock / shard)
+// ---------------------------------------------------------------------------
+
+namespace {
+
+// A faceted mesh duplicates its vertices per triangle, so every triangle owns
+// three consecutive indices and all three normals are the face normal.
+void require_flat_shaded(const MeshData& mesh) {
+    REQUIRE(mesh.positions.size() == mesh.indices.size());
+    for (size_t t = 0; t + 2 < mesh.indices.size(); t += 3) {
+        const Vec3 a = mesh.positions[mesh.indices[t]];
+        const Vec3 b = mesh.positions[mesh.indices[t + 1]];
+        const Vec3 c = mesh.positions[mesh.indices[t + 2]];
+        const Vec3 face = cross(b - a, c - a);
+        if (length(face) < 1e-9f) continue;
+        const Vec3 n = normalize(face);
+        for (int k = 0; k < 3; ++k)
+            REQUIRE(dot(mesh.normals[mesh.indices[t + static_cast<size_t>(k)]], n) == Catch::Approx(1.0f).margin(1e-4));
+    }
+}
+
+bool same_geometry(const MeshData& a, const MeshData& b) {
+    return a.positions == b.positions && a.normals == b.normals && a.indices == b.indices;
+}
+
+// Bounds contract: x,z inside [-radius, radius], y inside [-height/2, height/2].
+void require_within(const MeshData& mesh, float radius, float height) {
+    const Bounds bounds = mesh.bounds();
+    REQUIRE(bounds.valid());
+    REQUIRE(std::max(std::fabs(bounds.min.x), std::fabs(bounds.max.x)) <= radius + 1e-4f);
+    REQUIRE(std::max(std::fabs(bounds.min.z), std::fabs(bounds.max.z)) <= radius + 1e-4f);
+    REQUIRE(std::max(std::fabs(bounds.min.y), std::fabs(bounds.max.y)) <= height * 0.5f + 1e-4f);
+}
+
+}  // namespace
+
+TEST_CASE("crystal is a valid faceted spike", "[procedural][mesh][crystal]") {
+    const MeshData crystal = make_crystal(0.3f, 1.2f, 6, 0.5f, 11u);
+    require_valid(crystal);
+    require_flat_shaded(crystal);
+    require_within(crystal, 0.3f, 1.2f);
+
+    // The apex is the single highest vertex and the base sits at -height/2.
+    const Bounds bounds = crystal.bounds();
+    REQUIRE(bounds.min.y == Catch::Approx(-0.6f).margin(1e-4));
+    REQUIRE(bounds.max.y > 0.0f);
+
+    SECTION("a regular crystal has exactly one spike") {
+        // irregularity 0 never grows the twin spike: slices sides + slices cap triangles.
+        const MeshData regular = make_crystal(0.5f, 1.0f, 6, 0.0f, 7u);
+        require_valid(regular);
+        REQUIRE(regular.triangle_count() == 12);
+        REQUIRE(regular.bounds().max.y == Catch::Approx(0.5f).margin(1e-5));
+        // and the base ring is a regular hexagon of exactly `radius`
+        for (const Vec3& p : regular.positions) {
+            if (p.y > -0.4f) continue;
+            const float r = std::sqrt(p.x * p.x + p.z * p.z);
+            REQUIRE((r < 1e-5f || r == Catch::Approx(0.5f).margin(1e-5)));
+        }
+    }
+
+    SECTION("irregularity 1 always fuses a twin spike") {
+        const MeshData twinned = make_crystal(0.5f, 1.0f, 6, 1.0f, 7u);
+        require_valid(twinned);
+        REQUIRE(twinned.triangle_count() > 12);
+    }
+}
+
+TEST_CASE("rock is a valid faceted boulder", "[procedural][mesh][rock]") {
+    const MeshData low = make_rock(0.4f, 6, 0.6f, 5u);
+    require_valid(low);
+    require_flat_shaded(low);
+    require_within(low, 0.4f, 0.8f);
+    REQUIRE(low.triangle_count() == 20);  // bare icosahedron
+
+    const MeshData high = make_rock(0.4f, 24, 0.6f, 5u);
+    require_valid(high);
+    REQUIRE(high.triangle_count() == 80);  // one subdivision
+
+    SECTION("irregularity 0 is a plain icosphere") {
+        const MeshData ideal = make_rock(1.0f, 24, 0.0f, 3u);
+        require_valid(ideal);
+        for (const Vec3& p : ideal.positions) REQUIRE(length(p) == Catch::Approx(1.0f).margin(1e-4));
+    }
+
+    SECTION("irregularity moves the surface off the sphere") {
+        const MeshData bumpy = make_rock(1.0f, 24, 1.0f, 3u);
+        float worst = 0.0f;
+        for (const Vec3& p : bumpy.positions) worst = std::max(worst, std::fabs(length(p) - 1.0f));
+        REQUIRE(worst > 0.05f);
+    }
+}
+
+TEST_CASE("shard is a valid thin flake", "[procedural][mesh][shard]") {
+    const MeshData shard = make_shard(0.25f, 0.9f, 0.4f, 21u);
+    require_valid(shard);
+    require_flat_shaded(shard);
+    require_within(shard, 0.25f, 0.9f);
+
+    // Thin: the whole flake lives inside +/- 0.06 * radius on Z.
+    const Bounds bounds = shard.bounds();
+    REQUIRE(std::max(std::fabs(bounds.min.z), std::fabs(bounds.max.z)) <= 0.06f * 0.25f + 1e-4f);
+    // Sharp end: the topmost vertex is far above the widest part of the outline.
+    REQUIRE(bounds.max.y > 0.25f * 0.9f);
+}
+
+TEST_CASE("the seeded primitives are pure functions of (parameters, seed)", "[procedural][mesh][crystal][rock][shard]") {
+    for (uint32_t seed : {0u, 1u, 17u, 4242u}) {
+        REQUIRE(same_geometry(make_crystal(0.3f, 1.0f, 6, 0.5f, seed), make_crystal(0.3f, 1.0f, 6, 0.5f, seed)));
+        REQUIRE(same_geometry(make_rock(0.3f, 12, 0.5f, seed), make_rock(0.3f, 12, 0.5f, seed)));
+        REQUIRE(same_geometry(make_shard(0.3f, 1.0f, 0.5f, seed), make_shard(0.3f, 1.0f, 0.5f, seed)));
+    }
+
+    // Different seeds must give visibly different meshes, not just reordered ones.
+    for (uint32_t seed = 1; seed <= 8; ++seed) {
+        REQUIRE(!same_geometry(make_crystal(0.3f, 1.0f, 6, 0.5f, seed), make_crystal(0.3f, 1.0f, 6, 0.5f, seed + 1)));
+        REQUIRE(!same_geometry(make_rock(0.3f, 12, 0.5f, seed), make_rock(0.3f, 12, 0.5f, seed + 1)));
+        REQUIRE(!same_geometry(make_shard(0.3f, 1.0f, 0.5f, seed), make_shard(0.3f, 1.0f, 0.5f, seed + 1)));
+    }
+
+    // "Visibly different" means the vertices actually move, not that a float
+    // wobbled in the last bit.
+    const MeshData a = make_rock(1.0f, 12, 0.7f, 1u);
+    const MeshData b = make_rock(1.0f, 12, 0.7f, 2u);
+    REQUIRE(a.positions.size() == b.positions.size());
+    float worst = 0.0f;
+    for (size_t i = 0; i < a.positions.size(); ++i) worst = std::max(worst, distance(a.positions[i], b.positions[i]));
+    REQUIRE(worst > 0.05f);
+}
+
+TEST_CASE("the seeded primitives survive degenerate parameters", "[procedural][mesh]") {
+    for (int segments : {0, 3, 5, 8, 64}) {
+        require_valid(make_crystal(0.5f, 1.0f, segments, 0.35f, 2u));
+        require_valid(make_rock(0.5f, segments, 0.35f, 2u));
+    }
+    // Clamped irregularity and a zero height must not produce NaNs or garbage.
+    for (float irregularity : {-1.0f, 0.0f, 1.0f, 3.0f}) {
+        const MeshData crystal = make_crystal(0.5f, 1.0f, 6, irregularity, 9u);
+        require_valid(crystal);
+        require_within(crystal, 0.5f, 1.0f);
+        const MeshData shard = make_shard(0.5f, 1.0f, irregularity, 9u);
+        require_valid(shard);
+        require_within(shard, 0.5f, 1.0f);
+    }
+}

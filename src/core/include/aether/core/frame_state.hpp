@@ -43,6 +43,11 @@ struct ParticleBuffer {
     std::vector<float> custom0;
     std::vector<float> custom1;
     std::vector<uint32_t> seed;
+    // Mesh particles (RenderMode::Mesh). Billboard systems leave these at their
+    // defaults, which reproduce the pre-orientation behaviour exactly.
+    std::vector<Vec4> orientation;  // rotation quaternion (x,y,z,w); identity (0,0,0,1) when unused
+    std::vector<Vec3> scale3;       // per-axis multipliers on `size`; (1,1,1) when unused
+    std::vector<uint32_t> variant;  // baked mesh variant index ("<mesh_id>" for 0, "<mesh_id>#k" otherwise)
 
     size_t count() const { return position.size(); }
     void clear();

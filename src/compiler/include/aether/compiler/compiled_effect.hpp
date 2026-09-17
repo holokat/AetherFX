@@ -32,6 +32,7 @@ struct CompiledNode {
     std::string material_id;          // ResourceSet keys ("" = default)
     std::string sprite_id;
     std::string mesh_id;
+    int mesh_variants = 1;            // mesh nodes: baked seeded variants ("<id>", "<id>#1" .. "<id>#N-1")
     std::string texture_id;
     NodeId shape_curve;               // emitter shape=curve / trail source curve
     NodeId shape_mesh;

@@ -155,6 +155,15 @@ NodeSpec spec_particle_system() {
     n.params.push_back(pb_float("friction", 0.2f).range_of(0.0, 1.0).doc("tangential friction on collision"));
     n.params.push_back(pb_bool("kill_on_collision", false).doc("destroy the particle on the first collision"));
     n.params.push_back(pb_float("collision_radius", 0.0f).doc("0 = use size*0.5").unit("m"));
+    n.params.push_back(pb_enum("orientation", "upright", {"upright", "random", "velocity", "tumble"})
+                           .doc("render_mode=mesh: how the instanced mesh is oriented in 3D"));
+    n.params.push_back(pb_float("tilt", 0.0f).range_of(0.0, 180.0)
+                           .doc("orientation=upright|velocity: per-particle random lean of the up axis, "
+                                "uniform in [0, tilt] around a random azimuth")
+                           .unit("deg"));
+    n.params.push_back(pb_vec3("mesh_scale", Vec3{1, 1, 1}).doc("render_mode=mesh: per-axis multipliers on top of size"));
+    n.params.push_back(pb_vec3("mesh_scale_variance", Vec3{0, 0, 0})
+                           .doc("+/- uniform per axis on mesh_scale (result clamped to >= 0.05)"));
     n.inputs = {port("material", {NodeType::Material}, false, false, "surface description"),
                 port("sprite", {NodeType::Texture}, false, false, "billboard sprite / flipbook"),
                 port("mesh", {NodeType::Mesh}, false, false, "instanced mesh when render_mode=mesh"),
@@ -244,13 +253,18 @@ NodeSpec spec_mesh() {
     n.params.push_back(pb_enum("source", "primitive", {"primitive", "imported", "procedural", "generated", "particle_instanced"})
                            .doc("where the geometry comes from"));
     n.params.push_back(pb_enum("primitive", "sphere",
-                               {"sphere", "cube", "plane", "disc", "ring", "cone", "cylinder", "capsule", "ribbon", "tube"})
-                           .doc("built-in primitive"));
+                               {"sphere", "cube", "plane", "disc", "ring", "cone", "cylinder", "capsule", "ribbon",
+                                "tube", "crystal", "rock", "shard"})
+                           .doc("built-in primitive; crystal/rock/shard are procedural and seeded"));
     n.params.push_back(pb_float("radius", 0.5f).min_of(0.0).doc("sphere/disc/ring/cone/cylinder radius").unit("m"));
     n.params.push_back(pb_float("inner_radius", 0.0f).min_of(0.0).doc("ring inner radius").unit("m"));
     n.params.push_back(pb_float("height", 1.0f).min_of(0.0).doc("cone/cylinder/capsule/tube height").unit("m"));
     n.params.push_back(pb_vec3("size", Vec3{1, 1, 1}).doc("cube/plane extents").unit("m"));
     n.params.push_back(pb_int("segments", 24).range_of(3.0, 256.0).doc("tessellation"));
+    n.params.push_back(pb_int("variants", 1).range_of(1.0, 16.0)
+                           .doc("crystal/rock/shard: how many seeded variants to bake; other primitives ignore it"));
+    n.params.push_back(pb_float("irregularity", 0.35f).range_of(0.0, 1.0)
+                           .doc("crystal/rock/shard: how far the generator strays from the ideal shape"));
     n.params.push_back(pb_string("path", "").doc("imported (obj) - V1 loads OBJ only"));
     n.params.push_back(pb_color("color", Color{1, 1, 1, 1}).animated().doc("tint (linear)"));
     n.params.push_back(pb_float("emissive", 0.0f).min_of(0.0).animated().doc("emissive multiplier (HDR)"));

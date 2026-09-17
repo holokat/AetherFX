@@ -51,6 +51,21 @@ namespace {
 // FrameState always produces the same image.
 // ---------------------------------------------------------------------------------------------
 constexpr float kBackgroundDepth = 1.0e30f;  // finite sentinel; keeps soft-particle math NaN-free
+
+// Rotation matrix of a unit quaternion (x, y, z, w). The identity quaternion
+// gives exactly Mat4::identity(), so a FrameState that never set an orientation
+// renders exactly as it did before mesh particles could be oriented.
+Mat4 quat_matrix(Vec4 q) {
+    const float xx = q.x * q.x, yy = q.y * q.y, zz = q.z * q.z;
+    const float xy = q.x * q.y, xz = q.x * q.z, yz = q.y * q.z;
+    const float wx = q.w * q.x, wy = q.w * q.y, wz = q.w * q.z;
+    Mat4 m;
+    m.at(0, 0) = 1.0f - 2.0f * (yy + zz); m.at(0, 1) = 2.0f * (xy - wz);        m.at(0, 2) = 2.0f * (xz + wy);
+    m.at(1, 0) = 2.0f * (xy + wz);        m.at(1, 1) = 1.0f - 2.0f * (xx + zz); m.at(1, 2) = 2.0f * (yz - wx);
+    m.at(2, 0) = 2.0f * (xz - wy);        m.at(2, 1) = 2.0f * (yz + wx);        m.at(2, 2) = 1.0f - 2.0f * (xx + yy);
+    return m;
+}
+
 constexpr float kGroundAmbient = 0.15f;
 constexpr float kMeshAmbient = 0.15f;
 // Shaded ("lit") billboard model, see shade_volumetric().
@@ -406,6 +421,8 @@ struct ResolvedParticles {
     const TextureResource* sprite = nullptr;
     const Image* noise = nullptr;  // dissolve/erosion mask source (material or built-in)
     const MeshData* mesh = nullptr;
+    std::vector<const MeshData*> mesh_variants;  // [0] == mesh; index k is the baked "<mesh_id>#k"
+    float max_mesh_scale = 1.0f;                 // largest per-particle scale3 component, for culling
     const Gradient* temperature = nullptr;
     BlendMode blend = BlendMode::Additive;
     bool lit = false;
@@ -943,6 +960,7 @@ private:
 
                 // Conservative on-screen test using the largest possible half extent.
                 float half = size * 0.5f;
+                if (mesh_mode) half *= rp.max_mesh_scale;  // per-axis mesh_scale can enlarge the instance
                 if (pb.render_mode == RenderMode::StretchedBillboard && pi < pb.velocity.size()) {
                     const float speed = length(pb.velocity[pi]);
                     half = std::max(half, size * (1.0f + pb.velocity_stretch * speed) * 0.5f);
@@ -1084,6 +1102,18 @@ private:
         rp.soft_distance = pb.soft_particle_distance;
         rp.sprite = pb.sprite_id.empty() ? nullptr : resources.texture(pb.sprite_id);
         rp.mesh = pb.mesh_id.empty() ? nullptr : resources.mesh(pb.mesh_id);
+        // Seeded mesh variants are baked as "<mesh_id>", "<mesh_id>#1", ...; probe
+        // until one is missing (the compiler caps `variants` at 16).
+        if (rp.mesh != nullptr) {
+            rp.mesh_variants.push_back(rp.mesh);
+            for (int k = 1; k < 16; ++k) {
+                const MeshData* variant = resources.mesh(pb.mesh_id + "#" + std::to_string(k));
+                if (variant == nullptr) break;
+                rp.mesh_variants.push_back(variant);
+            }
+        }
+        for (const Vec3& s3 : pb.scale3)
+            rp.max_mesh_scale = std::max(rp.max_mesh_scale, std::max(s3.x, std::max(s3.y, s3.z)));
         rp.sprite_columns = std::max(1, pb.sprite_columns);
         rp.sprite_rows = std::max(1, pb.sprite_rows);
         rp.sprite_cells = rp.sprite_columns * rp.sprite_rows;
@@ -1347,8 +1377,17 @@ private:
         const ParticleShade sh = shade_particle(rp, i);
         if (sh.alpha <= 0.0f) return;
         const float size = pb.size[i];
-        const float rot = i < pb.rotation.size() ? pb.rotation[i] : 0.0f;
-        const Mat4 xf = Mat4::translation(pb.position[i]) * Mat4::rotation_y(rot) * Mat4::scaling(Vec3{size});
+        // The runtime folds the billboard yaw into the orientation quaternion, so
+        // identity + scale3 = 1 reproduces the old yaw-free transform exactly.
+        const Vec4 q = i < pb.orientation.size() ? pb.orientation[i] : Vec4{0.0f, 0.0f, 0.0f, 1.0f};
+        const Vec3 s3 = i < pb.scale3.size() ? pb.scale3[i] : Vec3::one();
+        const Mat4 xf = Mat4::translation(pb.position[i]) * quat_matrix(q) * Mat4::scaling(Vec3{size} * s3);
+        const MeshData* mesh = rp.mesh;
+        if (i < pb.variant.size()) {
+            const size_t v = pb.variant[i];
+            if (v < rp.mesh_variants.size()) mesh = rp.mesh_variants[v];  // missing variants fall back to 0
+        }
+        if (mesh == nullptr) return;
 
         MeshShading ms;
         ms.albedo = sh.color;
@@ -1360,7 +1399,7 @@ private:
         ms.opaque = false;
         ms.blend = rp.blend;
         ms.depth_write = rp.blend == BlendMode::Alpha;
-        draw_mesh(fb, proj, state, settings, *rp.mesh, xf, ms);
+        draw_mesh(fb, proj, state, settings, *mesh, xf, ms);
     }
 
     // Camera-facing quad per polyline segment with a bright core and soft edges:

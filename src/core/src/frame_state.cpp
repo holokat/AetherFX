@@ -25,23 +25,27 @@ void ParticleBuffer::clear() {
     position.clear(); previous_position.clear(); velocity.clear(); acceleration.clear();
     age.clear(); lifetime.clear(); size.clear(); rotation.clear(); angular_velocity.clear();
     color.clear(); opacity.clear(); emissive.clear(); mass.clear(); custom0.clear(); custom1.clear(); seed.clear();
+    orientation.clear(); scale3.clear(); variant.clear();
 }
 void ParticleBuffer::reserve(size_t n) {
     position.reserve(n); previous_position.reserve(n); velocity.reserve(n); acceleration.reserve(n);
     age.reserve(n); lifetime.reserve(n); size.reserve(n); rotation.reserve(n); angular_velocity.reserve(n);
     color.reserve(n); opacity.reserve(n); emissive.reserve(n); mass.reserve(n); custom0.reserve(n); custom1.reserve(n); seed.reserve(n);
+    orientation.reserve(n); scale3.reserve(n); variant.reserve(n);
 }
 void ParticleBuffer::resize(size_t n) {
     position.resize(n); previous_position.resize(n); velocity.resize(n); acceleration.resize(n);
     age.resize(n, 0.0f); lifetime.resize(n, 1.0f); size.resize(n, 0.1f); rotation.resize(n, 0.0f);
     angular_velocity.resize(n, 0.0f); color.resize(n, Color::white()); opacity.resize(n, 1.0f);
     emissive.resize(n, 0.0f); mass.resize(n, 1.0f); custom0.resize(n, 0.0f); custom1.resize(n, 0.0f); seed.resize(n, 0u);
+    orientation.resize(n, Vec4{0.0f, 0.0f, 0.0f, 1.0f}); scale3.resize(n, Vec3::one()); variant.resize(n, 0u);
 }
 void ParticleBuffer::swap_remove(size_t i) {
     erase_swap(position, i); erase_swap(previous_position, i); erase_swap(velocity, i); erase_swap(acceleration, i);
     erase_swap(age, i); erase_swap(lifetime, i); erase_swap(size, i); erase_swap(rotation, i);
     erase_swap(angular_velocity, i); erase_swap(color, i); erase_swap(opacity, i); erase_swap(emissive, i);
     erase_swap(mass, i); erase_swap(custom0, i); erase_swap(custom1, i); erase_swap(seed, i);
+    erase_swap(orientation, i); erase_swap(scale3, i); erase_swap(variant, i);
 }
 void ParticleBuffer::push_default() { resize(count() + 1); }
 
@@ -65,6 +69,7 @@ uint64_t FrameState::hash() const {
         hash_vec(h, p.age); hash_vec(h, p.lifetime); hash_vec(h, p.size); hash_vec(h, p.rotation);
         hash_vec(h, p.angular_velocity); hash_vec(h, p.color); hash_vec(h, p.opacity); hash_vec(h, p.emissive);
         hash_vec(h, p.mass); hash_vec(h, p.custom0); hash_vec(h, p.custom1); hash_vec(h, p.seed);
+        hash_vec(h, p.orientation); hash_vec(h, p.scale3); hash_vec(h, p.variant);
     }
     for (const auto& l : lights) { hash_str(h, l.id); hash_bytes(h, &l.position, sizeof l.position); hash_bytes(h, &l.color, sizeof l.color); hash_bytes(h, &l.intensity, sizeof l.intensity); hash_bytes(h, &l.radius, sizeof l.radius); }
     for (const auto& b : beams) { hash_str(h, b.id); for (const auto& pl : b.polylines) hash_vec(h, pl); hash_bytes(h, &b.width, sizeof b.width); hash_bytes(h, &b.emissive, sizeof b.emissive); }

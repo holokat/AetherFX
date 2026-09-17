@@ -1394,6 +1394,9 @@
             "inner_radius": {
               "$ref": "#/$defs/param_float_min0"
             },
+            "irregularity": {
+              "$ref": "#/$defs/param_float_min0_max1"
+            },
             "path": {
               "$ref": "#/$defs/param_string"
             },
@@ -1404,7 +1407,7 @@
               "$ref": "#/$defs/param_vec3"
             },
             "primitive": {
-              "$ref": "#/$defs/param_enum_sphere_cube_plane_disc_ring_cone_cylinder_capsule_ribbon_tube"
+              "$ref": "#/$defs/param_enum_sphere_cube_plane_disc_ring_cone_cylinder_capsule_ribbon_tube_crystal_rock_shard"
             },
             "radius": {
               "$ref": "#/$defs/param_float_min0"
@@ -1426,6 +1429,9 @@
             },
             "start_time": {
               "$ref": "#/$defs/param_float_min0"
+            },
+            "variants": {
+              "$ref": "#/$defs/param_int_min1_max16"
             },
             "visible": {
               "$ref": "#/$defs/param_bool"
@@ -1634,11 +1640,20 @@
             "max_particles": {
               "$ref": "#/$defs/param_int_min1_max2e_06"
             },
+            "mesh_scale": {
+              "$ref": "#/$defs/param_vec3"
+            },
+            "mesh_scale_variance": {
+              "$ref": "#/$defs/param_vec3"
+            },
             "opacity": {
               "$ref": "#/$defs/param_float_min0_max1"
             },
             "opacity_over_life": {
               "$ref": "#/$defs/param_curve"
+            },
+            "orientation": {
+              "$ref": "#/$defs/param_enum_upright_random_velocity_tumble"
             },
             "physics": {
               "$ref": "#/$defs/param_enum_none_rigid"
@@ -1675,6 +1690,9 @@
             },
             "sprite_rows": {
               "$ref": "#/$defs/param_int_min1_max64"
+            },
+            "tilt": {
+              "$ref": "#/$defs/param_float_min0_max180"
             },
             "velocity_stretch": {
               "$ref": "#/$defs/param_float_min0"
@@ -2780,7 +2798,7 @@
         }
       ]
     },
-    "param_enum_sphere_cube_plane_disc_ring_cone_cylinder_capsule_ribbon_tube": {
+    "param_enum_sphere_cube_plane_disc_ring_cone_cylinder_capsule_ribbon_tube_crystal_rock_shard": {
       "anyOf": [
         {
           "enum": [
@@ -2793,7 +2811,10 @@
             "cylinder",
             "capsule",
             "ribbon",
-            "tube"
+            "tube",
+            "crystal",
+            "rock",
+            "shard"
           ],
           "type": "string"
         },
@@ -2814,7 +2835,10 @@
                 "cylinder",
                 "capsule",
                 "ribbon",
-                "tube"
+                "tube",
+                "crystal",
+                "rock",
+                "shard"
               ],
               "type": "string"
             }
@@ -2845,6 +2869,40 @@
               "enum": [
                 "unlit",
                 "lit"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_enum_upright_random_velocity_tumble": {
+      "anyOf": [
+        {
+          "enum": [
+            "upright",
+            "random",
+            "velocity",
+            "tumble"
+          ],
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "enum": [
+                "upright",
+                "random",
+                "velocity",
+                "tumble"
               ],
               "type": "string"
             }
@@ -3213,6 +3271,32 @@
             },
             "value": {
               "maximum": 1024,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_int_min1_max16": {
+      "anyOf": [
+        {
+          "maximum": 16,
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "maximum": 16,
               "minimum": 1,
               "type": "integer"
             }
