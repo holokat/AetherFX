@@ -362,6 +362,14 @@ NodeSpec spec_beam() {
                            .doc("when > 0 the scrolling displacement repeats exactly with this period, so a sustain "
                                 "phase of that length (or a multiple) loops without a pop (0 = never repeats)")
                            .unit("s"));
+    n.params.push_back(pb_float("noise_offset", 0.0f)
+                           .doc("reads the displacement field this much further along: beams that share a "
+                                "`noise_seed` but differ in `noise_offset` are phase-shifted copies of one wave, so "
+                                "they separate and re-cross like a braid")
+                           .unit("m"));
+    n.params.push_back(pb_int("noise_seed", 0).min_of(0.0)
+                           .doc("when > 0 the displacement field is seeded by this number (with the effect seed) "
+                                "instead of by the node, so several beams can follow one shared spine"));
     n.params.push_back(pb_float("noise_taper", 0.0f).range_of(0.0, 0.5)
                            .doc("fraction of the beam length over which the displacement eases in from each end, so "
                                 "the path leaves both anchors smoothly (0 = full displacement beside the endpoints)"));

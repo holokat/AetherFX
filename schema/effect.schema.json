@@ -434,8 +434,14 @@
             "noise_loop": {
               "$ref": "#/$defs/param_float_min0"
             },
+            "noise_offset": {
+              "$ref": "#/$defs/param_float"
+            },
             "noise_scroll": {
               "$ref": "#/$defs/param_float"
+            },
+            "noise_seed": {
+              "$ref": "#/$defs/param_int_min0"
             },
             "noise_taper": {
               "$ref": "#/$defs/param_float_min0_max0p5"

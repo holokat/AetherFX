@@ -967,23 +967,32 @@ void CpuRuntime::emit_beam(const CompiledNode& cn, const Node& n, double t1) {
     // re-rolling. With `noise_loop` the field is a cross-fade between two copies
     // of itself one period apart - both travel at the same speed, so it still
     // reads as one travelling wave, and the fade makes it exactly periodic.
-    // `noise_taper` eases the displacement in from both ends. All three are pure
-    // functions of time and all three are off at 0, which keeps the V1 vertices.
+    // `noise_taper` eases the displacement in from both ends. `noise_seed` lets
+    // several beams read ONE field and `noise_offset` reads it further along, so
+    // strands become phase-shifted copies of one wave: a braid round a shared
+    // spine. Everything is a pure function of time and everything is off at 0,
+    // which keeps the V1 vertices.
     const float noise_scroll = param_float(n, "noise_scroll");
     const float noise_loop = std::max(0.0f, param_float(n, "noise_loop"));
     const float noise_taper = clamp(param_float(n, "noise_taper"), 0.0f, 0.5f);
-    const bool flowing = noise_scroll != 0.0f;
-    float flow_offset = 0.0f;        // metres the field has travelled
-    float flow_offset_next = 0.0f;   // the same field one loop earlier (noise_loop only)
-    float flow_blend = 0.0f;         // cross-fade weight of the second copy
-    if (flowing) {
+    const float noise_offset = param_float(n, "noise_offset");
+    const int noise_seed = param_int(n, "noise_seed");
+    const uint32_t field_seed =
+        noise_seed > 0 ? seed32_of(derive_seed(compiled_.effect.seed, "$beam_noise",
+                                               std::optional<uint32_t>{static_cast<uint32_t>(noise_seed)}))
+                       : seed;
+    const bool flowing = noise_scroll != 0.0f || noise_offset != 0.0f;
+    float flow_offset = noise_offset;       // metres the field has travelled, plus the phase
+    float flow_offset_next = noise_offset;  // the same field one loop earlier (noise_loop only)
+    float flow_blend = 0.0f;                // cross-fade weight of the second copy
+    if (noise_scroll != 0.0f) {
         if (noise_loop > 0.0f) {
             const double phase = std::fmod(t1, static_cast<double>(noise_loop));
             flow_blend = static_cast<float>(phase / static_cast<double>(noise_loop));
-            flow_offset = noise_scroll * static_cast<float>(phase);
-            flow_offset_next = noise_scroll * static_cast<float>(phase - static_cast<double>(noise_loop));
+            flow_offset += noise_scroll * static_cast<float>(phase);
+            flow_offset_next += noise_scroll * static_cast<float>(phase - static_cast<double>(noise_loop));
         } else {
-            flow_offset = noise_scroll * static_cast<float>(t1);
+            flow_offset += noise_scroll * static_cast<float>(t1);
         }
     }
 
@@ -1006,19 +1015,23 @@ void CpuRuntime::emit_beam(const CompiledNode& cn, const Node& n, double t1) {
                 float n2 = 0.0f;
                 if (!flowing) {
                     const float along = f * span_length * frequency;
-                    n1 = procedural::fbm3(Vec3{along, 0.0f, key_f}, seed, fbm);
-                    n2 = procedural::fbm3(Vec3{along, 17.0f, key_f}, seed, fbm);
+                    n1 = procedural::fbm3(Vec3{along, 0.0f, key_f}, field_seed, fbm);
+                    n2 = procedural::fbm3(Vec3{along, 17.0f, key_f}, field_seed, fbm);
                 } else {
-                    const float along = (f * span_length - flow_offset) * frequency;
-                    n1 = procedural::fbm3(Vec3{along, 0.0f, key_f}, seed, fbm);
-                    n2 = procedural::fbm3(Vec3{along, 17.0f, key_f}, seed, fbm);
+                    // A flowing field is measured from the TARGET end, the one the flow
+                    // arrives at: when the origin moves (a channel that extends, retracts
+                    // or follows its victim) the shape stays put where it is held.
+                    const float from_target = (1.0f - f) * span_length;
+                    const float along = (from_target + flow_offset) * frequency;
+                    n1 = procedural::fbm3(Vec3{along, 0.0f, key_f}, field_seed, fbm);
+                    n2 = procedural::fbm3(Vec3{along, 17.0f, key_f}, field_seed, fbm);
                     if (flow_blend > 0.0f) {
-                        const float along_next = (f * span_length - flow_offset_next) * frequency;
+                        const float along_next = (from_target + flow_offset_next) * frequency;
                         const float keep = 1.0f - flow_blend;
                         // two uncorrelated fields average to a smaller one: renormalise
                         const float gain = 1.0f / std::sqrt(keep * keep + flow_blend * flow_blend);
-                        n1 = (keep * n1 + flow_blend * procedural::fbm3(Vec3{along_next, 0.0f, key_f}, seed, fbm)) * gain;
-                        n2 = (keep * n2 + flow_blend * procedural::fbm3(Vec3{along_next, 17.0f, key_f}, seed, fbm)) * gain;
+                        n1 = (keep * n1 + flow_blend * procedural::fbm3(Vec3{along_next, 0.0f, key_f}, field_seed, fbm)) * gain;
+                        n2 = (keep * n2 + flow_blend * procedural::fbm3(Vec3{along_next, 17.0f, key_f}, field_seed, fbm)) * gain;
                     }
                 }
                 float reach = amp;

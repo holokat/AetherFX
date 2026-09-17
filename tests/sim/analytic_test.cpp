@@ -570,8 +570,9 @@ TEST_CASE("beam noise_scroll makes the path travel smoothly instead of re-rollin
     CHECK(distance(at_050.front(), Vec3{3.0f, 1.25f, 0.0f}) < 1e-5f);
     CHECK(distance(at_050.back(), Vec3{-3.0f, 1.35f, 0.0f}) < 1e-5f);
 
-    // The field travels origin -> target at noise_scroll m/s: at t = 0.5 s and 2 m/s
-    // every vertex reads the V1 displacement field one metre further back.
+    // The field travels origin -> target at noise_scroll m/s and is measured from the
+    // target end (the end the flow arrives at): at t = 0.5 s and 2 m/s a vertex
+    // `d` metres from the target reads the displacement field at `d + 1`.
     const uint64_t stream = derive_seed(e.seed, "bolt", std::optional<uint32_t>{});
     const uint32_t seed = static_cast<uint32_t>(stream ^ (stream >> 32));
     const procedural::FbmParams fbm{3, 2.0f, 0.5f, procedural::NoiseBasis::Simplex};
@@ -583,7 +584,7 @@ TEST_CASE("beam noise_scroll makes the path travel smoothly instead of re-rollin
     const Vec3 v = cross(forward, u);
     for (int i = 1; i < 48; ++i) {
         const float f = static_cast<float>(i) / 48.0f;
-        const float along = (f * span_length - 2.0f * 0.5f) * 0.5f;
+        const float along = ((1.0f - f) * span_length + 2.0f * 0.5f) * 0.5f;
         const Vec3 expected = origin + span * f +
                               u * (0.3f * procedural::fbm3(Vec3{along, 0.0f, 0.0f}, seed, fbm)) +
                               v * (0.3f * procedural::fbm3(Vec3{along, 17.0f, 0.0f}, seed, fbm));
@@ -632,6 +633,53 @@ TEST_CASE("beam noise_loop repeats the flow exactly", "[sim][analytic]") {
     };
     CHECK(reach(half_way) > 0.4f * reach(start));
     CHECK(reach(half_way) < 2.5f * reach(start));
+}
+
+TEST_CASE("beams sharing a noise_seed follow one field and noise_offset shifts its phase", "[sim][analytic]") {
+    // Three strands between the same anchors: two read the shared field 7, the
+    // third keeps the field its own node id seeds.
+    Effect e = channel_effect();
+    const Vec3 origin{3.0f, 1.25f, 0.0f}, target{-3.0f, 1.35f, 0.0f};
+    const float span_length = length(target - origin);
+    const float spacing = span_length / 48.0f;  // metres between vertices
+    {
+        Node* bolt = e.find_node("bolt");
+        bolt->parameters["noise_scroll"] = Parameter{2.0f};
+        bolt->parameters["noise_seed"] = Parameter{7};
+    }
+    Node twin = *e.find_node("bolt");
+    twin.id = "twin";
+    Node shifted = twin;
+    shifted.id = "shifted";
+    shifted.parameters["noise_offset"] = Parameter{8.0f * spacing};
+    Node loner = twin;
+    loner.id = "loner";
+    loner.parameters["noise_seed"] = Parameter{0};
+    e.add_node(twin);
+    e.add_node(shifted);
+    e.add_node(loner);
+
+    std::unique_ptr<sim::IRuntime> rt = runtime_for(e);
+    rt->simulate_to(0.75);
+    const std::vector<Vec3> bolt = beam_of(rt->state(), "bolt")->paths.front().points;
+    const std::vector<Vec3> same = beam_of(rt->state(), "twin")->paths.front().points;
+    const std::vector<Vec3> moved = beam_of(rt->state(), "shifted")->paths.front().points;
+    const std::vector<Vec3> own = beam_of(rt->state(), "loner")->paths.front().points;
+    REQUIRE(bolt.size() == 49u);
+    CHECK(same == bolt);                       // one field, one path - whatever the node is called
+    CHECK(largest_move(own, bolt) > 0.02f);    // noise_seed 0 keeps the node's own field
+    CHECK(largest_move(moved, bolt) > 0.02f);  // a phase shift is a different path ...
+
+    // ... but the same wave: the field is measured from the target end, so a strand
+    // reading it 8 vertex spacings further along has, at vertex i, the displacement
+    // the unshifted strand has 8 vertices nearer the origin.
+    const auto displacement = [&](const std::vector<Vec3>& points, size_t i) {
+        return points[i] - lerp(origin, target, static_cast<float>(i) / 48.0f);
+    };
+    for (size_t i = 9; i < 48; ++i) {
+        INFO("vertex " << i);
+        CHECK(distance(displacement(moved, i), displacement(bolt, i - 8)) < 2e-5f);
+    }
 }
 
 TEST_CASE("beam noise_taper eases the displacement in from both anchors", "[sim][analytic]") {
