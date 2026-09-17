@@ -169,6 +169,13 @@ var S = {
   statusTimer: null
 };
 
+/* Inline icons (visual only; the transport button swaps between them). */
+var ICON_PLAY = '<svg class="ic" viewBox="0 0 16 16" aria-hidden="true">' +
+  '<path d="M5.4 3.5a.55.55 0 0 1 .85-.46l6.1 4.5a.55.55 0 0 1 0 .92l-6.1 4.5a.55.55 0 0 1-.85-.46z" fill="currentColor" stroke="none"/></svg>';
+var ICON_PAUSE = '<svg class="ic" viewBox="0 0 16 16" aria-hidden="true">' +
+  '<rect x="4.6" y="3.4" width="2.5" height="9.2" rx="1.1" fill="currentColor" stroke="none"/>' +
+  '<rect x="8.9" y="3.4" width="2.5" height="9.2" rx="1.1" fill="currentColor" stroke="none"/></svg>';
+
 var NODE_GLYPH = {
   emitter: '✳', particle_system: '∷', force: '↯', field: '▦',
   volume: '▣', mesh: '◆', curve: '∿', trail: '≈', beam: '╱',
@@ -202,6 +209,7 @@ function refreshStatus() {
     var genText = $('generator-status');
     genText.textContent = 'generator: ' + (gen.name || 'none') + (gen.available ? '' : ' (unavailable)');
     genText.title = gen.available ? 'ready' : (gen.reason || 'no generator backend configured');
+    genText.classList.toggle('off', !gen.available);   /* styled as the status dot */
 
     var button = $('btn-generate');
     var busy = !!S.job;
@@ -243,9 +251,16 @@ function followExternalChanges(status) {
 
 function setEffectName(active) {
   var node = $('effect-name');
-  if (!active) { node.textContent = 'no effect'; node.title = 'no effect is open'; return; }
-  node.textContent = (active.name || 'untitled') + (active.dirty ? ' *' : '');
-  node.title = (active.effect_id || '') + (active.path ? '\n' + active.path : '');
+  if (!active) {
+    node.textContent = 'no effect';
+    node.title = 'no effect is open';
+    node.classList.remove('dirty');
+    return;
+  }
+  node.textContent = active.name || 'untitled';
+  node.classList.toggle('dirty', !!active.dirty);   /* styled as the modified dot */
+  node.title = (active.effect_id || '') + (active.path ? '\n' + active.path : '') +
+    (active.dirty ? '\nunsaved changes' : '');
 }
 
 /* ====================================================================== *
@@ -463,7 +478,7 @@ function nodeRow(node, errorNodes) {
   return el('div', {
     class: classes.join(' '),
     title: node.type + ' · ' + node.id + (node.parent ? '\nparent: ' + node.parent : ''),
-    data: { node: node.id },
+    data: { node: node.id, type: node.type || '' },
     onclick: function () { selectNode(node.id); }
   },
     el('span', { class: 'glyph', text: NODE_GLYPH[node.type] || '●' }),
@@ -596,7 +611,7 @@ function renderParams() {
   var enabled = el('input', { type: 'checkbox', checked: node.enabled !== false, title: 'node enabled' });
   enabled.addEventListener('change', function () { setNodeProperty(node.id, { enabled: enabled.checked }); });
 
-  body.appendChild(el('div', { class: 'node-head' },
+  body.appendChild(el('div', { class: 'node-head', data: { type: node.type || '' } },
     el('span', { class: 'glyph', text: NODE_GLYPH[node.type] || '●' }),
     el('span', { class: 'id', text: node.id }),
     el('span', { class: 'type', text: node.type }),
@@ -939,6 +954,14 @@ function timeAt(index) {
 
 function usingPreview() { return !!(S.preview && S.preview.count && !S.previewStale); }
 
+/* The scrubber paints its own progress: CSS reads --fill on the input. */
+function paintSlider() {
+  var slider = $('frame-slider');
+  var max = parseFloat(slider.max) || 0;
+  var value = parseFloat(slider.value) || 0;
+  slider.style.setProperty('--fill', (max > 0 ? (value / max) * 100 : 0).toFixed(2) + '%');
+}
+
 function syncTransportRange() {
   var slider = $('frame-slider');
   var max = timelineMax();
@@ -946,6 +969,7 @@ function syncTransportRange() {
   if (S.index > max) S.index = max;
   slider.value = String(S.index);
   slider.disabled = !S.data;
+  paintSlider();
   updateReadout();
 }
 
@@ -959,6 +983,7 @@ function setIndex(index, fromPlayback) {
   var max = timelineMax();
   S.index = Math.max(0, Math.min(Math.round(index), max));
   $('frame-slider').value = String(S.index);
+  paintSlider();
   updateReadout();
   if (fromPlayback || usingPreview()) showPreviewFrame(S.index);
   else requestFrame(timeAt(S.index), false);
@@ -1341,8 +1366,9 @@ function play() {
   if (!S.preview || !S.preview.count) { renderPreview(true); return; }
   S.playing = true;
   S.lastTick = 0;
-  $('btn-play').innerHTML = '&#10073;&#10073;';
+  $('btn-play').innerHTML = ICON_PAUSE;
   $('btn-play').title = 'Pause (Space)';
+  $('btn-play').setAttribute('aria-label', 'Pause');
   S.raf = requestAnimationFrame(tick);
 }
 
@@ -1351,8 +1377,9 @@ function pause() {
   S.playing = false;
   if (S.raf) cancelAnimationFrame(S.raf);
   S.raf = null;
-  $('btn-play').innerHTML = '&#9654;';
+  $('btn-play').innerHTML = ICON_PLAY;
   $('btn-play').title = 'Play (Space)';
+  $('btn-play').setAttribute('aria-label', 'Play');
 }
 
 function togglePlay() { if (S.playing) pause(); else play(); }
@@ -1455,12 +1482,12 @@ function jobEventNode(event) {
   var kind = event.kind || 'text';
   if (kind === 'status') return el('div', { class: 'ev-status', text: event.text || '' });
   if (kind === 'text') return el('div', { class: 'ev-text', text: event.text || '' });
-  if (kind === 'error') return el('div', { class: 'ev-error', text: '✗ ' + (event.text || 'error') });
-  if (kind === 'done') return el('div', { class: 'ev-done', text: '✔ ' + (event.summary || 'done') });
+  if (kind === 'error') return el('div', { class: 'ev-error', text: event.text || 'error' });
+  if (kind === 'done') return el('div', { class: 'ev-done', text: event.summary || 'done' });
   if (kind === 'tool_call') return el('div', { class: 'ev-call', text: formatToolCall(event) });
   if (kind === 'tool_result') {
     return el('div', { class: 'ev-result ' + (event.ok === false ? 'bad' : 'ok') },
-      (event.ok === false ? '✗ ' : '✓ ') + (event.name || '') + (event.summary ? ' — ' + shorten(event.summary, 180) : ''));
+      (event.name || '') + (event.summary ? ' — ' + shorten(event.summary, 180) : ''));
   }
   if (kind === 'image') {
     var url = event.url || event.path;
@@ -1545,6 +1572,17 @@ function wire() {
     else if (key === 'Home') { ev.preventDefault(); pause(); setIndex(0); }
     else if (key === 'End') { ev.preventDefault(); pause(); setIndex(timelineMax()); }
   });
+
+  /* The stage popover is a <details>; close it like a real popover. */
+  var stagePop = $('stage-pop');
+  if (stagePop) {
+    document.addEventListener('mousedown', function (ev) {
+      if (stagePop.open && !stagePop.contains(ev.target)) stagePop.open = false;
+    });
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape' && stagePop.open) { stagePop.open = false; }
+    });
+  }
 
   window.addEventListener('beforeunload', function () { resetPreview(); });
 }

@@ -4,151 +4,222 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AetherFX Studio</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='%234aa3ff'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10 1.4l2.2 5.3 5.3 2.2-5.3 2.2L10 16.4l-2.2-5.3L2.5 8.9l5.3-2.2z' fill='%238b5cf6'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
+<!-- ===================== HEADER ===================== -->
 <header id="topbar">
-  <div class="brand">Aether<span>FX</span><em>Studio</em></div>
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.4l2.2 5.3 5.3 2.2-5.3 2.2L10 16.4l-2.2-5.3L2.5 8.9l5.3-2.2z"/></svg>
+    <span class="brand-name">AetherFX</span>
+    <em>Studio</em>
+  </div>
+
   <div id="effect-name" class="effect-name" title="active effect">no effect</div>
+
   <div class="grow"></div>
+
   <div class="status" id="engine-status" title="engine connection">
     <span class="dot" id="engine-dot"></span><span id="engine-text">connecting</span>
   </div>
   <div class="status dim" id="generator-status" title="generator backend">generator: checking</div>
+
   <div class="actions">
-    <button id="btn-new" type="button" title="Create a new effect">New</button>
-    <button id="btn-save" type="button" title="Save the working copy into your library under a name (Ctrl+S)">Save as…</button>
-    <button id="btn-undo" type="button" title="Undo the last change (Ctrl+Z)">Undo</button>
-    <button id="btn-redo" type="button" title="Redo (Ctrl+Shift+Z)">Redo</button>
+    <button id="btn-undo" type="button" class="ghost icon-btn" title="Undo the last change (Ctrl+Z)" aria-label="Undo">
+      <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 7.5h5.6a3.4 3.4 0 0 1 0 6.8H7"/><path d="M6.6 4.3 3.4 7.5l3.2 3.2"/></svg>
+    </button>
+    <button id="btn-redo" type="button" class="ghost icon-btn" title="Redo (Ctrl+Shift+Z)" aria-label="Redo">
+      <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M12 7.5H6.4a3.4 3.4 0 0 0 0 6.8H9"/><path d="M9.4 4.3l3.2 3.2-3.2 3.2"/></svg>
+    </button>
+    <span class="hdr-sep" aria-hidden="true"></span>
+    <button id="btn-new" type="button" class="ghost" title="Create a new effect">
+      <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.6v8.8M3.6 8h8.8"/></svg><span>New</span>
+    </button>
+    <button id="btn-save" type="button" class="ghost" title="Save the working copy into your library under a name (Ctrl+S)">
+      <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4.6A1.6 1.6 0 0 1 4.6 3h5.2L13 6.2v5.2A1.6 1.6 0 0 1 11.4 13H4.6A1.6 1.6 0 0 1 3 11.4z"/><path d="M5.6 3v3.2h4.2M5.6 13v-3.4h4.8V13"/></svg><span>Save as</span>
+    </button>
   </div>
 </header>
 
 <main id="layout">
 
-  <!-- ================= LEFT ================= -->
+  <!-- ===================== LEFT ===================== -->
   <section class="column" id="col-left">
 
-    <div class="panel" id="panel-generate">
-      <h2>Generate</h2>
+    <section class="panel" id="panel-generate">
+      <h2 class="panel-title"><span class="t">Generate</span></h2>
       <div class="panel-body">
-        <textarea id="gen-prompt" rows="4" spellcheck="false"
-          placeholder="Describe an effect... e.g. a blue magic missile with a glowing core, trailing sparks and a soft smoke trail"></textarea>
-        <div class="row gen-modes">
-          <label class="check"><input type="radio" name="gen-mode" value="new" checked> New effect</label>
-          <label class="check"><input type="radio" name="gen-mode" value="modify"> Modify current</label>
+
+        <div class="prompt-box">
+          <textarea id="gen-prompt" rows="3" spellcheck="false"
+            placeholder="Describe an effect — a blue magic missile with a glowing core, trailing sparks and a soft smoke trail"></textarea>
+          <div class="prompt-foot">
+            <div class="segmented" role="group" aria-label="generation mode">
+              <label class="seg"><input type="radio" name="gen-mode" value="new" checked><span>New</span></label>
+              <label class="seg"><input type="radio" name="gen-mode" value="modify"><span>Modify</span></label>
+            </div>
+            <span class="grow"></span>
+            <kbd class="kbd" title="Ctrl/Cmd + Enter to generate">&#8984;&#8629;</kbd>
+          </div>
         </div>
-        <div class="row">
-          <button id="btn-generate" type="button" class="primary">Generate</button>
-          <button id="btn-cancel-job" type="button" class="danger" hidden>Cancel</button>
+
+        <div class="row gen-actions">
+          <button id="btn-generate" type="button" class="primary">
+            <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.9l1.35 3.36L12.7 6.6 9.35 7.95 8 11.3 6.65 7.95 3.3 6.6l3.35-1.34z" fill="currentColor" stroke="none"/><path d="M12.5 10.2l.62 1.54 1.54.62-1.54.62-.62 1.54-.62-1.54-1.54-.62 1.54-.62z" fill="currentColor" stroke="none"/></svg><span>Generate</span>
+          </button>
+          <button id="btn-cancel-job" type="button" class="ghost danger" hidden>Cancel</button>
           <span id="gen-spinner" class="spinner" hidden></span>
           <span id="gen-state" class="dim small"></span>
         </div>
+
         <div id="job-log" class="job-log" tabindex="0" aria-live="polite"></div>
       </div>
-    </div>
+    </section>
 
-        <div class="panel" id="panel-effects">
-      <h2>Library <button id="btn-refresh-effects" class="icon" type="button" title="Refresh">&#x21bb;</button></h2>
+    <section class="panel" id="panel-effects">
+      <h2 class="panel-title"><span class="t">Library</span>
+        <button id="btn-refresh-effects" type="button" class="ghost icon-btn xs" title="Refresh" aria-label="Refresh library">
+          <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.2 8a5.2 5.2 0 1 1-1.52-3.68"/><path d="M13.3 2.6v3.2h-3.2"/></svg>
+        </button>
+      </h2>
       <div class="panel-body">
-        <details id="new-effect-form">
-          <summary>New effect</summary>
-          <div class="form-grid">
-            <label for="new-name">name</label>
-            <input id="new-name" type="text" value="Untitled" spellcheck="false">
-            <label for="new-duration">duration</label>
-            <input id="new-duration" type="number" value="2" min="0.05" step="0.1">
-            <label for="new-template">template</label>
-            <select id="new-template"><option value="empty">empty</option></select>
+        <details id="new-effect-form" class="disclosure">
+          <summary><svg class="ic chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6.2 4.2 10 8l-3.8 3.8"/></svg><span>New effect</span></summary>
+          <div class="disclosure-body">
+            <div class="form-grid">
+              <label for="new-name">name</label>
+              <input id="new-name" type="text" value="Untitled" spellcheck="false">
+              <label for="new-duration">duration</label>
+              <input id="new-duration" type="number" value="2" min="0.05" step="0.1">
+              <label for="new-template">template</label>
+              <select id="new-template"><option value="empty">empty</option></select>
+            </div>
+            <button id="btn-create" type="button" class="primary sm">Create</button>
           </div>
-          <button id="btn-create" type="button">Create</button>
         </details>
-        <p class="hint small">Click to load a copy. Edits stay in memory until you press Save as.</p>
+        <p class="hint-note">Click a row to load a copy. Edits stay in memory until you press Save as.</p>
         <div id="list-library" class="file-list"></div>
       </div>
-    </div>
+    </section>
+
   </section>
 
-  <!-- ================= CENTER ================= -->
+  <!-- ===================== CENTER ===================== -->
   <section class="column" id="col-center">
 
-    <div id="viewport">
-      <img id="viewport-img" alt="rendered frame" hidden>
-      <div id="viewport-empty">
-        <p>No effect loaded.</p>
-        <p class="dim">Pick an example on the left, or describe an effect and press Generate.</p>
+    <div class="stage-wrap">
+      <div id="viewport">
+        <img id="viewport-img" alt="rendered frame" hidden>
+        <div id="viewport-empty">
+          <svg class="empty-mark" viewBox="0 0 48 48" aria-hidden="true">
+            <circle cx="24" cy="24" r="15" stroke-dasharray="3 5"/>
+            <path d="M24 15.5l2 5.3 5.3 2-5.3 2-2 5.3-2-5.3-5.3-2 5.3-2z" fill="currentColor" stroke="none"/>
+          </svg>
+          <p class="empty-title">No effect loaded</p>
+          <p class="empty-sub">Pick one from the Library, or describe an effect and press Generate.</p>
+        </div>
+        <div id="viewport-busy" class="viewport-busy" hidden><span class="spinner"></span><span id="viewport-busy-text">rendering</span></div>
       </div>
-      <div id="viewport-busy" class="viewport-busy" hidden><span class="spinner"></span><span id="viewport-busy-text">rendering</span></div>
+
+      <div id="transport">
+        <div class="tp-main">
+          <button id="btn-play" type="button" class="play" title="Play / pause (Space)" aria-label="Play">
+            <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.4 3.5a.55.55 0 0 1 .85-.46l6.1 4.5a.55.55 0 0 1 0 .92l-6.1 4.5a.55.55 0 0 1-.85-.46z" fill="currentColor" stroke="none"/></svg>
+          </button>
+          <input id="frame-slider" type="range" min="0" max="1" step="1" value="0" title="Scrub (arrow keys step, Home/End jump)">
+          <span id="time-readout" class="mono">0.00 s / 0.00 s  frame 1/1</span>
+        </div>
+
+        <div class="tp-tools">
+          <label class="field" title="Playback / render frame rate"><span class="fl">fps</span>
+            <select id="sel-fps">
+              <option value="12">12</option>
+              <option value="24" selected>24</option>
+              <option value="30">30</option>
+            </select>
+          </label>
+          <label class="field" title="Render resolution: fit = the viewport's own size"><span class="fl">size</span>
+            <select id="sel-size">
+              <option value="fit" selected>fit</option>
+              <option value="256">256</option>
+              <option value="384">384</option>
+              <option value="512">512</option>
+              <option value="768">768</option>
+              <option value="1024">1024</option>
+            </select>
+          </label>
+          <label class="toggle-chip" title="Loop playback"><input id="chk-loop" type="checkbox" checked><span class="tl">loop</span></label>
+
+          <span class="tp-sep" aria-hidden="true"></span>
+
+          <details id="stage-pop" class="stage-pop">
+            <summary class="btn-like" title="Stage: how the preview scene is lit and shown (saved with the effect as metadata.render_settings)">
+              <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.6 5.2h10.8M2.6 10.8h10.8"/><circle cx="6.2" cy="5.2" r="1.7" fill="var(--surface-2)"/><circle cx="10.2" cy="10.8" r="1.7" fill="var(--surface-2)"/></svg>
+              <span>Stage</span>
+            </summary>
+            <div class="stage-panel">
+              <div class="stage-head">Stage</div>
+              <div class="stage-grid">
+                <label><span class="sl">ground</span><input id="stage-ground" type="range" min="0.01" max="0.5" step="0.01" value="0.18"></label>
+                <label><span class="sl">background</span><input id="stage-bg" type="color" value="#050506"></label>
+                <label><span class="sl">bloom</span><input id="stage-bloom" type="range" min="0" max="1.2" step="0.05" value="0.35"></label>
+                <label><span class="sl">glow</span><input id="stage-bloom-radius" type="range" min="0.01" max="0.16" step="0.005" value="0.04"></label>
+                <label><span class="sl">exposure</span><input id="stage-exposure" type="range" min="0.2" max="2.5" step="0.05" value="1"></label>
+                <label><span class="sl">grid</span><input id="stage-grid" type="checkbox" checked></label>
+              </div>
+              <button id="btn-stage-save" type="button" class="sm" title="Store these stage settings in the effect (metadata.render_settings)">Save stage</button>
+            </div>
+          </details>
+
+          <button id="btn-preview" type="button" class="ghost" title="Render the whole sequence and play it">
+            <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><rect x="2.4" y="3.4" width="11.2" height="9.2" rx="2.2"/><path d="M6.6 6.5v3l2.8-1.5z" fill="currentColor" stroke="none"/></svg>
+            <span class="lb">Preview</span>
+          </button>
+          <button id="btn-view-reset" type="button" class="ghost icon-btn" title="Reset the camera to the effect's camera (wheel: zoom, drag: orbit, shift-drag: pan)" aria-label="Reset view">
+            <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3.1"/><path d="M8 1.9v2.2M8 11.9v2.2M1.9 8h2.2M11.9 8h2.2"/></svg>
+          </button>
+          <span id="preview-hint" class="hint"></span>
+        </div>
+      </div>
     </div>
 
-    <div id="transport">
-      <button id="btn-play" type="button" class="play" title="Play / pause (Space)">&#9654;</button>
-      <input id="frame-slider" type="range" min="0" max="1" step="1" value="0" title="Scrub (arrow keys step, Home/End jump)">
-      <span id="time-readout" class="mono">0.00 s / 0.00 s &nbsp;frame 1/1</span>
-      <label class="inline">fps
-        <select id="sel-fps">
-          <option value="12">12</option>
-          <option value="24" selected>24</option>
-          <option value="30">30</option>
-        </select>
-      </label>
-      <label class="inline">size
-        <select id="sel-size" title="Render resolution: fit = the viewport's own size">
-          <option value="fit" selected>fit</option>
-          <option value="256">256</option>
-          <option value="384">384</option>
-          <option value="512">512</option>
-          <option value="768">768</option>
-          <option value="1024">1024</option>
-        </select>
-      </label>
-      <label class="check inline" title="Loop playback"><input id="chk-loop" type="checkbox" checked> loop</label>
-      <button id="btn-preview" type="button" title="Render the whole sequence and play it">Render preview</button>
-      <button id="btn-view-reset" type="button" title="Reset the camera to the effect's camera (wheel: zoom, drag: orbit, shift-drag: pan)">Reset view</button>
-      <span class="stage-controls" title="Stage: how the preview scene is lit and shown (saved with the effect as metadata.render_settings when you press Save stage)">
-        <label>ground <input id="stage-ground" type="range" min="0.01" max="0.5" step="0.01" value="0.18"></label>
-        <label>bg <input id="stage-bg" type="color" value="#050506"></label>
-        <label>bloom <input id="stage-bloom" type="range" min="0" max="1.2" step="0.05" value="0.35"></label>
-        <label>glow <input id="stage-bloom-radius" type="range" min="0.01" max="0.16" step="0.005" value="0.04"></label>
-        <label>exposure <input id="stage-exposure" type="range" min="0.2" max="2.5" step="0.05" value="1"></label>
-        <label class="check"><input id="stage-grid" type="checkbox" checked> grid</label>
-        <button id="btn-stage-save" type="button" title="Store these stage settings in the effect (metadata.render_settings)">Save stage</button>
-      </span>
-      <span id="preview-hint" class="hint"></span>
+    <div class="underbar">
+      <div id="statline" class="statline mono dim">no statistics yet</div>
+      <div id="diagnostics" class="diagnostics"></div>
     </div>
-
-    <div id="statline" class="statline mono dim">no statistics yet</div>
-    <div id="diagnostics" class="diagnostics"></div>
 
   </section>
 
-  <!-- ================= RIGHT ================= -->
+  <!-- ===================== RIGHT ===================== -->
   <section class="column" id="col-right">
 
-    <div class="panel" id="panel-graph">
-      <h2>Graph
+    <section class="panel" id="panel-graph">
+      <h2 class="panel-title"><span class="t">Graph</span>
         <span class="panel-tools">
           <select id="sel-random-amount" title="How far values move">
             <option value="0.15">subtle</option>
             <option value="0.35" selected>medium</option>
             <option value="1.0">wild</option>
           </select>
-          <button id="btn-random" type="button" title="Randomize the selected node, or the whole effect when nothing is selected (undoable)">Random</button>
+          <button id="btn-random" type="button" class="ghost sm" title="Randomize the selected node, or the whole effect when nothing is selected (undoable)">
+            <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><rect x="2.6" y="2.6" width="10.8" height="10.8" rx="2.6"/><circle cx="5.9" cy="5.9" r=".95" fill="currentColor" stroke="none"/><circle cx="10.1" cy="10.1" r=".95" fill="currentColor" stroke="none"/><circle cx="10.1" cy="5.9" r=".95" fill="currentColor" stroke="none"/></svg>
+          </button>
         </span>
       </h2>
       <div class="panel-body">
         <div id="timeline-phases" class="phases"></div>
         <div id="graph-tree" class="graph-tree"><p class="dim small">no effect loaded</p></div>
       </div>
-    </div>
+    </section>
 
-    <div class="panel" id="panel-params">
-      <h2>Parameters <span id="param-node-title" class="dim small"></span></h2>
+    <section class="panel" id="panel-params">
+      <h2 class="panel-title"><span class="t">Parameters</span><span id="param-node-title" class="node-title"></span></h2>
       <div class="panel-body" id="params-body">
         <p class="dim small">Select a node in the graph.</p>
       </div>
-    </div>
+    </section>
 
   </section>
 
