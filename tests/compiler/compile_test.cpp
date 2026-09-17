@@ -15,6 +15,7 @@
 #include "aether/core/rng.hpp"
 #include "aether/core/serialization.hpp"
 #include "aether/core/spec.hpp"
+#include "aether/imageio/image_io.hpp"
 
 using namespace aether;
 using compiler::CompiledEffect;
@@ -44,6 +45,40 @@ size_t index_of(const CompiledEffect& c, const std::string& id) {
         if (c.nodes[i].id == id) return i;
     FAIL("node not found in compiled plan: " << id);
     return 0;
+}
+
+std::filesystem::path output_dir() {
+    std::filesystem::path dir(AETHER_TEST_OUTPUT_DIR);
+    std::error_code ec;
+    std::filesystem::create_directories(dir, ec);
+    return dir;
+}
+
+// Flipbook cells carry a distinct flat value so a baked strip can be checked cell by cell.
+constexpr int kCellW = 8;
+constexpr int kCellH = 6;
+float cell_value(int index) { return static_cast<float>(index + 1) / 16.0f; }
+
+// Writes a columns x rows sprite sheet whose cells are numbered left to right, top to bottom.
+// The PNG is written without the filmic curve so reading it back recovers the same linear value.
+void write_test_grid(const std::filesystem::path& path, int columns, int rows, int cell_w, int cell_h) {
+    Image sheet(columns * cell_w, rows * cell_h);
+    for (int r = 0; r < rows; ++r) {
+        for (int c = 0; c < columns; ++c) {
+            const float v = cell_value(r * columns + c);
+            for (int y = 0; y < cell_h; ++y)
+                for (int x = 0; x < cell_w; ++x) sheet.set(c * cell_w + x, r * cell_h + y, Color{v, v, v, 1.0f});
+        }
+    }
+    imageio::TonemapSettings tonemap;
+    tonemap.filmic = false;
+    imageio::write_png(path, sheet, tonemap);
+}
+
+std::string message_for(const Diagnostics& d, const std::string& code) {
+    for (const Diagnostic& i : d.items)
+        if (i.code == code) return i.message;
+    return {};
 }
 
 void print_warnings(const std::string& name, const Diagnostics& d) {
@@ -230,7 +265,7 @@ TEST_CASE("baked resources", "[compiler][resources]") {
     CHECK(aoe.resources.material("mat_rock")->fresnel_power == Catch::Approx(2.5f));
 
     // texture ids reach the systems that use them
-    CHECK(aoe.find("flame_ps")->sprite_id == "tex_puff");
+    CHECK(aoe.find("flame_ps")->sprite_id == "tex_flame");
     CHECK(aoe.find("flame_ps")->material_id == "mat_fire");
     CHECK(aoe.find("rock_ps")->mesh_id == "rock_mesh");
     CHECK(aoe.find("rune")->texture_id == "tex_rune");
@@ -274,18 +309,103 @@ TEST_CASE("bake_textures=false skips texture baking", "[compiler][resources]") {
     CHECK(!c.resources.materials.empty());
 }
 
-TEST_CASE("file textures warn W105 instead of baking", "[compiler][resources]") {
+TEST_CASE("a file texture bakes its flipbook grid into a horizontal strip", "[compiler][resources]") {
+    const std::filesystem::path sheet = output_dir() / "grid_4x2.png";
+    write_test_grid(sheet, 4, 2, kCellW, kCellH);
+
     Effect effect = load_example("fireball.json");
     Node* tex = effect.find_node("tex_spark");
     REQUIRE(tex != nullptr);
     tex->parameters["source"] = Parameter{std::string("file")};
-    tex->parameters["path"] = Parameter{std::string("sprites/spark.png")};
+    tex->parameters["path"] = Parameter{sheet.string()};
+    tex->parameters.erase("width");  // unset: the baked frames keep the file's cell size
+    tex->parameters.erase("height");
+    tex->parameters["columns"] = Parameter{4};
+    tex->parameters["rows"] = Parameter{2};
 
     const CompiledEffect c = compiler::compile(effect);
     CHECK(c.diagnostics.error_count() == 0);
-    CHECK(has_code_for(c.diagnostics, "W105", "tex_spark"));
-    CHECK(c.resources.texture("tex_spark") == nullptr);
+    CHECK_FALSE(has_code_for(c.diagnostics, "W105", "tex_spark"));
+    const TextureResource* baked = c.resources.texture("tex_spark");
+    REQUIRE(baked != nullptr);
+    CHECK(baked->frames == 8);
+    CHECK(baked->frame_width() == kCellW);
+    CHECK(baked->image.width == kCellW * 8);
+    CHECK(baked->image.height == kCellH);
+    // Cells are laid out left to right, top to bottom, so frame i carries cell i's value.
+    for (int i = 0; i < 8; ++i) {
+        const Color c0 = baked->image.get(i * kCellW + kCellW / 2, kCellH / 2);
+        CHECK(c0.r == Catch::Approx(cell_value(i)).margin(0.01));
+    }
     CHECK(c.resources.texture("tex_puff") != nullptr);
+}
+
+TEST_CASE("a file texture resamples when width/height are set", "[compiler][resources]") {
+    const std::filesystem::path sheet = output_dir() / "grid_strip.png";
+    write_test_grid(sheet, 3, 1, kCellW, kCellH);
+
+    Effect effect = load_example("fireball.json");
+    Node* tex = effect.find_node("tex_spark");
+    REQUIRE(tex != nullptr);
+    tex->parameters["source"] = Parameter{std::string("file")};
+    tex->parameters["path"] = Parameter{sheet.string()};
+    tex->parameters["frames"] = Parameter{3};  // a horizontal strip needs no columns/rows
+    tex->parameters["width"] = Parameter{16};
+    tex->parameters["height"] = Parameter{20};
+
+    const CompiledEffect c = compiler::compile(effect);
+    CHECK(c.diagnostics.error_count() == 0);
+    const TextureResource* baked = c.resources.texture("tex_spark");
+    REQUIRE(baked != nullptr);
+    CHECK(baked->frames == 3);
+    CHECK(baked->frame_width() == 16);
+    CHECK(baked->image.width == 48);
+    CHECK(baked->image.height == 20);
+    for (int i = 0; i < 3; ++i) {
+        const Color c0 = baked->image.get(i * 16 + 8, 10);
+        CHECK(c0.r == Catch::Approx(cell_value(i)).margin(0.02));
+    }
+}
+
+TEST_CASE("a missing file texture is E102 and names the path", "[compiler][resources]") {
+    Effect effect = load_example("fireball.json");
+    Node* tex = effect.find_node("tex_spark");
+    REQUIRE(tex != nullptr);
+    tex->parameters["source"] = Parameter{std::string("file")};
+    tex->parameters["path"] = Parameter{std::string("sprites/does_not_exist.png")};
+
+    const CompiledEffect c = compiler::compile(effect);
+    CHECK(c.diagnostics.error_count() > 0);
+    CHECK(has_code_for(c.diagnostics, "E102", "tex_spark"));
+    CHECK(message_for(c.diagnostics, "E102").find("does_not_exist.png") != std::string::npos);
+    CHECK(c.resources.texture("tex_spark") == nullptr);
+}
+
+TEST_CASE("a relative file texture path resolves against CompileOptions::base_dir", "[compiler][resources]") {
+    const std::filesystem::path dir = output_dir() / "textures";
+    std::error_code ec;
+    std::filesystem::create_directories(dir, ec);
+    write_test_grid(dir / "relative.png", 2, 1, kCellW, kCellH);
+
+    Effect effect = load_example("fireball.json");
+    Node* tex = effect.find_node("tex_spark");
+    REQUIRE(tex != nullptr);
+    tex->parameters["source"] = Parameter{std::string("file")};
+    tex->parameters["path"] = Parameter{std::string("textures/relative.png")};
+    tex->parameters.erase("width");
+    tex->parameters.erase("height");
+    tex->parameters["frames"] = Parameter{2};
+
+    CHECK(compiler::compile(effect).diagnostics.error_count() > 0);  // no base_dir: not found
+
+    CompileOptions options;
+    options.base_dir = output_dir();
+    const CompiledEffect c = compiler::compile(effect, options);
+    CHECK(c.diagnostics.error_count() == 0);
+    const TextureResource* baked = c.resources.texture("tex_spark");
+    REQUIRE(baked != nullptr);
+    CHECK(baked->frames == 2);
+    CHECK(baked->frame_width() == kCellW);
 }
 
 TEST_CASE("a broken texture graph becomes a compile error", "[compiler][resources]") {
@@ -349,7 +469,7 @@ TEST_CASE("execution order respects dependencies", "[compiler][order]") {
     CHECK(index_of(c, "lift") < index_of(c, "rock_ps"));
     CHECK(index_of(c, "ground") < index_of(c, "rock_ps"));
     CHECK(index_of(c, "mat_fire") < index_of(c, "flame_ps"));
-    CHECK(index_of(c, "tex_puff") < index_of(c, "flame_ps"));
+    CHECK(index_of(c, "tex_flame") < index_of(c, "flame_ps"));
     CHECK(index_of(c, "rock_mesh") < index_of(c, "rock_ps"));
     // a parent comes before its child
     const CompiledEffect fireball = compiler::compile(load_example("fireball.json"));

@@ -105,6 +105,33 @@ std::vector<OpSpec> build_op_specs() {
                           {"softness", "float", 0.006, "edge softness"},
                           {"rotation", "float", 0.0, "rotation in degrees"}},
                          {}});
+    ops.push_back(OpSpec{
+        "flame",
+        "Animated flame slice: heat in [0,1] for one licking tongue of fire, meant to be baked with "
+        "frames: 16-32 and coloured by a material temperature_gradient or a `colorize` op (feed it "
+        "through `levels` first to pick the silhouette). Recipe, with v = 0 at the top so h = 1-v is the "
+        "height above the base: a vertical profile base = smoothstep(0, 0.15, h) * "
+        "(1 - smoothstep(0.55, 1, h))^1.5 and a horizontal mask 1 - ((2u-1)/half_width)^2 whose "
+        "half_width starts at `width` and narrows to a point towards the top; a vertically stretched, "
+        "domain-warped fbm n = fbm(u*frequency + wu, v*frequency*0.6 + wv) supplies the tongues, where "
+        "(wu, wv) is a coarser second fbm scaled by `warp`. The same (wu, wv) and n also displace h and "
+        "u before the profile and the mask are evaluated, so the silhouette itself leans and frays "
+        "instead of staying a smooth cone. heat = base * mask * (0.18 + 0.82*n), with the lower centre "
+        "held near full heat so it reads as a white-hot core, the tips broken into separate licks by "
+        "1 - smoothstep(threshold) on a third, finer noise (`licks`), and the result raised to "
+        "`sharpness`. Every noise axis that carries time is wrapped onto a circle whose circumference is "
+        "the distance scrolled in one loop, so the flipbook loops seamlessly: frame 0 continues the last "
+        "frame. Fire ramp for `colorize` (black -> deep red -> orange -> yellow -> white): "
+        "[[0,[0.05,0,0,1]], [0.25,[0.8,0.1,0,1]], [0.5,[1,0.45,0.05,1]], [0.75,[1,0.85,0.35,1]], "
+        "[1,[1,1,0.85,1]]].",
+        {{"frequency", "float", 3.0, "tongue detail across the tile"},
+         {"speed", "float", 1.0, "upward scroll over one loop; the flipbook always closes"},
+         {"warp", "float", 0.35, "domain warp strength; 0 = straight, unleaning tongues"},
+         {"width", "float", 0.9, "flame half width at the base, in half-tiles"},
+         {"sharpness", "float", 1.6, "contrast exponent; higher = thinner, hotter cores"},
+         {"licks", "float", 0.4, "how much the tips break up into separate tongues"},
+         {"seed", "int", 0, "per-op seed"}},
+        {}});
     ops.push_back(OpSpec{"cracks", "Thin bright lines along Worley cell boundaries on black.",
                          {{"density", "float", 5.0, "cells per unit UV"},
                           {"width", "float", 0.01, "crack width in UV units"},
@@ -547,6 +574,94 @@ Image eval_voronoi(const json& p, const Ctx& ctx, uint32_t seed) {
     return out;
 }
 
+// Animated flame slice in [0,1] "heat" values. See the op description for the recipe.
+//
+// Looping: every noise layer that moves with time takes its vertical coordinate
+// `y - t * rate` and wraps it onto a circle of circumference `rate`, so one whole
+// loop rotates that circle by exactly 2*pi and the field returns to itself. The
+// texture therefore tiles in time without a cross-fade.
+Image eval_flame(const json& p, const Ctx& ctx, uint32_t seed) {
+    const float frequency = std::max(0.01f, param_float(p, "frequency", 3.0f));
+    const float speed = std::max(0.01f, param_float(p, "speed", 1.0f));
+    const float warp = param_float(p, "warp", 0.35f);
+    const float width = std::max(0.05f, param_float(p, "width", 0.9f));
+    const float sharpness = std::max(0.01f, param_float(p, "sharpness", 1.6f));
+    const float licks = saturate(param_float(p, "licks", 0.4f));
+
+    constexpr float kProfileExponent = 1.5f;   // how hard the flame fades out towards its tip
+    constexpr float kTipNarrowing = 0.92f;     // fraction of the width lost between base and tip
+    constexpr float kRise = 0.35f;             // how far the noise displaces the silhouette vertically
+    constexpr float kStretch = 0.6f;           // vertical noise scale; < 1 elongates the tongues upward
+    constexpr float kLean = 0.35f;             // how much the warp layer lifts/drops whole tongues
+    constexpr float kCore = 0.55f;             // how strongly the lower centre is held at full heat
+
+    FbmParams body;
+    body.octaves = 4;
+    FbmParams coarse;
+    coarse.octaves = 2;
+    FbmParams tips;
+    tips.octaves = 3;
+
+    const float t = ctx.time;
+    // One looping noise layer: `y` is the static vertical coordinate, `rate` both the
+    // scroll speed and the circumference that closes the loop.
+    const auto layer = [t](float x, float y, float rate, uint32_t s, const FbmParams& fp) {
+        const float r = std::max(1e-4f, rate) / kTwoPi;
+        const float theta = (y + t * rate) / r;
+        return fbm4(Vec4{x, r * std::cos(theta), r * std::sin(theta), 0.0f}, s, fp);
+    };
+
+    const float rate = speed * 2.0f;
+    Image out(ctx.width, ctx.height);
+    for (int y = 0; y < ctx.height; ++y) {
+        // The flame root sits at v = 0. The renderer's sprite V axis points up the screen
+        // (v = 1 is drawn at the top), so a flame stored root-first renders upright, and on a
+        // stretched_billboard its tip points along the particle's velocity.
+        const float height = uv_v(ctx, y);  // 0 at the root of the flame, 1 at the far tip
+        const float vy = 1.0f - height;     // noise coordinate, so the field scrolls root -> tip
+        // The base of the flame stays solid; the displacement ramps in with height so only the
+        // tongues wander.
+        const float loose = smoothstep(0.04f, 0.45f, height);
+        const float tip = smoothstep(0.35f, 0.95f, height);
+        const float lick_cut = 1.2f - (licks + 0.2f) * tip;
+        for (int x = 0; x < ctx.width; ++x) {
+            const float u = uv_u(ctx, x);
+            // Domain warp: a coarser, slower layer bends the tongues sideways.
+            const float wx = u * frequency * 0.45f;
+            const float wy = vy * frequency * 0.3f;
+            const float wu = warp * layer(wx + 11.3f, wy, rate * 0.6f, seed + 101u, coarse);
+            const float wv = warp * layer(wx - 7.1f, wy, rate * 0.6f, seed + 257u, coarse);
+            const float n01 =
+                saturate(0.5f + 0.5f * layer(u * frequency + wu, vy * frequency * kStretch + wv, rate, seed, body));
+
+            // The same fields displace the silhouette, so the profile and the mask carve ragged,
+            // leaning tongues instead of a smooth cone.
+            const float uu = u + loose * wu / frequency;
+            const float hh = height + loose * (kRise * (0.5f - n01) + kLean * wv / frequency);
+            const float base = smoothstep(0.0f, 0.15f, hh) *
+                               std::pow(std::max(0.0f, 1.0f - smoothstep(0.55f, 1.0f, hh)), kProfileExponent);
+            const float half_width = std::max(0.06f, width * (1.0f - kTipNarrowing * std::pow(saturate(hh), 1.3f)));
+            const float xr = (2.0f * uu - 1.0f) / half_width;
+            const float mask = saturate(1.0f - xr * xr);
+            if (base <= 0.0f || mask <= 0.0f) {
+                set_gray(out, x, y, 0.0f);
+                continue;
+            }
+            // Third noise, faster and finer: breaks the tips into separate licks.
+            const float l = 0.5f + 0.5f * layer(u * frequency * 1.6f, vy * frequency * 1.0f,
+                                                rate * 1.35f, seed + 613u, tips);
+            const float lick = 1.0f - smoothstep(lick_cut - 0.2f, lick_cut + 0.2f, 1.0f - l);
+            // The lower centre is the core: hold it near full heat so it reads white-hot once
+            // a fire ramp is applied, and let the noise own the edges and the tips.
+            const float core = mask * mask * mask * (1.0f - smoothstep(0.02f, 0.5f, height));
+            const float hot = lerp(n01, 1.0f, kCore * core);
+            const float heat = base * mask * (0.18f + 0.82f * hot) * lick;
+            set_gray(out, x, y, std::pow(saturate(heat), sharpness));
+        }
+    }
+    return out;
+}
+
 Image eval_constant(const json& p, const Ctx& ctx) {
     Image out(ctx.width, ctx.height);
     out.fill(param_color(p, "color", Color{1, 1, 1, 1}));
@@ -896,6 +1011,7 @@ private:
         if (op == "star") return eval_star(p, ctx_);
         if (op == "cracks") return eval_cracks(p, ctx_, seed);
         if (op == "voronoi") return eval_voronoi(p, ctx_, seed);
+        if (op == "flame") return eval_flame(p, ctx_, seed);
         if (op == "constant") return eval_constant(p, ctx_);
         if (op == "time") return eval_time(p, ctx_);
         if (op == "channel_pack") return eval_channel_pack(p, ctx_, inputs);

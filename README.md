@@ -72,6 +72,27 @@ simulates. See `docs/ENGINE_INTEGRATION.md` for Unreal, Unity and Godot.
 ./build/bin/aetherfx serve            # JSON-RPC 2.0 over stdio (used by the Python client and MCP server)
 ```
 
+## Bringing your own flipbooks
+
+Fire, smoke and explosion sprites read best as real flipbooks. Point a texture
+node at an image file and give it the sheet's grid; the compiler loads it and
+unrolls the grid into the engine's animated-sprite layout, so `frames` becomes
+`columns * rows` and the sprite plays over the particle's life (or at
+`sprite_fps`).
+
+```json
+{"id": "tex_fire", "type": "texture",
+ "parameters": {"source": "file", "path": "../textures/fire_8x4.png",
+                "columns": 8, "rows": 4}}
+```
+
+`path` is absolute, or relative to the directory of the effect document - keep
+sheets next to the effects, for example in `examples/textures/`. PNG/JPG/TGA/BMP
+are read as sRGB and decoded to linear, `.exr` is read as linear HDR. Add
+`width`/`height` only when you want the frames resampled. If you would rather
+generate the sheet, the `flame` texture op bakes a seamless, animated fire
+flipbook procedurally (see `examples/effects/fire_aoe.json`).
+
 Python / MCP:
 
 ```bash

@@ -336,6 +336,44 @@
       }
     },
     {
+      "id": "tex_flame",
+      "type": "texture",
+      "parameters": {
+        "width": 96,
+        "height": 160,
+        "frames": 24,
+        "graph": {
+          "nodes": [
+            {
+              "id": "f",
+              "op": "flame",
+              "params": {
+                "frequency": 3.0,
+                "speed": 1.0,
+                "warp": 0.35,
+                "width": 0.9,
+                "sharpness": 1.6,
+                "licks": 0.4,
+                "seed": 11
+              }
+            },
+            {
+              "id": "l",
+              "op": "levels",
+              "params": {
+                "in_low": 0.28,
+                "in_high": 0.8
+              },
+              "inputs": {
+                "a": "f"
+              }
+            }
+          ],
+          "output": "l"
+        }
+      }
+    },
+    {
       "id": "tex_spark",
       "type": "texture",
       "parameters": {
@@ -418,7 +456,54 @@
         "soft_particle": true,
         "depth_fade": 0.15,
         "dissolve": 0.55,
-        "erosion": 0.3
+        "erosion": 0.3,
+        "temperature_gradient": [
+          [
+            0.0,
+            [
+              0.05,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          [
+            0.25,
+            [
+              0.8,
+              0.1,
+              0.0,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              1.0,
+              0.45,
+              0.05,
+              1.0
+            ]
+          ],
+          [
+            0.75,
+            [
+              1.0,
+              0.85,
+              0.35,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              1.0,
+              1.0,
+              0.85,
+              1.0
+            ]
+          ]
+        ]
       }
     },
     {
@@ -815,10 +900,11 @@
         "drag": 2.5,
         "blend": "additive",
         "render_mode": "stretched_billboard",
-        "velocity_stretch": 0.05
+        "velocity_stretch": 0.1,
+        "sprite_fps": 0.0
       },
       "inputs": {
-        "sprite": "tex_puff",
+        "sprite": "tex_flame",
         "material": "mat_fire",
         "forces": [
           "flame_curl",
@@ -942,10 +1028,11 @@
         "drag": 1.8,
         "blend": "additive",
         "render_mode": "stretched_billboard",
-        "velocity_stretch": 0.08
+        "velocity_stretch": 0.1,
+        "sprite_fps": 0.0
       },
       "inputs": {
-        "sprite": "tex_puff",
+        "sprite": "tex_flame",
         "material": "mat_fire",
         "forces": [
           "flame_curl",
@@ -1090,10 +1177,11 @@
         "drag": 1.2,
         "blend": "additive",
         "render_mode": "stretched_billboard",
-        "velocity_stretch": 0.06
+        "velocity_stretch": 0.1,
+        "sprite_fps": 0.0
       },
       "inputs": {
-        "sprite": "tex_puff",
+        "sprite": "tex_flame",
         "material": "mat_fire",
         "forces": [
           "flame_curl",

@@ -126,7 +126,12 @@ const compiler::CompiledEffect& Session::compiled(Document& doc, const compiler:
     if (!doc.compiled || doc.compiled_hash != hash || doc.compiled_fixed_dt != options.fixed_dt) {
         doc.runtime.reset();  // it points at the old CompiledEffect
         doc.runtime_hash = 0;
-        doc.compiled = std::make_shared<compiler::CompiledEffect>(compiler::compile(doc.effect, options));
+        // A file texture's relative `path` is relative to the document it was authored in,
+        // so the compiler resolves it against the document's directory unless the caller
+        // already chose a base directory.
+        compiler::CompileOptions effective = options;
+        if (effective.base_dir.empty() && doc.path) effective.base_dir = doc.path->parent_path();
+        doc.compiled = std::make_shared<compiler::CompiledEffect>(compiler::compile(doc.effect, effective));
         doc.compiled_hash = hash;
         doc.compiled_fixed_dt = options.fixed_dt;
     }

@@ -54,10 +54,11 @@ Hard rules:
 
 ```
 core        <- (nothing but nlohmann/json)
+imageio     <- core                 PNG/JPG/TGA/BMP + EXR codecs, tonemap, flipbook packing
 procedural  <- core                 noise, procedural textures, mesh primitives
-compiler    <- core, procedural     tier selection, resource baking, plan
+compiler    <- core, procedural, imageio   tier selection, resource baking, plan
 sim         <- core, compiler       CPU reference runtime (GPU runtime later)
-render      <- core                 software reference renderer, image IO
+render      <- core, imageio        software reference renderer, video encode
 tools       <- core, compiler, sim, render, procedural   ToolRegistry, Session
 cli         <- tools                `aetherfx` executable, JSON-RPC stdio server
 gpu         <- core                 wgpu-native bootstrap (optional, AETHER_WITH_GPU)

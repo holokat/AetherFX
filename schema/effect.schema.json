@@ -1835,6 +1835,9 @@
         "parameters": {
           "additionalProperties": false,
           "properties": {
+            "columns": {
+              "$ref": "#/$defs/param_int_min1_max64"
+            },
             "frames": {
               "$ref": "#/$defs/param_int_min1_max256"
             },
@@ -1846,6 +1849,9 @@
             },
             "path": {
               "$ref": "#/$defs/param_string"
+            },
+            "rows": {
+              "$ref": "#/$defs/param_int_min1_max64"
             },
             "source": {
               "$ref": "#/$defs/param_enum_procedural_file"

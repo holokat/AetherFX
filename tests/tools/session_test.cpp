@@ -429,7 +429,7 @@ TEST_CASE("create_effect starts from a bundled example", "[tools][session]") {
     const nlohmann::json created = call(session, "create_effect", {{"template", "fireball"}});
     CHECK(created["effect"]["name"] == "Fireball");
     CHECK(created["effect"]["duration"] == Approx(2.5));
-    CHECK(created["effect"]["nodes"].size() == 21);
+    CHECK(created["effect"]["nodes"].size() == 22);
     CHECK(created["diagnostics"]["errors"] == 0);
 
     const nlohmann::json renamed =

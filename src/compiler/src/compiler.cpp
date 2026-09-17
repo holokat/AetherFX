@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <filesystem>
 #include <map>
 #include <string>
 #include <string_view>
@@ -15,6 +16,7 @@
 #include "aether/core/serialization.hpp"
 #include "aether/core/spec.hpp"
 #include "aether/core/validation.hpp"
+#include "aether/imageio/image_io.hpp"
 #include "aether/procedural/mesh_primitives.hpp"
 #include "aether/procedural/texture_graph.hpp"
 
@@ -150,11 +152,94 @@ MaterialDesc build_material(const Effect& effect, const Node& n) {
     return m;
 }
 
-void bake_texture(const Node& n, uint64_t seed, ResourceSet& resources, Diagnostics& diag) {
+// source: file. `path` is absolute or relative to options.base_dir (the directory of the
+// document the effect came from; empty = the working directory). A columns x rows grid is
+// unrolled into the engine's horizontal strip layout (frames = columns*rows); `frames` alone
+// means the file already is a horizontal strip. Explicit width/height resample every frame.
+void bake_file_texture(const Node& n, const CompileOptions& options, ResourceSet& resources, Diagnostics& diag) {
+    const std::string path_text = param_string(n, "path");
+    if (path_text.empty()) {
+        diag.error("E102", "texture \"" + n.id + "\" has source \"file\" but an empty path", n.id, "path");
+        return;
+    }
+    std::filesystem::path path(path_text);
+    if (path.is_relative() && !options.base_dir.empty()) path = options.base_dir / path;
+
+    std::error_code ec;
+    if (!std::filesystem::is_regular_file(path, ec)) {
+        diag.error("E102", "texture \"" + n.id + "\" file not found: \"" + path.string() + "\"", n.id, "path");
+        return;
+    }
+    Image source;
+    try {
+        source = imageio::read_image(path);
+    } catch (const Error& err) {
+        diag.error("E102", "texture \"" + n.id + "\" could not read \"" + path.string() + "\": " + err.what(),
+                   n.id, "path");
+        return;
+    }
+    if (source.empty()) {
+        diag.error("E102", "texture \"" + n.id + "\" read an empty image from \"" + path.string() + "\"",
+                   n.id, "path");
+        return;
+    }
+
+    const int columns = std::max(1, param_int(n, "columns"));
+    const int rows = std::max(1, param_int(n, "rows"));
+    int grid_columns = columns;
+    int grid_rows = rows;
+    int frames = columns * rows;
+    if (frames == 1) {
+        // No grid: `frames` > 1 means the file is already a horizontal strip.
+        frames = std::max(1, param_int(n, "frames"));
+        grid_columns = frames;
+        grid_rows = 1;
+    }
+    const int frame_width = source.width / grid_columns;
+    const int frame_height = source.height / grid_rows;
+    if (frame_width <= 0 || frame_height <= 0) {
+        diag.error("E102", "texture \"" + n.id + "\" is " + std::to_string(source.width) + "x" +
+                               std::to_string(source.height) + ", too small for a " +
+                               std::to_string(grid_columns) + "x" + std::to_string(grid_rows) + " flipbook grid",
+                   n.id, "columns");
+        return;
+    }
+    if (frames > 1 && (source.width % grid_columns != 0 || source.height % grid_rows != 0)) {
+        diag.warning("W105", "texture \"" + n.id + "\" is " + std::to_string(source.width) + "x" +
+                                 std::to_string(source.height) + ", which a " + std::to_string(grid_columns) + "x" +
+                                 std::to_string(grid_rows) + " grid does not divide evenly; the trailing pixels "
+                                 "are dropped",
+                     n.id, "columns");
+    }
+
+    // width/height only resample when the author asked for a specific size.
+    const int target_width = n.has_param("width") ? std::max(1, param_int(n, "width")) : frame_width;
+    const int target_height = n.has_param("height") ? std::max(1, param_int(n, "height")) : frame_height;
+    const bool resize = target_width != frame_width || target_height != frame_height;
+
+    TextureResource resource;
+    resource.frames = frames;
+    resource.image.resize(target_width * frames, target_height, Color::transparent());
+    Image cell(frame_width, frame_height);
+    Image scaled;
+    for (int f = 0; f < frames; ++f) {
+        const int cx = (f % grid_columns) * frame_width;
+        const int cy = (f / grid_columns) * frame_height;
+        for (int y = 0; y < frame_height; ++y)
+            for (int x = 0; x < frame_width; ++x) cell.set(x, y, source.get(cx + x, cy + y));
+        if (resize) scaled = procedural::resample(cell, target_width, target_height);
+        const Image& out_cell = resize ? scaled : cell;
+        const int x0 = f * target_width;
+        for (int y = 0; y < target_height; ++y)
+            for (int x = 0; x < target_width; ++x) resource.image.set(x0 + x, y, out_cell.get(x, y));
+    }
+    resources.textures[n.id] = std::move(resource);
+}
+
+void bake_texture(const Node& n, uint64_t seed, const CompileOptions& options, ResourceSet& resources,
+                  Diagnostics& diag) {
     if (param_string(n, "source") == "file") {
-        diag.warning("W105", "file textures are not baked by the compiler in V1; texture \"" + n.id +
-                                 "\" resolves to the renderer's default sprite",
-                     n.id, "source");
+        bake_file_texture(n, options, resources, diag);
         return;
     }
     const nlohmann::json graph = param_json(n, "graph");
@@ -168,13 +253,13 @@ void bake_texture(const Node& n, uint64_t seed, ResourceSet& resources, Diagnost
     }
     if (rejected) return;
 
-    procedural::TextureBakeOptions options;
-    options.width = param_int(n, "width");
-    options.height = param_int(n, "height");
-    options.frames = param_int(n, "frames");
-    options.seed = seed32_of(seed);
+    procedural::TextureBakeOptions bake;
+    bake.width = param_int(n, "width");
+    bake.height = param_int(n, "height");
+    bake.frames = param_int(n, "frames");
+    bake.seed = seed32_of(seed);
     try {
-        resources.textures[n.id] = procedural::bake_texture_graph(graph, options);
+        resources.textures[n.id] = procedural::bake_texture_graph(graph, bake);
     } catch (const Error& err) {
         diag.error("E102", "texture \"" + n.id + "\" failed to bake: " + err.what(), n.id, "graph");
     }
@@ -467,7 +552,7 @@ CompiledEffect compile(const Effect& effect, const CompileOptions& options) {
         if (node == nullptr) continue;
         switch (node->type) {
             case NodeType::Texture:
-                if (options.bake_textures) bake_texture(*node, cn.seed, compiled.resources, diag);
+                if (options.bake_textures) bake_texture(*node, cn.seed, options, compiled.resources, diag);
                 break;
             case NodeType::Mesh: {
                 // Seeded primitives bake `variants` meshes under "<id>", "<id>#1", ...

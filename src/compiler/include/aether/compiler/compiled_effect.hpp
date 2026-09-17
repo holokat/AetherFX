@@ -1,5 +1,6 @@
 #pragma once
 // Effect -> CompiledEffect. See docs/ARCHITECTURE.md section 4.
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -47,6 +48,10 @@ struct CompileOptions {
     size_t particle_budget = 250000;   // W003 above this total
     bool bake_textures = true;
     bool allow_errors = false;         // when true, compile proceeds past validation errors (tools' dry-run)
+    // Directory that relative `texture.path` (source: file) values resolve against.
+    // Empty = the process working directory. The tools layer sets it to the
+    // directory of the document the effect was loaded from.
+    std::filesystem::path base_dir;
 };
 
 struct CompiledEffect {

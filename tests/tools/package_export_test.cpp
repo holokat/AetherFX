@@ -303,7 +303,7 @@ TEST_CASE("mesh variants are written as OBJ files", "[tools][package]") {
 
 TEST_CASE("baked textures are written with their frame layout", "[tools][package]") {
     const Package& package = fire();
-    REQUIRE(package.runtime["textures"].size() == 4);
+    REQUIRE(package.runtime["textures"].size() == 5);
 
     const nlohmann::json* puff = find_by_id(package.runtime["textures"], "tex_puff");
     REQUIRE(puff != nullptr);

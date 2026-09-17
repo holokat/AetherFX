@@ -522,6 +522,10 @@ NodeSpec spec_texture() {
     n.params.push_back(pb_int("width", 256).range_of(1.0, 4096.0).doc("baked width").unit("px"));
     n.params.push_back(pb_int("height", 256).range_of(1.0, 4096.0).doc("baked height").unit("px"));
     n.params.push_back(pb_int("frames", 1).range_of(1.0, 256.0).doc("flipbook frames"));
+    n.params.push_back(pb_int("columns", 1).range_of(1.0, 64.0)
+                           .doc("flipbook grid layout of a file texture; frames become columns*rows"));
+    n.params.push_back(pb_int("rows", 1).range_of(1.0, 64.0)
+                           .doc("flipbook grid layout of a file texture; frames become columns*rows"));
     n.params.push_back(pb_json("graph", nlohmann::json::object())
                            .doc("procedural texture graph {nodes:[{id,op,params,inputs}], output}"));
     n.outputs = {"texture"};

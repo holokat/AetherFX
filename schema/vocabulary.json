@@ -2927,6 +2927,16 @@
         "texture"
       ],
       "parameters": {
+        "columns": {
+          "animatable": false,
+          "default": 1,
+          "description": "flipbook grid layout of a file texture; frames become columns*rows",
+          "enum": [],
+          "max": 64,
+          "min": 1,
+          "type": "int",
+          "units": ""
+        },
         "frames": {
           "animatable": false,
           "default": 1,
@@ -2965,6 +2975,16 @@
           "max": null,
           "min": null,
           "type": "string",
+          "units": ""
+        },
+        "rows": {
+          "animatable": false,
+          "default": 1,
+          "description": "flipbook grid layout of a file texture; frames become columns*rows",
+          "enum": [],
+          "max": 64,
+          "min": 1,
+          "type": "int",
           "units": ""
         },
         "source": {

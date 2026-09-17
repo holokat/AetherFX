@@ -110,7 +110,7 @@
           "buoyancy"
         ],
         "material": "mat_flame",
-        "sprite": "tex_puff"
+        "sprite": "tex_flame"
       },
       "layer": "core_layer",
       "parameters": {
@@ -165,7 +165,7 @@
             0.0
           ]
         ],
-        "render_mode": "billboard",
+        "render_mode": "stretched_billboard",
         "size": 0.14,
         "size_over_life": [
           [
@@ -181,7 +181,9 @@
             0.2
           ]
         ],
-        "size_variance": 0.05
+        "size_variance": 0.05,
+        "sprite_fps": 0.0,
+        "velocity_stretch": 0.1
       },
       "type": "particle_system"
     },
@@ -232,7 +234,54 @@
         "blend": "additive",
         "depth_fade": 0.05,
         "emissive_intensity": 2.0,
-        "soft_particle": true
+        "soft_particle": true,
+        "temperature_gradient": [
+          [
+            0.0,
+            [
+              0.05,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          [
+            0.25,
+            [
+              0.8,
+              0.1,
+              0.0,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              1.0,
+              0.45,
+              0.05,
+              1.0
+            ]
+          ],
+          [
+            0.75,
+            [
+              1.0,
+              0.85,
+              0.35,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              1.0,
+              1.0,
+              0.85,
+              1.0
+            ]
+          ]
+        ]
       },
       "type": "material"
     },
@@ -285,6 +334,44 @@
         },
         "height": 128,
         "width": 128
+      },
+      "type": "texture"
+    },
+    {
+      "id": "tex_flame",
+      "parameters": {
+        "width": 96,
+        "height": 160,
+        "frames": 24,
+        "graph": {
+          "nodes": [
+            {
+              "id": "f",
+              "op": "flame",
+              "params": {
+                "frequency": 3.0,
+                "speed": 1.0,
+                "warp": 0.35,
+                "width": 0.9,
+                "sharpness": 1.6,
+                "licks": 0.4,
+                "seed": 5
+              }
+            },
+            {
+              "id": "l",
+              "op": "levels",
+              "params": {
+                "in_low": 0.28,
+                "in_high": 0.8
+              },
+              "inputs": {
+                "a": "f"
+              }
+            }
+          ],
+          "output": "l"
+        }
       },
       "type": "texture"
     },

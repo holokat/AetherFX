@@ -183,7 +183,7 @@ TEST_CASE("the CLI commands work on the example effects", "[integration][cli]") 
             run(quoted(binary_path()) + " tool inspect_graph {} --effect " + quoted(example) + " --output-dir " +
                 quoted(dir / "tool")));
         CHECK(graph["name"] == "Fireball");
-        CHECK(graph["nodes"].size() == 21);
+        CHECK(graph["nodes"].size() == 22);
     }
     SECTION("usage errors exit 2 and unknown effects exit 1") {
         CHECK(run_status(quoted(binary_path()) + " frobnicate > /dev/null 2>&1") == 2);

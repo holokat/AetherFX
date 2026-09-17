@@ -425,13 +425,43 @@ outputs: `post`.
 ### texture  (procedural texture graph or file; baked by the compiler)
 ```
 source: enum = procedural [procedural, file]
-path: string = ""
+path: string = ""               image file when source=file
 width: int = 256 [1..4096]
 height: int = 256 [1..4096]
 frames: int = 1 [1..256]          animated textures (flipbook baked, `time` op input)
+columns: int = 1 [1..64]          flipbook grid layout of a file texture; frames become columns*rows
+rows: int = 1 [1..64]             flipbook grid layout of a file texture; frames become columns*rows
 graph: json = {}                  procedural texture graph, see below
 ```
 outputs: `texture`.
+
+#### File textures (`source: file`)
+
+The compiler loads the image and bakes it into the same `TextureResource` a
+procedural graph produces, so a file texture is usable anywhere a procedural one
+is (sprite, decal, material slot).
+
+* `path` is absolute, or relative to the directory of the effect document it is
+  written in (the tools layer passes that directory as `CompileOptions::base_dir`;
+  with no document it is the working directory).
+* 8-bit formats (PNG/JPG/TGA/BMP) are read as sRGB and decoded to linear; `.exr`
+  is read as linear. Alpha is always linear.
+* `columns` x `rows` describe a flipbook grid. The compiler unrolls the grid,
+  left to right and top to bottom, into the engine's horizontal strip layout:
+  `frames = columns * rows`, each frame `width/columns` by `height/rows` pixels.
+  A grid the image does not divide evenly warns W105 and drops the trailing
+  pixels.
+* Without a grid, `frames > 1` means the file already is a horizontal strip.
+* `width`/`height` are only applied when they are written on the node: the frames
+  are then resampled to that size. Leave them out to keep the file's own
+  resolution.
+* A missing or unreadable file is error E102 and names the resolved path.
+
+```json
+{"id": "tex_fire", "type": "texture",
+ "parameters": {"source": "file", "path": "../textures/fire_8x4.png",
+                "columns": 8, "rows": 4}}
+```
 
 ## Procedural texture graph (`texture.graph`)
 
@@ -453,7 +483,18 @@ Every op produces an RGBA float image at the texture resolution. Ops:
 `math` (`mode` add|multiply|subtract|max|min|screen|lerp, `factor`, inputs `a`,`b`),
 `invert`, `dissolve_mask` (`threshold`, `softness`, input `a`),
 `colorize` (`gradient`), `constant` (`color`), `time` (`speed`) provides
-animation phase for animated noises.
+animation phase for animated noises,
+`flame` (`frequency`, `speed`, `warp`, `width`, `sharpness`, `licks`, `seed`).
+
+`flame` is the fire sprite generator: bake it with `frames: 16..32` and feed it
+through `levels` to pick the silhouette, then colour it with the material's
+`temperature_gradient` or a `colorize` op. It stores the flame root at `v = 0`
+and the tip at `v = 1`, which is what draws upright (the renderer's sprite V axis
+points up the screen) and makes a `stretched_billboard` tip point along the
+particle's velocity. Every time-carrying noise axis is wrapped onto a circle, so
+the flipbook loops seamlessly. Fire ramp for `colorize` or
+`material.temperature_gradient`:
+`[[0,[0.05,0,0,1]], [0.25,[0.8,0.1,0,1]], [0.5,[1,0.45,0.05,1]], [0.75,[1,0.85,0.35,1]], [1,[1,1,0.85,1]]]`.
 
 ## Effect-level
 
