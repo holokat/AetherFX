@@ -1,7 +1,7 @@
 {
  "schema_version": "0.1.0",
  "name": "Meteor",
- "description": "A sky portal of storm cloud tears open and a burning rock falls on the marked ground: fireball, rock debris, a racing shockwave ring and a smouldering crater.",
+ "description": "A storm vortex tears open in the sky and a burning rock falls on the marked ground: fireball, rock debris, a racing shockwave ring and a smouldering crater.",
  "duration": 4.0,
  "seed": 60606,
  "timeline": {
@@ -81,16 +81,16 @@
    "type": "camera",
    "parameters": {
     "position": [
-     -2.0,
-     6.841,
-     17.241
+     -1.5,
+     7.488,
+     18.621
     ],
     "target": [
-     -2.0,
-     7.6,
+     -1.5,
+     6.35,
      0.0
     ],
-    "fov": 46
+    "fov": 52
    }
   },
   {
@@ -373,6 +373,64 @@
    }
   },
   {
+   "id": "tex_erosion",
+   "type": "texture",
+   "parameters": {
+    "width": 128,
+    "height": 128,
+    "graph": {
+     "nodes": [
+      {
+       "id": "a",
+       "op": "fbm",
+       "params": {
+        "frequency": 5.0,
+        "octaves": 5,
+        "gain": 0.55,
+        "seed": 4407,
+        "tile": true
+       }
+      },
+      {
+       "id": "b",
+       "op": "fbm",
+       "params": {
+        "frequency": 13.0,
+        "octaves": 3,
+        "gain": 0.5,
+        "seed": 9931,
+        "tile": true
+       }
+      },
+      {
+       "id": "m",
+       "op": "math",
+       "params": {
+        "mode": "lerp",
+        "factor": 0.35
+       },
+       "inputs": {
+        "a": "a",
+        "b": "b"
+       }
+      },
+      {
+       "id": "l",
+       "op": "levels",
+       "params": {
+        "in_low": 0.27,
+        "in_high": 0.76
+       },
+       "inputs": {
+        "a": "m"
+       }
+      }
+     ],
+     "output": "l"
+    }
+   }
+  },
+  {
    "id": "tex_glow",
    "type": "texture",
    "parameters": {
@@ -418,8 +476,8 @@
    "id": "tex_glint",
    "type": "texture",
    "parameters": {
-    "width": 192,
-    "height": 192,
+    "width": 128,
+    "height": 128,
     "graph": {
      "nodes": [
       {
@@ -546,7 +604,7 @@
        "id": "rb",
        "op": "blur",
        "params": {
-        "radius": 6.0
+        "radius": 4.0
        },
        "inputs": {
         "a": "raysf"
@@ -1145,8 +1203,8 @@
    "id": "tex_cracks",
    "type": "texture",
    "parameters": {
-    "width": 384,
-    "height": 384,
+    "width": 320,
+    "height": 320,
     "graph": {
      "nodes": [
       {
@@ -1737,8 +1795,8 @@
     "soft_particle": true,
     "depth_fade": 0.5,
     "emissive_intensity": 0.55,
-    "dissolve": 0.42,
-    "erosion": 0.28,
+    "dissolve": 0.3,
+    "erosion": 0.3,
     "temperature_gradient": [
      [
       0.0,
@@ -1795,6 +1853,9 @@
       ]
      ]
     ]
+   },
+   "inputs": {
+    "noise_texture": "tex_erosion"
    }
   },
   {
@@ -1814,9 +1875,9 @@
     "blend": "alpha",
     "shading": "lit",
     "base_color": [
-     0.115,
-     0.092,
-     0.082,
+     0.34,
+     0.28,
+     0.25,
      1.0
     ],
     "emissive_color": [
@@ -1829,6 +1890,9 @@
     "depth_fade": 0.5,
     "dissolve": 0.45,
     "erosion": 0.3
+   },
+   "inputs": {
+    "noise_texture": "tex_erosion"
    }
   },
   {
@@ -1838,21 +1902,24 @@
     "blend": "alpha",
     "shading": "lit",
     "base_color": [
-     0.13,
-     0.1,
-     0.125,
+     0.62,
+     0.56,
+     0.58,
      1.0
     ],
     "emissive_color": [
-     0.62,
+     0.6,
      0.5,
-     0.68,
+     0.62,
      1.0
     ],
     "soft_particle": true,
     "depth_fade": 0.5,
-    "dissolve": 0.42,
-    "erosion": 0.3
+    "dissolve": 0.5,
+    "erosion": 0.32
+   },
+   "inputs": {
+    "noise_texture": "tex_erosion"
    }
   },
   {
@@ -1877,6 +1944,9 @@
     "depth_fade": 0.45,
     "dissolve": 0.42,
     "erosion": 0.3
+   },
+   "inputs": {
+    "noise_texture": "tex_erosion"
    }
   },
   {
@@ -1886,15 +1956,15 @@
     "blend": "alpha",
     "shading": "lit",
     "base_color": [
-     0.085,
-     0.06,
-     0.048,
+     0.17,
+     0.12,
+     0.095,
      1.0
     ],
     "emissive_color": [
      1.0,
-     0.3,
-     0.05,
+     0.26,
+     0.04,
      1.0
     ],
     "emissive_intensity": 0.06
@@ -1907,9 +1977,9 @@
     "blend": "alpha",
     "shading": "lit",
     "base_color": [
-     0.05,
      0.034,
-     0.028,
+     0.024,
+     0.02,
      1.0
     ],
     "emissive_color": [
@@ -1928,15 +1998,15 @@
     "blend": "alpha",
     "shading": "lit",
     "base_color": [
-     0.55,
-     0.2,
-     0.04,
+     0.12,
+     0.03,
+     0.01,
      1.0
     ],
     "emissive_color": [
      1.0,
-     0.46,
-     0.1,
+     0.26,
+     0.035,
      1.0
     ],
     "emissive_intensity": 0.0
@@ -1975,7 +2045,7 @@
    "type": "force",
    "parameters": {
     "force_type": "gravity",
-    "strength": 24.0
+    "strength": 32.0
    }
   },
   {
@@ -1992,7 +2062,7 @@
    "parameters": {
     "force_type": "curl_noise",
     "strength": 2.6,
-    "frequency": 0.55,
+    "frequency": 0.5,
     "octaves": 2,
     "speed": 0.9
    }
@@ -2002,7 +2072,16 @@
    "type": "force",
    "parameters": {
     "force_type": "buoyancy",
-    "strength": 2.6,
+    "strength": 2.8,
+    "temperature": 1.0
+   }
+  },
+  {
+   "id": "f_ball_lift",
+   "type": "force",
+   "parameters": {
+    "force_type": "buoyancy",
+    "strength": 7.5,
     "temperature": 1.0
    }
   },
@@ -2011,7 +2090,7 @@
    "type": "force",
    "parameters": {
     "force_type": "buoyancy",
-    "strength": 1.5,
+    "strength": 1.6,
     "temperature": 1.0
    }
   },
@@ -2051,7 +2130,7 @@
    "type": "force",
    "parameters": {
     "force_type": "vortex",
-    "strength": 7.0,
+    "strength": 9.0,
     "direction": [
      0.0,
      0.9511,
@@ -2062,7 +2141,7 @@
      14.2,
      -1.2
     ],
-    "radius": 12.0,
+    "radius": 0.0,
     "falloff": "none"
    }
   },
@@ -2071,7 +2150,7 @@
    "type": "force",
    "parameters": {
     "force_type": "attractor",
-    "strength": 8.0,
+    "strength": 7.0,
     "position": [
      -5.2,
      14.2,
@@ -2305,9 +2384,9 @@
    "layer": "telegraph",
    "parameters": {
     "max_particles": 110,
-    "lifetime": 1.7,
+    "lifetime": 1.8,
     "lifetime_variance": 0.3,
-    "size": 2.5,
+    "size": 2.6,
     "size_variance": 0.7,
     "size_over_life": [
      [
@@ -2316,7 +2395,7 @@
      ],
      [
       1.0,
-      1.15
+      1.2
      ]
     ],
     "color": [
@@ -2354,7 +2433,7 @@
       ]
      ]
     ],
-    "opacity": 0.085,
+    "opacity": 0.06,
     "opacity_over_life": [
      [
       0.0,
@@ -2366,7 +2445,7 @@
      ],
      [
       0.6,
-      0.6
+      0.55
      ],
      [
       1.0,
@@ -2374,7 +2453,7 @@
      ]
     ],
     "emissive": 0.3,
-    "drag": 0.35,
+    "drag": 0.3,
     "blend": "additive",
     "render_mode": "stretched_billboard",
     "velocity_stretch": 0.34
@@ -2421,7 +2500,7 @@
       }
      ]
     },
-    "velocity": 4.2,
+    "velocity": 4.4,
     "velocity_variance": 1.0,
     "direction": [
      0,
@@ -2440,11 +2519,11 @@
    "type": "particle_system",
    "layer": "telegraph",
    "parameters": {
-    "max_particles": 220,
-    "lifetime": 1.3,
-    "lifetime_variance": 0.5,
-    "size": 0.075,
-    "size_variance": 0.035,
+    "max_particles": 520,
+    "lifetime": 1.0,
+    "lifetime_variance": 0.35,
+    "size": 0.09,
+    "size_variance": 0.04,
     "color": [
      1.0,
      0.42,
@@ -2635,48 +2714,37 @@
      0.0,
      0.0
     ],
+    "scale": [
+     1.0,
+     0.6,
+     1.0
+    ],
     "radius": {
-     "value": 2.2,
+     "value": 2.8,
      "track": [
       {
        "time": 0.55,
-       "value": 2.2
+       "value": 2.8
       },
       {
-       "time": 1.0,
-       "value": 3.6
-      },
-      {
-       "time": 1.3,
-       "value": 4.3
-      },
-      {
-       "time": 2.8,
-       "value": 4.7
-      },
-      {
-       "time": 3.3,
-       "value": 5.2
-      }
-     ]
-    },
-    "height": {
-     "value": 6.0,
-     "track": [
-      {
-       "time": 0.55,
-       "value": 6.0
+       "time": 0.9,
+       "value": 5.0
       },
       {
        "time": 1.2,
-       "value": 9.6
+       "value": 6.2
       },
       {
-       "time": 3.3,
-       "value": 10.0
+       "time": 2.8,
+       "value": 6.7
+      },
+      {
+       "time": 3.5,
+       "value": 7.2
       }
      ]
     },
+    "height": 11.6,
     "density": {
      "value": 0.0,
      "track": [
@@ -2685,53 +2753,53 @@
        "value": 0.0
       },
       {
-       "time": 0.9,
-       "value": 1.2
+       "time": 0.8,
+       "value": 2.0
       },
       {
        "time": 1.2,
-       "value": 1.8
+       "value": 3.4
       },
       {
-       "time": 2.3,
+       "time": 2.6,
+       "value": 3.2
+      },
+      {
+       "time": 3.0,
        "value": 1.6
       },
       {
-       "time": 2.9,
-       "value": 0.7
-      },
-      {
-       "time": 3.3,
+       "time": 3.5,
        "value": 0.0
       }
      ]
     },
-    "emission": 0.22,
+    "emission": 0.06,
     "color": [
-     0.16,
+     0.12,
+     0.08,
      0.1,
-     0.17,
      1.0
     ],
     "color_hot": [
-     0.3,
+     0.36,
+     0.25,
      0.22,
-     0.28,
      1.0
     ],
-    "filament_scale": 0.7,
-    "strands": 0.55,
-    "carve": 0.46,
-    "softness": 0.8,
-    "spiral_arms": 4,
-    "arm_sharpness": 1.7,
+    "filament_scale": 0.65,
+    "strands": 0.65,
+    "carve": 0.5,
+    "softness": 0.35,
+    "spiral_arms": 5,
+    "arm_sharpness": 1.1,
     "twist": 0.0,
-    "spin": 0.22,
+    "spin": 0.2,
     "climb": 0.0,
-    "scatter": 0.8,
+    "scatter": 1.0,
     "march_steps": 24,
     "start_time": 0.55,
-    "duration": 2.78
+    "duration": 2.95
    }
   },
   {
@@ -2739,15 +2807,15 @@
    "type": "particle_system",
    "layer": "sky",
    "parameters": {
-    "max_particles": 220,
-    "lifetime": 1.6,
+    "max_particles": 110,
+    "lifetime": 2.0,
     "lifetime_variance": 0.4,
-    "size": 2.7,
-    "size_variance": 0.9,
+    "size": 3.7,
+    "size_variance": 1.1,
     "size_over_life": [
      [
       0.0,
-      0.45
+      0.5
      ],
      [
       0.4,
@@ -2755,23 +2823,23 @@
      ],
      [
       1.0,
-      1.3
+      1.25
      ]
     ],
     "color": [
-     0.42,
-     0.36,
-     0.42,
+     0.62,
+     0.6,
+     0.62,
      1.0
     ],
-    "opacity": 0.7,
+    "opacity": 0.85,
     "opacity_over_life": [
      [
       0.0,
       0.0
      ],
      [
-      0.25,
+      0.2,
       1.0
      ],
      [
@@ -2783,13 +2851,13 @@
       0.0
      ]
     ],
-    "emissive": 1.3,
+    "emissive": 0.07,
     "rotation_variance": 180.0,
-    "angular_velocity_variance": 24.0,
+    "angular_velocity_variance": 20.0,
     "drag": 0.8,
     "blend": "alpha",
     "sort": true,
-    "sprite_fps": 7.0
+    "sprite_fps": 6.0
    },
    "inputs": {
     "sprite": "tex_puff",
@@ -2807,8 +2875,8 @@
    "layer": "sky",
    "parameters": {
     "shape": "ring",
-    "radius": 6.4,
-    "inner_radius": 2.4,
+    "radius": 9.0,
+    "inner_radius": 2.8,
     "position": [
      -5.2,
      14.2,
@@ -2828,18 +2896,18 @@
       },
       {
        "time": 0.72,
-       "value": 95.0
-      },
-      {
-       "time": 1.2,
        "value": 70.0
       },
       {
-       "time": 2.2,
-       "value": 55.0
+       "time": 1.2,
+       "value": 42.0
       },
       {
-       "time": 2.7,
+       "time": 2.5,
+       "value": 36.0
+      },
+      {
+       "time": 2.95,
        "value": 0.0
       }
      ]
@@ -2853,10 +2921,169 @@
     ],
     "spread": 40,
     "start_time": 0.6,
-    "duration": 2.15
+    "duration": 2.4
    },
    "inputs": {
     "particle": "ps_cloud"
+   }
+  },
+  {
+   "id": "ps_sky_fire",
+   "type": "particle_system",
+   "layer": "sky",
+   "parameters": {
+    "max_particles": 90,
+    "lifetime": 0.75,
+    "lifetime_variance": 0.25,
+    "size": 2.9,
+    "size_variance": 0.9,
+    "size_over_life": [
+     [
+      0.0,
+      0.5
+     ],
+     [
+      0.3,
+      1.0
+     ],
+     [
+      1.0,
+      0.7
+     ]
+    ],
+    "color": [
+     1.0,
+     0.8,
+     0.6,
+     1.0
+    ],
+    "color_over_life": [
+     [
+      0.0,
+      [
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      0.5,
+      [
+       1.0,
+       0.85,
+       0.75,
+       1.0
+      ]
+     ],
+     [
+      1.0,
+      [
+       0.9,
+       0.55,
+       0.45,
+       1.0
+      ]
+     ]
+    ],
+    "opacity": 0.34,
+    "opacity_over_life": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.15,
+      1.0
+     ],
+     [
+      0.45,
+      0.6
+     ],
+     [
+      0.75,
+      0.0
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 0.25,
+    "drag": 1.2,
+    "blend": "additive",
+    "render_mode": "stretched_billboard",
+    "velocity_stretch": 0.08,
+    "sprite_fps": 16.0
+   },
+   "inputs": {
+    "sprite": "tex_fire",
+    "material": "mat_fire",
+    "forces": [
+     "f_sky_vortex",
+     "f_fire_curl"
+    ]
+   }
+  },
+  {
+   "id": "e_sky_fire",
+   "type": "emitter",
+   "layer": "sky",
+   "parameters": {
+    "shape": "disc",
+    "radius": 2.8,
+    "position": [
+     -5.2,
+     14.2,
+     -1.2
+    ],
+    "rotation": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.7,
+       "value": 0.0
+      },
+      {
+       "time": 1.0,
+       "value": 40.0
+      },
+      {
+       "time": 1.25,
+       "value": 80.0
+      },
+      {
+       "time": 1.8,
+       "value": 50.0
+      },
+      {
+       "time": 2.3,
+       "value": 30.0
+      },
+      {
+       "time": 2.55,
+       "value": 0.0
+      }
+     ]
+    },
+    "velocity": 1.6,
+    "velocity_variance": 1.0,
+    "direction": [
+     0,
+     0,
+     0
+    ],
+    "spread": 60,
+    "start_time": 0.7,
+    "duration": 2.45
+   },
+   "inputs": {
+    "particle": "ps_sky_fire"
    }
   },
   {
@@ -2865,28 +3092,32 @@
    "layer": "sky",
    "parameters": {
     "max_particles": 4,
-    "lifetime": 2.3,
-    "size": 8.5,
+    "lifetime": 2.75,
+    "size": 9.5,
     "size_over_life": [
      [
       0.0,
-      0.25
+      0.2
      ],
      [
-      0.22,
-      0.8
+      0.2,
+      0.75
      ],
      [
-      0.27,
+      0.23,
       1.0
      ],
      [
-      0.5,
-      0.85
+      0.4,
+      0.8
+     ],
+     [
+      0.8,
+      0.7
      ],
      [
       1.0,
-      0.6
+      0.5
      ]
     ],
     "color": [
@@ -2906,7 +3137,7 @@
       ]
      ],
      [
-      0.2,
+      0.18,
       [
        1.0,
        0.8,
@@ -2915,7 +3146,7 @@
       ]
      ],
      [
-      0.27,
+      0.23,
       [
        1.0,
        1.0,
@@ -2924,7 +3155,7 @@
       ]
      ],
      [
-      0.6,
+      0.5,
       [
        0.9,
        0.7,
@@ -2942,27 +3173,27 @@
       ]
      ]
     ],
-    "opacity": 0.55,
+    "opacity": 0.6,
     "opacity_over_life": [
      [
       0.0,
       0.0
      ],
      [
-      0.12,
-      0.45
+      0.1,
+      0.4
      ],
      [
-      0.26,
+      0.22,
       1.0
      ],
      [
-      0.4,
+      0.35,
       0.7
      ],
      [
-      0.75,
-      0.45
+      0.8,
+      0.5
      ],
      [
       1.0,
@@ -3007,8 +3238,8 @@
    "layer": "sky",
    "parameters": {
     "max_particles": 4,
-    "lifetime": 0.46,
-    "size": 6.4,
+    "lifetime": 0.5,
+    "size": 8.5,
     "size_over_life": [
      [
       0.0,
@@ -3098,9 +3329,9 @@
    "parameters": {
     "shape": "point",
     "position": [
-     -5.2,
-     14.2,
-     0.4
+     -4.8949,
+     13.6888,
+     1.125
     ],
     "rate": 0,
     "burst_count": 1,
@@ -3120,11 +3351,11 @@
    "type": "particle_system",
    "layer": "sky",
    "parameters": {
-    "max_particles": 200,
-    "lifetime": 1.5,
-    "lifetime_variance": 0.5,
-    "size": 0.1,
-    "size_variance": 0.05,
+    "max_particles": 420,
+    "lifetime": 1.8,
+    "lifetime_variance": 0.6,
+    "size": 0.13,
+    "size_variance": 0.06,
     "color": [
      1.0,
      0.5,
@@ -3199,7 +3430,7 @@
    "layer": "sky",
    "parameters": {
     "shape": "disc",
-    "radius": 2.8,
+    "radius": 3.6,
     "position": [
      -5.2,
      14.2,
@@ -3219,31 +3450,219 @@
       },
       {
        "time": 1.05,
+       "value": 120.0
+      },
+      {
+       "time": 1.3,
+       "value": 190.0
+      },
+      {
+       "time": 2.0,
+       "value": 140.0
+      },
+      {
+       "time": 2.7,
        "value": 70.0
       },
       {
-       "time": 1.9,
-       "value": 60.0
-      },
-      {
-       "time": 2.6,
+       "time": 3.0,
        "value": 0.0
       }
      ]
     },
-    "velocity": 1.6,
-    "velocity_variance": 1.2,
+    "velocity": 2.4,
+    "velocity_variance": 1.8,
     "direction": [
      0,
      -1,
      0
     ],
-    "spread": 50,
+    "spread": 60,
     "start_time": 0.75,
-    "duration": 1.9
+    "duration": 2.3
    },
    "inputs": {
     "particle": "ps_sky_ember"
+   }
+  },
+  {
+   "id": "rock_mesh",
+   "type": "mesh",
+   "parameters": {
+    "primitive": "rock",
+    "radius": 0.5,
+    "segments": 12,
+    "irregularity": 0.75,
+    "variants": 3,
+    "visible": false
+   }
+  },
+  {
+   "id": "chip_mesh",
+   "type": "mesh",
+   "parameters": {
+    "primitive": "shard",
+    "radius": 0.5,
+    "height": 0.34,
+    "irregularity": 0.7,
+    "variants": 3,
+    "visible": false
+   }
+  },
+  {
+   "id": "ps_frag",
+   "type": "particle_system",
+   "layer": "sky",
+   "parameters": {
+    "max_particles": 16,
+    "lifetime": 1.05,
+    "lifetime_variance": 0.2,
+    "size": 0.42,
+    "size_variance": 0.18,
+    "size_over_life": [
+     [
+      0.0,
+      0.3
+     ],
+     [
+      0.1,
+      1.0
+     ],
+     [
+      0.7,
+      0.85
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "angular_velocity": 260.0,
+    "angular_velocity_variance": 160.0,
+    "render_mode": "mesh",
+    "blend": "alpha",
+    "drag": 0.3,
+    "orientation": "tumble",
+    "mesh_scale": [
+     1.0,
+     0.8,
+     1.0
+    ],
+    "mesh_scale_variance": [
+     0.3,
+     0.25,
+     0.3
+    ]
+   },
+   "inputs": {
+    "mesh": "rock_mesh",
+    "material": "mat_rock",
+    "forces": [
+     "f_gravity"
+    ]
+   }
+  },
+  {
+   "id": "e_frag",
+   "type": "emitter",
+   "layer": "sky",
+   "parameters": {
+    "shape": "disc",
+    "radius": 3.0,
+    "position": [
+     -5.2,
+     14.2,
+     -1.2
+    ],
+    "rotation": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rate": 0,
+    "burst_count": 3,
+    "burst_times": [
+     0.0,
+     0.15,
+     0.35,
+     0.55,
+     0.75
+    ],
+    "velocity": 6.5,
+    "velocity_variance": 3.0,
+    "direction": [
+     0.25,
+     -1.0,
+     0.1
+    ],
+    "spread": 58,
+    "start_time": 1.2,
+    "duration": 1.1
+   },
+   "inputs": {
+    "particle": "ps_frag"
+   }
+  },
+  {
+   "id": "t_frag",
+   "type": "trail",
+   "layer": "sky",
+   "parameters": {
+    "width": 0.5,
+    "lifetime": 0.34,
+    "blend": "additive",
+    "color": [
+     1.0,
+     0.45,
+     0.12,
+     1.0
+    ],
+    "emissive": 0.9,
+    "taper": [
+     [
+      0.0,
+      0.55
+     ],
+     [
+      0.2,
+      1.0
+     ],
+     [
+      0.6,
+      0.6
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "opacity_over_life": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.12,
+      0.85
+     ],
+     [
+      0.5,
+      0.5
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "min_vertex_distance": 0.12,
+    "max_segments": 28,
+    "uv_scroll": -1.5,
+    "start_time": 1.2,
+    "duration": 2.2
+   },
+   "inputs": {
+    "source": "ps_frag",
+    "material": "mat_ribbon"
    }
   },
   {
@@ -3254,16 +3673,16 @@
     "light_type": "point",
     "position": [
      -5.2,
-     14.6,
-     -3.4
+     14.5,
+     -2.7
     ],
     "color": [
      1.0,
-     0.24,
+     0.27,
      0.05,
      1.0
     ],
-    "radius": 9.5,
+    "radius": 11.0,
     "intensity": {
      "value": 0.0,
      "track": [
@@ -3273,38 +3692,81 @@
       },
       {
        "time": 0.9,
-       "value": 10.0
-      },
-      {
-       "time": 1.1,
        "value": 26.0
       },
       {
+       "time": 1.1,
+       "value": 60.0
+      },
+      {
        "time": 1.2,
-       "value": 46.0
+       "value": 95.0
       },
       {
-       "time": 1.36,
-       "value": 30.0
-      },
-      {
-       "time": 1.8,
-       "value": 20.0
+       "time": 1.4,
+       "value": 62.0
       },
       {
        "time": 2.4,
-       "value": 10.0
+       "value": 46.0
       },
       {
-       "time": 2.95,
+       "time": 2.8,
+       "value": 38.0
+      },
+      {
+       "time": 3.3,
        "value": 0.0
       }
      ]
     },
-    "flicker_amplitude": 0.18,
+    "flicker_amplitude": 0.2,
     "flicker_frequency": 11.0,
     "start_time": 0.6,
-    "duration": 2.4
+    "duration": 2.75
+   }
+  },
+  {
+   "id": "sky_rim",
+   "type": "light",
+   "layer": "sky",
+   "parameters": {
+    "light_type": "point",
+    "position": [
+     -5.2,
+     17.2,
+     -5.2
+    ],
+    "color": [
+     0.9,
+     0.2,
+     0.08,
+     1.0
+    ],
+    "radius": 24.0,
+    "intensity": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.6,
+       "value": 0.0
+      },
+      {
+       "time": 1.0,
+       "value": 26.0
+      },
+      {
+       "time": 2.6,
+       "value": 26.0
+      },
+      {
+       "time": 3.3,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.6,
+    "duration": 2.75
    }
   },
   {
@@ -3343,7 +3805,7 @@
        "time": 1.2,
        "value": [
         -5.1882,
-        14.1699,
+        14.1711,
         -1.1973
        ]
       },
@@ -3351,7 +3813,7 @@
        "time": 1.25,
        "value": [
         -5.1736,
-        14.1326,
+        14.1352,
         -1.1939
        ]
       },
@@ -3359,7 +3821,7 @@
        "time": 1.3,
        "value": [
         -5.1549,
-        14.085,
+        14.0893,
         -1.1896
        ]
       },
@@ -3367,7 +3829,7 @@
        "time": 1.35,
        "value": [
         -5.1311,
-        14.0245,
+        14.0312,
         -1.1841
        ]
       },
@@ -3375,7 +3837,7 @@
        "time": 1.4,
        "value": [
         -5.1016,
-        13.9494,
+        13.9588,
         -1.1773
        ]
       },
@@ -3383,7 +3845,7 @@
        "time": 1.45,
        "value": [
         -5.0657,
-        13.8577,
+        13.8706,
         -1.169
        ]
       },
@@ -3391,7 +3853,7 @@
        "time": 1.5,
        "value": [
         -5.0226,
-        13.7479,
+        13.765,
         -1.1591
        ]
       },
@@ -3399,7 +3861,7 @@
        "time": 1.55,
        "value": [
         -4.9718,
-        13.6186,
+        13.6405,
         -1.1473
        ]
       },
@@ -3407,7 +3869,7 @@
        "time": 1.6,
        "value": [
         -4.9129,
-        13.4684,
+        13.496,
         -1.1337
        ]
       },
@@ -3415,7 +3877,7 @@
        "time": 1.65,
        "value": [
         -4.8452,
-        13.296,
+        13.3302,
         -1.1181
        ]
       },
@@ -3423,7 +3885,7 @@
        "time": 1.7,
        "value": [
         -4.7684,
-        13.1003,
+        13.1418,
         -1.1004
        ]
       },
@@ -3431,7 +3893,7 @@
        "time": 1.75,
        "value": [
         -4.682,
-        12.8801,
+        12.93,
         -1.0805
        ]
       },
@@ -3439,7 +3901,7 @@
        "time": 1.8,
        "value": [
         -4.5856,
-        12.6344,
+        12.6934,
         -1.0582
        ]
       },
@@ -3447,7 +3909,7 @@
        "time": 1.85,
        "value": [
         -4.4787,
-        12.362,
+        12.4313,
         -1.0335
        ]
       },
@@ -3455,7 +3917,7 @@
        "time": 1.9,
        "value": [
         -4.3609,
-        12.0619,
+        12.1426,
         -1.0064
        ]
       },
@@ -3463,7 +3925,7 @@
        "time": 1.95,
        "value": [
         -4.2319,
-        11.7333,
+        11.8264,
         -0.9766
        ]
       },
@@ -3471,7 +3933,7 @@
        "time": 2.0,
        "value": [
         -4.0913,
-        11.3751,
+        11.4817,
         -0.9442
        ]
       },
@@ -3479,7 +3941,7 @@
        "time": 2.05,
        "value": [
         -3.9388,
-        10.9864,
+        11.1077,
         -0.909
        ]
       },
@@ -3487,7 +3949,7 @@
        "time": 2.1,
        "value": [
         -3.774,
-        10.5664,
+        10.7036,
         -0.8709
        ]
       },
@@ -3495,7 +3957,7 @@
        "time": 2.15,
        "value": [
         -3.5965,
-        10.1143,
+        10.2684,
         -0.83
        ]
       },
@@ -3503,7 +3965,7 @@
        "time": 2.2,
        "value": [
         -3.4061,
-        9.629,
+        9.8015,
         -0.786
        ]
       },
@@ -3511,7 +3973,7 @@
        "time": 2.25,
        "value": [
         -3.2024,
-        9.11,
+        9.3021,
         -0.739
        ]
       },
@@ -3519,7 +3981,7 @@
        "time": 2.3,
        "value": [
         -2.9851,
-        8.5563,
+        8.7693,
         -0.6889
        ]
       },
@@ -3527,7 +3989,7 @@
        "time": 2.35,
        "value": [
         -2.7539,
-        7.9672,
+        8.2024,
         -0.6355
        ]
       },
@@ -3535,7 +3997,7 @@
        "time": 2.4,
        "value": [
         -2.5085,
-        7.3418,
+        7.6006,
         -0.5789
        ]
       },
@@ -3543,7 +4005,7 @@
        "time": 2.45,
        "value": [
         -2.2486,
-        6.6796,
+        6.9634,
         -0.5189
        ]
       },
@@ -3551,7 +4013,7 @@
        "time": 2.5,
        "value": [
         -1.9739,
-        5.9797,
+        6.2899,
         -0.4555
        ]
       },
@@ -3559,7 +4021,7 @@
        "time": 2.55,
        "value": [
         -1.6842,
-        5.2414,
+        5.5795,
         -0.3887
        ]
       },
@@ -3567,7 +4029,7 @@
        "time": 2.6,
        "value": [
         -1.3791,
-        4.464,
+        4.8314,
         -0.3183
        ]
       },
@@ -3575,7 +4037,7 @@
        "time": 2.65,
        "value": [
         -1.0584,
-        3.6469,
+        4.0451,
         -0.2442
        ]
       },
@@ -3583,7 +4045,7 @@
        "time": 2.7,
        "value": [
         -0.7218,
-        2.7893,
+        3.2198,
         -0.1666
        ]
       },
@@ -3591,7 +4053,7 @@
        "time": 2.75,
        "value": [
         -0.3691,
-        1.8905,
+        2.355,
         -0.0852
        ]
       },
@@ -3599,7 +4061,7 @@
        "time": 2.8,
        "value": [
         0.0,
-        0.95,
+        1.45,
         0.0
        ]
       },
@@ -3607,7 +4069,7 @@
        "time": 4.0,
        "value": [
         0.0,
-        0.95,
+        1.45,
         0.0
        ]
       }
@@ -3643,38 +4105,38 @@
       {
        "time": 2.8,
        "value": [
-        150.0,
-        -110.0,
-        80.0
+        38.0,
+        -64.0,
+        26.0
        ]
       }
      ]
     },
     "scale": {
      "value": [
-      0.08,
-      0.08,
-      0.08
+      0.05,
+      0.05,
+      0.05
      ],
      "track": [
       {
        "time": 1.15,
        "value": [
-        0.08,
-        0.08,
-        0.08
+        0.05,
+        0.05,
+        0.05
        ]
       },
       {
-       "time": 1.4,
+       "time": 1.45,
        "value": [
-        0.62,
-        0.62,
-        0.62
+        0.6,
+        0.6,
+        0.6
        ]
       },
       {
-       "time": 1.75,
+       "time": 1.8,
        "value": [
         1.0,
         1.0,
@@ -3701,7 +4163,7 @@
    "seed": 9001,
    "parameters": {
     "primitive": "rock",
-    "radius": 0.8,
+    "radius": 1.428,
     "segments": 16,
     "irregularity": 0.22,
     "color": [
@@ -3711,23 +4173,23 @@
      1.0
     ],
     "emissive": {
-     "value": 1.0,
+     "value": 0.9,
      "track": [
       {
        "time": 1.15,
-       "value": 1.0
+       "value": 0.9
       },
       {
        "time": 1.8,
-       "value": 1.5
+       "value": 1.1
       },
       {
        "time": 2.4,
-       "value": 2.0
+       "value": 1.3
       },
       {
        "time": 2.8,
-       "value": 2.6
+       "value": 1.6
       }
      ]
     },
@@ -3746,13 +4208,13 @@
    "seed": 9100,
    "parameters": {
     "primitive": "rock",
-    "radius": 0.4146,
+    "radius": 0.9429,
     "segments": 12,
-    "irregularity": 0.6302,
+    "irregularity": 0.6802,
     "position": [
-     0.1635,
-     0.4965,
-     0.0263
+     0.3551,
+     0.8128,
+     0.0571
     ],
     "rotation": [
      66.6,
@@ -3760,9 +4222,9 @@
      292.9
     ],
     "scale": [
-     0.9972,
-     0.8434,
-     1.1016
+     0.9708,
+     0.8094,
+     1.1524
     ],
     "color": [
      0.886,
@@ -3786,13 +4248,13 @@
    "seed": 9113,
    "parameters": {
     "primitive": "rock",
-    "radius": 0.4564,
+    "radius": 1.0139,
     "segments": 12,
-    "irregularity": 0.7171,
+    "irregularity": 0.7671,
     "position": [
-     -0.2077,
-     0.4577,
-     0.2197
+     -0.437,
+     0.6707,
+     0.4622
     ],
     "rotation": [
      84.1,
@@ -3800,9 +4262,9 @@
      328.6
     ],
     "scale": [
-     1.0509,
-     0.7797,
-     0.9505
+     1.0514,
+     0.7253,
+     0.9257
     ],
     "color": [
      0.9509,
@@ -3826,13 +4288,13 @@
    "seed": 9126,
    "parameters": {
     "primitive": "rock",
-    "radius": 0.4442,
+    "radius": 0.9931,
     "segments": 12,
-    "irregularity": 0.6712,
+    "irregularity": 0.7212,
     "position": [
-     0.0032,
-     0.3975,
-     -0.3656
+     0.0066,
+     0.5132,
+     -0.7545
     ],
     "rotation": [
      158.6,
@@ -3840,9 +4302,9 @@
      260.5
     ],
     "scale": [
-     1.0935,
-     0.7418,
-     1.0834
+     1.1152,
+     0.6751,
+     1.1251
     ],
     "color": [
      1.1232,
@@ -3866,13 +4328,13 @@
    "seed": 9139,
    "parameters": {
     "primitive": "rock",
-    "radius": 0.4532,
+    "radius": 1.0085,
     "segments": 12,
-    "irregularity": 0.6666,
+    "irregularity": 0.7166,
     "position": [
-     0.2145,
-     0.4151,
-     0.4064
+     0.428,
+     0.457,
+     0.811
     ],
     "rotation": [
      82.4,
@@ -3880,9 +4342,9 @@
      223.4
     ],
     "scale": [
-     1.0745,
-     0.9166,
-     0.9664
+     1.0867,
+     0.906,
+     0.9497
     ],
     "color": [
      0.9245,
@@ -3906,13 +4368,13 @@
    "seed": 9152,
    "parameters": {
     "primitive": "rock",
-    "radius": 0.4348,
+    "radius": 0.9772,
     "segments": 12,
-    "irregularity": 0.5753,
+    "irregularity": 0.6253,
     "position": [
-     -0.5217,
-     0.3246,
-     0.0041
+     -0.9926,
+     0.2251,
+     0.0078
     ],
     "rotation": [
      3.1,
@@ -3920,9 +4382,9 @@
      199.8
     ],
     "scale": [
-     1.1291,
-     0.8443,
-     1.138
+     1.1686,
+     0.8105,
+     1.207
     ],
     "color": [
      0.9257,
@@ -3946,13 +4408,13 @@
    "seed": 9165,
    "parameters": {
     "primitive": "rock",
-    "radius": 0.4724,
+    "radius": 1.041,
     "segments": 12,
-    "irregularity": 0.7576,
+    "irregularity": 0.8076,
     "position": [
-     0.3801,
-     0.2417,
-     -0.3144
+     0.7114,
+     0.0657,
+     -0.5883
     ],
     "rotation": [
      289.1,
@@ -3960,9 +4422,9 @@
      181.8
     ],
     "scale": [
-     1.0637,
-     0.7278,
-     1.0453
+     1.0705,
+     0.6568,
+     1.068
     ],
     "color": [
      1.1368,
@@ -3986,13 +4448,13 @@
    "seed": 9178,
    "parameters": {
     "primitive": "rock",
-    "radius": 0.4807,
+    "radius": 1.0552,
     "segments": 12,
-    "irregularity": 0.5564,
+    "irregularity": 0.6064,
     "position": [
-     -0.0972,
-     0.2138,
-     0.5556
+     -0.1721,
+     -0.0784,
+     0.9839
     ],
     "rotation": [
      327.9,
@@ -4000,9 +4462,9 @@
      17.8
     ],
     "scale": [
-     1.0896,
-     0.7519,
-     0.9968
+     1.1093,
+     0.6885,
+     0.9952
     ],
     "color": [
      1.0926,
@@ -4026,13 +4488,13 @@
    "seed": 9191,
    "parameters": {
     "primitive": "rock",
-    "radius": 0.4864,
+    "radius": 1.0649,
     "segments": 12,
-    "irregularity": 0.7976,
+    "irregularity": 0.8476,
     "position": [
-     -0.2699,
-     0.1826,
-     -0.4966
+     -0.4635,
+     -0.1877,
+     -0.853
     ],
     "rotation": [
      88.8,
@@ -4040,9 +4502,9 @@
      34.5
     ],
     "scale": [
-     1.1505,
-     0.8685,
-     1.0735
+     1.2007,
+     0.8424,
+     1.1102
     ],
     "color": [
      0.8914,
@@ -4066,13 +4528,13 @@
    "seed": 9204,
    "parameters": {
     "primitive": "rock",
-    "radius": 0.4807,
+    "radius": 0.9074,
     "segments": 12,
-    "irregularity": 0.6183,
+    "irregularity": 0.6683,
     "position": [
-     0.5815,
-     0.053,
-     0.1763
+     0.8557,
+     -0.4726,
+     0.2594
     ],
     "rotation": [
      72.0,
@@ -4080,9 +4542,9 @@
      61.4
     ],
     "scale": [
-     1.2002,
-     0.8347,
-     1.1946
+     1.2753,
+     0.7978,
+     1.2919
     ],
     "color": [
      0.9709,
@@ -4106,13 +4568,13 @@
    "seed": 9217,
    "parameters": {
     "primitive": "rock",
-    "radius": 0.43,
+    "radius": 0.969,
     "segments": 12,
-    "irregularity": 0.726,
+    "irregularity": 0.776,
     "position": [
-     -0.5292,
-     0.0053,
-     0.3336
+     -0.693,
+     -0.6303,
+     0.4369
     ],
     "rotation": [
      21.7,
@@ -4120,9 +4582,9 @@
      140.2
     ],
     "scale": [
-     1.2328,
-     0.8064,
-     1.1595
+     1.3242,
+     0.7605,
+     1.2393
     ],
     "color": [
      1.0778,
@@ -4146,13 +4608,13 @@
    "seed": 9230,
    "parameters": {
     "primitive": "rock",
-    "radius": 0.4907,
+    "radius": 0.922,
     "segments": 12,
-    "irregularity": 0.6895,
+    "irregularity": 0.7395,
     "position": [
-     0.2808,
-     -0.0138,
-     -0.4434
+     0.321,
+     -0.6587,
+     -0.5069
     ],
     "rotation": [
      59.3,
@@ -4160,9 +4622,9 @@
      51.4
     ],
     "scale": [
-     1.2223,
-     0.9467,
-     0.966
+     1.3084,
+     0.9456,
+     0.949
     ],
     "color": [
      0.9163,
@@ -4186,13 +4648,13 @@
    "seed": 9243,
    "parameters": {
     "primitive": "rock",
-    "radius": 0.3934,
+    "radius": 0.7798,
     "segments": 12,
-    "irregularity": 0.7726,
+    "irregularity": 0.8226,
     "position": [
-     0.0574,
-     -0.0759,
-     0.613
+     0.0392,
+     -0.9359,
+     0.4191
     ],
     "rotation": [
      265.6,
@@ -4200,9 +4662,9 @@
      20.3
     ],
     "scale": [
-     1.0031,
-     0.9079,
-     1.0377
+     0.9796,
+     0.8945,
+     1.0566
     ],
     "color": [
      1.0656,
@@ -4219,335 +4681,15 @@
    }
   },
   {
-   "id": "met_crust_12",
-   "type": "mesh",
-   "layer": "meteor",
-   "parent": "met_body",
-   "seed": 9256,
-   "parameters": {
-    "primitive": "rock",
-    "radius": 0.3917,
-    "segments": 12,
-    "irregularity": 0.7042,
-    "position": [
-     -0.4776,
-     -0.1624,
-     -0.172
-    ],
-    "rotation": [
-     2.0,
-     343.3,
-     272.4
-    ],
-    "scale": [
-     1.0987,
-     0.8021,
-     0.9435
-    ],
-    "color": [
-     1.0965,
-     0.9596,
-     0.9758,
-     1.0
-    ],
-    "emissive": 0.0,
-    "start_time": 1.15,
-    "duration": 1.65
-   },
-   "inputs": {
-    "material": "mat_crust"
-   }
-  },
-  {
-   "id": "met_crust_13",
-   "type": "mesh",
-   "layer": "meteor",
-   "parent": "met_body",
-   "seed": 9269,
-   "parameters": {
-    "primitive": "rock",
-    "radius": 0.4312,
-    "segments": 12,
-    "irregularity": 0.7708,
-    "position": [
-     0.4963,
-     -0.2349,
-     -0.1647
-    ],
-    "rotation": [
-     14.6,
-     53.5,
-     72.1
-    ],
-    "scale": [
-     1.2375,
-     0.7671,
-     1.1038
-    ],
-    "color": [
-     0.9803,
-     0.9256,
-     0.8326,
-     1.0
-    ],
-    "emissive": 0.0,
-    "start_time": 1.15,
-    "duration": 1.65
-   },
-   "inputs": {
-    "material": "mat_crust"
-   }
-  },
-  {
-   "id": "met_crust_14",
-   "type": "mesh",
-   "layer": "meteor",
-   "parent": "met_body",
-   "seed": 9282,
-   "parameters": {
-    "primitive": "rock",
-    "radius": 0.4651,
-    "segments": 12,
-    "irregularity": 0.6617,
-    "position": [
-     -0.2761,
-     -0.2861,
-     0.4174
-    ],
-    "rotation": [
-     122.3,
-     236.3,
-     97.1
-    ],
-    "scale": [
-     1.0607,
-     0.812,
-     0.9947
-    ],
-    "color": [
-     0.9619,
-     0.8853,
-     0.8104,
-     1.0
-    ],
-    "emissive": 0.0,
-    "start_time": 1.15,
-    "duration": 1.65
-   },
-   "inputs": {
-    "material": "mat_crust"
-   }
-  },
-  {
-   "id": "met_crust_15",
-   "type": "mesh",
-   "layer": "meteor",
-   "parent": "met_body",
-   "seed": 9295,
-   "parameters": {
-    "primitive": "rock",
-    "radius": 0.3975,
-    "segments": 12,
-    "irregularity": 0.7556,
-    "position": [
-     0.021,
-     -0.3537,
-     -0.4792
-    ],
-    "rotation": [
-     161.8,
-     305.1,
-     8.3
-    ],
-    "scale": [
-     1.1269,
-     0.9036,
-     1.1937
-    ],
-    "color": [
-     0.8855,
-     0.8679,
-     0.8953,
-     1.0
-    ],
-    "emissive": 0.0,
-    "start_time": 1.15,
-    "duration": 1.65
-   },
-   "inputs": {
-    "material": "mat_crust"
-   }
-  },
-  {
-   "id": "met_crust_16",
-   "type": "mesh",
-   "layer": "meteor",
-   "parent": "met_body",
-   "seed": 9308,
-   "parameters": {
-    "primitive": "rock",
-    "radius": 0.3845,
-    "segments": 12,
-    "irregularity": 0.6824,
-    "position": [
-     0.3407,
-     -0.4241,
-     0.3054
-    ],
-    "rotation": [
-     230.4,
-     249.5,
-     29.7
-    ],
-    "scale": [
-     1.2215,
-     0.9451,
-     0.9313
-    ],
-    "color": [
-     1.1128,
-     0.9342,
-     0.8319,
-     1.0
-    ],
-    "emissive": 0.0,
-    "start_time": 1.15,
-    "duration": 1.65
-   },
-   "inputs": {
-    "material": "mat_crust"
-   }
-  },
-  {
-   "id": "met_crust_17",
-   "type": "mesh",
-   "layer": "meteor",
-   "parent": "met_body",
-   "seed": 9321,
-   "parameters": {
-    "primitive": "rock",
-    "radius": 0.478,
-    "segments": 12,
-    "irregularity": 0.6488,
-    "position": [
-     -0.3968,
-     -0.4152,
-     0.022
-    ],
-    "rotation": [
-     232.3,
-     189.1,
-     194.8
-    ],
-    "scale": [
-     0.9812,
-     0.9467,
-     1.0376
-    ],
-    "color": [
-     1.1229,
-     0.8382,
-     0.8588,
-     1.0
-    ],
-    "emissive": 0.0,
-    "start_time": 1.15,
-    "duration": 1.65
-   },
-   "inputs": {
-    "material": "mat_crust"
-   }
-  },
-  {
-   "id": "met_crust_18",
-   "type": "mesh",
-   "layer": "meteor",
-   "parent": "met_body",
-   "seed": 9334,
-   "parameters": {
-    "primitive": "rock",
-    "radius": 0.3863,
-    "segments": 12,
-    "irregularity": 0.6605,
-    "position": [
-     0.2209,
-     -0.4884,
-     -0.2475
-    ],
-    "rotation": [
-     265.3,
-     118.2,
-     209.0
-    ],
-    "scale": [
-     1.0442,
-     0.9163,
-     1.063
-    ],
-    "color": [
-     0.9848,
-     0.9127,
-     0.9924,
-     1.0
-    ],
-    "emissive": 0.0,
-    "start_time": 1.15,
-    "duration": 1.65
-   },
-   "inputs": {
-    "material": "mat_crust"
-   }
-  },
-  {
-   "id": "met_crust_19",
-   "type": "mesh",
-   "layer": "meteor",
-   "parent": "met_body",
-   "seed": 9347,
-   "parameters": {
-    "primitive": "rock",
-    "radius": 0.4849,
-    "segments": 12,
-    "irregularity": 0.5572,
-    "position": [
-     0.0289,
-     -0.5353,
-     0.169
-    ],
-    "rotation": [
-     79.4,
-     301.6,
-     295.8
-    ],
-    "scale": [
-     1.2135,
-     0.9468,
-     1.0272
-    ],
-    "color": [
-     0.9202,
-     1.0056,
-     0.8047,
-     1.0
-    ],
-    "emissive": 0.0,
-    "start_time": 1.15,
-    "duration": 1.65
-   },
-   "inputs": {
-    "material": "mat_crust"
-   }
-  },
-  {
    "id": "ps_tail",
    "type": "particle_system",
    "layer": "meteor",
    "parameters": {
-    "max_particles": 260,
-    "lifetime": 0.58,
+    "max_particles": 220,
+    "lifetime": 0.6,
     "lifetime_variance": 0.2,
-    "size": 2.35,
-    "size_variance": 0.7,
+    "size": 3.74,
+    "size_variance": 1.02,
     "size_over_life": [
      [
       0.0,
@@ -4643,11 +4785,11 @@
    "parent": "rig",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.7,
+    "radius": 1.105,
     "position": [
-     -0.1274,
-     0.3247,
-     -0.5794
+     -0.2558,
+     0.6273,
+     -0.994
     ],
     "rate": {
      "value": 0.0,
@@ -4658,19 +4800,19 @@
       },
       {
        "time": 1.3,
-       "value": 40.0
+       "value": 30.0
       },
       {
        "time": 1.8,
-       "value": 120.0
+       "value": 80.0
       },
       {
        "time": 2.4,
-       "value": 170.0
+       "value": 110.0
       },
       {
        "time": 2.78,
-       "value": 200.0
+       "value": 125.0
       },
       {
        "time": 2.8,
@@ -4678,12 +4820,12 @@
       }
      ]
     },
-    "velocity": 4.2,
+    "velocity": 4.6,
     "velocity_variance": 2.0,
     "direction": [
-     -0.364,
-     0.9276,
-     -0.084
+     -0.3762,
+     0.9225,
+     -0.0868
     ],
     "spread": 13,
     "start_time": 1.15,
@@ -4698,11 +4840,11 @@
    "type": "particle_system",
    "layer": "meteor",
    "parameters": {
-    "max_particles": 220,
-    "lifetime": 1.05,
+    "max_particles": 200,
+    "lifetime": 1.1,
     "lifetime_variance": 0.3,
-    "size": 1.55,
-    "size_variance": 0.55,
+    "size": 2.465,
+    "size_variance": 0.85,
     "size_over_life": [
      [
       0.0,
@@ -4767,8 +4909,12 @@
       1.0
      ],
      [
-      0.5,
-      0.65
+      0.45,
+      0.6
+     ],
+     [
+      0.75,
+      0.0
      ],
      [
       1.0,
@@ -4798,11 +4944,11 @@
    "parent": "rig",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.5,
+    "radius": 0.85,
     "position": [
-     -0.2912,
-     0.7421,
-     -0.4672
+     -0.5756,
+     1.4114,
+     -0.8128
     ],
     "rate": {
      "value": 0.0,
@@ -4813,19 +4959,19 @@
       },
       {
        "time": 1.4,
-       "value": 25.0
+       "value": 20.0
       },
       {
        "time": 1.8,
-       "value": 70.0
+       "value": 48.0
       },
       {
        "time": 2.4,
-       "value": 95.0
+       "value": 62.0
       },
       {
        "time": 2.78,
-       "value": 110.0
+       "value": 70.0
       },
       {
        "time": 2.8,
@@ -4833,12 +4979,12 @@
       }
      ]
     },
-    "velocity": 2.6,
+    "velocity": 2.8,
     "velocity_variance": 1.4,
     "direction": [
-     -0.364,
-     0.9276,
-     -0.084
+     -0.3762,
+     0.9225,
+     -0.0868
     ],
     "spread": 10,
     "start_time": 1.15,
@@ -4855,15 +5001,15 @@
    "parameters": {
     "max_particles": 16,
     "lifetime": 0.12,
-    "size": 1.9,
-    "size_variance": 0.3,
+    "size": 2.55,
+    "size_variance": 0.34,
     "color": [
      1.0,
-     0.5,
-     0.14,
+     0.4,
+     0.09,
      1.0
     ],
-    "opacity": 0.32,
+    "opacity": 0.3,
     "opacity_over_life": [
      [
       0.0,
@@ -4878,7 +5024,7 @@
       0.0
      ]
     ],
-    "emissive": 0.5,
+    "emissive": 0.6,
     "blend": "additive"
    },
    "inputs": {
@@ -4894,9 +5040,9 @@
    "parameters": {
     "shape": "point",
     "position": [
-     0.2002,
-     -0.5102,
-     0.7462
+     0.3744,
+     -0.7776,
+     1.4231
     ],
     "rate": {
      "value": 0.0,
@@ -4933,11 +5079,11 @@
    "type": "particle_system",
    "layer": "meteor",
    "parameters": {
-    "max_particles": 160,
+    "max_particles": 140,
     "lifetime": 1.35,
     "lifetime_variance": 0.4,
-    "size": 1.7,
-    "size_variance": 0.6,
+    "size": 2.5,
+    "size_variance": 0.8,
     "size_over_life": [
      [
       0.0,
@@ -4958,7 +5104,7 @@
      0.68,
      1.0
     ],
-    "opacity": 0.6,
+    "opacity": 0.62,
     "opacity_over_life": [
      [
       0.0,
@@ -4977,7 +5123,7 @@
       0.0
      ]
     ],
-    "emissive": 0.55,
+    "emissive": 1.4,
     "emissive_over_life": [
      [
       0.0,
@@ -5019,11 +5165,11 @@
    "parent": "rig",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.6,
+    "radius": 0.9,
     "position": [
-     -0.5825,
-     1.4841,
-     -0.1344
+     -1.0233,
+     2.5091,
+     -0.2361
     ],
     "rate": {
      "value": 0.0,
@@ -5034,15 +5180,15 @@
       },
       {
        "time": 1.5,
-       "value": 18.0
+       "value": 14.0
       },
       {
        "time": 1.9,
-       "value": 40.0
+       "value": 30.0
       },
       {
        "time": 2.6,
-       "value": 52.0
+       "value": 40.0
       },
       {
        "time": 2.8,
@@ -5053,9 +5199,9 @@
     "velocity": 1.6,
     "velocity_variance": 0.9,
     "direction": [
-     -0.364,
-     0.9276,
-     -0.084
+     -0.3762,
+     0.9225,
+     -0.0868
     ],
     "spread": 35,
     "start_time": 1.15,
@@ -5070,11 +5216,11 @@
    "type": "particle_system",
    "layer": "meteor",
    "parameters": {
-    "max_particles": 420,
-    "lifetime": 0.85,
+    "max_particles": 520,
+    "lifetime": 0.9,
     "lifetime_variance": 0.4,
-    "size": 0.085,
-    "size_variance": 0.04,
+    "size": 0.1,
+    "size_variance": 0.045,
     "color": [
      1.0,
      0.6,
@@ -5146,7 +5292,7 @@
    "parent": "rig",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.8,
+    "radius": 1.36,
     "rate": {
      "value": 0.0,
      "track": [
@@ -5156,15 +5302,15 @@
       },
       {
        "time": 1.4,
-       "value": 40.0
+       "value": 50.0
       },
       {
        "time": 1.9,
-       "value": 160.0
+       "value": 200.0
       },
       {
        "time": 2.6,
-       "value": 260.0
+       "value": 320.0
       },
       {
        "time": 2.8,
@@ -5172,12 +5318,12 @@
       }
      ]
     },
-    "velocity": 4.5,
-    "velocity_variance": 3.0,
+    "velocity": 5.5,
+    "velocity_variance": 3.5,
     "direction": [
-     -0.364,
-     0.9276,
-     -0.084
+     -0.3762,
+     0.9225,
+     -0.0868
     ],
     "spread": 55,
     "inherit_velocity": 0.15,
@@ -5189,6 +5335,139 @@
    }
   },
   {
+   "id": "ps_shed",
+   "type": "particle_system",
+   "layer": "meteor",
+   "parameters": {
+    "max_particles": 90,
+    "lifetime": 1.0,
+    "lifetime_variance": 0.3,
+    "size": 0.26,
+    "size_variance": 0.12,
+    "size_over_life": [
+     [
+      0.0,
+      1.0
+     ],
+     [
+      1.0,
+      0.3
+     ]
+    ],
+    "color": [
+     1.0,
+     0.5,
+     0.12,
+     1.0
+    ],
+    "color_over_life": [
+     [
+      0.0,
+      [
+       1.0,
+       0.9,
+       0.6,
+       1.0
+      ]
+     ],
+     [
+      0.4,
+      [
+       1.0,
+       0.45,
+       0.1,
+       1.0
+      ]
+     ],
+     [
+      1.0,
+      [
+       0.4,
+       0.04,
+       0.0,
+       1.0
+      ]
+     ]
+    ],
+    "opacity_over_life": [
+     [
+      0.0,
+      1.0
+     ],
+     [
+      0.7,
+      0.9
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 3.5,
+    "drag": 0.5,
+    "blend": "additive",
+    "render_mode": "stretched_billboard",
+    "velocity_stretch": 0.06
+   },
+   "inputs": {
+    "sprite": "tex_spark",
+    "material": "mat_glow",
+    "forces": [
+     "f_gravity"
+    ]
+   }
+  },
+  {
+   "id": "e_shed",
+   "type": "emitter",
+   "layer": "meteor",
+   "parent": "rig",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 1.53,
+    "surface_only": true,
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 1.15,
+       "value": 0.0
+      },
+      {
+       "time": 1.5,
+       "value": 20.0
+      },
+      {
+       "time": 2.0,
+       "value": 55.0
+      },
+      {
+       "time": 2.7,
+       "value": 80.0
+      },
+      {
+       "time": 2.8,
+       "value": 0.0
+      }
+     ]
+    },
+    "velocity": 2.5,
+    "velocity_variance": 1.5,
+    "direction": [
+     0,
+     0,
+     0
+    ],
+    "spread": 30,
+    "inherit_velocity": 0.35,
+    "start_time": 1.15,
+    "duration": 1.65
+   },
+   "inputs": {
+    "particle": "ps_shed"
+   }
+  },
+  {
    "id": "met_light",
    "type": "light",
    "layer": "meteor",
@@ -5196,9 +5475,9 @@
    "parameters": {
     "light_type": "point",
     "position": [
-     -0.5461,
-     1.3914,
-     0.674
+     -1.535,
+     3.7636,
+     1.3458
     ],
     "color": [
      1.0,
@@ -5206,7 +5485,7 @@
      0.15,
      1.0
     ],
-    "radius": 17.0,
+    "radius": 20.0,
     "intensity": {
      "value": 0.0,
      "track": [
@@ -5220,15 +5499,15 @@
       },
       {
        "time": 1.8,
-       "value": 7.0
+       "value": 8.0
       },
       {
        "time": 2.4,
-       "value": 12.0
+       "value": 15.0
       },
       {
        "time": 2.8,
-       "value": 20.0
+       "value": 26.0
       }
      ]
     },
@@ -5246,16 +5525,16 @@
     "light_type": "point",
     "position": [
      0.0,
-     2.6,
-     0.6
+     3.0,
+     1.0
     ],
     "color": [
      1.0,
-     0.72,
-     0.4,
+     0.75,
+     0.45,
      1.0
     ],
-    "radius": 18.0,
+    "radius": 20.0,
     "intensity": {
      "value": 0.0,
      "track": [
@@ -5265,20 +5544,20 @@
       },
       {
        "time": 2.83,
-       "value": 30.0
+       "value": 42.0
       },
       {
        "time": 2.95,
-       "value": 12.0
+       "value": 14.0
       },
       {
-       "time": 3.12,
+       "time": 3.14,
        "value": 0.0
       }
      ]
     },
     "start_time": 2.8,
-    "duration": 0.34
+    "duration": 0.36
    }
   },
   {
@@ -5287,7 +5566,7 @@
    "layer": "impact",
    "parameters": {
     "max_particles": 4,
-    "lifetime": 0.3,
+    "lifetime": 0.32,
     "size": 13.0,
     "size_over_life": [
      [
@@ -5338,7 +5617,7 @@
       ]
      ]
     ],
-    "opacity": 0.7,
+    "opacity": 0.75,
     "opacity_over_life": [
      [
       0.0,
@@ -5353,7 +5632,7 @@
       0.0
      ]
     ],
-    "emissive": 0.6,
+    "emissive": 0.7,
     "blend": "additive"
    },
    "inputs": {
@@ -5369,7 +5648,7 @@
     "shape": "point",
     "position": [
      0.0,
-     1.2,
+     1.4,
      0.0
     ],
     "rate": 0,
@@ -5391,12 +5670,12 @@
    "layer": "impact",
    "parameters": {
     "max_particles": 4,
-    "lifetime": 0.16,
-    "size": 4.6,
+    "lifetime": 0.14,
+    "size": 5.5,
     "size_over_life": [
      [
       0.0,
-      0.4
+      0.35
      ],
      [
       0.3,
@@ -5404,13 +5683,13 @@
      ],
      [
       1.0,
-      0.7
+      0.75
      ]
     ],
     "color": [
      1.0,
-     0.92,
-     0.78,
+     0.95,
+     0.85,
      1.0
     ],
     "opacity": 1.0,
@@ -5420,15 +5699,15 @@
       1.0
      ],
      [
-      0.4,
-      0.8
+      0.45,
+      0.85
      ],
      [
       1.0,
       0.0
      ]
     ],
-    "emissive": 1.6,
+    "emissive": 2.6,
     "blend": "additive"
    },
    "inputs": {
@@ -5444,7 +5723,7 @@
     "shape": "point",
     "position": [
      0.0,
-     1.0,
+     1.3,
      0.0
     ],
     "rate": 0,
@@ -5465,11 +5744,11 @@
    "type": "particle_system",
    "layer": "impact",
    "parameters": {
-    "max_particles": 420,
-    "lifetime": 0.72,
-    "lifetime_variance": 0.26,
-    "size": 2.7,
-    "size_variance": 0.9,
+    "max_particles": 360,
+    "lifetime": 0.7,
+    "lifetime_variance": 0.25,
+    "size": 3.1,
+    "size_variance": 1.0,
     "size_over_life": [
      [
       0.0,
@@ -5519,7 +5798,7 @@
       ]
      ]
     ],
-    "opacity": 0.5,
+    "opacity": 0.42,
     "opacity_over_life": [
      [
       0.0,
@@ -5531,7 +5810,11 @@
      ],
      [
       0.55,
-      0.78
+      0.7
+     ],
+     [
+      0.9,
+      0.0
      ],
      [
       1.0,
@@ -5561,19 +5844,19 @@
    "layer": "impact",
    "parameters": {
     "shape": "hemisphere",
-    "radius": 1.3,
+    "radius": 1.5,
     "position": [
      0.0,
-     0.7,
+     0.8,
      0.0
     ],
     "rate": 0,
-    "burst_count": 80,
+    "burst_count": 52,
     "burst_times": [
      0.0,
      0.05
     ],
-    "velocity": 10.0,
+    "velocity": 11.0,
     "velocity_variance": 4.5,
     "direction": [
      0,
@@ -5589,60 +5872,12 @@
    }
   },
   {
-   "id": "e_fire_column",
-   "type": "emitter",
-   "layer": "impact",
-   "parameters": {
-    "shape": "disc",
-    "radius": 1.5,
-    "position": [
-     0.0,
-     1.0,
-     0.0
-    ],
-    "rate": {
-     "value": 0.0,
-     "track": [
-      {
-       "time": 2.84,
-       "value": 0.0
-      },
-      {
-       "time": 2.9,
-       "value": 190.0
-      },
-      {
-       "time": 3.1,
-       "value": 130.0
-      },
-      {
-       "time": 3.4,
-       "value": 0.0
-      }
-     ]
-    },
-    "velocity": 7.5,
-    "velocity_variance": 2.5,
-    "direction": [
-     0,
-     1,
-     0
-    ],
-    "spread": 26,
-    "start_time": 2.84,
-    "duration": 0.6
-   },
-   "inputs": {
-    "particle": "ps_fireball"
-   }
-  },
-  {
    "id": "e_fire_skirt",
    "type": "emitter",
    "layer": "impact",
    "parameters": {
     "shape": "ring",
-    "radius": 2.0,
+    "radius": 2.2,
     "inner_radius": 0.8,
     "position": [
      0.0,
@@ -5650,7 +5885,7 @@
      0.0
     ],
     "rate": 0,
-    "burst_count": 60,
+    "burst_count": 32,
     "burst_times": [
      0.02,
      0.08
@@ -5663,12 +5898,191 @@
      0
     ],
     "spread": 30,
-    "radial_velocity": 11.0,
+    "radial_velocity": 12.0,
     "start_time": 2.8,
     "duration": 0.2
    },
    "inputs": {
     "particle": "ps_fireball"
+   }
+  },
+  {
+   "id": "ps_fire_rise",
+   "type": "particle_system",
+   "layer": "impact",
+   "parameters": {
+    "max_particles": 200,
+    "lifetime": 0.62,
+    "lifetime_variance": 0.18,
+    "size": 3.0,
+    "size_variance": 0.9,
+    "size_over_life": [
+     [
+      0.0,
+      0.4
+     ],
+     [
+      0.35,
+      1.0
+     ],
+     [
+      1.0,
+      1.15
+     ]
+    ],
+    "color": [
+     1.0,
+     0.84,
+     0.64,
+     1.0
+    ],
+    "color_over_life": [
+     [
+      0.0,
+      [
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      0.4,
+      [
+       1.0,
+       0.86,
+       0.74,
+       1.0
+      ]
+     ],
+     [
+      1.0,
+      [
+       0.8,
+       0.45,
+       0.35,
+       1.0
+      ]
+     ]
+    ],
+    "opacity": 0.36,
+    "opacity_over_life": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.12,
+      1.0
+     ],
+     [
+      0.55,
+      0.7
+     ],
+     [
+      0.9,
+      0.0
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 0.3,
+    "drag": 2.2,
+    "blend": "additive",
+    "soft_particle_distance": 0.7,
+    "render_mode": "stretched_billboard",
+    "velocity_stretch": 0.08,
+    "sprite_fps": 16.0
+   },
+   "inputs": {
+    "sprite": "tex_fire",
+    "material": "mat_fire",
+    "forces": [
+     "f_fire_curl",
+     "f_ball_lift"
+    ]
+   }
+  },
+  {
+   "id": "e_fire_rise",
+   "type": "emitter",
+   "layer": "impact",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 1.5,
+    "position": {
+     "value": [
+      0.0,
+      1.4,
+      0.0
+     ],
+     "track": [
+      {
+       "time": 2.84,
+       "value": [
+        0.0,
+        1.4,
+        0.0
+       ]
+      },
+      {
+       "time": 3.1,
+       "value": [
+        0.0,
+        3.0,
+        0.0
+       ]
+      },
+      {
+       "time": 3.4,
+       "value": [
+        0.0,
+        4.6,
+        0.0
+       ]
+      }
+     ]
+    },
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 2.84,
+       "value": 0.0
+      },
+      {
+       "time": 2.9,
+       "value": 150.0
+      },
+      {
+       "time": 3.1,
+       "value": 110.0
+      },
+      {
+       "time": 3.25,
+       "value": 40.0
+      },
+      {
+       "time": 3.32,
+       "value": 0.0
+      }
+     ]
+    },
+    "velocity": 3.2,
+    "velocity_variance": 1.5,
+    "direction": [
+     0,
+     0,
+     0
+    ],
+    "spread": 20,
+    "start_time": 2.84,
+    "duration": 0.6
+   },
+   "inputs": {
+    "particle": "ps_fire_rise"
    }
   },
   {
@@ -5703,36 +6117,36 @@
       {
        "time": 2.88,
        "value": [
-        6.5,
-        6.5
+        6.4,
+        6.4
        ]
       },
       {
        "time": 2.98,
        "value": [
-        10.4,
-        10.4
+        10.0,
+        10.0
        ]
       },
       {
        "time": 3.1,
        "value": [
-        13.6,
-        13.6
+        12.8,
+        12.8
        ]
       },
       {
        "time": 3.25,
        "value": [
-        16.2,
-        16.2
+        14.8,
+        14.8
        ]
       },
       {
-       "time": 3.4,
+       "time": 3.42,
        "value": [
-        17.6,
-        17.6
+        15.8,
+        15.8
        ]
       }
      ]
@@ -5758,17 +6172,17 @@
        "time": 3.0,
        "value": [
         1.0,
-        0.75,
-        0.45,
+        0.78,
+        0.48,
         1.0
        ]
       },
       {
-       "time": 3.4,
+       "time": 3.42,
        "value": [
         1.0,
-        0.4,
-        0.12,
+        0.42,
+        0.13,
         1.0
        ]
       }
@@ -5776,22 +6190,26 @@
     },
     "blend": "additive",
     "emissive": {
-     "value": 3.4,
+     "value": 5.0,
      "track": [
       {
        "time": 2.8,
-       "value": 3.4
+       "value": 5.0
       },
       {
        "time": 2.95,
-       "value": 2.6
+       "value": 4.0
       },
       {
        "time": 3.15,
-       "value": 1.5
+       "value": 2.6
       },
       {
-       "time": 3.4,
+       "time": 3.3,
+       "value": 1.2
+      },
+      {
+       "time": 3.42,
        "value": 0.0
       }
      ]
@@ -5804,15 +6222,15 @@
        "value": 1.0
       },
       {
-       "time": 3.1,
-       "value": 0.9
+       "time": 3.15,
+       "value": 1.0
       },
       {
-       "time": 3.25,
-       "value": 0.5
+       "time": 3.3,
+       "value": 0.6
       },
       {
-       "time": 3.4,
+       "time": 3.42,
        "value": 0.0
       }
      ]
@@ -5820,7 +6238,7 @@
     "fade_in": 0.0,
     "fade_out": 0.0,
     "start_time": 2.8,
-    "duration": 0.62
+    "duration": 0.64
    },
    "inputs": {
     "texture": "tex_shock"
@@ -5831,10 +6249,10 @@
    "type": "particle_system",
    "layer": "impact",
    "parameters": {
-    "max_particles": 700,
+    "max_particles": 900,
     "lifetime": 0.95,
     "lifetime_variance": 0.5,
-    "size": 0.095,
+    "size": 0.11,
     "size_variance": 0.05,
     "color": [
      1.0,
@@ -5924,7 +6342,7 @@
    "layer": "impact",
    "parameters": {
     "shape": "hemisphere",
-    "radius": 1.2,
+    "radius": 1.4,
     "position": [
      0.0,
      0.3,
@@ -5939,11 +6357,11 @@
       },
       {
        "time": 2.84,
-       "value": 300.0
+       "value": 320.0
       },
       {
        "time": 3.1,
-       "value": 120.0
+       "value": 130.0
       },
       {
        "time": 3.4,
@@ -5951,18 +6369,18 @@
       }
      ]
     },
-    "burst_count": 440,
+    "burst_count": 560,
     "burst_times": [
      0.0
     ],
-    "velocity": 13.0,
-    "velocity_variance": 8.0,
+    "velocity": 14.0,
+    "velocity_variance": 9.0,
     "direction": [
      0,
      1,
      0
     ],
-    "spread": 72,
+    "spread": 74,
     "start_time": 2.8,
     "duration": 0.62
    },
@@ -5975,10 +6393,10 @@
    "type": "particle_system",
    "layer": "impact",
    "parameters": {
-    "max_particles": 260,
-    "lifetime": 1.05,
-    "lifetime_variance": 0.25,
-    "size": 1.5,
+    "max_particles": 240,
+    "lifetime": 1.0,
+    "lifetime_variance": 0.22,
+    "size": 1.7,
     "size_variance": 0.6,
     "size_over_life": [
      [
@@ -5987,11 +6405,11 @@
      ],
      [
       0.5,
-      1.4
+      1.35
      ],
      [
       1.0,
-      2.0
+      1.9
      ]
     ],
     "color": [
@@ -6000,7 +6418,7 @@
      0.7,
      1.0
     ],
-    "opacity": 0.5,
+    "opacity": 0.55,
     "opacity_over_life": [
      [
       0.0,
@@ -6019,7 +6437,7 @@
       0.0
      ]
     ],
-    "emissive": 0.45,
+    "emissive": 0.6,
     "emissive_over_life": [
      [
       0.0,
@@ -6036,7 +6454,7 @@
     ],
     "rotation_variance": 180.0,
     "angular_velocity_variance": 30.0,
-    "drag": 2.5,
+    "drag": 2.8,
     "blend": "alpha",
     "sort": true,
     "sprite_fps": 8.0
@@ -6055,18 +6473,18 @@
    "layer": "impact",
    "parameters": {
     "shape": "ring",
-    "radius": 1.6,
-    "inner_radius": 0.9,
+    "radius": 1.8,
+    "inner_radius": 1.2,
     "position": [
      0.0,
-     0.55,
+     0.6,
      0.0
     ],
     "rate": 0,
-    "burst_count": 110,
+    "burst_count": 70,
     "burst_times": [
      0.0,
-     0.06
+     0.05
     ],
     "velocity": 0.8,
     "velocity_variance": 0.6,
@@ -6076,7 +6494,7 @@
      0
     ],
     "spread": 40,
-    "radial_velocity": 12.5,
+    "radial_velocity": 17.5,
     "start_time": 2.8,
     "duration": 0.2
    },
@@ -6085,39 +6503,15 @@
    }
   },
   {
-   "id": "rock_mesh",
-   "type": "mesh",
-   "parameters": {
-    "primitive": "rock",
-    "radius": 0.5,
-    "segments": 12,
-    "irregularity": 0.75,
-    "variants": 6,
-    "visible": false
-   }
-  },
-  {
-   "id": "chip_mesh",
-   "type": "mesh",
-   "parameters": {
-    "primitive": "shard",
-    "radius": 0.5,
-    "height": 0.34,
-    "irregularity": 0.7,
-    "variants": 4,
-    "visible": false
-   }
-  },
-  {
    "id": "ps_rock_big",
    "type": "particle_system",
    "layer": "debris",
    "parameters": {
-    "max_particles": 15,
-    "lifetime": 1.16,
-    "lifetime_variance": 0.06,
-    "size": 0.95,
-    "size_variance": 0.35,
+    "max_particles": 16,
+    "lifetime": 1.17,
+    "lifetime_variance": 0.05,
+    "size": 1.05,
+    "size_variance": 0.4,
     "size_over_life": [
      [
       0.0,
@@ -6128,7 +6522,7 @@
       1.0
      ],
      [
-      0.86,
+      0.88,
       1.0
      ],
      [
@@ -6153,7 +6547,7 @@
      0.25,
      0.3
     ],
-    "bounce": 0.32,
+    "bounce": 0.34,
     "friction": 0.55
    },
    "inputs": {
@@ -6173,27 +6567,27 @@
    "layer": "debris",
    "parameters": {
     "shape": "ring",
-    "radius": 1.5,
-    "inner_radius": 0.525,
+    "radius": 1.6,
+    "inner_radius": 0.56,
     "position": [
      0.0,
-     0.35,
+     0.4,
      0.0
     ],
     "rate": 0,
-    "burst_count": 11,
+    "burst_count": 12,
     "burst_times": [
      0.0
     ],
-    "velocity": 12.5,
+    "velocity": 14.5,
     "velocity_variance": 3.0,
     "direction": [
      0,
      1,
      0
     ],
-    "spread": 26,
-    "radial_velocity": 4.2,
+    "spread": 28,
+    "radial_velocity": 5.0,
     "start_time": 2.8,
     "duration": 0.1
    },
@@ -6206,11 +6600,11 @@
    "type": "particle_system",
    "layer": "debris",
    "parameters": {
-    "max_particles": 40,
-    "lifetime": 1.14,
-    "lifetime_variance": 0.06,
-    "size": 0.5,
-    "size_variance": 0.2,
+    "max_particles": 42,
+    "lifetime": 1.16,
+    "lifetime_variance": 0.05,
+    "size": 0.56,
+    "size_variance": 0.22,
     "size_over_life": [
      [
       0.0,
@@ -6221,7 +6615,7 @@
       1.0
      ],
      [
-      0.86,
+      0.88,
       1.0
      ],
      [
@@ -6246,7 +6640,7 @@
      0.3,
      0.35
     ],
-    "bounce": 0.32,
+    "bounce": 0.34,
     "friction": 0.55
    },
    "inputs": {
@@ -6266,27 +6660,27 @@
    "layer": "debris",
    "parameters": {
     "shape": "ring",
-    "radius": 1.9,
-    "inner_radius": 0.665,
+    "radius": 2.0,
+    "inner_radius": 0.7,
     "position": [
      0.0,
-     0.35,
+     0.4,
      0.0
     ],
     "rate": 0,
-    "burst_count": 36,
+    "burst_count": 38,
     "burst_times": [
      0.0
     ],
-    "velocity": 13.5,
-    "velocity_variance": 4.5,
+    "velocity": 16.5,
+    "velocity_variance": 5.0,
     "direction": [
      0,
      1,
      0
     ],
-    "spread": 38,
-    "radial_velocity": 5.5,
+    "spread": 42,
+    "radial_velocity": 7.0,
     "start_time": 2.8,
     "duration": 0.1
    },
@@ -6300,10 +6694,10 @@
    "layer": "debris",
    "parameters": {
     "max_particles": 50,
-    "lifetime": 1.1,
-    "lifetime_variance": 0.06,
-    "size": 0.3,
-    "size_variance": 0.13,
+    "lifetime": 1.14,
+    "lifetime_variance": 0.05,
+    "size": 0.32,
+    "size_variance": 0.14,
     "size_over_life": [
      [
       0.0,
@@ -6314,7 +6708,7 @@
       1.0
      ],
      [
-      0.86,
+      0.88,
       1.0
      ],
      [
@@ -6339,7 +6733,7 @@
      0.3,
      0.35
     ],
-    "bounce": 0.32,
+    "bounce": 0.34,
     "friction": 0.55
    },
    "inputs": {
@@ -6359,11 +6753,11 @@
    "layer": "debris",
    "parameters": {
     "shape": "ring",
-    "radius": 2.2,
-    "inner_radius": 0.77,
+    "radius": 2.3,
+    "inner_radius": 0.805,
     "position": [
      0.0,
-     0.35,
+     0.4,
      0.0
     ],
     "rate": 0,
@@ -6371,15 +6765,15 @@
     "burst_times": [
      0.0
     ],
-    "velocity": 14.0,
-    "velocity_variance": 6.0,
+    "velocity": 17.5,
+    "velocity_variance": 6.5,
     "direction": [
      0,
      1,
      0
     ],
-    "spread": 52,
-    "radial_velocity": 6.5,
+    "spread": 55,
+    "radial_velocity": 8.0,
     "start_time": 2.8,
     "duration": 0.1
    },
@@ -6392,7 +6786,7 @@
    "type": "trail",
    "layer": "debris",
    "parameters": {
-    "width": 0.34,
+    "width": 0.36,
     "lifetime": 0.3,
     "blend": "additive",
     "color": [
@@ -6442,7 +6836,7 @@
     "max_segments": 24,
     "uv_scroll": -1.5,
     "start_time": 2.8,
-    "duration": 0.75
+    "duration": 0.8
    },
    "inputs": {
     "source": "ps_rock_big",
@@ -6504,7 +6898,7 @@
     "max_segments": 24,
     "uv_scroll": -1.5,
     "start_time": 2.8,
-    "duration": 0.75
+    "duration": 0.8
    },
    "inputs": {
     "source": "ps_rock_med",
@@ -6519,8 +6913,8 @@
     "max_particles": 160,
     "lifetime": 0.6,
     "lifetime_variance": 0.15,
-    "size": 0.9,
-    "size_variance": 0.35,
+    "size": 1.0,
+    "size_variance": 0.4,
     "size_over_life": [
      [
       0.0,
@@ -6541,7 +6935,7 @@
      0.66,
      1.0
     ],
-    "opacity": 0.42,
+    "opacity": 0.45,
     "opacity_over_life": [
      [
       0.0,
@@ -6560,6 +6954,7 @@
       0.0
      ]
     ],
+    "emissive": 0.4,
     "rotation_variance": 180.0,
     "angular_velocity_variance": 40.0,
     "drag": 2.6,
@@ -6645,8 +7040,8 @@
      0.0
     ],
     "size": [
-     10.5,
-     10.5
+     12.0,
+     12.0
     ],
     "color": [
      0.016,
@@ -6664,11 +7059,11 @@
       },
       {
        "time": 2.9,
-       "value": 0.9
+       "value": 0.92
       },
       {
        "time": 3.7,
-       "value": 0.88
+       "value": 0.9
       },
       {
        "time": 4.0,
@@ -6717,22 +7112,22 @@
       {
        "time": 2.9,
        "value": [
-        8.2,
-        8.2
-       ]
-      },
-      {
-       "time": 3.2,
-       "value": [
         9.0,
         9.0
        ]
       },
       {
+       "time": 3.2,
+       "value": [
+        10.0,
+        10.0
+       ]
+      },
+      {
        "time": 4.0,
        "value": [
-        9.2,
-        9.2
+        10.3,
+        10.3
        ]
       }
      ]
@@ -6758,8 +7153,8 @@
        "time": 3.2,
        "value": [
         1.0,
-        0.78,
-        0.36,
+        0.8,
+        0.38,
         1.0
        ]
       },
@@ -6767,7 +7162,7 @@
        "time": 3.5,
        "value": [
         1.0,
-        0.45,
+        0.46,
         0.12,
         1.0
        ]
@@ -6802,19 +7197,19 @@
       },
       {
        "time": 2.88,
-       "value": 3.2
+       "value": 4.0
       },
       {
        "time": 3.2,
-       "value": 2.2
+       "value": 3.0
       },
       {
        "time": 3.5,
-       "value": 1.5
+       "value": 2.2
       },
       {
        "time": 3.8,
-       "value": 0.8
+       "value": 1.2
       },
       {
        "time": 4.0,
@@ -6834,11 +7229,11 @@
        "value": 1.0
       },
       {
-       "time": 3.6,
-       "value": 0.9
+       "time": 3.65,
+       "value": 1.0
       },
       {
-       "time": 3.85,
+       "time": 3.88,
        "value": 0.5
       },
       {
@@ -6857,15 +7252,123 @@
    }
   },
   {
+   "id": "crater_glow",
+   "type": "decal",
+   "layer": "aftermath",
+   "parameters": {
+    "shape": "circle",
+    "position": [
+     0.0,
+     0.02,
+     0.0
+    ],
+    "size": [
+     6.4,
+     6.4
+    ],
+    "color": {
+     "value": [
+      1.0,
+      0.7,
+      0.3,
+      1.0
+     ],
+     "track": [
+      {
+       "time": 2.8,
+       "value": [
+        1.0,
+        0.7,
+        0.3,
+        1.0
+       ]
+      },
+      {
+       "time": 3.4,
+       "value": [
+        1.0,
+        0.36,
+        0.08,
+        1.0
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        0.7,
+        0.08,
+        0.01,
+        1.0
+       ]
+      }
+     ]
+    },
+    "blend": "additive",
+    "emissive": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 2.8,
+       "value": 0.0
+      },
+      {
+       "time": 2.9,
+       "value": 1.6
+      },
+      {
+       "time": 3.3,
+       "value": 1.0
+      },
+      {
+       "time": 3.8,
+       "value": 0.5
+      },
+      {
+       "time": 4.0,
+       "value": 0.0
+      }
+     ]
+    },
+    "opacity": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 2.8,
+       "value": 0.0
+      },
+      {
+       "time": 2.9,
+       "value": 0.8
+      },
+      {
+       "time": 3.6,
+       "value": 0.6
+      },
+      {
+       "time": 4.0,
+       "value": 0.0
+      }
+     ]
+    },
+    "fade_in": 0.0,
+    "fade_out": 0.0,
+    "start_time": 2.8,
+    "duration": 1.2
+   },
+   "inputs": {
+    "texture": "tex_glow"
+   }
+  },
+  {
    "id": "ps_groundfire",
    "type": "particle_system",
    "layer": "aftermath",
    "parameters": {
     "max_particles": 420,
-    "lifetime": 0.62,
-    "lifetime_variance": 0.22,
-    "size": 1.25,
-    "size_variance": 0.5,
+    "lifetime": 0.46,
+    "lifetime_variance": 0.12,
+    "size": 1.6,
+    "size_variance": 0.6,
     "size_over_life": [
      [
       0.0,
@@ -6882,8 +7385,8 @@
     ],
     "color": [
      1.0,
-     0.85,
-     0.66,
+     0.9,
+     0.74,
      1.0
     ],
     "color_over_life": [
@@ -6915,7 +7418,7 @@
       ]
      ]
     ],
-    "opacity": 0.4,
+    "opacity": 0.5,
     "opacity_over_life": [
      [
       0.0,
@@ -6926,8 +7429,12 @@
       1.0
      ],
      [
-      0.6,
-      0.78
+      0.55,
+      0.7
+     ],
+     [
+      0.88,
+      0.0
      ],
      [
       1.0,
@@ -6957,34 +7464,34 @@
    "layer": "aftermath",
    "parameters": {
     "shape": "disc",
-    "radius": 0.5399,
+    "radius": 0.5394,
     "position": [
-     3.7041,
-     0.42,
-     0.4552
+     2.8973,
+     0.5,
+     -0.3197
     ],
     "rate": {
      "value": 0.0,
      "track": [
       {
-       "time": 2.9283,
+       "time": 2.9271,
        "value": 0.0
       },
       {
-       "time": 3.0283,
-       "value": 23.3
-      },
-      {
-       "time": 3.35,
+       "time": 3.0271,
        "value": 19.2
       },
       {
-       "time": 3.62,
+       "time": 3.35,
+       "value": 18.0
+      },
+      {
+       "time": 3.56,
        "value": 0.0
       }
      ]
     },
-    "velocity": 2.1484,
+    "velocity": 2.2387,
     "velocity_variance": 0.8,
     "direction": [
      0,
@@ -6992,8 +7499,8 @@
      0
     ],
     "spread": 16,
-    "start_time": 2.9283,
-    "duration": 0.7117
+    "start_time": 2.9271,
+    "duration": 0.6529
    },
    "inputs": {
     "particle": "ps_groundfire"
@@ -7005,34 +7512,34 @@
    "layer": "aftermath",
    "parameters": {
     "shape": "disc",
-    "radius": 0.6216,
+    "radius": 0.6917,
     "position": [
-     2.5113,
-     0.42,
-     1.8631
+     2.4451,
+     0.5,
+     1.2739
     ],
     "rate": {
      "value": 0.0,
      "track": [
       {
-       "time": 2.9769,
+       "time": 2.9908,
        "value": 0.0
       },
       {
-       "time": 3.0769,
-       "value": 31.2
+       "time": 3.0908,
+       "value": 31.3
       },
       {
        "time": 3.35,
-       "value": 25.7
+       "value": 29.4
       },
       {
-       "time": 3.62,
+       "time": 3.56,
        "value": 0.0
       }
      ]
     },
-    "velocity": 2.335,
+    "velocity": 2.5813,
     "velocity_variance": 0.8,
     "direction": [
      0,
@@ -7040,8 +7547,8 @@
      0
     ],
     "spread": 16,
-    "start_time": 2.9769,
-    "duration": 0.6631
+    "start_time": 2.9908,
+    "duration": 0.5892
    },
    "inputs": {
     "particle": "ps_groundfire"
@@ -7053,34 +7560,34 @@
    "layer": "aftermath",
    "parameters": {
     "shape": "disc",
-    "radius": 0.6008,
+    "radius": 0.5461,
     "position": [
-     1.87,
-     0.42,
-     3.1342
+     2.0485,
+     0.5,
+     2.5625
     ],
     "rate": {
      "value": 0.0,
      "track": [
       {
-       "time": 2.9668,
+       "time": 2.9986,
        "value": 0.0
       },
       {
-       "time": 3.0668,
-       "value": 29.2
+       "time": 3.0986,
+       "value": 19.7
       },
       {
        "time": 3.35,
-       "value": 24.1
+       "value": 18.5
       },
       {
-       "time": 3.62,
+       "time": 3.56,
        "value": 0.0
       }
      ]
     },
-    "velocity": 2.2876,
+    "velocity": 2.2538,
     "velocity_variance": 0.8,
     "direction": [
      0,
@@ -7088,8 +7595,8 @@
      0
     ],
     "spread": 16,
-    "start_time": 2.9668,
-    "duration": 0.6732
+    "start_time": 2.9986,
+    "duration": 0.5814
    },
    "inputs": {
     "particle": "ps_groundfire"
@@ -7101,34 +7608,34 @@
    "layer": "aftermath",
    "parameters": {
     "shape": "disc",
-    "radius": 0.6381,
+    "radius": 0.5674,
     "position": [
-     -0.5832,
-     0.42,
-     3.7206
+     0.7268,
+     0.5,
+     3.8387
     ],
     "rate": {
      "value": 0.0,
      "track": [
       {
-       "time": 2.9477,
+       "time": 2.9069,
        "value": 0.0
       },
       {
-       "time": 3.0477,
-       "value": 32.8
+       "time": 3.0069,
+       "value": 21.4
       },
       {
        "time": 3.35,
-       "value": 27.1
+       "value": 20.1
       },
       {
-       "time": 3.62,
+       "time": 3.56,
        "value": 0.0
       }
      ]
     },
-    "velocity": 2.3729,
+    "velocity": 2.3017,
     "velocity_variance": 0.8,
     "direction": [
      0,
@@ -7136,8 +7643,8 @@
      0
     ],
     "spread": 16,
-    "start_time": 2.9477,
-    "duration": 0.6923
+    "start_time": 2.9069,
+    "duration": 0.6731
    },
    "inputs": {
     "particle": "ps_groundfire"
@@ -7149,34 +7656,34 @@
    "layer": "aftermath",
    "parameters": {
     "shape": "disc",
-    "radius": 0.6371,
+    "radius": 0.6789,
     "position": [
-     -1.7777,
-     0.42,
-     2.7094
+     -0.7092,
+     0.5,
+     3.337
     ],
     "rate": {
      "value": 0.0,
      "track": [
       {
-       "time": 2.9307,
+       "time": 2.9049,
        "value": 0.0
       },
       {
-       "time": 3.0307,
-       "value": 32.7
+       "time": 3.0049,
+       "value": 30.3
       },
       {
        "time": 3.35,
-       "value": 27.0
+       "value": 28.4
       },
       {
-       "time": 3.62,
+       "time": 3.56,
        "value": 0.0
       }
      ]
     },
-    "velocity": 2.3704,
+    "velocity": 2.5526,
     "velocity_variance": 0.8,
     "direction": [
      0,
@@ -7184,8 +7691,8 @@
      0
     ],
     "spread": 16,
-    "start_time": 2.9307,
-    "duration": 0.7093
+    "start_time": 2.9049,
+    "duration": 0.6751
    },
    "inputs": {
     "particle": "ps_groundfire"
@@ -7197,34 +7704,34 @@
    "layer": "aftermath",
    "parameters": {
     "shape": "disc",
-    "radius": 0.6199,
+    "radius": 0.6925,
     "position": [
-     -3.6471,
-     0.42,
-     1.4286
+     -1.6461,
+     0.5,
+     2.5204
     ],
     "rate": {
      "value": 0.0,
      "track": [
       {
-       "time": 2.9156,
+       "time": 2.9322,
        "value": 0.0
       },
       {
-       "time": 3.0156,
-       "value": 31.1
+       "time": 3.0322,
+       "value": 31.4
       },
       {
        "time": 3.35,
-       "value": 25.6
+       "value": 29.4
       },
       {
-       "time": 3.62,
+       "time": 3.56,
        "value": 0.0
       }
      ]
     },
-    "velocity": 2.3311,
+    "velocity": 2.5831,
     "velocity_variance": 0.8,
     "direction": [
      0,
@@ -7232,8 +7739,8 @@
      0
     ],
     "spread": 16,
-    "start_time": 2.9156,
-    "duration": 0.7244
+    "start_time": 2.9322,
+    "duration": 0.6478
    },
    "inputs": {
     "particle": "ps_groundfire"
@@ -7245,34 +7752,34 @@
    "layer": "aftermath",
    "parameters": {
     "shape": "disc",
-    "radius": 0.6158,
+    "radius": 0.6104,
     "position": [
-     -2.8915,
-     0.42,
-     0.3573
+     -3.0521,
+     0.5,
+     1.2922
     ],
     "rate": {
      "value": 0.0,
      "track": [
       {
-       "time": 2.9613,
+       "time": 2.9287,
        "value": 0.0
       },
       {
-       "time": 3.0613,
-       "value": 30.7
+       "time": 3.0287,
+       "value": 24.8
       },
       {
        "time": 3.35,
-       "value": 25.3
+       "value": 23.3
       },
       {
-       "time": 3.62,
+       "time": 3.56,
        "value": 0.0
       }
      ]
     },
-    "velocity": 2.3218,
+    "velocity": 2.3985,
     "velocity_variance": 0.8,
     "direction": [
      0,
@@ -7280,8 +7787,8 @@
      0
     ],
     "spread": 16,
-    "start_time": 2.9613,
-    "duration": 0.6787
+    "start_time": 2.9287,
+    "duration": 0.6513
    },
    "inputs": {
     "particle": "ps_groundfire"
@@ -7293,34 +7800,34 @@
    "layer": "aftermath",
    "parameters": {
     "shape": "disc",
-    "radius": 0.6348,
+    "radius": 0.6047,
     "position": [
-     -2.6896,
-     0.42,
-     -1.8745
+     -2.907,
+     0.5,
+     0.0504
     ],
     "rate": {
      "value": 0.0,
      "track": [
       {
-       "time": 2.9294,
+       "time": 2.99,
        "value": 0.0
       },
       {
-       "time": 3.0294,
-       "value": 32.5
+       "time": 3.09,
+       "value": 24.4
       },
       {
        "time": 3.35,
-       "value": 26.8
+       "value": 22.8
       },
       {
-       "time": 3.62,
+       "time": 3.56,
        "value": 0.0
       }
      ]
     },
-    "velocity": 2.3653,
+    "velocity": 2.3855,
     "velocity_variance": 0.8,
     "direction": [
      0,
@@ -7328,8 +7835,8 @@
      0
     ],
     "spread": 16,
-    "start_time": 2.9294,
-    "duration": 0.7106
+    "start_time": 2.99,
+    "duration": 0.59
    },
    "inputs": {
     "particle": "ps_groundfire"
@@ -7341,34 +7848,34 @@
    "layer": "aftermath",
    "parameters": {
     "shape": "disc",
-    "radius": 0.602,
+    "radius": 0.6381,
     "position": [
-     -1.3571,
-     0.42,
-     -2.527
+     -2.8951,
+     0.5,
+     -1.3434
     ],
     "rate": {
      "value": 0.0,
      "track": [
       {
-       "time": 2.883,
+       "time": 2.9324,
        "value": 0.0
       },
       {
-       "time": 2.983,
-       "value": 29.3
+       "time": 3.0324,
+       "value": 27.1
       },
       {
        "time": 3.35,
-       "value": 24.2
+       "value": 25.4
       },
       {
-       "time": 3.62,
+       "time": 3.56,
        "value": 0.0
       }
      ]
     },
-    "velocity": 2.2904,
+    "velocity": 2.4608,
     "velocity_variance": 0.8,
     "direction": [
      0,
@@ -7376,8 +7883,8 @@
      0
     ],
     "spread": 16,
-    "start_time": 2.883,
-    "duration": 0.757
+    "start_time": 2.9324,
+    "duration": 0.6476
    },
    "inputs": {
     "particle": "ps_groundfire"
@@ -7389,34 +7896,34 @@
    "layer": "aftermath",
    "parameters": {
     "shape": "disc",
-    "radius": 0.6442,
+    "radius": 0.5768,
     "position": [
-     0.0445,
-     0.42,
-     -3.9196
+     -2.1682,
+     0.5,
+     -2.5303
     ],
     "rate": {
      "value": 0.0,
      "track": [
       {
-       "time": 2.9072,
+       "time": 2.9448,
        "value": 0.0
       },
       {
-       "time": 3.0072,
-       "value": 33.4
+       "time": 3.0448,
+       "value": 22.1
       },
       {
        "time": 3.35,
-       "value": 27.5
+       "value": 20.8
       },
       {
-       "time": 3.62,
+       "time": 3.56,
        "value": 0.0
       }
      ]
     },
-    "velocity": 2.3868,
+    "velocity": 2.3229,
     "velocity_variance": 0.8,
     "direction": [
      0,
@@ -7424,8 +7931,8 @@
      0
     ],
     "spread": 16,
-    "start_time": 2.9072,
-    "duration": 0.7328
+    "start_time": 2.9448,
+    "duration": 0.6352
    },
    "inputs": {
     "particle": "ps_groundfire"
@@ -7437,34 +7944,34 @@
    "layer": "aftermath",
    "parameters": {
     "shape": "disc",
-    "radius": 0.5741,
+    "radius": 0.6806,
     "position": [
-     1.7167,
-     0.42,
-     -2.6862
+     -0.7735,
+     0.5,
+     -2.8259
     ],
     "rate": {
      "value": 0.0,
      "track": [
       {
-       "time": 2.9621,
+       "time": 2.9107,
        "value": 0.0
       },
       {
-       "time": 3.0621,
-       "value": 26.6
+       "time": 3.0107,
+       "value": 30.4
       },
       {
        "time": 3.35,
-       "value": 21.9
+       "value": 28.5
       },
       {
-       "time": 3.62,
+       "time": 3.56,
        "value": 0.0
       }
      ]
     },
-    "velocity": 2.2266,
+    "velocity": 2.5564,
     "velocity_variance": 0.8,
     "direction": [
      0,
@@ -7472,8 +7979,8 @@
      0
     ],
     "spread": 16,
-    "start_time": 2.9621,
-    "duration": 0.6779
+    "start_time": 2.9107,
+    "duration": 0.6693
    },
    "inputs": {
     "particle": "ps_groundfire"
@@ -7485,34 +7992,34 @@
    "layer": "aftermath",
    "parameters": {
     "shape": "disc",
-    "radius": 0.5997,
+    "radius": 0.668,
     "position": [
-     2.9619,
-     0.42,
-     -1.4132
+     0.7972,
+     0.5,
+     -2.994
     ],
     "rate": {
      "value": 0.0,
      "track": [
       {
-       "time": 2.9736,
+       "time": 2.9539,
        "value": 0.0
       },
       {
-       "time": 3.0736,
-       "value": 29.1
+       "time": 3.0539,
+       "value": 29.4
       },
       {
        "time": 3.35,
-       "value": 24.0
+       "value": 27.6
       },
       {
-       "time": 3.62,
+       "time": 3.56,
        "value": 0.0
       }
      ]
     },
-    "velocity": 2.2851,
+    "velocity": 2.5281,
     "velocity_variance": 0.8,
     "direction": [
      0,
@@ -7520,8 +8027,104 @@
      0
     ],
     "spread": 16,
-    "start_time": 2.9736,
-    "duration": 0.6664
+    "start_time": 2.9539,
+    "duration": 0.6261
+   },
+   "inputs": {
+    "particle": "ps_groundfire"
+   }
+  },
+  {
+   "id": "e_groundfire_12",
+   "type": "emitter",
+   "layer": "aftermath",
+   "parameters": {
+    "shape": "disc",
+    "radius": 0.6261,
+    "position": [
+     1.9287,
+     0.5,
+     -2.0019
+    ],
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 2.9977,
+       "value": 0.0
+      },
+      {
+       "time": 3.0977,
+       "value": 26.1
+      },
+      {
+       "time": 3.35,
+       "value": 24.5
+      },
+      {
+       "time": 3.56,
+       "value": 0.0
+      }
+     ]
+    },
+    "velocity": 2.4338,
+    "velocity_variance": 0.8,
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "spread": 16,
+    "start_time": 2.9977,
+    "duration": 0.5823
+   },
+   "inputs": {
+    "particle": "ps_groundfire"
+   }
+  },
+  {
+   "id": "e_groundfire_13",
+   "type": "emitter",
+   "layer": "aftermath",
+   "parameters": {
+    "shape": "disc",
+    "radius": 0.5689,
+    "position": [
+     2.7566,
+     0.5,
+     -0.9131
+    ],
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 2.9629,
+       "value": 0.0
+      },
+      {
+       "time": 3.0629,
+       "value": 21.5
+      },
+      {
+       "time": 3.35,
+       "value": 20.2
+      },
+      {
+       "time": 3.56,
+       "value": 0.0
+      }
+     ]
+    },
+    "velocity": 2.3049,
+    "velocity_variance": 0.8,
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "spread": 16,
+    "start_time": 2.9629,
+    "duration": 0.6171
    },
    "inputs": {
     "particle": "ps_groundfire"
@@ -7532,11 +8135,11 @@
    "type": "particle_system",
    "layer": "aftermath",
    "parameters": {
-    "max_particles": 260,
-    "lifetime": 1.0,
-    "lifetime_variance": 0.18,
-    "size": 2.3,
-    "size_variance": 0.8,
+    "max_particles": 220,
+    "lifetime": 0.95,
+    "lifetime_variance": 0.15,
+    "size": 2.7,
+    "size_variance": 0.9,
     "size_over_life": [
      [
       0.0,
@@ -7552,12 +8155,12 @@
      ]
     ],
     "color": [
-     0.75,
-     0.68,
-     0.64,
+     0.85,
+     0.78,
+     0.74,
      1.0
     ],
-    "opacity": 0.66,
+    "opacity": 0.7,
     "opacity_over_life": [
      [
       0.0,
@@ -7576,7 +8179,7 @@
       0.0
      ]
     ],
-    "emissive": 0.6,
+    "emissive": 1.5,
     "emissive_over_life": [
      [
       0.0,
@@ -7617,12 +8220,32 @@
    "layer": "aftermath",
    "parameters": {
     "shape": "disc",
-    "radius": 1.7,
-    "position": [
-     0.0,
-     1.0,
-     0.0
-    ],
+    "radius": 1.8,
+    "position": {
+     "value": [
+      0.0,
+      1.2,
+      0.0
+     ],
+     "track": [
+      {
+       "time": 2.86,
+       "value": [
+        0.0,
+        1.2,
+        0.0
+       ]
+      },
+      {
+       "time": 3.3,
+       "value": [
+        0.0,
+        3.4,
+        0.0
+       ]
+      }
+     ]
+    },
     "rate": {
      "value": 0.0,
      "track": [
@@ -7632,113 +8255,35 @@
       },
       {
        "time": 2.95,
-       "value": 120.0
+       "value": 110.0
       },
       {
-       "time": 3.1,
+       "time": 3.12,
        "value": 70.0
       },
       {
-       "time": 3.2,
+       "time": 3.24,
        "value": 0.0
       }
      ]
     },
-    "burst_count": 40,
+    "burst_count": 30,
     "burst_times": [
      0.0
     ],
-    "velocity": 5.5,
+    "velocity": 5.0,
     "velocity_variance": 2.2,
     "direction": [
      0,
      1,
      0
     ],
-    "spread": 32,
+    "spread": 34,
     "start_time": 2.86,
-    "duration": 0.36
+    "duration": 0.4
    },
    "inputs": {
     "particle": "ps_smoke"
-   }
-  },
-  {
-   "id": "ps_ember",
-   "type": "particle_system",
-   "layer": "aftermath",
-   "parameters": {
-    "max_particles": 320,
-    "lifetime": 0.9,
-    "lifetime_variance": 0.3,
-    "size": 0.08,
-    "size_variance": 0.04,
-    "color": [
-     1.0,
-     0.5,
-     0.12,
-     1.0
-    ],
-    "color_over_life": [
-     [
-      0.0,
-      [
-       1.0,
-       0.9,
-       0.6,
-       1.0
-      ]
-     ],
-     [
-      0.5,
-      [
-       1.0,
-       0.45,
-       0.08,
-       1.0
-      ]
-     ],
-     [
-      1.0,
-      [
-       0.4,
-       0.03,
-       0.0,
-       1.0
-      ]
-     ]
-    ],
-    "opacity_over_life": [
-     [
-      0.0,
-      0.0
-     ],
-     [
-      0.12,
-      1.0
-     ],
-     [
-      0.7,
-      0.85
-     ],
-     [
-      1.0,
-      0.0
-     ]
-    ],
-    "emissive": 4.5,
-    "drag": 0.8,
-    "blend": "additive",
-    "render_mode": "stretched_billboard",
-    "velocity_stretch": 0.12
-   },
-   "inputs": {
-    "sprite": "tex_spark",
-    "material": "mat_glow",
-    "forces": [
-     "f_ember_lift",
-     "f_spark_turb"
-    ]
    }
   },
   {
@@ -7747,7 +8292,7 @@
    "layer": "aftermath",
    "parameters": {
     "shape": "disc",
-    "radius": 4.2,
+    "radius": 4.6,
     "position": [
      0.0,
      0.3,
@@ -7762,20 +8307,20 @@
       },
       {
        "time": 3.0,
-       "value": 260.0
+       "value": 300.0
       },
       {
        "time": 3.2,
-       "value": 200.0
+       "value": 240.0
       },
       {
-       "time": 3.32,
+       "time": 3.34,
        "value": 0.0
       }
      ]
     },
-    "velocity": 2.2,
-    "velocity_variance": 1.4,
+    "velocity": 2.4,
+    "velocity_variance": 1.5,
     "direction": [
      0,
      1,
@@ -7783,111 +8328,10 @@
     ],
     "spread": 50,
     "start_time": 2.9,
-    "duration": 0.45
+    "duration": 0.46
    },
    "inputs": {
-    "particle": "ps_ember"
-   }
-  },
-  {
-   "id": "ps_ash",
-   "type": "particle_system",
-   "layer": "aftermath",
-   "parameters": {
-    "max_particles": 160,
-    "lifetime": 0.95,
-    "lifetime_variance": 0.2,
-    "size": 0.09,
-    "size_variance": 0.04,
-    "color": [
-     0.5,
-     0.46,
-     0.44,
-     1.0
-    ],
-    "opacity": 0.8,
-    "opacity_over_life": [
-     [
-      0.0,
-      0.0
-     ],
-     [
-      0.2,
-      1.0
-     ],
-     [
-      0.7,
-      0.8
-     ],
-     [
-      1.0,
-      0.0
-     ]
-    ],
-    "rotation_variance": 180.0,
-    "angular_velocity_variance": 120.0,
-    "drag": 1.4,
-    "blend": "alpha"
-   },
-   "inputs": {
-    "sprite": "tex_puff",
-    "material": "mat_dust",
-    "forces": [
-     "f_gravity_soft",
-     "f_spark_turb"
-    ]
-   }
-  },
-  {
-   "id": "e_ash",
-   "type": "emitter",
-   "layer": "aftermath",
-   "parameters": {
-    "shape": "box",
-    "size": [
-     9.0,
-     3.0,
-     6.0
-    ],
-    "position": [
-     0.0,
-     3.2,
-     0.0
-    ],
-    "rate": {
-     "value": 0.0,
-     "track": [
-      {
-       "time": 2.95,
-       "value": 0.0
-      },
-      {
-       "time": 3.05,
-       "value": 140.0
-      },
-      {
-       "time": 3.2,
-       "value": 120.0
-      },
-      {
-       "time": 3.28,
-       "value": 0.0
-      }
-     ]
-    },
-    "velocity": 0.6,
-    "velocity_variance": 0.5,
-    "direction": [
-     0,
-     -1,
-     0
-    ],
-    "spread": 60,
-    "start_time": 2.95,
-    "duration": 0.35
-   },
-   "inputs": {
-    "particle": "ps_ash"
+    "particle": "ps_mote"
    }
   },
   {
@@ -7898,8 +8342,8 @@
     "light_type": "point",
     "position": [
      0.0,
-     1.4,
-     0.8
+     2.2,
+     1.2
     ],
     "color": [
      1.0,
@@ -7907,7 +8351,7 @@
      0.11,
      1.0
     ],
-    "radius": 13.0,
+    "radius": 15.0,
     "intensity": {
      "value": 0.0,
      "track": [
@@ -7917,15 +8361,15 @@
       },
       {
        "time": 3.0,
-       "value": 9.0
+       "value": 16.0
       },
       {
        "time": 3.3,
-       "value": 7.0
+       "value": 13.0
       },
       {
        "time": 3.7,
-       "value": 3.5
+       "value": 7.0
       },
       {
        "time": 4.0,
@@ -7990,7 +8434,7 @@
    "label": "Meteor size",
    "group": "Meteor",
    "min": 0.5,
-   "max": 1.8,
+   "max": 1.6,
    "default": 1.0,
    "value": 1.0,
    "step": 0.01,
@@ -8025,6 +8469,11 @@
      "node": "e_tail_far",
      "parameter": "radius",
      "op": "multiply"
+    },
+    {
+     "node": "e_shed",
+     "parameter": "radius",
+     "op": "multiply"
     }
    ]
   },
@@ -8055,6 +8504,11 @@
      "op": "multiply"
     },
     {
+     "node": "ps_fire_rise",
+     "parameter": "color",
+     "op": "multiply"
+    },
+    {
      "node": "ps_groundfire",
      "parameter": "color",
      "op": "multiply"
@@ -8071,6 +8525,11 @@
     },
     {
      "node": "ps_fireball",
+     "parameter": "emissive",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_fire_rise",
      "parameter": "emissive",
      "op": "multiply"
     },
@@ -8101,7 +8560,7 @@
    "label": "Sky summon",
    "group": "Sky summon",
    "min": 0.0,
-   "max": 2.5,
+   "max": 2.0,
    "default": 1.0,
    "value": 1.0,
    "step": 0.01,
@@ -8128,8 +8587,18 @@
      "op": "multiply"
     },
     {
+     "node": "e_sky_fire",
+     "parameter": "rate",
+     "op": "multiply"
+    },
+    {
      "node": "e_sky_ember",
      "parameter": "rate",
+     "op": "multiply"
+    },
+    {
+     "node": "e_frag",
+     "parameter": "burst_count",
      "op": "multiply"
     },
     {
@@ -8149,7 +8618,7 @@
    "label": "Debris amount",
    "group": "Debris",
    "min": 0.0,
-   "max": 2.5,
+   "max": 1.25,
    "default": 1.0,
    "value": 1.0,
    "step": 0.01,
@@ -8214,6 +8683,11 @@
      "op": "multiply"
     },
     {
+     "node": "ps_dust",
+     "parameter": "max_particles",
+     "op": "multiply"
+    },
+    {
      "node": "haze",
      "parameter": "intensity",
      "op": "multiply"
@@ -8242,6 +8716,11 @@
      "op": "multiply"
     },
     {
+     "node": "crater_glow",
+     "parameter": "emissive",
+     "op": "multiply"
+    },
+    {
      "node": "e_smoke",
      "parameter": "rate",
      "op": "multiply"
@@ -8253,11 +8732,6 @@
     },
     {
      "node": "e_ember",
-     "parameter": "rate",
-     "op": "multiply"
-    },
-    {
-     "node": "e_ash",
      "parameter": "rate",
      "op": "multiply"
     },
@@ -8325,6 +8799,16 @@
      "node": "e_groundfire_11",
      "parameter": "rate",
      "op": "multiply"
+    },
+    {
+     "node": "e_groundfire_12",
+     "parameter": "rate",
+     "op": "multiply"
+    },
+    {
+     "node": "e_groundfire_13",
+     "parameter": "rate",
+     "op": "multiply"
     }
    ]
   },
@@ -8350,7 +8834,7 @@
  "metadata": {
   "prompt": "lets create the meteor effect, just one basic one is good with impact debris, shockwave ring and aftermath, make sure to include summon sky",
   "generator": "tools/generators/meteor.py",
-  "analysis": "telegraph: ringed ground marker with a soft rising glow | summon_sky: a tilted storm vortex (raymarched nebula + lit swirling puffs) lit from inside, embers fall, a many-rayed glint | meteor: crust boulders around a lava core on a keyframed rig, fire_sim flame body left behind as a tapering tail, smoke and sparks | impact: flash, fireball, tumbling rock debris with flaming streaks, dust ring, shockwave ring decal | aftermath: scorch, cooling crack web, ring of ground fires, smoke, embers and ash",
+  "analysis": "telegraph: ringed ground marker with a soft rising glow | summon_sky: a tilted storm vortex (raymarched torus deck + lit swirling puffs) lit from inside, fire in the eye, embers and burning fragments rain out, a many-rayed soft glint | meteor: crust boulders around a lava core on a keyframed rig, fire_sim flame body left behind as a tapering tail, smoke, sparks and shed embers | impact: white-hot flash, fireball that rolls up, tumbling rock debris, dust wall behind the shockwave ring decal | aftermath: scorch, cooling crack web, molten pool, ring of ground fires, smoke, embers and ash",
   "render_settings": {
    "ground_albedo": 0.11,
    "background": [

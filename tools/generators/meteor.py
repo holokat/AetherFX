@@ -32,8 +32,9 @@ T_FORM = 1.15          # the rock starts to exist inside the glow
 T_HIT = 2.8            # ground contact
 AOE = 3.5              # telegraph / damage radius
 
-SKY = (-5.2, 14.2, -1.2)          # centre of the sky portal
-HIT = (0.0, 0.95, 0.0)            # rock centre at ground contact
+SKY = (-5.2, 14.2, -1.2)          # centre of the sky portal (the eye of the storm)
+ROCK = 1.7                        # rock scale: the meteor is about 2 * ROCK metres across
+HIT = (0.0, 1.45, 0.0)            # rock centre at ground contact
 CLOUD_TILT = -18.0                # the cloud disc leans its underside towards the camera
 
 rng = random.Random(4242)
@@ -135,12 +136,13 @@ FIRE_RAMP = [
 # =========================================================================
 # camera
 # =========================================================================
-# The studio pulls the eye back 1.45x from this node, so the eye ends up near
-# CAM_EYE: low, far, looking slightly up, sky in the upper third.
-CAM_TARGET = (-2.0, 7.6, 0.0)
-CAM_EYE = (-2.0, 6.5, 25.0)
+# The studio pulls the eye back 1.45x from this node, so the eye ends up at CAM_EYE: far back,
+# pitched 3.5 degrees down, so the storm fills the top of the frame and the telegraph circle and
+# the shockwave ring at full radius stay above the studio's play bar (bottom 14% of the viewport).
+CAM_EYE = (-1.5, 8.0, 27.0)
+CAM_TARGET = (-1.5, 6.35, 0.0)
 cam_pos = add(CAM_TARGET, mul(sub(CAM_EYE, CAM_TARGET), 1.0 / 1.45))
-node("cam", "camera", {"position": vec(cam_pos, 3), "target": vec(CAM_TARGET, 3), "fov": 46})
+node("cam", "camera", {"position": vec(cam_pos, 3), "target": vec(CAM_TARGET, 3), "fov": 52})
 
 # =========================================================================
 # textures
@@ -185,6 +187,14 @@ node("tex_puff", "texture", {"width": 96, "height": 96, "frames": 8, "graph": {"
     g("l", "levels", {"in_low": 0.05, "in_high": 0.55}, {"a": "m"}),
 ], "output": "l"}})
 
+# dissolve / erosion noise (the viewer's built-in fallback is blocky on 3 m sprites)
+node("tex_erosion", "texture", {"width": 128, "height": 128, "graph": {"nodes": [
+    g("a", "fbm", {"frequency": 5.0, "octaves": 5, "gain": 0.55, "seed": 4407, "tile": True}),
+    g("b", "fbm", {"frequency": 13.0, "octaves": 3, "gain": 0.5, "seed": 9931, "tile": True}),
+    g("m", "math", {"mode": "lerp", "factor": 0.35}, {"a": "a", "b": "b"}),
+    g("l", "levels", {"in_low": 0.27, "in_high": 0.76}, {"a": "m"}),
+], "output": "l"}})
+
 # soft round glow whose falloff fills the quad
 node("tex_glow", "texture", {"width": 64, "height": 64, "graph": {"nodes": [
     g("rd", "gradient_radial", {"radius": 0.5, "falloff": "quadratic"}),
@@ -196,7 +206,7 @@ node("tex_spark", "texture", {"width": 32, "height": 32, "graph": {"nodes": [
 
 # the glint as the meteor forms: a round hot core with many short uneven soft rays
 # (9 + 13 rays of different lengths, broken by noise - never a four-armed star)
-node("tex_glint", "texture", {"width": 192, "height": 192, "graph": {"nodes": [
+node("tex_glint", "texture", {"width": 128, "height": 128, "graph": {"nodes": [
     g("s1", "star", {"points": 9, "width": 0.06, "outer_radius": 0.38, "core_radius": 0.06,
                      "softness": 0.05, "rotation": 7.0}),
     g("s2", "star", {"points": 14, "width": 0.04, "outer_radius": 0.25, "core_radius": 0.05,
@@ -210,7 +220,7 @@ node("tex_glint", "texture", {"width": 192, "height": 192, "graph": {"nodes": [
     g("rays", "math", {"mode": "max"}, {"a": "s1n", "b": "s2n"}),
     g("fall", "gradient_radial", {"radius": 0.5, "falloff": "smooth"}),
     g("raysf", "math", {"mode": "multiply"}, {"a": "rays", "b": "fall"}),
-    g("rb", "blur", {"radius": 6.0}, {"a": "raysf"}),
+    g("rb", "blur", {"radius": 4.0}, {"a": "raysf"}),
     g("rbl", "levels", {"out_high": 0.62}, {"a": "rb"}),
     g("halo", "gradient_radial", {"radius": 0.5, "falloff": "quadratic"}),
     g("halol", "levels", {"out_high": 0.36}, {"a": "halo"}),
@@ -332,7 +342,7 @@ def crater_texture(nid, s, size):
                                  "graph": {"nodes": gn, "output": "k2"}})
 
 
-crater_texture("tex_cracks", 980, 384)
+crater_texture("tex_cracks", 980, 320)
 
 node("tex_scorch", "texture", {"width": 128, "height": 128, "graph": {"nodes": [
     g("rd", "gradient_radial", {"radius": 0.5, "inner_radius": 0.12, "falloff": "smooth"}),
@@ -363,36 +373,36 @@ node("tex_ribbon", "texture", {"width": 128, "height": 64, "graph": {"nodes": [
 # =========================================================================
 node("mat_fire", "material", {"blend": "additive", "shading": "unlit", "soft_particle": True,
                               "depth_fade": 0.5, "emissive_intensity": 0.55,
-                              "dissolve": 0.42, "erosion": 0.28,
-                              "temperature_gradient": FIRE_RAMP})
+                              "dissolve": 0.3, "erosion": 0.3,
+                              "temperature_gradient": FIRE_RAMP}, {"noise_texture": "tex_erosion"})
 node("mat_glow", "material", {"blend": "additive", "shading": "unlit", "soft_particle": True,
                               "depth_fade": 0.4})
 node("mat_smoke", "material", {"blend": "alpha", "shading": "lit",
-                               "base_color": [0.115, 0.092, 0.082, 1.0],
+                               "base_color": [0.34, 0.28, 0.25, 1.0],
                                "emissive_color": [1.0, 0.36, 0.08, 1.0],
                                "soft_particle": True, "depth_fade": 0.5,
-                               "dissolve": 0.45, "erosion": 0.3})
+                               "dissolve": 0.45, "erosion": 0.3}, {"noise_texture": "tex_erosion"})
 node("mat_cloud", "material", {"blend": "alpha", "shading": "lit",
-                               "base_color": [0.13, 0.10, 0.125, 1.0],
-                               "emissive_color": [0.62, 0.50, 0.68, 1.0],
+                               "base_color": [0.62, 0.56, 0.58, 1.0],
+                               "emissive_color": [0.60, 0.50, 0.62, 1.0],
                                "soft_particle": True, "depth_fade": 0.5,
-                               "dissolve": 0.42, "erosion": 0.3})
+                               "dissolve": 0.5, "erosion": 0.32}, {"noise_texture": "tex_erosion"})
 node("mat_dust", "material", {"blend": "alpha", "shading": "lit",
                               "base_color": [0.26, 0.19, 0.145, 1.0],
                               "emissive_color": [1.0, 0.4, 0.1, 1.0],
                               "soft_particle": True, "depth_fade": 0.45,
-                              "dissolve": 0.42, "erosion": 0.3})
+                              "dissolve": 0.42, "erosion": 0.3}, {"noise_texture": "tex_erosion"})
 node("mat_rock", "material", {"blend": "alpha", "shading": "lit",
-                              "base_color": [0.085, 0.060, 0.048, 1.0],
-                              "emissive_color": [1.0, 0.30, 0.05, 1.0],
+                              "base_color": [0.17, 0.12, 0.095, 1.0],
+                              "emissive_color": [1.0, 0.26, 0.04, 1.0],
                               "emissive_intensity": 0.06})
 node("mat_crust", "material", {"blend": "alpha", "shading": "lit",
-                               "base_color": [0.050, 0.034, 0.028, 1.0],
+                               "base_color": [0.034, 0.024, 0.020, 1.0],
                                "emissive_color": [1.0, 0.24, 0.04, 1.0],
                                "emissive_intensity": 0.0})
 node("mat_lava", "material", {"blend": "alpha", "shading": "lit",
-                              "base_color": [0.55, 0.20, 0.04, 1.0],
-                              "emissive_color": [1.0, 0.46, 0.10, 1.0],
+                              "base_color": [0.12, 0.03, 0.01, 1.0],
+                              "emissive_color": [1.0, 0.26, 0.035, 1.0],
                               "emissive_intensity": 0.0})
 node("mat_ribbon", "material", {"blend": "additive", "shading": "unlit", "soft_particle": True,
                                 "depth_fade": 0.2, "emissive_color": [1.0, 0.5, 0.18, 1.0],
@@ -402,12 +412,13 @@ node("mat_ribbon", "material", {"blend": "additive", "shading": "unlit", "soft_p
 # forces and colliders
 # =========================================================================
 node("f_gravity", "force", {"force_type": "gravity", "strength": 9.81})
-node("f_gravity_rock", "force", {"force_type": "gravity", "strength": 24.0})
+node("f_gravity_rock", "force", {"force_type": "gravity", "strength": 32.0})
 node("f_gravity_soft", "force", {"force_type": "gravity", "strength": 4.5})
-node("f_fire_curl", "force", {"force_type": "curl_noise", "strength": 2.6, "frequency": 0.55,
+node("f_fire_curl", "force", {"force_type": "curl_noise", "strength": 2.6, "frequency": 0.5,
                               "octaves": 2, "speed": 0.9})
-node("f_fire_lift", "force", {"force_type": "buoyancy", "strength": 2.6, "temperature": 1.0})
-node("f_smoke_lift", "force", {"force_type": "buoyancy", "strength": 1.5, "temperature": 1.0})
+node("f_fire_lift", "force", {"force_type": "buoyancy", "strength": 2.8, "temperature": 1.0})
+node("f_ball_lift", "force", {"force_type": "buoyancy", "strength": 7.5, "temperature": 1.0})
+node("f_smoke_lift", "force", {"force_type": "buoyancy", "strength": 1.6, "temperature": 1.0})
 node("f_smoke_turb", "force", {"force_type": "turbulence", "strength": 1.5, "frequency": 0.45,
                                "octaves": 3, "speed": 0.6})
 node("f_spark_turb", "force", {"force_type": "turbulence", "strength": 2.2, "frequency": 0.9,
@@ -415,9 +426,9 @@ node("f_spark_turb", "force", {"force_type": "turbulence", "strength": 2.2, "fre
 node("f_ember_lift", "force", {"force_type": "buoyancy", "strength": 1.6, "temperature": 1.0})
 tilt = math.radians(CLOUD_TILT)
 CLOUD_AXIS = (0.0, math.cos(tilt), math.sin(tilt))
-node("f_sky_vortex", "force", {"force_type": "vortex", "strength": 7.0, "direction": vec(CLOUD_AXIS),
-                               "position": vec(SKY), "radius": 12.0, "falloff": "none"})
-node("f_sky_pull", "force", {"force_type": "attractor", "strength": 8.0, "position": vec(SKY),
+node("f_sky_vortex", "force", {"force_type": "vortex", "strength": 9.0, "direction": vec(CLOUD_AXIS),
+                               "position": vec(SKY), "radius": 0.0, "falloff": "none"})
+node("f_sky_pull", "force", {"force_type": "attractor", "strength": 7.0, "position": vec(SKY),
                              "radius": 0.0})
 node("ground", "collider", {"collider_type": "plane", "normal": [0, 1, 0],
                             "bounce": 0.3, "friction": 0.6})
@@ -445,24 +456,24 @@ node("tele_glow", "decal", {
 
 # the faint soft glow rising from the centre: wide stretched puffs, never a line
 node("ps_column", "particle_system", {
-    "max_particles": 110, "lifetime": 1.7, "lifetime_variance": 0.3,
-    "size": 2.5, "size_variance": 0.7, "size_over_life": [[0.0, 0.8], [1.0, 1.15]],
+    "max_particles": 110, "lifetime": 1.8, "lifetime_variance": 0.3,
+    "size": 2.6, "size_variance": 0.7, "size_over_life": [[0.0, 0.8], [1.0, 1.2]],
     "color": [1.0, 0.17, 0.03, 1.0],
     "color_over_life": [[0.0, [1.0, 0.9, 0.7, 1.0]], [0.4, [1.0, 0.7, 0.55, 1.0]], [1.0, [0.8, 0.3, 0.3, 1.0]]],
-    "opacity": 0.085, "opacity_over_life": [[0.0, 0.0], [0.2, 1.0], [0.6, 0.6], [1.0, 0.0]],
-    "emissive": 0.3, "drag": 0.35, "blend": "additive",
+    "opacity": 0.06, "opacity_over_life": [[0.0, 0.0], [0.2, 1.0], [0.6, 0.55], [1.0, 0.0]],
+    "emissive": 0.3, "drag": 0.3, "blend": "additive",
     "render_mode": "stretched_billboard", "velocity_stretch": 0.34,
 }, {"sprite": "tex_glow", "material": "mat_glow"}, layer="telegraph")
 node("e_column", "emitter", {
     "shape": "disc", "radius": 0.7, "position": [0.0, 0.6, 0.0],
     "rate": track([(0.0, 0.0), (0.08, 40.0), (0.9, 32.0), (1.5, 14.0), (2.2, 0.0)]),
-    "velocity": 4.2, "velocity_variance": 1.0, "direction": [0, 1, 0], "spread": 4,
+    "velocity": 4.4, "velocity_variance": 1.0, "direction": [0, 1, 0], "spread": 4,
     "duration": 2.25,
 }, {"particle": "ps_column"}, layer="telegraph")
 
 node("ps_mote", "particle_system", {
-    "max_particles": 220, "lifetime": 1.3, "lifetime_variance": 0.5,
-    "size": 0.075, "size_variance": 0.035,
+    "max_particles": 520, "lifetime": 1.0, "lifetime_variance": 0.35,
+    "size": 0.09, "size_variance": 0.04,
     "color": [1.0, 0.42, 0.08, 1.0],
     "color_over_life": [[0.0, [1.0, 0.9, 0.6, 1.0]], [0.5, [1.0, 0.45, 0.1, 1.0]], [1.0, [0.5, 0.05, 0.0, 1.0]]],
     "opacity_over_life": [[0.0, 0.0], [0.15, 1.0], [0.7, 0.85], [1.0, 0.0]],
@@ -485,53 +496,73 @@ node("tele_light", "light", {
 }, layer="telegraph")
 
 # =========================================================================
-# LAYER sky summon (0.6 - 3.2)
+# LAYER sky summon (0.6 - 3.5)
 # =========================================================================
-# The glowing, swirling inside of the storm: a raymarched nebula disc whose dense arms scatter
-# the portal light.  Dark lit puffs (ps_cloud) draw over it, so the glow sits *inside* the cloud.
+# The storm is a raymarched torus squashed into a wide cloud deck (about 21 m across): the
+# hole is the eye the meteor falls through, the arms and the spin are the swirl, and the dense
+# core scatters the fire light that sits in the eye.  Dark lit puffs orbit over it, fire
+# churns inside the eye and embers and burning fragments rain out of it.
+SKY_END = 3.5
 node("sky_cloud", "volume", {
     "mode": "procedural", "volume_type": "smoke", "shape": "ring",
-    "position": vec(SKY), "rotation": [CLOUD_TILT, 0.0, 0.0],
-    # a torus: `radius` is the centreline and height / 4 the tube radius, so the eye of the
-    # storm opens as the radius grows
-    "radius": track([(0.55, 2.2), (1.0, 3.6), (1.3, 4.3), (T_HIT, 4.7), (3.3, 5.2)]),
-    "height": track([(0.55, 6.0), (1.2, 9.6), (3.3, 10.0)]),
-    "density": track([(0.55, 0.0), (0.9, 1.2), (1.2, 1.8), (2.3, 1.6), (2.9, 0.7), (3.3, 0.0)]),
-    "emission": 0.22,
-    "color": [0.16, 0.10, 0.17, 1.0], "color_hot": [0.30, 0.22, 0.28, 1.0],
-    "filament_scale": 0.7, "strands": 0.55, "carve": 0.46, "softness": 0.8,
-    "spiral_arms": 4, "arm_sharpness": 1.7, "twist": 0.0, "spin": 0.22, "climb": 0.0,
-    "scatter": 0.8, "march_steps": 24,
-    "start_time": 0.55, "duration": 2.78,
+    "position": vec(SKY), "rotation": [CLOUD_TILT, 0.0, 0.0], "scale": [1.0, 0.6, 1.0],
+    # `radius` is the torus centreline and height / 4 the tube radius
+    "radius": track([(0.55, 2.8), (0.9, 5.0), (1.2, 6.2), (T_HIT, 6.7), (SKY_END, 7.2)]),
+    "height": 11.6,
+    "density": track([(0.55, 0.0), (0.8, 2.0), (1.2, 3.4), (2.6, 3.2), (3.0, 1.6), (SKY_END, 0.0)]),
+    "emission": 0.06,
+    "color": [0.12, 0.08, 0.10, 1.0], "color_hot": [0.36, 0.25, 0.22, 1.0],
+    "filament_scale": 0.65, "strands": 0.65, "carve": 0.5, "softness": 0.35,
+    "spiral_arms": 5, "arm_sharpness": 1.1, "twist": 0.0, "spin": 0.2, "climb": 0.0,
+    "scatter": 1.0, "march_steps": 24,
+    "start_time": 0.55, "duration": r(SKY_END - 0.55),
 }, layer="sky")
 
 node("ps_cloud", "particle_system", {
-    "max_particles": 220, "lifetime": 1.6, "lifetime_variance": 0.4,
-    "size": 2.7, "size_variance": 0.9, "size_over_life": [[0.0, 0.45], [0.4, 1.0], [1.0, 1.3]],
-    "color": [0.42, 0.36, 0.42, 1.0],
-    "opacity": 0.7, "opacity_over_life": [[0.0, 0.0], [0.25, 1.0], [0.7, 0.8], [1.0, 0.0]],
-    "emissive": 1.3, "rotation_variance": 180.0, "angular_velocity_variance": 24.0,
-    "drag": 0.8, "blend": "alpha", "sort": True, "sprite_fps": 7.0,
+    "max_particles": 110, "lifetime": 2.0, "lifetime_variance": 0.4,
+    "size": 3.7, "size_variance": 1.1, "size_over_life": [[0.0, 0.5], [0.4, 1.0], [1.0, 1.25]],
+    "color": [0.62, 0.6, 0.62, 1.0],
+    "opacity": 0.85, "opacity_over_life": [[0.0, 0.0], [0.2, 1.0], [0.7, 0.8], [1.0, 0.0]],
+    "emissive": 0.07, "rotation_variance": 180.0, "angular_velocity_variance": 20.0,
+    "drag": 0.8, "blend": "alpha", "sort": True, "sprite_fps": 6.0,
 }, {"sprite": "tex_puff", "material": "mat_cloud",
     "forces": ["f_sky_vortex", "f_sky_pull", "f_smoke_turb"]}, layer="sky")
 node("e_cloud", "emitter", {
-    "shape": "ring", "radius": 6.4, "inner_radius": 2.4,
+    "shape": "ring", "radius": 9.0, "inner_radius": 2.8,
     "position": vec(SKY), "rotation": [CLOUD_TILT, 0.0, 0.0],
-    "rate": track([(0.6, 0.0), (0.72, 95.0), (1.2, 70.0), (2.2, 55.0), (2.7, 0.0)]),
+    "rate": track([(0.6, 0.0), (0.72, 70.0), (1.2, 42.0), (2.5, 36.0), (2.95, 0.0)]),
     "velocity": 0.6, "velocity_variance": 0.4, "direction": [0, 0, 0], "spread": 40,
-    "start_time": 0.6, "duration": 2.15,
+    "start_time": 0.6, "duration": 2.4,
 }, {"particle": "ps_cloud"}, layer="sky")
+
+# fire churning inside the eye
+node("ps_sky_fire", "particle_system", {
+    "max_particles": 90, "lifetime": 0.75, "lifetime_variance": 0.25,
+    "size": 2.9, "size_variance": 0.9, "size_over_life": [[0.0, 0.5], [0.3, 1.0], [1.0, 0.7]],
+    "color": [1.0, 0.8, 0.6, 1.0],
+    "color_over_life": [[0.0, [1.0, 1.0, 1.0, 1.0]], [0.5, [1.0, 0.85, 0.75, 1.0]], [1.0, [0.9, 0.55, 0.45, 1.0]]],
+    "opacity": 0.34, "opacity_over_life": [[0.0, 0.0], [0.15, 1.0], [0.45, 0.6], [0.75, 0.0], [1.0, 0.0]],
+    "emissive": 0.25, "drag": 1.2, "blend": "additive",
+    "render_mode": "stretched_billboard", "velocity_stretch": 0.08, "sprite_fps": 16.0,
+}, {"sprite": "tex_fire", "material": "mat_fire",
+    "forces": ["f_sky_vortex", "f_fire_curl"]}, layer="sky")
+node("e_sky_fire", "emitter", {
+    "shape": "disc", "radius": 2.8, "position": vec(SKY), "rotation": [CLOUD_TILT, 0.0, 0.0],
+    "rate": track([(0.7, 0.0), (1.0, 40.0), (1.25, 80.0), (1.8, 50.0), (2.3, 30.0), (2.55, 0.0)]),
+    "velocity": 1.6, "velocity_variance": 1.0, "direction": [0, 0, 0], "spread": 60,
+    "start_time": 0.7, "duration": 2.45,
+}, {"particle": "ps_sky_fire"}, layer="sky")
 
 # one long-lived sprite is the keyframed inner glow: its life curves are the animation
 node("ps_sky_glow", "particle_system", {
-    "max_particles": 4, "lifetime": 2.3, "size": 8.5,
-    "size_over_life": [[0.0, 0.25], [0.22, 0.8], [0.27, 1.0], [0.5, 0.85], [1.0, 0.6]],
+    "max_particles": 4, "lifetime": 2.75, "size": 9.5,
+    "size_over_life": [[0.0, 0.2], [0.2, 0.75], [0.23, 1.0], [0.4, 0.8], [0.8, 0.7], [1.0, 0.5]],
     "color": [1.0, 0.2, 0.035, 1.0],
-    "color_over_life": [[0.0, [0.7, 0.5, 0.5, 1.0]], [0.2, [1.0, 0.8, 0.7, 1.0]],
-                        [0.27, [1.0, 1.0, 1.0, 1.0]], [0.6, [0.9, 0.7, 0.6, 1.0]],
+    "color_over_life": [[0.0, [0.7, 0.5, 0.5, 1.0]], [0.18, [1.0, 0.8, 0.7, 1.0]],
+                        [0.23, [1.0, 1.0, 1.0, 1.0]], [0.5, [0.9, 0.7, 0.6, 1.0]],
                         [1.0, [0.6, 0.3, 0.3, 1.0]]],
-    "opacity": 0.55, "opacity_over_life": [[0.0, 0.0], [0.12, 0.45], [0.26, 1.0], [0.4, 0.7],
-                                           [0.75, 0.45], [1.0, 0.0]],
+    "opacity": 0.6, "opacity_over_life": [[0.0, 0.0], [0.1, 0.4], [0.22, 1.0], [0.35, 0.7],
+                                          [0.8, 0.5], [1.0, 0.0]],
     "emissive": 0.4, "blend": "additive",
 }, {"sprite": "tex_glow", "material": "mat_glow"}, layer="sky")
 node("e_sky_glow", "emitter", {
@@ -539,8 +570,10 @@ node("e_sky_glow", "emitter", {
     "velocity": 0.0, "start_time": 0.62, "duration": 0.2,
 }, {"particle": "ps_sky_glow"}, layer="sky")
 
+# the glint sits a little towards the hero camera so the forming rock never punches a hole in it
+GLINT_POS = add(SKY, mul(norm(sub(CAM_EYE, SKY)), 2.4))
 node("ps_glint", "particle_system", {
-    "max_particles": 4, "lifetime": 0.46, "size": 6.4,
+    "max_particles": 4, "lifetime": 0.5, "size": 8.5,
     "size_over_life": [[0.0, 0.08], [0.25, 1.0], [0.55, 0.8], [1.0, 0.25]],
     "color": [1.0, 0.62, 0.30, 1.0],
     "color_over_life": [[0.0, [1.0, 1.0, 1.0, 1.0]], [0.5, [1.0, 0.85, 0.7, 1.0]], [1.0, [1.0, 0.5, 0.3, 1.0]]],
@@ -548,13 +581,13 @@ node("ps_glint", "particle_system", {
     "emissive": 1.2, "rotation": 12.0, "angular_velocity": 22.0, "blend": "additive",
 }, {"sprite": "tex_glint", "material": "mat_glow"}, layer="sky")
 node("e_glint", "emitter", {
-    "shape": "point", "position": vec(add(SKY, (0.0, 0.0, 1.6))), "rate": 0, "burst_count": 1,
+    "shape": "point", "position": vec(GLINT_POS), "rate": 0, "burst_count": 1,
     "burst_times": [0.0], "velocity": 0.0, "start_time": 0.98, "duration": 0.2,
 }, {"particle": "ps_glint"}, layer="sky")
 
 node("ps_sky_ember", "particle_system", {
-    "max_particles": 200, "lifetime": 1.5, "lifetime_variance": 0.5,
-    "size": 0.10, "size_variance": 0.05,
+    "max_particles": 420, "lifetime": 1.8, "lifetime_variance": 0.6,
+    "size": 0.13, "size_variance": 0.06,
     "color": [1.0, 0.5, 0.12, 1.0],
     "color_over_life": [[0.0, [1.0, 0.95, 0.7, 1.0]], [0.4, [1.0, 0.5, 0.12, 1.0]], [1.0, [0.45, 0.04, 0.0, 1.0]]],
     "opacity_over_life": [[0.0, 0.0], [0.1, 1.0], [0.75, 0.9], [1.0, 0.0]],
@@ -563,19 +596,55 @@ node("ps_sky_ember", "particle_system", {
 }, {"sprite": "tex_spark", "material": "mat_glow",
     "forces": ["f_gravity_soft", "f_spark_turb"]}, layer="sky")
 node("e_sky_ember", "emitter", {
-    "shape": "disc", "radius": 2.8, "position": vec(SKY), "rotation": [CLOUD_TILT, 0.0, 0.0],
-    "rate": track([(0.75, 0.0), (1.05, 70.0), (1.9, 60.0), (2.6, 0.0)]),
-    "velocity": 1.6, "velocity_variance": 1.2, "direction": [0, -1, 0], "spread": 50,
-    "start_time": 0.75, "duration": 1.9,
+    "shape": "disc", "radius": 3.6, "position": vec(SKY), "rotation": [CLOUD_TILT, 0.0, 0.0],
+    "rate": track([(0.75, 0.0), (1.05, 120.0), (1.3, 190.0), (2.0, 140.0), (2.7, 70.0), (3.0, 0.0)]),
+    "velocity": 2.4, "velocity_variance": 1.8, "direction": [0, -1, 0], "spread": 60,
+    "start_time": 0.75, "duration": 2.3,
 }, {"particle": "ps_sky_ember"}, layer="sky")
 
+# burning fragments raining out of the rift: small rocks with flaming ribbons, burnt out in mid air
+node("rock_mesh", "mesh", {"primitive": "rock", "radius": 0.5, "segments": 12,
+                           "irregularity": 0.75, "variants": 3, "visible": False})
+node("chip_mesh", "mesh", {"primitive": "shard", "radius": 0.5, "height": 0.34,
+                           "irregularity": 0.7, "variants": 3, "visible": False})
+node("ps_frag", "particle_system", {
+    "max_particles": 16, "lifetime": 1.05, "lifetime_variance": 0.2,
+    "size": 0.42, "size_variance": 0.18,
+    "size_over_life": [[0.0, 0.3], [0.1, 1.0], [0.7, 0.85], [1.0, 0.0]],
+    "angular_velocity": 260.0, "angular_velocity_variance": 160.0,
+    "render_mode": "mesh", "blend": "alpha", "drag": 0.3, "orientation": "tumble",
+    "mesh_scale": [1.0, 0.8, 1.0], "mesh_scale_variance": [0.3, 0.25, 0.3],
+}, {"mesh": "rock_mesh", "material": "mat_rock", "forces": ["f_gravity"]}, layer="sky")
+node("e_frag", "emitter", {
+    "shape": "disc", "radius": 3.0, "position": vec(SKY), "rotation": [CLOUD_TILT, 0.0, 0.0],
+    "rate": 0, "burst_count": 3, "burst_times": [0.0, 0.15, 0.35, 0.55, 0.75],
+    "velocity": 6.5, "velocity_variance": 3.0, "direction": [0.25, -1.0, 0.1], "spread": 58,
+    "start_time": 1.2, "duration": 1.1,
+}, {"particle": "ps_frag"}, layer="sky")
+node("t_frag", "trail", {
+    "width": 0.5, "lifetime": 0.34, "blend": "additive",
+    "color": [1.0, 0.45, 0.12, 1.0], "emissive": 0.9,
+    "taper": [[0.0, 0.55], [0.2, 1.0], [0.6, 0.6], [1.0, 0.0]],
+    "opacity_over_life": [[0.0, 0.0], [0.12, 0.85], [0.5, 0.5], [1.0, 0.0]],
+    "min_vertex_distance": 0.12, "max_segments": 28, "uv_scroll": -1.5,
+    "start_time": 1.2, "duration": 2.2,
+}, {"source": "ps_frag", "material": "mat_ribbon"}, layer="sky")
+
 node("sky_light", "light", {
-    "light_type": "point", "position": vec(add(SKY, (0.0, 0.4, -2.2))),
-    "color": [1.0, 0.24, 0.05, 1.0], "radius": 9.5,
-    "intensity": track([(0.6, 0.0), (0.9, 10.0), (1.1, 26.0), (1.2, 46.0), (1.36, 30.0),
-                        (1.8, 20.0), (2.4, 10.0), (2.95, 0.0)]),
-    "flicker_amplitude": 0.18, "flicker_frequency": 11.0,
-    "start_time": 0.6, "duration": 2.4,
+    "light_type": "point", "position": vec(add(SKY, (0.0, 0.3, -1.5))),
+    "color": [1.0, 0.27, 0.05, 1.0], "radius": 11.0,
+    "intensity": track([(0.6, 0.0), (0.9, 26.0), (1.1, 60.0), (1.2, 95.0), (1.4, 62.0),
+                        (2.4, 46.0), (T_HIT, 38.0), (3.3, 0.0)]),
+    "flicker_amplitude": 0.2, "flicker_frequency": 11.0,
+    "start_time": 0.6, "duration": 2.75,
+}, layer="sky")
+
+# a dim, wide, deep red light above the deck: the outer cloud stays dark but never vanishes
+node("sky_rim", "light", {
+    "light_type": "point", "position": vec(add(SKY, (0.0, 3.0, -4.0))),
+    "color": [0.9, 0.2, 0.08, 1.0], "radius": 24.0,
+    "intensity": track([(0.6, 0.0), (1.0, 26.0), (2.6, 26.0), (3.3, 0.0)]),
+    "start_time": 0.6, "duration": 2.75,
 }, layer="sky")
 
 # =========================================================================
@@ -594,20 +663,21 @@ node("rig", "mesh", {"primitive": "sphere", "radius": 0.02, "segments": 6, "visi
 FLIGHT = T_HIT - T_FORM
 node("met_body", "mesh", {
     "primitive": "sphere", "radius": 0.02, "segments": 6, "visible": False,
-    "rotation": track([(T_FORM, [0.0, 0.0, 0.0]), (T_HIT, [150.0, -110.0, 80.0])]),
-    "scale": track([(T_FORM, [0.08, 0.08, 0.08]), (1.4, [0.62, 0.62, 0.62]),
-                    (1.75, [1.0, 1.0, 1.0]), (T_HIT, [1.0, 1.0, 1.0])]),
+    "rotation": track([(T_FORM, [0.0, 0.0, 0.0]), (T_HIT, [38.0, -64.0, 26.0])]),
+    "scale": track([(T_FORM, [0.05, 0.05, 0.05]), (1.45, [0.6, 0.6, 0.6]),
+                    (1.8, [1.0, 1.0, 1.0]), (T_HIT, [1.0, 1.0, 1.0])]),
 }, layer="meteor", parent="rig")
 
 node("met_lava", "mesh", {
-    "primitive": "rock", "radius": 0.80, "segments": 16, "irregularity": 0.22,
+    "primitive": "rock", "radius": r(0.84 * ROCK), "segments": 16, "irregularity": 0.22,
     "color": [1.0, 0.72, 0.40, 1.0],
-    "emissive": track([(T_FORM, 1.0), (1.8, 1.5), (2.4, 2.0), (T_HIT, 2.6)]),
+    "emissive": track([(T_FORM, 0.9), (1.8, 1.1), (2.4, 1.3), (T_HIT, 1.6)]),
     "start_time": T_FORM, "duration": r(FLIGHT),
 }, {"material": "mat_lava"}, layer="meteor", parent="met_body", seed=9001)
 
-# crust boulders on a jittered Fibonacci sphere: the gaps between them are the lava cracks
-CHUNKS = 20
+# crust boulders on a jittered Fibonacci sphere: the gaps between them are the lava cracks.
+# The boulders on the leading side are smaller, so the face that meets the air shows more lava.
+CHUNKS = 12
 chunk_ids = []
 golden = math.pi * (3.0 - math.sqrt(5.0))
 for i in range(CHUNKS):
@@ -615,26 +685,29 @@ for i in range(CHUNKS):
     ring = math.sqrt(max(0.0, 1.0 - y * y))
     phi = i * golden + rng.uniform(-0.22, 0.22)
     direction = norm((math.cos(phi) * ring, y + rng.uniform(-0.08, 0.08), math.sin(phi) * ring))
-    dist = rng.uniform(0.52, 0.64)
-    rad = rng.uniform(0.36, 0.50)
+    dist = rng.uniform(0.52, 0.62)
+    rad = rng.uniform(0.50, 0.64)
+    leading = direction[0] * FALL[0] + direction[1] * FALL[1] + direction[2] * FALL[2]
+    if leading > 0.35:
+        rad *= 0.86
     cid = f"met_crust_{i}"
     chunk_ids.append(cid)
     node(cid, "mesh", {
-        "primitive": "rock", "radius": r(rad), "segments": 12, "irregularity": r(rng.uniform(0.55, 0.8)),
-        "position": vec(mul(direction, dist)),
+        "primitive": "rock", "radius": r(rad * ROCK), "segments": 12,
+        "irregularity": r(rng.uniform(0.6, 0.85)),
+        "position": vec(mul(direction, dist * ROCK)),
         "rotation": [r(rng.uniform(0, 360), 1), r(rng.uniform(0, 360), 1), r(rng.uniform(0, 360), 1)],
-        "scale": [r(rng.uniform(0.95, 1.25)), r(rng.uniform(0.7, 0.95)), r(rng.uniform(0.9, 1.2))],
+        "scale": [r(rng.uniform(0.9, 1.35)), r(rng.uniform(0.62, 0.95)), r(rng.uniform(0.85, 1.3))],
         "color": [r(rng.uniform(0.85, 1.15)), r(rng.uniform(0.8, 1.05)), r(rng.uniform(0.78, 1.0)), 1.0],
         "emissive": 0.0,
         "start_time": T_FORM, "duration": r(FLIGHT),
     }, {"material": "mat_crust"}, layer="meteor", parent="met_body", seed=9100 + i * 13)
 
 # --- flame body: big fire_sim sprites born around the back of the rock and left behind,
-# so the body is a long tapering tail and the leading face of the rock stays dark.
-FLAME_OFFSET = add(mul(BACK, 0.35), (0.0, 0.0, -0.55))
+# so the body is a long tapering tail and the leading face of the rock stays readable.
 node("ps_tail", "particle_system", {
-    "max_particles": 260, "lifetime": 0.58, "lifetime_variance": 0.2,
-    "size": 2.35, "size_variance": 0.7,
+    "max_particles": 220, "lifetime": 0.6, "lifetime_variance": 0.2,
+    "size": r(2.2 * ROCK), "size_variance": r(0.6 * ROCK),
     "size_over_life": [[0.0, 0.5], [0.22, 1.0], [0.6, 0.78], [1.0, 0.3]],
     "color": [1.0, 0.88, 0.70, 1.0],
     "color_over_life": [[0.0, [1.0, 1.0, 1.0, 1.0]], [0.4, [1.0, 0.9, 0.8, 1.0]], [1.0, [0.9, 0.62, 0.5, 1.0]]],
@@ -643,64 +716,66 @@ node("ps_tail", "particle_system", {
     "render_mode": "stretched_billboard", "velocity_stretch": 0.1, "sprite_fps": 18.0,
 }, {"sprite": "tex_fire", "material": "mat_fire", "forces": ["f_fire_curl"]}, layer="meteor")
 node("e_tail", "emitter", {
-    "shape": "sphere", "radius": 0.7, "position": vec(FLAME_OFFSET),
-    "rate": track([(T_FORM, 0.0), (1.3, 40.0), (1.8, 120.0), (2.4, 170.0), (2.78, 200.0), (T_HIT, 0.0)]),
-    "velocity": 4.2, "velocity_variance": 2.0, "direction": vec(BACK), "spread": 13,
+    "shape": "sphere", "radius": r(0.65 * ROCK),
+    "position": vec(add(mul(BACK, 0.4 * ROCK), (0.0, 0.0, -0.55 * ROCK))),
+    "rate": track([(T_FORM, 0.0), (1.3, 30.0), (1.8, 80.0), (2.4, 110.0), (2.78, 125.0), (T_HIT, 0.0)]),
+    "velocity": 4.6, "velocity_variance": 2.0, "direction": vec(BACK), "spread": 13,
     "start_time": T_FORM, "duration": r(FLIGHT),
 }, {"particle": "ps_tail"}, layer="meteor", parent="rig")
 
 # thinner, longer-lived wisps: the far end of the tail
 node("ps_tail_far", "particle_system", {
-    "max_particles": 220, "lifetime": 1.05, "lifetime_variance": 0.3,
-    "size": 1.55, "size_variance": 0.55,
+    "max_particles": 200, "lifetime": 1.1, "lifetime_variance": 0.3,
+    "size": r(1.45 * ROCK), "size_variance": r(0.5 * ROCK),
     "size_over_life": [[0.0, 0.45], [0.2, 1.0], [0.6, 0.7], [1.0, 0.2]],
     "color": [1.0, 0.80, 0.60, 1.0],
     "color_over_life": [[0.0, [1.0, 1.0, 1.0, 1.0]], [0.5, [1.0, 0.8, 0.66, 1.0]], [1.0, [0.8, 0.45, 0.35, 1.0]]],
-    "opacity": 0.42, "opacity_over_life": [[0.0, 0.0], [0.1, 1.0], [0.5, 0.65], [1.0, 0.0]],
+    "opacity": 0.42, "opacity_over_life": [[0.0, 0.0], [0.1, 1.0], [0.45, 0.6], [0.75, 0.0], [1.0, 0.0]],
     "emissive": 0.25, "drag": 0.9, "blend": "additive", "soft_particle_distance": 0.6,
     "render_mode": "stretched_billboard", "velocity_stretch": 0.16, "sprite_fps": 15.0,
 }, {"sprite": "tex_fire", "material": "mat_fire", "forces": ["f_fire_curl"]}, layer="meteor")
 node("e_tail_far", "emitter", {
-    "shape": "sphere", "radius": 0.5, "position": vec(add(mul(BACK, 0.8), (0.0, 0.0, -0.4))),
-    "rate": track([(T_FORM, 0.0), (1.4, 25.0), (1.8, 70.0), (2.4, 95.0), (2.78, 110.0), (T_HIT, 0.0)]),
-    "velocity": 2.6, "velocity_variance": 1.4, "direction": vec(BACK), "spread": 10,
+    "shape": "sphere", "radius": r(0.5 * ROCK),
+    "position": vec(add(mul(BACK, 0.9 * ROCK), (0.0, 0.0, -0.4 * ROCK))),
+    "rate": track([(T_FORM, 0.0), (1.4, 20.0), (1.8, 48.0), (2.4, 62.0), (2.78, 70.0), (T_HIT, 0.0)]),
+    "velocity": 2.8, "velocity_variance": 1.4, "direction": vec(BACK), "spread": 10,
     "start_time": T_FORM, "duration": r(FLIGHT),
 }, {"particle": "ps_tail_far"}, layer="meteor", parent="rig")
 
-# hot leading face: a small glow that rides the bow of the rock
+# hot leading face: a glow that rides the bow of the rock
 node("ps_bow", "particle_system", {
-    "max_particles": 16, "lifetime": 0.12, "size": 1.9, "size_variance": 0.3,
-    "color": [1.0, 0.5, 0.14, 1.0],
-    "opacity": 0.32, "opacity_over_life": [[0.0, 0.0], [0.3, 1.0], [1.0, 0.0]],
-    "emissive": 0.5, "blend": "additive",
+    "max_particles": 16, "lifetime": 0.12, "size": r(1.5 * ROCK), "size_variance": r(0.2 * ROCK),
+    "color": [1.0, 0.40, 0.09, 1.0],
+    "opacity": 0.3, "opacity_over_life": [[0.0, 0.0], [0.3, 1.0], [1.0, 0.0]],
+    "emissive": 0.6, "blend": "additive",
 }, {"sprite": "tex_glow", "material": "mat_glow"}, layer="meteor")
 node("e_bow", "emitter", {
-    "shape": "point", "position": vec(add(mul(FALL, 0.55), (0.0, 0.0, 0.7))),
+    "shape": "point", "position": vec(add(mul(FALL, 0.7 * ROCK), mul(norm(sub(CAM_EYE, HIT)), 0.8 * ROCK))),
     "rate": track([(T_FORM, 0.0), (1.5, 30.0), (T_HIT - 0.02, 50.0), (T_HIT, 0.0)]),
     "velocity": 0.0, "inherit_velocity": 1.0,
     "start_time": T_FORM, "duration": r(FLIGHT),
 }, {"particle": "ps_bow"}, layer="meteor", parent="rig")
 
 node("ps_trail_smoke", "particle_system", {
-    "max_particles": 160, "lifetime": 1.35, "lifetime_variance": 0.4,
-    "size": 1.7, "size_variance": 0.6, "size_over_life": [[0.0, 0.45], [0.4, 1.2], [1.0, 1.9]],
+    "max_particles": 140, "lifetime": 1.35, "lifetime_variance": 0.4,
+    "size": 2.5, "size_variance": 0.8, "size_over_life": [[0.0, 0.45], [0.4, 1.2], [1.0, 1.9]],
     "color": [0.8, 0.72, 0.68, 1.0],
-    "opacity": 0.6, "opacity_over_life": [[0.0, 0.0], [0.25, 1.0], [0.65, 0.7], [1.0, 0.0]],
-    "emissive": 0.55, "emissive_over_life": [[0.0, 1.6], [0.25, 0.55], [0.6, 0.12], [1.0, 0.0]],
+    "opacity": 0.62, "opacity_over_life": [[0.0, 0.0], [0.25, 1.0], [0.65, 0.7], [1.0, 0.0]],
+    "emissive": 1.4, "emissive_over_life": [[0.0, 1.6], [0.25, 0.55], [0.6, 0.12], [1.0, 0.0]],
     "rotation_variance": 180.0, "angular_velocity_variance": 30.0,
     "drag": 1.2, "blend": "alpha", "sort": True, "sprite_fps": 8.0,
 }, {"sprite": "tex_puff", "material": "mat_smoke",
     "forces": ["f_smoke_lift", "f_smoke_turb"]}, layer="meteor")
 node("e_trail_smoke", "emitter", {
-    "shape": "sphere", "radius": 0.6, "position": vec(mul(BACK, 1.6)),
-    "rate": track([(T_FORM, 0.0), (1.5, 18.0), (1.9, 40.0), (2.6, 52.0), (T_HIT, 0.0)]),
+    "shape": "sphere", "radius": 0.9, "position": vec(mul(BACK, 1.6 * ROCK)),
+    "rate": track([(T_FORM, 0.0), (1.5, 14.0), (1.9, 30.0), (2.6, 40.0), (T_HIT, 0.0)]),
     "velocity": 1.6, "velocity_variance": 0.9, "direction": vec(BACK), "spread": 35,
     "start_time": T_FORM, "duration": r(FLIGHT),
 }, {"particle": "ps_trail_smoke"}, layer="meteor", parent="rig")
 
 node("ps_trail_spark", "particle_system", {
-    "max_particles": 420, "lifetime": 0.85, "lifetime_variance": 0.4,
-    "size": 0.085, "size_variance": 0.04,
+    "max_particles": 520, "lifetime": 0.9, "lifetime_variance": 0.4,
+    "size": 0.1, "size_variance": 0.045,
     "color": [1.0, 0.6, 0.18, 1.0],
     "color_over_life": [[0.0, [1.0, 0.95, 0.7, 1.0]], [0.4, [1.0, 0.5, 0.12, 1.0]], [1.0, [0.5, 0.05, 0.0, 1.0]]],
     "opacity_over_life": [[0.0, 1.0], [0.7, 0.9], [1.0, 0.0]],
@@ -709,18 +784,36 @@ node("ps_trail_spark", "particle_system", {
 }, {"sprite": "tex_spark", "material": "mat_glow",
     "forces": ["f_gravity_soft", "f_spark_turb"]}, layer="meteor")
 node("e_trail_spark", "emitter", {
-    "shape": "sphere", "radius": 0.8,
-    "rate": track([(T_FORM, 0.0), (1.4, 40.0), (1.9, 160.0), (2.6, 260.0), (T_HIT, 0.0)]),
-    "velocity": 4.5, "velocity_variance": 3.0, "direction": vec(BACK), "spread": 55,
+    "shape": "sphere", "radius": r(0.8 * ROCK),
+    "rate": track([(T_FORM, 0.0), (1.4, 50.0), (1.9, 200.0), (2.6, 320.0), (T_HIT, 0.0)]),
+    "velocity": 5.5, "velocity_variance": 3.5, "direction": vec(BACK), "spread": 55,
     "inherit_velocity": 0.15,
     "start_time": T_FORM, "duration": r(FLIGHT),
 }, {"particle": "ps_trail_spark"}, layer="meteor", parent="rig")
 
-# the light rides behind the rock (a light at the mesh would burn it white)
+# ember shedding: fat glowing crumbs that peel off the rock and fall away
+node("ps_shed", "particle_system", {
+    "max_particles": 90, "lifetime": 1.0, "lifetime_variance": 0.3,
+    "size": 0.26, "size_variance": 0.12, "size_over_life": [[0.0, 1.0], [1.0, 0.3]],
+    "color": [1.0, 0.5, 0.12, 1.0],
+    "color_over_life": [[0.0, [1.0, 0.9, 0.6, 1.0]], [0.4, [1.0, 0.45, 0.1, 1.0]], [1.0, [0.4, 0.04, 0.0, 1.0]]],
+    "opacity_over_life": [[0.0, 1.0], [0.7, 0.9], [1.0, 0.0]],
+    "emissive": 3.5, "drag": 0.5, "blend": "additive",
+    "render_mode": "stretched_billboard", "velocity_stretch": 0.06,
+}, {"sprite": "tex_spark", "material": "mat_glow", "forces": ["f_gravity"]}, layer="meteor")
+node("e_shed", "emitter", {
+    "shape": "sphere", "radius": r(0.9 * ROCK), "surface_only": True,
+    "rate": track([(T_FORM, 0.0), (1.5, 20.0), (2.0, 55.0), (2.7, 80.0), (T_HIT, 0.0)]),
+    "velocity": 2.5, "velocity_variance": 1.5, "direction": [0, 0, 0], "spread": 30,
+    "inherit_velocity": 0.35,
+    "start_time": T_FORM, "duration": r(FLIGHT),
+}, {"particle": "ps_shed"}, layer="meteor", parent="rig")
+
+# the light rides well behind the rock (a light at the mesh would burn it white)
 node("met_light", "light", {
-    "light_type": "point", "position": vec(add(mul(BACK, 1.5), (0.0, 0.0, 0.8))),
-    "color": [1.0, 0.48, 0.15, 1.0], "radius": 17.0,
-    "intensity": track([(T_FORM, 0.0), (1.4, 3.0), (1.8, 7.0), (2.4, 12.0), (T_HIT, 20.0)]),
+    "light_type": "point", "position": vec(add(mul(BACK, 2.4 * ROCK), (0.0, 0.0, 1.0 * ROCK))),
+    "color": [1.0, 0.48, 0.15, 1.0], "radius": 20.0,
+    "intensity": track([(T_FORM, 0.0), (1.4, 3.0), (1.8, 8.0), (2.4, 15.0), (T_HIT, 26.0)]),
     "flicker_amplitude": 0.2, "flicker_frequency": 16.0,
     "start_time": T_FORM, "duration": r(FLIGHT),
 }, layer="meteor", parent="rig")
@@ -729,85 +822,100 @@ node("met_light", "light", {
 # LAYER impact (2.8 - 3.2)
 # =========================================================================
 node("flash_light", "light", {
-    "light_type": "point", "position": [0.0, 2.6, 0.6], "color": [1.0, 0.72, 0.4, 1.0],
-    "radius": 18.0,
-    "intensity": track([(T_HIT, 0.0), (2.83, 30.0), (2.95, 12.0), (3.12, 0.0)]),
-    "start_time": T_HIT, "duration": 0.34,
+    "light_type": "point", "position": [0.0, 3.0, 1.0], "color": [1.0, 0.75, 0.45, 1.0],
+    "radius": 20.0,
+    "intensity": track([(T_HIT, 0.0), (2.83, 42.0), (2.95, 14.0), (3.14, 0.0)]),
+    "start_time": T_HIT, "duration": 0.36,
 }, layer="impact")
 
+# white-hot flash frame: a small blinding core inside a wide orange bloom, gone in a few frames
 node("ps_flash", "particle_system", {
-    "max_particles": 4, "lifetime": 0.3, "size": 13.0,
+    "max_particles": 4, "lifetime": 0.32, "size": 13.0,
     "size_over_life": [[0.0, 0.3], [0.15, 1.0], [1.0, 1.2]],
     "color": [1.0, 0.55, 0.2, 1.0],
     "color_over_life": [[0.0, [1.0, 1.0, 1.0, 1.0]], [0.3, [1.0, 0.8, 0.6, 1.0]], [1.0, [0.9, 0.4, 0.25, 1.0]]],
-    "opacity": 0.7, "opacity_over_life": [[0.0, 1.0], [0.25, 0.6], [1.0, 0.0]],
-    "emissive": 0.6, "blend": "additive",
+    "opacity": 0.75, "opacity_over_life": [[0.0, 1.0], [0.25, 0.6], [1.0, 0.0]],
+    "emissive": 0.7, "blend": "additive",
 }, {"sprite": "tex_glow", "material": "mat_glow"}, layer="impact")
 node("e_flash", "emitter", {
-    "shape": "point", "position": [0.0, 1.2, 0.0], "rate": 0, "burst_count": 1, "burst_times": [0.0],
+    "shape": "point", "position": [0.0, 1.4, 0.0], "rate": 0, "burst_count": 1, "burst_times": [0.0],
     "velocity": 0.0, "start_time": T_HIT, "duration": 0.1,
 }, {"particle": "ps_flash"}, layer="impact")
 
 node("ps_flash_core", "particle_system", {
-    "max_particles": 4, "lifetime": 0.16, "size": 4.6,
-    "size_over_life": [[0.0, 0.4], [0.3, 1.0], [1.0, 0.7]],
-    "color": [1.0, 0.92, 0.78, 1.0],
-    "opacity": 1.0, "opacity_over_life": [[0.0, 1.0], [0.4, 0.8], [1.0, 0.0]],
-    "emissive": 1.6, "blend": "additive",
+    "max_particles": 4, "lifetime": 0.14, "size": 5.5,
+    "size_over_life": [[0.0, 0.35], [0.3, 1.0], [1.0, 0.75]],
+    "color": [1.0, 0.95, 0.85, 1.0],
+    "opacity": 1.0, "opacity_over_life": [[0.0, 1.0], [0.45, 0.85], [1.0, 0.0]],
+    "emissive": 2.6, "blend": "additive",
 }, {"sprite": "tex_glow", "material": "mat_glow"}, layer="impact")
 node("e_flash_core", "emitter", {
-    "shape": "point", "position": [0.0, 1.0, 0.0], "rate": 0, "burst_count": 1, "burst_times": [0.0],
+    "shape": "point", "position": [0.0, 1.3, 0.0], "rate": 0, "burst_count": 1, "burst_times": [0.0],
     "velocity": 0.0, "start_time": T_HIT, "duration": 0.1,
 }, {"particle": "ps_flash_core"}, layer="impact")
 
-# fireball: tongues thrown outward and up, rolled by drag and buoyancy
+# fireball, stage 1: tongues thrown outward and up, stopped short by drag
 node("ps_fireball", "particle_system", {
-    "max_particles": 420, "lifetime": 0.72, "lifetime_variance": 0.26,
-    "size": 2.7, "size_variance": 0.9,
+    "max_particles": 360, "lifetime": 0.7, "lifetime_variance": 0.25,
+    "size": 3.1, "size_variance": 1.0,
     "size_over_life": [[0.0, 0.35], [0.3, 1.0], [1.0, 1.1]],
     "color": [1.0, 0.88, 0.70, 1.0],
     "color_over_life": [[0.0, [1.0, 1.0, 1.0, 1.0]], [0.35, [1.0, 0.92, 0.84, 1.0]], [1.0, [0.9, 0.6, 0.45, 1.0]]],
-    "opacity": 0.5, "opacity_over_life": [[0.0, 0.0], [0.1, 1.0], [0.55, 0.78], [1.0, 0.0]],
+    "opacity": 0.42, "opacity_over_life": [[0.0, 0.0], [0.1, 1.0], [0.55, 0.7], [0.9, 0.0], [1.0, 0.0]],
     "emissive": 0.3, "drag": 3.0, "blend": "additive", "soft_particle_distance": 0.7,
     "render_mode": "stretched_billboard", "velocity_stretch": 0.07, "sprite_fps": 18.0,
 }, {"sprite": "tex_fire", "material": "mat_fire",
     "forces": ["f_fire_curl", "f_fire_lift"]}, layer="impact")
 node("e_fireball", "emitter", {
-    "shape": "hemisphere", "radius": 1.3, "position": [0.0, 0.7, 0.0],
-    "rate": 0, "burst_count": 80, "burst_times": [0.0, 0.05],
-    "velocity": 10.0, "velocity_variance": 4.5, "direction": [0, 0, 0], "spread": 12,
+    "shape": "hemisphere", "radius": 1.5, "position": [0.0, 0.8, 0.0],
+    "rate": 0, "burst_count": 52, "burst_times": [0.0, 0.05],
+    "velocity": 11.0, "velocity_variance": 4.5, "direction": [0, 0, 0], "spread": 12,
     "start_time": T_HIT, "duration": 0.2,
-}, {"particle": "ps_fireball"}, layer="impact")
-node("e_fire_column", "emitter", {
-    "shape": "disc", "radius": 1.5, "position": [0.0, 1.0, 0.0],
-    "rate": track([(2.84, 0.0), (2.9, 190.0), (3.1, 130.0), (3.4, 0.0)]),
-    "velocity": 7.5, "velocity_variance": 2.5, "direction": [0, 1, 0], "spread": 26,
-    "start_time": 2.84, "duration": 0.6,
 }, {"particle": "ps_fireball"}, layer="impact")
 node("e_fire_skirt", "emitter", {
-    "shape": "ring", "radius": 2.0, "inner_radius": 0.8, "position": [0.0, 0.9, 0.0],
-    "rate": 0, "burst_count": 60, "burst_times": [0.02, 0.08],
+    "shape": "ring", "radius": 2.2, "inner_radius": 0.8, "position": [0.0, 0.9, 0.0],
+    "rate": 0, "burst_count": 32, "burst_times": [0.02, 0.08],
     "velocity": 2.0, "velocity_variance": 1.0, "direction": [0, 1, 0], "spread": 30,
-    "radial_velocity": 11.0,
+    "radial_velocity": 12.0,
     "start_time": T_HIT, "duration": 0.2,
 }, {"particle": "ps_fireball"}, layer="impact")
+
+# fireball, stage 2: the ball that rolls up off the ground (its emitter climbs, strong buoyancy)
+node("ps_fire_rise", "particle_system", {
+    "max_particles": 200, "lifetime": 0.62, "lifetime_variance": 0.18,
+    "size": 3.0, "size_variance": 0.9,
+    "size_over_life": [[0.0, 0.4], [0.35, 1.0], [1.0, 1.15]],
+    "color": [1.0, 0.84, 0.64, 1.0],
+    "color_over_life": [[0.0, [1.0, 1.0, 1.0, 1.0]], [0.4, [1.0, 0.86, 0.74, 1.0]], [1.0, [0.8, 0.45, 0.35, 1.0]]],
+    "opacity": 0.36, "opacity_over_life": [[0.0, 0.0], [0.12, 1.0], [0.55, 0.7], [0.9, 0.0], [1.0, 0.0]],
+    "emissive": 0.3, "drag": 2.2, "blend": "additive", "soft_particle_distance": 0.7,
+    "render_mode": "stretched_billboard", "velocity_stretch": 0.08, "sprite_fps": 16.0,
+}, {"sprite": "tex_fire", "material": "mat_fire",
+    "forces": ["f_fire_curl", "f_ball_lift"]}, layer="impact")
+node("e_fire_rise", "emitter", {
+    "shape": "sphere", "radius": 1.5,
+    "position": track([(2.84, [0.0, 1.4, 0.0]), (3.1, [0.0, 3.0, 0.0]), (3.4, [0.0, 4.6, 0.0])]),
+    "rate": track([(2.84, 0.0), (2.9, 150.0), (3.1, 110.0), (3.25, 40.0), (3.32, 0.0)]),
+    "velocity": 3.2, "velocity_variance": 1.5, "direction": [0, 0, 0], "spread": 20,
+    "start_time": 2.84, "duration": 0.6,
+}, {"particle": "ps_fire_rise"}, layer="impact")
 
 # shockwave ring racing outward along the ground
 node("shock_ring", "decal", {
     "shape": "circle", "position": [0.0, 0.04, 0.0], "rotation": [0.0, 31.0, 0.0],
-    "size": track([(T_HIT, [1.6, 1.6]), (2.88, [6.5, 6.5]), (2.98, [10.4, 10.4]),
-                   (3.1, [13.6, 13.6]), (3.25, [16.2, 16.2]), (3.4, [17.6, 17.6])]),
-    "color": track([(T_HIT, [1.0, 0.95, 0.85, 1.0]), (3.0, [1.0, 0.75, 0.45, 1.0]),
-                    (3.4, [1.0, 0.4, 0.12, 1.0])]),
+    "size": track([(T_HIT, [1.6, 1.6]), (2.88, [6.4, 6.4]), (2.98, [10.0, 10.0]),
+                   (3.1, [12.8, 12.8]), (3.25, [14.8, 14.8]), (3.42, [15.8, 15.8])]),
+    "color": track([(T_HIT, [1.0, 0.95, 0.85, 1.0]), (3.0, [1.0, 0.78, 0.48, 1.0]),
+                    (3.42, [1.0, 0.42, 0.13, 1.0])]),
     "blend": "additive",
-    "emissive": track([(T_HIT, 3.4), (2.95, 2.6), (3.15, 1.5), (3.4, 0.0)]),
-    "opacity": track([(T_HIT, 1.0), (3.1, 0.9), (3.25, 0.5), (3.4, 0.0)]),
-    "fade_in": 0.0, "fade_out": 0.0, "start_time": T_HIT, "duration": 0.62,
+    "emissive": track([(T_HIT, 5.0), (2.95, 4.0), (3.15, 2.6), (3.3, 1.2), (3.42, 0.0)]),
+    "opacity": track([(T_HIT, 1.0), (3.15, 1.0), (3.3, 0.6), (3.42, 0.0)]),
+    "fade_in": 0.0, "fade_out": 0.0, "start_time": T_HIT, "duration": 0.64,
 }, {"texture": "tex_shock"}, layer="impact")
 
 node("ps_spark", "particle_system", {
-    "max_particles": 700, "lifetime": 0.95, "lifetime_variance": 0.5,
-    "size": 0.095, "size_variance": 0.05,
+    "max_particles": 900, "lifetime": 0.95, "lifetime_variance": 0.5,
+    "size": 0.11, "size_variance": 0.05,
     "color": [1.0, 0.62, 0.2, 1.0],
     "color_over_life": [[0.0, [1.0, 0.96, 0.75, 1.0]], [0.4, [1.0, 0.5, 0.1, 1.0]], [1.0, [0.45, 0.05, 0.0, 1.0]]],
     "opacity_over_life": [[0.0, 1.0], [0.75, 0.95], [1.0, 0.0]],
@@ -817,54 +925,48 @@ node("ps_spark", "particle_system", {
 }, {"sprite": "tex_spark", "material": "mat_glow",
     "forces": ["f_gravity", "f_spark_turb"], "colliders": ["ground"]}, layer="impact")
 node("e_spark", "emitter", {
-    "shape": "hemisphere", "radius": 1.2, "position": [0.0, 0.3, 0.0],
-    "rate": track([(T_HIT, 0.0), (2.84, 300.0), (3.1, 120.0), (3.4, 0.0)]),
-    "burst_count": 440, "burst_times": [0.0],
-    "velocity": 13.0, "velocity_variance": 8.0, "direction": [0, 1, 0], "spread": 72,
+    "shape": "hemisphere", "radius": 1.4, "position": [0.0, 0.3, 0.0],
+    "rate": track([(T_HIT, 0.0), (2.84, 320.0), (3.1, 130.0), (3.4, 0.0)]),
+    "burst_count": 560, "burst_times": [0.0],
+    "velocity": 14.0, "velocity_variance": 9.0, "direction": [0, 1, 0], "spread": 74,
     "start_time": T_HIT, "duration": 0.62,
 }, {"particle": "ps_spark"}, layer="impact")
 
-# dust rolling along the ground behind the shock
+# the dust wall that rolls along the ground right behind the shock ring
 node("ps_dust", "particle_system", {
-    "max_particles": 260, "lifetime": 1.05, "lifetime_variance": 0.25,
-    "size": 1.5, "size_variance": 0.6, "size_over_life": [[0.0, 0.4], [0.5, 1.4], [1.0, 2.0]],
+    "max_particles": 240, "lifetime": 1.0, "lifetime_variance": 0.22,
+    "size": 1.7, "size_variance": 0.6, "size_over_life": [[0.0, 0.4], [0.5, 1.35], [1.0, 1.9]],
     "color": [0.82, 0.76, 0.7, 1.0],
-    "opacity": 0.5, "opacity_over_life": [[0.0, 0.0], [0.15, 1.0], [0.6, 0.7], [1.0, 0.0]],
-    "emissive": 0.45, "emissive_over_life": [[0.0, 1.5], [0.3, 0.5], [1.0, 0.0]],
+    "opacity": 0.55, "opacity_over_life": [[0.0, 0.0], [0.15, 1.0], [0.6, 0.7], [1.0, 0.0]],
+    "emissive": 0.6, "emissive_over_life": [[0.0, 1.5], [0.3, 0.5], [1.0, 0.0]],
     "rotation_variance": 180.0, "angular_velocity_variance": 30.0,
-    "drag": 2.5, "blend": "alpha", "sort": True, "sprite_fps": 8.0,
+    "drag": 2.8, "blend": "alpha", "sort": True, "sprite_fps": 8.0,
 }, {"sprite": "tex_puff", "material": "mat_dust", "forces": ["f_smoke_turb"]}, layer="impact")
 node("e_dust", "emitter", {
-    "shape": "ring", "radius": 1.6, "inner_radius": 0.9, "position": [0.0, 0.55, 0.0],
-    "rate": 0, "burst_count": 110, "burst_times": [0.0, 0.06],
+    "shape": "ring", "radius": 1.8, "inner_radius": 1.2, "position": [0.0, 0.6, 0.0],
+    "rate": 0, "burst_count": 70, "burst_times": [0.0, 0.05],
     "velocity": 0.8, "velocity_variance": 0.6, "direction": [0, 1, 0], "spread": 40,
-    "radial_velocity": 12.5,
+    "radial_velocity": 17.5,
     "start_time": T_HIT, "duration": 0.2,
 }, {"particle": "ps_dust"}, layer="impact")
 
 # =========================================================================
 # LAYER debris (2.8 - 4.0)
 # =========================================================================
-node("rock_mesh", "mesh", {"primitive": "rock", "radius": 0.5, "segments": 12,
-                           "irregularity": 0.75, "variants": 6, "visible": False})
-node("chip_mesh", "mesh", {"primitive": "shard", "radius": 0.5, "height": 0.34,
-                           "irregularity": 0.7, "variants": 4, "visible": False})
-
-
 def debris(name, mesh, count, size, size_var, speed, speed_var, spread, radial, ring, life, spin,
            mesh_scale, mesh_var, mass):
     node(f"ps_{name}", "particle_system", {
-        "max_particles": count + 4, "lifetime": life, "lifetime_variance": 0.06,
+        "max_particles": count + 4, "lifetime": life, "lifetime_variance": 0.05,
         "size": size, "size_variance": size_var,
-        "size_over_life": [[0.0, 0.6], [0.04, 1.0], [0.86, 1.0], [1.0, 0.0]],
+        "size_over_life": [[0.0, 0.6], [0.04, 1.0], [0.88, 1.0], [1.0, 0.0]],
         "angular_velocity": spin, "angular_velocity_variance": r(spin * 0.8),
         "render_mode": "mesh", "blend": "alpha", "drag": 0.85, "mass": mass,
         "orientation": "tumble", "mesh_scale": mesh_scale, "mesh_scale_variance": mesh_var,
-        "bounce": 0.32, "friction": 0.55,
+        "bounce": 0.34, "friction": 0.55,
     }, {"mesh": mesh, "material": "mat_rock",
         "forces": ["f_gravity_rock"], "colliders": ["ground"]}, layer="debris")
     node(f"e_{name}", "emitter", {
-        "shape": "ring", "radius": ring, "inner_radius": r(ring * 0.35), "position": [0.0, 0.35, 0.0],
+        "shape": "ring", "radius": ring, "inner_radius": r(ring * 0.35), "position": [0.0, 0.4, 0.0],
         "rate": 0, "burst_count": count, "burst_times": [0.0],
         "velocity": speed, "velocity_variance": speed_var, "direction": [0, 1, 0], "spread": spread,
         "radial_velocity": radial,
@@ -872,31 +974,31 @@ def debris(name, mesh, count, size, size_var, speed, speed_var, spread, radial, 
     }, {"particle": f"ps_{name}"}, layer="debris")
 
 
-debris("rock_big", "rock_mesh", 11, 0.95, 0.35, 12.5, 3.0, 26, 4.2, 1.5, 1.16, 140.0,
+debris("rock_big", "rock_mesh", 12, 1.05, 0.4, 14.5, 3.0, 28, 5.0, 1.6, 1.17, 140.0,
        [1.1, 0.78, 1.0], [0.3, 0.25, 0.3], 4.0)
-debris("rock_med", "rock_mesh", 36, 0.5, 0.2, 13.5, 4.5, 38, 5.5, 1.9, 1.14, 230.0,
+debris("rock_med", "rock_mesh", 38, 0.56, 0.22, 16.5, 5.0, 42, 7.0, 2.0, 1.16, 230.0,
        [1.05, 0.75, 1.0], [0.35, 0.3, 0.35], 2.0)
-debris("rock_chip", "chip_mesh", 46, 0.3, 0.13, 14.0, 6.0, 52, 6.5, 2.2, 1.1, 340.0,
+debris("rock_chip", "chip_mesh", 46, 0.32, 0.14, 17.5, 6.5, 55, 8.0, 2.3, 1.14, 340.0,
        [1.0, 0.9, 1.0], [0.35, 0.3, 0.35], 1.0)
 
-# flaming streaks behind the bigger rocks
-for name, width, life in (("rock_big", 0.34, 0.30), ("rock_med", 0.2, 0.22)):
+# flaming streaks behind the bigger rocks: dim, red, short - embers on a rock, not light rods
+for name, width, life in (("rock_big", 0.36, 0.30), ("rock_med", 0.2, 0.22)):
     node(f"t_{name}", "trail", {
         "width": width, "lifetime": life, "blend": "additive",
         "color": [0.9, 0.3, 0.07, 1.0], "emissive": 0.35,
         "taper": [[0.0, 0.5], [0.2, 1.0], [0.6, 0.7], [1.0, 0.0]],
         "opacity_over_life": [[0.0, 0.0], [0.15, 0.5], [0.5, 0.3], [1.0, 0.0]],
         "min_vertex_distance": 0.12, "max_segments": 24, "uv_scroll": -1.5,
-        "start_time": T_HIT, "duration": 0.75,
+        "start_time": T_HIT, "duration": 0.8,
     }, {"source": f"ps_{name}", "material": "mat_ribbon"}, layer="debris")
 
 # every landing kicks up a puff of dust: on_collision events fire an event-only emitter
 node("ps_land_dust", "particle_system", {
     "max_particles": 160, "lifetime": 0.6, "lifetime_variance": 0.15,
-    "size": 0.9, "size_variance": 0.35, "size_over_life": [[0.0, 0.35], [0.4, 1.0], [1.0, 1.5]],
+    "size": 1.0, "size_variance": 0.4, "size_over_life": [[0.0, 0.35], [0.4, 1.0], [1.0, 1.5]],
     "color": [0.8, 0.72, 0.66, 1.0],
-    "opacity": 0.42, "opacity_over_life": [[0.0, 0.0], [0.15, 1.0], [0.55, 0.6], [1.0, 0.0]],
-    "rotation_variance": 180.0, "angular_velocity_variance": 40.0,
+    "opacity": 0.45, "opacity_over_life": [[0.0, 0.0], [0.15, 1.0], [0.55, 0.6], [1.0, 0.0]],
+    "emissive": 0.4, "rotation_variance": 180.0, "angular_velocity_variance": 40.0,
     "drag": 2.6, "blend": "alpha", "sort": True, "sprite_fps": 9.0,
 }, {"sprite": "tex_puff", "material": "mat_dust", "forces": ["f_smoke_turb"]}, layer="debris")
 node("e_land_dust", "emitter", {
@@ -914,110 +1016,98 @@ node("ev_land_med", "event", {"trigger": "on_collision", "probability": 0.55, "m
 # LAYER aftermath (2.8 - 4.0)
 # =========================================================================
 node("scorch", "decal", {
-    "shape": "circle", "position": [0.0, 0.006, 0.0], "size": [10.5, 10.5],
+    "shape": "circle", "position": [0.0, 0.006, 0.0], "size": [12.0, 12.0],
     "color": [0.016, 0.011, 0.008, 1.0], "blend": "alpha",
-    "opacity": track([(T_HIT, 0.0), (2.9, 0.9), (3.7, 0.88), (DUR, 0.0)]),
+    "opacity": track([(T_HIT, 0.0), (2.9, 0.92), (3.7, 0.9), (DUR, 0.0)]),
     "fade_in": 0.0, "fade_out": 0.0, "start_time": T_HIT, "duration": r(DUR - T_HIT),
 }, {"texture": "tex_scorch"}, layer="aftermath")
 
 node("crater_cracks", "decal", {
     "shape": "circle", "position": [0.0, 0.03, 0.0], "rotation": [0.0, 17.0, 0.0],
-    "size": track([(T_HIT, [3.0, 3.0]), (2.9, [8.2, 8.2]), (3.2, [9.0, 9.0]), (DUR, [9.2, 9.2])]),
-    "color": track([(T_HIT, [1.0, 0.95, 0.75, 1.0]), (3.2, [1.0, 0.78, 0.36, 1.0]),
-                    (3.5, [1.0, 0.45, 0.12, 1.0]), (3.8, [0.95, 0.2, 0.04, 1.0]),
+    "size": track([(T_HIT, [3.0, 3.0]), (2.9, [9.0, 9.0]), (3.2, [10.0, 10.0]), (DUR, [10.3, 10.3])]),
+    "color": track([(T_HIT, [1.0, 0.95, 0.75, 1.0]), (3.2, [1.0, 0.80, 0.38, 1.0]),
+                    (3.5, [1.0, 0.46, 0.12, 1.0]), (3.8, [0.95, 0.2, 0.04, 1.0]),
                     (DUR, [0.6, 0.06, 0.01, 1.0])]),
     "blend": "additive",
-    "emissive": track([(T_HIT, 0.0), (2.88, 3.2), (3.2, 2.2), (3.5, 1.5), (3.8, 0.8), (DUR, 0.0)]),
-    "opacity": track([(T_HIT, 0.0), (2.86, 1.0), (3.6, 0.9), (3.85, 0.5), (DUR, 0.0)]),
+    "emissive": track([(T_HIT, 0.0), (2.88, 4.0), (3.2, 3.0), (3.5, 2.2), (3.8, 1.2), (DUR, 0.0)]),
+    "opacity": track([(T_HIT, 0.0), (2.86, 1.0), (3.65, 1.0), (3.88, 0.5), (DUR, 0.0)]),
     "fade_in": 0.0, "fade_out": 0.0, "start_time": T_HIT, "duration": r(DUR - T_HIT),
 }, {"texture": "tex_cracks"}, layer="aftermath")
 
+# molten pool in the crater
+node("crater_glow", "decal", {
+    "shape": "circle", "position": [0.0, 0.02, 0.0], "size": [6.4, 6.4],
+    "color": track([(T_HIT, [1.0, 0.7, 0.3, 1.0]), (3.4, [1.0, 0.36, 0.08, 1.0]),
+                    (DUR, [0.7, 0.08, 0.01, 1.0])]),
+    "blend": "additive",
+    "emissive": track([(T_HIT, 0.0), (2.9, 1.6), (3.3, 1.0), (3.8, 0.5), (DUR, 0.0)]),
+    "opacity": track([(T_HIT, 0.0), (2.9, 0.8), (3.6, 0.6), (DUR, 0.0)]),
+    "fade_in": 0.0, "fade_out": 0.0, "start_time": T_HIT, "duration": r(DUR - T_HIT),
+}, {"texture": "tex_glow"}, layer="aftermath")
+
 # ring of small ground fires around the impact radius: irregular clusters, one particle system
 node("ps_groundfire", "particle_system", {
-    "max_particles": 420, "lifetime": 0.62, "lifetime_variance": 0.22,
-    "size": 1.25, "size_variance": 0.5,
+    "max_particles": 420, "lifetime": 0.46, "lifetime_variance": 0.12,
+    "size": 1.6, "size_variance": 0.6,
     "size_over_life": [[0.0, 0.5], [0.3, 1.0], [1.0, 0.8]],
-    "color": [1.0, 0.85, 0.66, 1.0],
+    "color": [1.0, 0.9, 0.74, 1.0],
     "color_over_life": [[0.0, [1.0, 1.0, 1.0, 1.0]], [0.4, [1.0, 0.9, 0.8, 1.0]], [1.0, [0.9, 0.62, 0.48, 1.0]]],
-    "opacity": 0.4, "opacity_over_life": [[0.0, 0.0], [0.15, 1.0], [0.6, 0.78], [1.0, 0.0]],
+    "opacity": 0.5, "opacity_over_life": [[0.0, 0.0], [0.15, 1.0], [0.55, 0.7], [0.88, 0.0], [1.0, 0.0]],
     "emissive": 0.25, "drag": 2.0, "blend": "additive", "soft_particle_distance": 0.4,
     "render_mode": "stretched_billboard", "velocity_stretch": 0.2, "sprite_fps": 18.0,
 }, {"sprite": "tex_fire", "material": "mat_fire",
     "forces": ["f_fire_curl", "f_fire_lift"]}, layer="aftermath")
 
-FIRES = 12
+FIRES = 14
 fire_ids = []
 for i in range(FIRES):
     ang = (i + rng.uniform(-0.3, 0.3)) * 2.0 * math.pi / FIRES
-    rad = AOE + rng.uniform(-0.75, 0.45)
+    rad = AOE + rng.uniform(-0.75, 0.55)
     strength = rng.uniform(0.55, 1.0)
-    t0 = 2.88 + rng.uniform(0.0, 0.1)
+    t0 = 2.9 + rng.uniform(0.0, 0.12)
     fid = f"e_groundfire_{i}"
     fire_ids.append(fid)
     node(fid, "emitter", {
-        "shape": "disc", "radius": r(0.3 + 0.35 * strength),
-        "position": [r(math.cos(ang) * rad), 0.42, r(math.sin(ang) * rad)],
-        "rate": track([(t0, 0.0), (t0 + 0.1, r(34.0 * strength, 1)), (3.35, r(28.0 * strength, 1)),
-                       (3.62, 0.0)]),
-        "velocity": r(1.6 + 0.8 * strength), "velocity_variance": 0.8, "direction": [0, 1, 0], "spread": 16,
-        "start_time": r(t0), "duration": r(3.64 - t0),
+        "shape": "disc", "radius": r(0.3 + 0.4 * strength),
+        "position": [r(math.cos(ang) * rad), 0.5, r(math.sin(ang) * rad)],
+        "rate": track([(t0, 0.0), (t0 + 0.1, r(32.0 * strength, 1)), (3.35, r(30.0 * strength, 1)),
+                       (3.56, 0.0)]),
+        "velocity": r(1.7 + 0.9 * strength), "velocity_variance": 0.8, "direction": [0, 1, 0], "spread": 16,
+        "start_time": r(t0), "duration": r(3.58 - t0),
     }, {"particle": "ps_groundfire"}, layer="aftermath")
 
+# smoke: the cap that follows the fireball up, then the column that stands over the crater
 node("ps_smoke", "particle_system", {
-    "max_particles": 260, "lifetime": 1.0, "lifetime_variance": 0.18,
-    "size": 2.3, "size_variance": 0.8, "size_over_life": [[0.0, 0.4], [0.4, 1.1], [1.0, 1.8]],
-    "color": [0.75, 0.68, 0.64, 1.0],
-    "opacity": 0.66, "opacity_over_life": [[0.0, 0.0], [0.2, 1.0], [0.6, 0.72], [1.0, 0.0]],
-    "emissive": 0.6, "emissive_over_life": [[0.0, 1.6], [0.3, 0.5], [0.7, 0.1], [1.0, 0.0]],
+    "max_particles": 220, "lifetime": 0.95, "lifetime_variance": 0.15,
+    "size": 2.7, "size_variance": 0.9, "size_over_life": [[0.0, 0.4], [0.4, 1.1], [1.0, 1.8]],
+    "color": [0.85, 0.78, 0.74, 1.0],
+    "opacity": 0.7, "opacity_over_life": [[0.0, 0.0], [0.2, 1.0], [0.6, 0.72], [1.0, 0.0]],
+    "emissive": 1.5, "emissive_over_life": [[0.0, 1.6], [0.3, 0.5], [0.7, 0.1], [1.0, 0.0]],
     "rotation_variance": 180.0, "angular_velocity_variance": 26.0,
     "drag": 1.3, "blend": "alpha", "sort": True, "sprite_fps": 8.0,
 }, {"sprite": "tex_puff", "material": "mat_smoke",
     "forces": ["f_smoke_lift", "f_smoke_turb"]}, layer="aftermath")
 node("e_smoke", "emitter", {
-    "shape": "disc", "radius": 1.7, "position": [0.0, 1.0, 0.0],
-    "rate": track([(2.86, 0.0), (2.95, 120.0), (3.1, 70.0), (3.2, 0.0)]),
-    "burst_count": 40, "burst_times": [0.0],
-    "velocity": 5.5, "velocity_variance": 2.2, "direction": [0, 1, 0], "spread": 32,
-    "start_time": 2.86, "duration": 0.36,
+    "shape": "disc", "radius": 1.8,
+    "position": track([(2.86, [0.0, 1.2, 0.0]), (3.3, [0.0, 3.4, 0.0])]),
+    "rate": track([(2.86, 0.0), (2.95, 110.0), (3.12, 70.0), (3.24, 0.0)]),
+    "burst_count": 30, "burst_times": [0.0],
+    "velocity": 5.0, "velocity_variance": 2.2, "direction": [0, 1, 0], "spread": 34,
+    "start_time": 2.86, "duration": 0.4,
 }, {"particle": "ps_smoke"}, layer="aftermath")
 
-node("ps_ember", "particle_system", {
-    "max_particles": 320, "lifetime": 0.9, "lifetime_variance": 0.3,
-    "size": 0.08, "size_variance": 0.04,
-    "color": [1.0, 0.5, 0.12, 1.0],
-    "color_over_life": [[0.0, [1.0, 0.9, 0.6, 1.0]], [0.5, [1.0, 0.45, 0.08, 1.0]], [1.0, [0.4, 0.03, 0.0, 1.0]]],
-    "opacity_over_life": [[0.0, 0.0], [0.12, 1.0], [0.7, 0.85], [1.0, 0.0]],
-    "emissive": 4.5, "drag": 0.8, "blend": "additive",
-    "render_mode": "stretched_billboard", "velocity_stretch": 0.12,
-}, {"sprite": "tex_spark", "material": "mat_glow",
-    "forces": ["f_ember_lift", "f_spark_turb"]}, layer="aftermath")
+# drifting embers: the telegraph's mote system again (same look, same forces, one draw call)
 node("e_ember", "emitter", {
-    "shape": "disc", "radius": 4.2, "position": [0.0, 0.3, 0.0],
-    "rate": track([(2.9, 0.0), (3.0, 260.0), (3.2, 200.0), (3.32, 0.0)]),
-    "velocity": 2.2, "velocity_variance": 1.4, "direction": [0, 1, 0], "spread": 50,
-    "start_time": 2.9, "duration": 0.45,
-}, {"particle": "ps_ember"}, layer="aftermath")
-
-node("ps_ash", "particle_system", {
-    "max_particles": 160, "lifetime": 0.95, "lifetime_variance": 0.2,
-    "size": 0.09, "size_variance": 0.04,
-    "color": [0.5, 0.46, 0.44, 1.0],
-    "opacity": 0.8, "opacity_over_life": [[0.0, 0.0], [0.2, 1.0], [0.7, 0.8], [1.0, 0.0]],
-    "rotation_variance": 180.0, "angular_velocity_variance": 120.0,
-    "drag": 1.4, "blend": "alpha",
-}, {"sprite": "tex_puff", "material": "mat_dust",
-    "forces": ["f_gravity_soft", "f_spark_turb"]}, layer="aftermath")
-node("e_ash", "emitter", {
-    "shape": "box", "size": [9.0, 3.0, 6.0], "position": [0.0, 3.2, 0.0],
-    "rate": track([(2.95, 0.0), (3.05, 140.0), (3.2, 120.0), (3.28, 0.0)]),
-    "velocity": 0.6, "velocity_variance": 0.5, "direction": [0, -1, 0], "spread": 60,
-    "start_time": 2.95, "duration": 0.35,
-}, {"particle": "ps_ash"}, layer="aftermath")
+    "shape": "disc", "radius": 4.6, "position": [0.0, 0.3, 0.0],
+    "rate": track([(2.9, 0.0), (3.0, 300.0), (3.2, 240.0), (3.34, 0.0)]),
+    "velocity": 2.4, "velocity_variance": 1.5, "direction": [0, 1, 0], "spread": 50,
+    "start_time": 2.9, "duration": 0.46,
+}, {"particle": "ps_mote"}, layer="aftermath")
 
 node("after_light", "light", {
-    "light_type": "point", "position": [0.0, 1.4, 0.8], "color": [1.0, 0.42, 0.11, 1.0],
-    "radius": 13.0,
-    "intensity": track([(2.9, 0.0), (3.0, 9.0), (3.3, 7.0), (3.7, 3.5), (DUR, 0.0)]),
+    "light_type": "point", "position": [0.0, 2.2, 1.2], "color": [1.0, 0.42, 0.11, 1.0],
+    "radius": 15.0,
+    "intensity": track([(2.9, 0.0), (3.0, 16.0), (3.3, 13.0), (3.7, 7.0), (DUR, 0.0)]),
     "flicker_amplitude": 0.25, "flicker_frequency": 12.0,
     "start_time": 2.9, "duration": r(DUR - 2.9),
 }, layer="aftermath")
@@ -1042,32 +1132,35 @@ def control(cid, label, group, bindings, lo=0.0, hi=3.0, step=0.01, unit="x"):
             "value": 1.0, "step": step, "unit": unit, "bindings": bindings}
 
 
-FIRE_SYSTEMS = ["ps_tail", "ps_tail_far", "ps_fireball", "ps_groundfire"]
+FIRE_SYSTEMS = ["ps_tail", "ps_tail_far", "ps_fireball", "ps_fire_rise", "ps_groundfire"]
 controls = [
     control("meteor_size", "Meteor size", "Meteor",
             [bind("met_body", "scale"), bind("ps_tail", "size"), bind("ps_tail_far", "size"),
-             bind("ps_bow", "size"), bind("e_tail", "radius"), bind("e_tail_far", "radius")],
-            lo=0.5, hi=1.8),
+             bind("ps_bow", "size"), bind("e_tail", "radius"), bind("e_tail_far", "radius"),
+             bind("e_shed", "radius")],
+            lo=0.5, hi=1.6),
     control("fire_intensity", "Fire intensity", "Meteor",
             [bind(ps, "color") for ps in FIRE_SYSTEMS] + [bind(ps, "emissive") for ps in FIRE_SYSTEMS] +
             [bind("met_lava", "emissive"), bind("met_light", "intensity"), bind("ps_bow", "color")],
             hi=2.5),
     control("sky_summon", "Sky summon", "Sky summon",
             [bind("sky_cloud", "density"), bind("sky_cloud", "emission"), bind("sky_light", "intensity"),
-             bind("e_cloud", "rate"), bind("e_sky_ember", "rate"), bind("ps_sky_glow", "color"),
-             bind("ps_glint", "color")], hi=2.5),
+             bind("e_cloud", "rate"), bind("e_sky_fire", "rate"), bind("e_sky_ember", "rate"),
+             bind("e_frag", "burst_count"), bind("ps_sky_glow", "color"), bind("ps_glint", "color")],
+            hi=2.0),
     control("debris_amount", "Debris amount", "Debris",
             [bind("e_rock_big", "burst_count"), bind("e_rock_med", "burst_count"),
              bind("e_rock_chip", "burst_count"), bind("ps_rock_big", "max_particles"),
              bind("ps_rock_med", "max_particles"), bind("ps_rock_chip", "max_particles")],
-            hi=2.5),
+            hi=1.25),
     control("shockwave", "Shockwave", "Impact",
             [bind("shock_ring", "emissive"), bind("shock_ring", "opacity"), bind("e_dust", "burst_count"),
-             bind("haze", "intensity")], hi=2.5),
+             bind("ps_dust", "max_particles"), bind("haze", "intensity")], hi=2.5),
     control("aftermath", "Aftermath", "Aftermath",
-            [bind("scorch", "opacity"), bind("crater_cracks", "emissive"), bind("e_smoke", "rate"),
-             bind("e_smoke", "burst_count"), bind("e_ember", "rate"), bind("e_ash", "rate"),
-             bind("after_light", "intensity")] + [bind(fid, "rate") for fid in fire_ids], hi=2.5),
+            [bind("scorch", "opacity"), bind("crater_cracks", "emissive"), bind("crater_glow", "emissive"),
+             bind("e_smoke", "rate"), bind("e_smoke", "burst_count"), bind("e_ember", "rate"),
+             bind("after_light", "intensity")] +
+            [bind(fid, "rate") for fid in fire_ids], hi=2.5),
     {"id": "global_speed", "label": "Speed", "group": "Global", "min": 0.25, "max": 4.0,
      "default": 1.0, "value": 1.0, "step": 0.05, "unit": "x",
      "bindings": [{"node": "$effect", "parameter": "time_scale", "op": "multiply"}]},
@@ -1076,7 +1169,7 @@ controls = [
 effect = {
     "schema_version": "0.1.0",
     "name": "Meteor",
-    "description": "A sky portal of storm cloud tears open and a burning rock falls on the marked "
+    "description": "A storm vortex tears open in the sky and a burning rock falls on the marked "
                    "ground: fireball, rock debris, a racing shockwave ring and a smouldering crater.",
     "duration": DUR,
     "seed": SEED,
@@ -1104,11 +1197,12 @@ effect = {
                   "shockwave ring and aftermath, make sure to include summon sky",
         "generator": "tools/generators/meteor.py",
         "analysis": "telegraph: ringed ground marker with a soft rising glow | summon_sky: a tilted storm "
-                    "vortex (raymarched nebula + lit swirling puffs) lit from inside, embers fall, a "
-                    "many-rayed glint | meteor: crust boulders around a lava core on a keyframed rig, "
-                    "fire_sim flame body left behind as a tapering tail, smoke and sparks | impact: flash, "
-                    "fireball, tumbling rock debris with flaming streaks, dust ring, shockwave ring decal | "
-                    "aftermath: scorch, cooling crack web, ring of ground fires, smoke, embers and ash",
+                    "vortex (raymarched torus deck + lit swirling puffs) lit from inside, fire in the eye, "
+                    "embers and burning fragments rain out, a many-rayed soft glint | meteor: crust "
+                    "boulders around a lava core on a keyframed rig, fire_sim flame body left behind as a "
+                    "tapering tail, smoke, sparks and shed embers | impact: white-hot flash, fireball that "
+                    "rolls up, tumbling rock debris, dust wall behind the shockwave ring decal | aftermath: "
+                    "scorch, cooling crack web, molten pool, ring of ground fires, smoke, embers and ash",
         "render_settings": {
             "ground_albedo": 0.11,
             "background": [0.0, 0.0, 0.0, 1.0],
