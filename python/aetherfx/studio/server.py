@@ -1362,11 +1362,52 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
             mcp_server = AetherMCPServer(_StudioClient(studio.client, studio.engine_lock))  # type: ignore[arg-type]
             mcp_manager = StreamableHTTPSessionManager(app=mcp_server.build_server())
 
+            from .. import mcp_docs  # noqa: PLC0415
+            from starlette.responses import HTMLResponse, PlainTextResponse  # noqa: PLC0415
+
+            def _addresses(request: Request) -> tuple[str, str]:
+                base = str(request.base_url).rstrip("/")
+                return base, base + "/mcp"
+
             class _McpEndpoint:
                 async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
+                    # A browser (or a curious agent with only the URL) gets documentation, not a protocol error.
+                    headers = {k.decode("latin-1").lower(): v.decode("latin-1") for k, v in scope.get("headers", [])}
+                    if mcp_docs.wants_docs_page(scope.get("method", ""), headers.get("accept", "")):
+                        request = Request(scope, receive)
+                        base, endpoint = _addresses(request)
+                        page = HTMLResponse(mcp_docs.docs_html(endpoint, base, mcp_server.tool_definitions()))
+                        await page(scope, receive, send)
+                        return
                     await mcp_manager.handle_request(scope, receive, send)
 
+            async def llms_txt(request: Request) -> Response:
+                base, endpoint = _addresses(request)
+                return PlainTextResponse(mcp_docs.llms_txt(base, endpoint), media_type="text/markdown; charset=utf-8")
+
+            async def mcp_docs_all(request: Request) -> Response:
+                _base, endpoint = _addresses(request)
+                return PlainTextResponse(mcp_docs.full_markdown(endpoint, mcp_server.tool_definitions()),
+                                         media_type="text/markdown; charset=utf-8")
+
+            async def mcp_docs_one(request: Request) -> Response:
+                _base, endpoint = _addresses(request)
+                doc = mcp_docs.find_resource("aetherfx://docs/" + str(request.path_params["slug"]))
+                if doc is None:
+                    return JSONResponse({"error": {"code": "not_found", "message": "unknown guide"}}, status_code=404)
+                text = (mcp_docs.getting_started_markdown(endpoint, mcp_server.tool_definitions())
+                        if doc.slug == "getting-started" else doc.load())
+                return PlainTextResponse(text, media_type="text/markdown; charset=utf-8")
+
+            async def mcp_tools_json(request: Request) -> Response:
+                _base, endpoint = _addresses(request)
+                return Response(mcp_docs.tools_json(mcp_server.tool_definitions(), endpoint), media_type="application/json")
+
             routes.insert(0, Route("/mcp", _McpEndpoint(), methods=["GET", "POST", "DELETE"]))
+            routes.insert(0, Route("/llms.txt", llms_txt, methods=["GET"]))
+            routes.insert(0, Route("/mcp/docs.md", mcp_docs_all, methods=["GET"]))
+            routes.insert(0, Route("/mcp/docs/{slug}.md", mcp_docs_one, methods=["GET"]))
+            routes.insert(0, Route("/mcp/tools.json", mcp_tools_json, methods=["GET"]))
         except Exception as exc:  # noqa: BLE001 - the studio still works without MCP
             LOGGER.warning("MCP endpoint disabled: %s", exc)
             mcp_manager = None

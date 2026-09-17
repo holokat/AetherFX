@@ -414,6 +414,72 @@ class AetherMCPServer:
         """MCP ``tools/call`` handler."""
         return await self.call_tool(params.name, dict(params.arguments or {}))
 
+    # -- documentation: resources and prompts -------------------------------
+
+    async def list_resources(
+        self,
+        _context: ServerRequestContext[Any],
+        _params: types.PaginatedRequestParams | None = None,
+    ) -> types.ListResourcesResult:
+        """MCP ``resources/list``: the guides an agent should read before authoring."""
+        from . import mcp_docs  # noqa: PLC0415
+
+        return types.ListResourcesResult(resources=[
+            types.Resource(name=doc.slug, title=doc.title, uri=doc.uri, description=doc.description,
+                           mime_type="text/markdown")
+            for doc in mcp_docs.doc_resources()
+        ])
+
+    async def read_resource(
+        self,
+        _context: ServerRequestContext[Any],
+        params: types.ReadResourceRequestParams,
+    ) -> types.ReadResourceResult:
+        """MCP ``resources/read`` for the ``aetherfx://docs/...`` guides."""
+        from . import mcp_docs  # noqa: PLC0415
+
+        doc = mcp_docs.find_resource(str(params.uri))
+        if doc is None:
+            raise ValueError(f"unknown resource: {params.uri}")
+        text = doc.load()
+        if doc.slug == "getting-started":
+            text = mcp_docs.getting_started_markdown(tools=self.tool_definitions())
+        return types.ReadResourceResult(contents=[
+            types.TextResourceContents(uri=doc.uri, mime_type="text/markdown", text=text)
+        ])
+
+    async def list_prompts(
+        self,
+        _context: ServerRequestContext[Any],
+        _params: types.PaginatedRequestParams | None = None,
+    ) -> types.ListPromptsResult:
+        """MCP ``prompts/list``."""
+        from . import mcp_docs  # noqa: PLC0415
+
+        return types.ListPromptsResult(prompts=[
+            types.Prompt(name=prompt["name"], description=prompt["description"], arguments=[
+                types.PromptArgument(name=arg["name"], description=arg["description"], required=arg["required"])
+                for arg in prompt["arguments"]
+            ])
+            for prompt in mcp_docs.PROMPTS
+        ])
+
+    async def get_prompt(
+        self,
+        _context: ServerRequestContext[Any],
+        params: types.GetPromptRequestParams,
+    ) -> types.GetPromptResult:
+        """MCP ``prompts/get``: the authoring guide plus the task, ready to run."""
+        from . import mcp_docs  # noqa: PLC0415
+
+        text = mcp_docs.prompt_text(params.name, dict(params.arguments or {}))
+        if text is None:
+            raise ValueError(f"unknown prompt: {params.name}")
+        return types.GetPromptResult(
+            description=next(p["description"] for p in mcp_docs.PROMPTS if p["name"] == params.name),
+            messages=[types.PromptMessage(role="user", content=types.TextContent(type="text", text=text))],
+        )
+
     def build_server(self) -> Server[Any]:
         """Build the low-level MCP :class:`Server` wired to this instance."""
         return Server(
@@ -421,14 +487,20 @@ class AetherMCPServer:
             version="0.1.0",
             title="AetherFX",
             instructions=(
-                "Author real-time game VFX as a node graph. Call describe_vocabulary first to get the "
-                "exact node types and parameter names, build with create_layer/create_node/connect_nodes, "
-                "then simulate and render_frame to see the result. Every mutating tool returns diagnostics: "
-                "read them. analyze_reference turns a reference image into an Effect Analysis Document and "
-                "plan_from_ead builds the graph from it."
+                "Author real-time game VFX as a node graph. Read the resource aetherfx://docs/getting-started "
+                "and aetherfx://docs/authoring-guide first (conventions, recipes and the house style every effect "
+                "must follow). Call describe_vocabulary to get the exact node types and parameter names, build with "
+                "create_layer/create_node/connect_nodes, then simulate and render_frame to see the result and "
+                "iterate on what you see. Every mutating tool returns diagnostics: read them. analyze_reference "
+                "turns a reference image into an Effect Analysis Document and plan_from_ead builds the graph from "
+                "it. Built-in library effects are read-only: save your work under a new name."
             ),
             on_list_tools=self.list_tools,
             on_call_tool=self.handle_call_tool,
+            on_list_resources=self.list_resources,
+            on_read_resource=self.read_resource,
+            on_list_prompts=self.list_prompts,
+            on_get_prompt=self.get_prompt,
         )
 
     async def run_stdio(self) -> None:
