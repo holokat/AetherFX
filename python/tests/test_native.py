@@ -436,7 +436,7 @@ class TestRuntime:
             assert parameters["jitter_rate"] == 0.0 and parameters["detail"] == 0
             assert parameters["noise_loop"] == pytest.approx(loop["end"] - loop["start"])
             assert parameters["target"] == layout["source"]   # life flows INTO the caster's hand
-            pulses = parameters["pulse_speed"] * parameters["noise_loop"]
+            pulses = parameters.get("pulse_speed", 0.0) * parameters["noise_loop"]   # absent = the default, 0
             assert pulses == pytest.approx(round(pulses), abs=1e-3)  # whole pulses per loop
 
         with native.Effect.from_file(EXAMPLES_DIR / "life_drain.json") as effect:
@@ -459,7 +459,9 @@ class TestRuntime:
             assert np.allclose(path[0], target, atol=1e-4), beam_id     # pinned to the victim's chest ...
             assert np.allclose(path[-1], source, atol=1e-4), beam_id    # ... and to the caster's hand
             step = np.linalg.norm(next_frame[beam_id] - path, axis=1).max()
-            assert 1e-5 < step < 0.05, (beam_id, step)                  # it flows, and it never jumps
+            # it flows, and it never jumps: a re-rolled path would move by the undulation amplitude
+            # (0.5-0.9 m for the wide braided stream), a flowing one by a few centimetres per frame
+            assert 1e-5 < step < 0.12, (beam_id, step)
             assert np.linalg.norm(middle[beam_id] - path, axis=1).max() > 0.01, beam_id
             assert np.allclose(end[beam_id], path, atol=2e-4), beam_id  # the loop closes
 
