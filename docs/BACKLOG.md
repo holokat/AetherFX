@@ -28,7 +28,18 @@ simplified once the feature lands.
   mesh-instance fresnel is not implemented at all. Workaround: additive halo + cross-flare sprite.
 - Trails have no animatable opacity; fade with `width` / `emissive` tracks.
 
+- Standalone `mesh` node instances use a plain MeshStandardMaterial: `fresnel_power`, transmission,
+  `dissolve`/`erosion` are ignored (only mesh *particles* get the full path).
+- `trail` ribbons have no cross-width noise; wide ribbons read as flat hard-edged wedges.
+
 ## Runtime / vocabulary
+- Particles are world-space only; nothing can rigidly follow a moving parent. Wanted: an emitter
+  flag keeping spawned particles in the emitter's local frame (hero clusters are parented mesh
+  nodes with keyframed TRS instead).
+- A `mesh` node always renders variant 0. Wanted: a `variant` index parameter on `mesh`.
+- `ring` emitters are XZ-only; a camera-facing ring needs `rotation: [90, 0, 0]`.
+- `metadata.render_settings` cannot carry a camera (the studio drops it); framing must live in
+  the `camera` node, and the studio viewer frames 1.45x wider than that camera.
 - No tangential initial velocity on emitters (`direction` is a fixed local vector, zero = radial),
   so orbiting particles need parent chains with keyframed rotation. Wanted: `tangential_velocity`.
 - `emitter.inherit_velocity` clamped to [0, 1]: no backward inheritance for trailing flames.
