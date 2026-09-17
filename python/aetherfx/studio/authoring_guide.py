@@ -73,6 +73,16 @@ RECIPES (proven values from the shipped examples)
 - Projectiles (bolts, missiles, arrows, thrown orbs) ALWAYS end with an impact phase at the end of the
   flight: a flash light, a radial burst in the projectile's palette, debris or sparks with gravity, a
   shock ring facing the camera, and a short lingering residue. Never let a projectile just fade out.
+- HOUSE STYLE, never break these (the user rejected every one of them on sight):
+  * No crosses, plus signs or four-armed star motifs anywhere: not as flares, not inside runes, not on
+    tablets or banners, not as sparkle sprites at large sizes. Use soft radial glows, asymmetric glints,
+    rings, arcs, dots and abstract glyph bands instead. A `star`/`spokes` op with 4 (or 2) arms is a cross.
+  * No obvious hard lines: no constant-width tube bolts, no flat tape ribbons with hard edges or visible
+    facets, no thin ruler-straight light rods. Beams use `detail` >= 2 with a non-uniform `width_profile`,
+    branches and flicker (see Lightning Strike); ribbons get a soft cross-width texture (bright thin centre
+    fading to zero at both edges), enough path samples to curve smoothly, taper and fade along their
+    length; light shafts are soft, tapered and slightly irregular, never crisp rectangles.
+  * Light should look like light: gradients and falloff, never a flat shape filled with white.
 """
 
 

@@ -62,6 +62,35 @@ SEEK_SCRIPT = """
 """
 
 
+PERF_SCRIPT = """
+(async () => {
+  const v = window.aetherViewer.gl;
+  if (typeof S !== 'undefined' && !S.playing) document.getElementById('btn-play').click();
+  await new Promise(r => setTimeout(r, 600));
+  let raf = 0, frames = 0, bytes = 0, long = 0, longMax = 0, worstGap = 0, last = performance.now();
+  const po = new PerformanceObserver(l => { for (const e of l.getEntries()) { long++; longMax = Math.max(longMax, e.duration); } });
+  try { po.observe({ entryTypes: ['longtask'] }); } catch (err) {}
+  const orig = v.client.onFrame;
+  v.client.onFrame = function () { frames++; return orig.apply(this, arguments); };
+  let calls = 0, tris = 0, samples = 0;
+  const t0 = performance.now();
+  await new Promise(res => { const tick = () => {
+      const now = performance.now(); worstGap = Math.max(worstGap, now - last); last = now; raf++;
+      calls += v.renderer.info.render.calls; tris += v.renderer.info.render.triangles; samples++;
+      if (now - t0 < %(ms)d) requestAnimationFrame(tick); else res(); };
+    requestAnimationFrame(tick); });
+  v.client.onFrame = orig; po.disconnect();
+  const secs = (performance.now() - t0) / 1000;
+  if (typeof S !== 'undefined' && S.playing) document.getElementById('btn-play').click();
+  return JSON.stringify({ render_fps: +(raf / secs).toFixed(1), stream_fps: +(frames / secs).toFixed(1),
+    worst_frame_gap_ms: Math.round(worstGap), long_tasks: long, longest_task_ms: Math.round(longMax),
+    avg_draw_calls: Math.round(calls / Math.max(1, samples)), avg_triangles: Math.round(tris / Math.max(1, samples)),
+    geometries: v.renderer.info.memory.geometries, textures: v.renderer.info.memory.textures,
+    canvas: [v.renderer.domElement.width, v.renderer.domElement.height] });
+})()
+"""
+
+
 async def run(args: argparse.Namespace) -> int:
     import websockets  # type: ignore
 
@@ -126,6 +155,9 @@ async def run(args: argparse.Namespace) -> int:
                   if (v.controls) v.controls.update(); v.camera.updateProjectionMatrix(); return 'camera set'; })()""" % (
                     json.dumps(cam.get("position")), json.dumps(cam.get("target")))
                 print("camera:", await evaluate(expr))
+            if args.perf > 0:
+                report = await evaluate(PERF_SCRIPT % {"ms": int(args.perf * 1000)})
+                print("perf:", report)
             for t in times:
                 info = await evaluate(SEEK_SCRIPT % {"time": t, "settle_ms": int(args.settle * 1000), "fallback_duration": args.duration})
                 shot = await send("Page.captureScreenshot", {"format": "png"})
@@ -150,7 +182,7 @@ def main() -> int:
     parser.add_argument("--allow-user-studio", action="store_true",
                         help="permit --url on port 8770 (the user's live studio); off by default")
     parser.add_argument("--effect", required=True, help="Library display name prefix, e.g. 'Fire AOE'")
-    parser.add_argument("--times", default="1.0", help="comma-separated effect times in seconds")
+    parser.add_argument("--times", default="1.0", help="comma-separated effect times in seconds (empty = no captures)")
     parser.add_argument("--out", required=True, help="output path prefix; _t<time>.png is appended")
     parser.add_argument("--size", default="1280x800")
     parser.add_argument("--scale", type=float, default=1.0, help="device scale factor (2 for retina-like detail)")
@@ -160,6 +192,9 @@ def main() -> int:
     parser.add_argument("--load-wait", type=float, default=8.0, help="seconds to wait after clicking the library row")
     parser.add_argument("--settle", type=float, default=2.0, help="seconds to wait after seeking before capture")
     parser.add_argument("--duration", type=float, default=3.0, help="fallback effect duration if the readout is unparsable")
+    parser.add_argument("--perf", type=float, default=0.0,
+                        help="play the effect for this many seconds first and print render fps, stream fps, "
+                             "draw calls, triangles and long tasks as JSON")
     parser.add_argument("--camera", default=None, help='optional JSON {"position":[x,y,z],"target":[x,y,z]} applied to the three.js camera before capture')
     args = parser.parse_args()
     if ":8770" in args.url and not args.allow_user_studio:
