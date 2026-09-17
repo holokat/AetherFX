@@ -99,13 +99,20 @@ class ApiGenerator:
         on_event({"kind": "tool_result", "name": name, "ok": True, "summary": summarize_result(name, result)})
         return {"content": content}
 
-    def generate(self, prompt: str, *, mode: str, on_event: EventSink, cancel: threading.Event) -> GenerationResult:
+    def generate(self, prompt: str, *, mode: str, on_event: EventSink, cancel: threading.Event,
+                 attachments: list[str] | None = None) -> GenerationResult:
         import anthropic  # noqa: PLC0415
 
         api = anthropic.Anthropic()
         tools = self._tool_definitions()
         system = [{"type": "text", "text": self._guide(), "cache_control": {"type": "ephemeral"}}]
-        messages: list[dict[str, Any]] = [{"role": "user", "content": build_task_prompt(prompt, mode, self._active_effect())}]
+        first: list[dict[str, Any]] = []
+        for path in attachments or []:
+            encoded = image_png_base64(path, max_px=1568)
+            if encoded:
+                first.append({"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": encoded[0]}})
+        first.append({"type": "text", "text": build_task_prompt(prompt, mode, self._active_effect(), attachments)})
+        messages: list[dict[str, Any]] = [{"role": "user", "content": first}]
         counters = {"calls": 0, "renders": 0}
         texts: list[str] = []
         error: str | None = None

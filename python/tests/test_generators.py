@@ -61,6 +61,9 @@ def test_task_prompt_modes():
     assert "create_effect" in new and "a blue flame" in new
     mod = build_task_prompt("make it bigger", "modify", {"effect_id": "fx_2", "name": "Fireball"})
     assert "Fireball" in mod and "inspect_graph" in mod
+    ref = build_task_prompt("", "new", None, attachments=["/tmp/ref.png"])
+    assert "Mode A" in ref and "/tmp/ref.png" in ref and "compare_reference" in ref
+    assert "Recreate the attached reference" in ref
 
 
 def test_summaries_and_render_paths(tmp_path: Path):
@@ -117,7 +120,8 @@ def test_session_generator_round_trip(tmp_path: Path):
     events: list[dict] = []
     worker = threading.Thread(target=_fake_worker, args=(jobs,), daemon=True)
     worker.start()
-    result = gen.generate("tiny spark", mode="new", on_event=events.append, cancel=threading.Event())
+    result = gen.generate("tiny spark", mode="new", on_event=events.append, cancel=threading.Event(),
+                          attachments=[str(tmp_path / "ref.png")])
     worker.join(timeout=5)
     kinds = [e["kind"] for e in events]
     assert kinds[0] == "status" and kinds[-1] == "done"
@@ -126,6 +130,7 @@ def test_session_generator_round_trip(tmp_path: Path):
     assert list((jobs / "done").glob("*.json"))
     job = json.loads(next((jobs / "done").glob("*.json")).read_text())
     assert job["prompt"] == "tiny spark" and job["mode"] == "new" and job["active_effect"]["effect_id"] == "fx_1"
+    assert job["reference_images"] == [str((tmp_path / "ref.png").resolve())]
 
 
 def test_session_generator_cancel(tmp_path: Path):

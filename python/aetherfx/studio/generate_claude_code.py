@@ -87,10 +87,11 @@ class ClaudeCodeGenerator:
                 return {"effect_id": fx.get("effect_id"), "name": fx.get("name")}
         return None
 
-    def generate(self, prompt: str, *, mode: str, on_event: EventSink, cancel: threading.Event) -> GenerationResult:
+    def generate(self, prompt: str, *, mode: str, on_event: EventSink, cancel: threading.Event,
+                 attachments: list[str] | None = None) -> GenerationResult:
         import anyio  # noqa: PLC0415
 
-        return anyio.run(self._run, prompt, mode, on_event, cancel)
+        return anyio.run(self._run, prompt, mode, on_event, cancel, list(attachments or []))
 
     def _make_tool(self, spec: dict[str, Any], on_event: EventSink, counters: dict[str, int]) -> Any:
         import anyio  # noqa: PLC0415
@@ -126,7 +127,8 @@ class ClaudeCodeGenerator:
 
         return handler
 
-    async def _run(self, prompt: str, mode: str, on_event: EventSink, cancel: threading.Event) -> GenerationResult:
+    async def _run(self, prompt: str, mode: str, on_event: EventSink, cancel: threading.Event,
+                   attachments: list[str]) -> GenerationResult:
         from claude_agent_sdk import (  # noqa: PLC0415
             AssistantMessage, ClaudeAgentOptions, ClaudeSDKClient, ResultMessage, TextBlock, create_sdk_mcp_server,
         )
@@ -139,9 +141,9 @@ class ClaudeCodeGenerator:
         options = ClaudeAgentOptions(
             system_prompt=self._guide(),
             mcp_servers={"aetherfx": server},
-            allowed_tools=[f"mcp__aetherfx__{n}" for n in CURATED_TOOLS],
+            allowed_tools=[f"mcp__aetherfx__{n}" for n in CURATED_TOOLS] + (["Read"] if attachments else []),
             disallowed_tools=["Bash", "Write", "Edit", "MultiEdit", "NotebookEdit", "WebFetch", "WebSearch",
-                              "Task", "Agent", "Read", "Glob", "Grep"],
+                              "Task", "Agent", "Glob", "Grep"] + ([] if attachments else ["Read"]),
             permission_mode="default",
             max_turns=self.max_turns,
             setting_sources=[],
@@ -149,7 +151,9 @@ class ClaudeCodeGenerator:
             model=self.model,
             cli_path=self.cli_path(),
         )
-        task = build_task_prompt(prompt, mode, self._active_effect())
+        task = build_task_prompt(prompt, mode, self._active_effect(), attachments)
+        if attachments:
+            task += "\nView each reference image with the Read tool first."
         on_event({"kind": "status", "text": f"Claude Code agent started ({self.model or 'default model'})"})
         texts: list[str] = []
         error: str | None = None

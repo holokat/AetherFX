@@ -136,7 +136,21 @@ def build_authoring_guide(vocabulary: dict[str, Any]) -> str:
     return CONVENTIONS + "\n" + render_vocabulary(vocabulary)
 
 
-def build_task_prompt(prompt: str, mode: str, active_effect: dict[str, Any] | None) -> str:
+REFERENCE_INSTRUCTIONS = """REFERENCE RECONSTRUCTION (Mode A): reference image(s) are attached. Before planning, LOOK at each
+one and decompose it like a senior VFX artist (docs/EAD.md): effect category, estimated scale (m),
+visual style, dominant colours, energy, symmetry, camera angle, probable duration; primary forms
+(ring, column, sphere, beam, arc, cloud, spiral...); every visually separable layer with its semantic
+role (telegraph/ignition/primary/secondary/interaction/aftermath), the vocabulary primitive that
+matches it (emitter+particle_system, decal, beam, trail, light, mesh particles...), depth ordering,
+colour, brightness, opacity, material behaviour and a MOTION HYPOTHESIS (a still image has no
+motion: say what you infer); a temporal hypothesis with phases if the sheet shows a timeline. Post
+that analysis as one status event, then build the effect to match it. After each preview, call
+compare_reference(reference_path, time) with the first reference and use its notes and metrics
+together with your own eyes to iterate. Match colours, scale and silhouette before adding detail."""
+
+
+def build_task_prompt(prompt: str, mode: str, active_effect: dict[str, Any] | None,
+                      attachments: list[str] | None = None) -> str:
     if mode == "modify" and active_effect:
         head = (
             f"Modify the active effect \"{active_effect.get('name', '?')}\" (id {active_effect.get('effect_id', '?')}). "
@@ -144,8 +158,13 @@ def build_task_prompt(prompt: str, mode: str, active_effect: dict[str, Any] | No
         )
     else:
         head = "Create a new effect with create_effect (choose a good name, duration and seed) and build it completely."
+    refs = ""
+    if attachments:
+        listing = "\n".join(f"- {path}" for path in attachments)
+        refs = f"\n\n{REFERENCE_INSTRUCTIONS}\nReference images:\n{listing}\n"
+    request = prompt.strip() or ("Recreate the attached reference as a real-time effect." if attachments else "")
     return (
-        f"{head}\n\nREQUEST: {prompt.strip()}\n\n"
+        f"{head}{refs}\n\nREQUEST: {request}\n\n"
         "Work through the workflow, render a preview and look at it, iterate until it reads well, "
         "then reply with a brief summary (what layers/nodes you built, what to tune)."
     )

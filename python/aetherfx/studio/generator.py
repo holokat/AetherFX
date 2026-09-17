@@ -6,6 +6,10 @@ what it made, and iterating.  The studio only depends on this interface; the
 concrete backends (Anthropic API tool-use loop, Claude Code Agent SDK) are
 selected by :func:`get_generator` based on what credentials exist.
 
+Reference images (Mode A): ``generate(..., attachments=[paths])`` passes reference
+images; backends make the agent look at them first and decompose them
+semantically before building (docs/EAD.md).
+
 Event protocol (``on_event`` receives plain dicts, in order):
     {"kind": "status",      "text": "..."}                       progress line
     {"kind": "text",        "text": "..."}                       agent prose
@@ -49,6 +53,7 @@ class Generator(Protocol):
         mode: str,  # "new" (fresh effect) or "modify" (edit the active effect)
         on_event: EventSink,
         cancel: threading.Event,
+        attachments: list[str] | None = None,  # absolute paths of reference images (Mode A)
     ) -> GenerationResult: ...
 
 
@@ -61,7 +66,8 @@ class NullGenerator:
     def __init__(self, reason: str) -> None:
         self.unavailable_reason = reason
 
-    def generate(self, prompt: str, *, mode: str, on_event: EventSink, cancel: threading.Event) -> GenerationResult:
+    def generate(self, prompt: str, *, mode: str, on_event: EventSink, cancel: threading.Event,
+                 attachments: list[str] | None = None) -> GenerationResult:
         on_event({"kind": "error", "text": self.unavailable_reason})
         on_event({"kind": "done", "effect_id": None, "summary": self.unavailable_reason})
         return GenerationResult(None, self.unavailable_reason)

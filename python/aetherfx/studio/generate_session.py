@@ -72,13 +72,15 @@ class SessionGenerator:
                 return {"effect_id": fx.get("effect_id"), "name": fx.get("name")}
         return {"effect_id": active, "name": None}
 
-    def generate(self, prompt: str, *, mode: str, on_event: EventSink, cancel: threading.Event) -> GenerationResult:
+    def generate(self, prompt: str, *, mode: str, on_event: EventSink, cancel: threading.Event,
+                 attachments: list[str] | None = None) -> GenerationResult:
         job_id = time.strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:6]
         job = {
             "id": job_id,
             "prompt": prompt,
             "mode": mode,
             "active_effect": self._active_effect(),
+            "reference_images": [str(Path(a).resolve()) for a in (attachments or [])],
             "created": time.time(),
         }
         events_path = self.jobs_dir / f"{job_id}.events.jsonl"
