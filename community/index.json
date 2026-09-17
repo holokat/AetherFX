@@ -8,7 +8,7 @@
         "name": "AetherFX Team",
         "url": "https://github.com/holokat"
       },
-      "bytes": 45685,
+      "bytes": 45678,
       "controls": [
         {
           "group": "Projectile",
@@ -44,7 +44,7 @@
       "node_count": 47,
       "previews": {},
       "schema_version": "0.1.0",
-      "sha256": "e8048ea6fd96880bdf2e1d949fe35d206f91cea235d936d2403881f654f148d6",
+      "sha256": "0851ec6e374fb7a6cddc4fb175c43b0049c52d5d127e0d5b9f2471b4d43e54ea",
       "slug": "arcane_missile",
       "tags": [
         "arcane",
