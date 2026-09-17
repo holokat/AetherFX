@@ -197,13 +197,14 @@ def smoothstep(u: float) -> float:
 # the flight: speed, turn rate and climb angle over time
 # ---------------------------------------------------------------------------
 
-V_CRUISE = 8.118         # m/s once the kick is over
-AZIMUTH_0 = 21.55        # launch heading: away from the camera, away from the final target
+V_CRUISE = 8.554         # m/s once the kick is over
+AZIMUTH_0 = 25.08        # launch heading: away from the camera, away from the final target
 TURN_MID = -36.0         # deg/s, the gentle arc of the mid flight (towards the camera)
-TURN_END = -430.0        # deg/s, the turn rate the hook tightens to at the impact
-T_TURN = 0.88            # the hook starts to tighten here
-CLIMB_0 = 13.29          # launch climb angle
+TURN_END = -485.0        # deg/s, the turn rate the hook tightens to at the impact
+T_TURN = 0.86            # the hook starts to tighten here
+CLIMB_0 = 14.40          # launch climb angle
 DIVE_END = -29.0         # dive angle at the impact
+HOOK_ACCEL = 0.8         # how much speed the missile gains through the hook (x cruise)
 
 
 def speed_at(t: float) -> float:
@@ -218,7 +219,7 @@ def speed_at(t: float) -> float:
     if t < 1.0:                                        # cruise, gaining a little
         return V_CRUISE * (1.0 + 0.07 * (t - 0.42) / 0.58)
     u = (t - 1.0) / (T_IMPACT - 1.0)                   # target adjust: accelerate into the hook
-    return V_CRUISE * 1.07 * (1.0 + 0.62 * u * u)
+    return V_CRUISE * 1.07 * (1.0 + HOOK_ACCEL * u * u)
 
 
 def turn_rate_at(t: float) -> float:
@@ -518,28 +519,16 @@ def build_textures() -> list[dict[str, Any]]:
         op("r", "gradient_radial", {"radius": 0.5, "falloff": "quadratic"}),
         op("lv", "levels", {"gamma": 0.8}, {"a": "r"}),
     ], "lv"))
-    # a five-rayed glint: odd and thin, so it never reads as a cross
-    out.append(tex("tex_glint", 64, 64, [
-        op("s", "star", {"points": 5, "width": 0.05, "outer_radius": 0.48, "core_radius": 0.07,
-                         "softness": 0.035, "rotation": 17.0}),
-        op("r", "gradient_radial", {"radius": 0.34, "falloff": "quadratic"}),
-        op("rl", "levels", {"out_high": 0.7, "gamma": 0.7}, {"a": "r"}),
-        op("m", "math", {"mode": "max"}, {"a": "s", "b": "rl"}),
-        op("b", "blur", {"radius": 1.2}, {"a": "m"}),
-    ], "b"))
     # the aura: a thin bubble rim that is brightest ahead of the crystal and open behind it
     out.append(tex("tex_aura", 128, 128, [
-        op("rim", "ring", {"radius": 0.44, "thickness": 0.022, "softness": 0.03}),
-        op("glow", "ring", {"radius": 0.43, "thickness": 0.07, "softness": 0.09}),
-        op("glowl", "levels", {"out_high": 0.3}, {"a": "glow"}),
+        op("rim", "ring", {"radius": 0.45, "thickness": 0.012, "softness": 0.022}),
+        op("glow", "ring", {"radius": 0.44, "thickness": 0.05, "softness": 0.07}),
+        op("glowl", "levels", {"out_high": 0.22}, {"a": "glow"}),
         op("shell", "math", {"mode": "max"}, {"a": "rim", "b": "glowl"}),
         op("front", "gradient_linear", {"angle": 90.0, "start": 1.0, "end": 0.0}),
-        op("frontl", "levels", {"in_low": 0.18, "in_high": 0.95, "out_low": 0.06, "gamma": 0.8}, {"a": "front"}),
+        op("frontl", "levels", {"in_low": 0.2, "in_high": 0.95, "out_low": 0.05, "gamma": 0.8}, {"a": "front"}),
         op("bow", "math", {"mode": "multiply"}, {"a": "shell", "b": "frontl"}),
-        op("fill", "gradient_radial", {"radius": 0.44, "falloff": "smooth"}),
-        op("filll", "levels", {"out_high": 0.1}, {"a": "fill"}),
-        op("m", "math", {"mode": "max"}, {"a": "bow", "b": "filll"}),
-    ], "m"))
+    ], "bow"))
     # a thin soft ring, slightly uneven so it never looks plotted
     out.append(tex("tex_ring", 128, 128, [
         op("ring", "ring", {"radius": 0.45, "thickness": 0.02, "softness": 0.03}),
@@ -610,27 +599,27 @@ LAYERS = [
 ]
 
 # camera: raised, from the front right, so the hook curls down and back on screen
-CAMERA = {"position": [4.4, 3.2, 8.4], "target": [-0.1, 1.45, -0.2], "fov": 40.0}
+CAMERA = {"position": [5.2, 3.9, 9.6], "target": [0.35, 1.7, -0.3], "fov": 40.0}
 
-# the crystal: a hexagonal bipyramid, long and pointed ahead, short behind
-GEM_RADIUS = 0.17
-GEM_FRONT = 0.50
-GEM_BACK = 0.26
-GEM_GIRDLE_X = -0.06
+# the crystal: a hexagonal bipyramid, long and pointed ahead, short behind - the hero of the effect
+GEM_RADIUS = 0.30
+GEM_FRONT = 0.98
+GEM_BACK = 0.50
+GEM_GIRDLE_X = -0.10
+GEM_TAIL_X = GEM_GIRDLE_X - GEM_BACK
 
 # three orbiting shards: (x along the axis, orbit radius, revs per second, phase, tilt y, tilt z, size, sides)
 SHARDS = [
-    (0.10, 0.43, 1.30, 20.0, 14.0, -9.0, 1.00, 4),
-    (-0.08, 0.52, -1.02, 150.0, -17.0, 12.0, 0.78, 6),
-    (-0.20, 0.37, 1.66, 265.0, 8.0, 19.0, 0.62, 4),
+    (0.28, 0.64, 1.25, 20.0, 14.0, -9.0, 1.00, 4),
+    (-0.08, 0.78, -0.98, 150.0, -17.0, 12.0, 0.80, 6),
+    (-0.40, 0.56, 1.6, 265.0, 8.0, 19.0, 0.66, 4),
 ]
 
-# ribbons of the braid: id, hub, local offset (y, z), colour, width, emissive, lifetime, material
 BRAID_HUBS = [
     # hub id, metres of travel per turn (negative = counter-rotating), phase
-    ("braid_a", 2.35, 0.0),
-    ("braid_b", -3.1, 70.0),
-    ("braid_c", 1.4, 200.0),
+    ("braid_a", 3.0, 0.0),
+    ("braid_b", -4.1, 70.0),
+    ("braid_c", 1.9, 200.0),
 ]
 
 
@@ -661,23 +650,27 @@ def build() -> dict[str, Any]:
         "blend": "additive", "base_color": [1.0, 1.0, 1.0, 1.0], "emissive_color": rgba(ICE),
         "emissive_intensity": 0.3, "soft_particle": True, "depth_fade": 0.1, "double_sided": True,
     }, inputs={"base_texture": "tex_filament"}))
-    # the gem: a translucent violet shell over a white-hot inner crystal
+    # the gem: translucent violet facets that catch the key light, over a white-hot inner crystal
     add(node("mat_gem_shell", "material", {
-        "blend": "alpha", "shading": "lit", "base_color": rgba(mix(violet, hot, 0.25), 1.0, 0.5),
-        "emissive_color": rgba(violet), "emissive_intensity": 0.2, "opacity": 0.62,
+        "blend": "alpha", "shading": "lit", "base_color": [0.3, 0.1, 0.72, 1.0],
+        "emissive_color": rgba(violet), "emissive_intensity": 0.05, "opacity": 0.72,
+    }))
+    add(node("mat_gem_cut", "material", {
+        "blend": "alpha", "shading": "lit", "base_color": rgba(mix(AZURE, violet, 0.35), 1.0, 0.8),
+        "emissive_color": rgba(mix(violet, AZURE, 0.5)), "emissive_intensity": 0.05, "opacity": 0.34,
     }))
     add(node("mat_gem_core", "material", {
         "blend": "alpha", "shading": "lit", "base_color": rgba(hot), "emissive_color": rgba(hot),
         "emissive_intensity": 0.5, "opacity": 1.0,
     }))
     add(node("mat_fragment", "material", {
-        "blend": "alpha", "shading": "lit", "base_color": rgba(mix(violet, hot, 0.4), 1.0, 0.6),
-        "emissive_color": rgba(mix(violet, hot, 0.3)), "emissive_intensity": 0.3, "opacity": 1.0,
+        "blend": "alpha", "shading": "lit", "base_color": [0.34, 0.14, 0.78, 1.0],
+        "emissive_color": rgba(violet), "emissive_intensity": 0.1, "opacity": 1.0,
     }))
     add(node("mat_burst_shard", "material", {
-        "blend": "alpha", "shading": "lit", "base_color": rgba(mix(violet, hot, 0.2), 1.0, 0.55),
-        "emissive_color": rgba(mix(violet, hot, 0.35)), "emissive_intensity": 1.1,
-        "fresnel_power": 2.4, "double_sided": True, "opacity": 1.0,
+        "blend": "alpha", "shading": "lit", "base_color": [0.3, 0.12, 0.7, 1.0],
+        "emissive_color": rgba(mix(violet, MAGENTA, 0.2)), "emissive_intensity": 0.22,
+        "fresnel_power": 3.2, "double_sided": True, "opacity": 1.0,
     }))
 
     # ---------------- forces ----------------
@@ -714,39 +707,40 @@ def build() -> dict[str, Any]:
     add(hub("body", {"scale": [1.0, 1.0, 1.0]}, layer="head", parent="head_tilt"))
 
     # ---------------- the crystal head ----------------
-    form = [(0.0, 0.001), (T_LAUNCH, 0.001), (0.25, 0.55), (0.31, 1.16), (0.38, 0.97), (0.44, 1.0),
-            (1.30, 1.0), (1.385, 1.12)]
-    add(hub("head_form", {"scale": track([(t, [round(s, 4), round(s, 4), round(s * 0.84, 4)]) for t, s in form])},
+    form = [(0.0, 0.001), (T_LAUNCH, 0.001), (0.25, 0.5), (0.31, 1.14), (0.38, 0.97), (0.44, 1.0),
+            (1.30, 1.0), (1.385, 1.1)]
+    add(hub("head_form", {"scale": track([(t, [round(s, 4), round(s, 4), round(s * 0.86, 4)]) for t, s in form])},
             layer="head", parent="body"))
     gem_window = {"start_time": round(T_LAUNCH, 4), "duration": round(T_IMPACT - T_LAUNCH - 0.006, 4)}
-    shell_glow = track([(T_LAUNCH, 0.5), (0.3, 1.6), (0.44, 0.85), (1.2, 0.85), (1.39, 1.7)])
-    core_glow = track([(T_LAUNCH, 2.0), (0.3, 5.5), (0.44, 3.4), (1.2, 3.4), (1.39, 6.0)])
-    for nid, mat, k, glow, spin in (("gem_shell", "mat_gem_shell", 1.0, shell_glow, 0.0),
-                                    ("gem_core", "mat_gem_core", 0.46, core_glow, 30.0)):
-        add(node(f"{nid}_front", "mesh", {
-            "primitive": "crystal", "radius": round(GEM_RADIUS * k, 4), "height": round(GEM_FRONT * k, 4),
-            "segments": 6, "irregularity": 0.0,
-            "position": [round(GEM_GIRDLE_X * k + GEM_FRONT * k / 2.0, 4), 0.0, 0.0],
-            "rotation": [spin, 0.0, -90.0], "color": [1.0, 1.0, 1.0, 1.0], "emissive": glow, **gem_window,
-        }, layer="head", parent="head_form", inputs={"material": mat}, seed=11))
-        add(node(f"{nid}_back", "mesh", {
-            "primitive": "crystal", "radius": round(GEM_RADIUS * k, 4), "height": round(GEM_BACK * k, 4),
-            "segments": 6, "irregularity": 0.0,
-            "position": [round(GEM_GIRDLE_X * k - GEM_BACK * k / 2.0, 4), 0.0, 0.0],
-            "rotation": [spin, 0.0, 90.0], "color": [1.0, 1.0, 1.0, 1.0], "emissive": glow, **gem_window,
-        }, layer="head", parent="head_form", inputs={"material": mat}, seed=11))
+    shell_glow = track([(T_LAUNCH, 0.3), (0.3, 1.0), (0.44, 0.3), (1.2, 0.3), (1.39, 0.9)])
+    cut_glow = track([(T_LAUNCH, 0.2), (0.3, 0.8), (0.44, 0.25), (1.2, 0.25), (1.39, 0.7)])
+    core_glow = track([(T_LAUNCH, 2.5), (0.3, 7.0), (0.44, 4.2), (1.2, 4.2), (1.39, 8.0)])
+    # (id, material, radius x, front x, back x, emissive, spin about the axis)
+    gem_parts = (
+        ("gem_shell", "mat_gem_shell", 1.0, 1.0, 1.0, shell_glow, 0.0),
+        ("gem_cut", "mat_gem_cut", 0.94, 0.8, 0.84, cut_glow, 30.0),
+        ("gem_core", "mat_gem_core", 0.3, 0.34, 0.36, core_glow, 30.0),
+    )
+    for nid, mat, kr, kf, kb, glow, spin in gem_parts:
+        for part, height, rot, sign in (("front", GEM_FRONT * kf, -90.0, 1.0), ("back", GEM_BACK * kb, 90.0, -1.0)):
+            add(node(f"{nid}_{part}", "mesh", {
+                "primitive": "crystal", "radius": round(GEM_RADIUS * kr, 4), "height": round(height, 4),
+                "segments": 6, "irregularity": 0.0,
+                "position": [round(GEM_GIRDLE_X + sign * height / 2.0, 4), 0.0, 0.0],
+                "rotation": [0.0, spin, rot], "color": [1.0, 1.0, 1.0, 1.0], "emissive": glow, **gem_window,
+            }, layer="head", parent="head_form", inputs={"material": mat}, seed=11))
 
     # follow sprites: emitted one frame of travel behind the hub with the hub's own velocity
-    add(hub("follow_anchor", {"position": frame_track([[round(-fl.speed[i] * DT, 4) + 0.0, 0.0, 0.0]
+    add(hub("follow_anchor", {"position": frame_track([[round(0.12 - fl.speed[i] * DT, 4) + 0.0, 0.0, 0.0]
                                                        if F_LAUNCH < i < F_IMPACT else [0.0, 0.0, 0.0]
                                                        for i in range(n)])},
             layer="head", parent="head_tilt"))
     add(node("ps_halo", "particle_system", {
         "max_particles": 24, "lifetime": 0.05, "size": 1.25,
-        "size_over_life": [[0.0, 0.9], [0.5, 1.0], [1.0, 0.95]],
-        "color": rgba(violet), "color_over_life": [[0.0, rgba(mix(violet, hot, 0.35))], [1.0, rgba(violet)]],
-        "opacity": 0.2, "opacity_over_life": [[0.0, 0.6], [0.4, 1.0], [1.0, 0.0]],
-        "emissive": 1.4, "render_mode": "billboard", "blend": "additive", "soft_particle_distance": 0.3,
+        "color": rgba(violet), "color_over_life": [[0.0, rgba(mix(violet, hot, 0.25))], [1.0, rgba(violet)]],
+        "opacity": 0.05, "opacity_over_life": [[0.0, 0.6], [0.4, 1.0], [1.0, 0.0]],
+        "emissive": 1.0, "render_mode": "stretched_billboard", "velocity_stretch": 0.085, "blend": "additive",
+        "soft_particle_distance": 0.3,
     }, layer="head", inputs={"sprite": "tex_glow", "material": "mat_glow"}))
     add(node("e_halo", "emitter", {
         "shape": "point", "velocity": 0.0, "inherit_velocity": 1.0,
@@ -754,10 +748,10 @@ def build() -> dict[str, Any]:
         "duration": round(T_IMPACT + 0.01, 4),
     }, layer="head", parent="follow_anchor", inputs={"particle": "ps_halo"}))
     add(node("ps_aura", "particle_system", {
-        "max_particles": 24, "lifetime": 0.05, "size": 1.12,
-        "color": rgba(mix(violet, AZURE, 0.35)), "opacity": 0.34,
+        "max_particles": 24, "lifetime": 0.05, "size": 1.56,
+        "color": rgba(mix(violet, AZURE, 0.35)), "opacity": 0.1,
         "opacity_over_life": [[0.0, 0.7], [0.4, 1.0], [1.0, 0.0]],
-        "emissive": 2.2, "render_mode": "billboard", "align_to_velocity": True, "blend": "additive",
+        "emissive": 1.6, "render_mode": "billboard", "align_to_velocity": True, "blend": "additive",
         "soft_particle_distance": 0.1,
     }, layer="head", inputs={"sprite": "tex_aura", "material": "mat_glow"}))
     add(node("e_aura", "emitter", {
@@ -769,17 +763,18 @@ def build() -> dict[str, Any]:
     # ---------------- the braid ----------------
     for hid, pitch, phase in BRAID_HUBS:
         angles = [[round(phase + 360.0 * fl.travel[i] / pitch, 2) + 0.0, 0.0, 0.0] for i in range(n)]
-        add(hub(hid, {"position": [-0.33, 0.0, 0.0], "rotation": frame_track(angles)}, layer="braid", parent="body"))
+        add(hub(hid, {"position": [round(GEM_TAIL_X - 0.06, 4), 0.0, 0.0], "rotation": frame_track(angles)},
+                layer="braid", parent="body"))
 
-    ribbon_taper = [[0.0, 0.0], [0.05, 0.5], [0.16, 1.0], [0.55, 0.82], [1.0, 0.12]]
+    ribbon_taper = [[0.0, 0.0], [0.05, 0.45], [0.16, 1.0], [0.55, 0.85], [1.0, 0.15]]
     ribbon_fade = [[0.0, 0.0], [0.06, 1.0], [0.4, 0.62], [1.0, 0.0]]
     ribbons = [
         # id, hub, (y, z), colour, width, emissive, lifetime, material
-        ("ribbon_violet", "braid_a", (0.115, 0.0), mix(violet, MAGENTA, 0.15), 0.23, 1.5, 0.46, "mat_ribbon"),
-        ("ribbon_magenta", "braid_a", (-0.115, 0.0), mix(violet, MAGENTA, 0.7), 0.2, 1.3, 0.42, "mat_ribbon"),
-        ("ribbon_azure", "braid_b", (0.0, 0.17), AZURE, 0.17, 1.35, 0.5, "mat_ribbon"),
-        ("filament_a", "braid_c", (0.07, 0.0), ICE, 0.034, 2.6, 0.34, "mat_filament"),
-        ("filament_b", "braid_c", (-0.07, 0.0), mix(ICE, violet, 0.3), 0.028, 2.2, 0.3, "mat_filament"),
+        ("ribbon_violet", "braid_a", (0.17, 0.0), mix(violet, MAGENTA, 0.15), 0.4, 2.3, 0.5, "mat_ribbon"),
+        ("ribbon_magenta", "braid_a", (-0.17, 0.0), mix(violet, MAGENTA, 0.7), 0.34, 2.0, 0.46, "mat_ribbon"),
+        ("ribbon_azure", "braid_b", (0.0, 0.25), AZURE, 0.3, 1.9, 0.54, "mat_ribbon"),
+        ("filament_a", "braid_c", (0.1, 0.0), mix(ICE, violet, 0.25), 0.055, 1.4, 0.36, "mat_filament"),
+        ("filament_b", "braid_c", (-0.1, 0.0), mix(ICE, violet, 0.5), 0.046, 1.2, 0.32, "mat_filament"),
     ]
     for rid, hid, (oy, oz), colour, width, emissive, life, mat in ribbons:
         add(hub(f"{rid}_src", {"position": [0.0, oy, oz]}, layer="braid", parent=hid))
@@ -790,7 +785,7 @@ def build() -> dict[str, Any]:
             "width": track([(0.22, 0.0), (0.32, round(width * 0.6, 4)), (0.46, width), (T_IMPACT, width),
                             (1.56, round(width * 0.7, 4)), (1.74, 0.0)]),
             "emissive": track([(0.22, round(emissive * 0.4, 3)), (0.4, emissive), (1.3, emissive),
-                               (T_IMPACT, round(emissive * 1.5, 3)), (1.7, 0.0)]),
+                               (T_IMPACT, round(emissive * 1.4, 3)), (1.7, 0.0)]),
             "start_time": 0.22,
         }, layer="braid", inputs={"source": f"{rid}_src", "material": mat}))
 
@@ -810,69 +805,72 @@ def build() -> dict[str, Any]:
             "scale": track([(t, [round(s * size, 4), round(s * size, 4), round(s * size * 0.8, 4)]) for t, s in pop]),
         }, layer="fragments", parent=f"orbit_{i}_spin"))
         window = {"start_time": round(0.3 + 0.03 * i, 4), "duration": round(T_IMPACT - 0.306 - 0.03 * i, 4)}
-        for part, height, rot, sign in (("front", 0.2, -90.0, 1.0), ("back", 0.11, 90.0, -1.0)):
+        for part, height, rot, sign in (("front", 0.38, -90.0, 1.0), ("back", 0.2, 90.0, -1.0)):
             add(node(f"shard_{i}_{part}", "mesh", {
-                "primitive": "crystal", "radius": 0.052, "height": height, "segments": sides, "irregularity": 0.0,
+                "primitive": "crystal", "radius": 0.1, "height": height, "segments": sides, "irregularity": 0.0,
                 "position": [round(sign * height / 2.0, 4), 0.0, 0.0], "rotation": [0.0, 0.0, rot],
-                "color": [1.0, 1.0, 1.0, 1.0], "emissive": 1.5, **window,
+                "color": [1.0, 1.0, 1.0, 1.0], "emissive": 0.4, **window,
             }, layer="fragments", parent=f"shard_{i}", inputs={"material": "mat_fragment"}, seed=20 + i))
-        w = round(0.05 * size, 4)
+        w = round(0.1 * size, 4)
         add(node(f"shard_{i}_trail", "trail", {
-            "lifetime": 0.17, "max_segments": 32, "min_vertex_distance": 0.02,
-            "taper": [[0.0, 0.2], [0.12, 1.0], [1.0, 0.0]], "opacity_over_life": [[0.0, 0.9], [0.5, 0.45], [1.0, 0.0]],
-            "color": rgba(mix(ICE, violet, 0.35)), "blend": "additive", "emissive": 1.6,
+            "lifetime": 0.12, "max_segments": 32, "min_vertex_distance": 0.02,
+            "taper": [[0.0, 0.2], [0.2, 1.0], [1.0, 0.0]], "opacity_over_life": [[0.0, 0.55], [0.5, 0.3], [1.0, 0.0]],
+            "color": rgba(mix(violet, ICE, 0.25)), "blend": "additive", "emissive": 0.8,
             "width": track([(0.34, 0.0), (0.48, w), (1.34, w), (T_IMPACT, 0.0)]),
             "start_time": 0.34,
         }, layer="fragments", inputs={"source": f"shard_{i}", "material": "mat_filament"}))
 
     # ---------------- sparkle motes and the soft haze along the braid ----------------
-    flight_rate = [(0.0, 0.0), (0.24, 0.0), (0.34, 1.0), (1.36, 1.0), (T_IMPACT, 0.0)]
+    # a fine trickle: a flurry at the kick, steady through the mid flight, thicker in the hook
+    flight_rate = [(0.0, 0.0), (0.22, 0.0), (0.27, 1.7), (0.44, 1.0), (1.0, 1.0), (1.12, 1.75), (1.37, 1.75),
+                   (T_IMPACT, 0.0)]
 
     def rate(scale: float) -> dict[str, Any]:
         return track([(t, round(v * scale, 2)) for t, v in flight_rate])
 
     twinkle = [[0.0, 0.3], [0.12, 1.0], [0.3, 0.55], [0.46, 1.0], [0.64, 0.45], [0.8, 0.8], [1.0, 0.0]]
     add(node("ps_motes", "particle_system", {
-        "max_particles": 220, "lifetime": 0.6, "lifetime_variance": 0.22, "size": 0.05, "size_variance": 0.026,
+        "max_particles": 360, "lifetime": 0.62, "lifetime_variance": 0.24, "size": 0.046, "size_variance": 0.026,
         "size_over_life": twinkle, "color": rgba(hot),
         "color_over_life": [[0.0, rgba(hot)], [0.35, rgba(mix(violet, hot, 0.3))], [1.0, rgba(deep)]],
         "opacity_over_life": [[0.0, 1.0], [0.7, 0.8], [1.0, 0.0]], "emissive": 3.4, "drag": 1.6,
         "render_mode": "billboard", "blend": "additive", "soft_particle_distance": 0.05,
     }, layer="motes", inputs={"sprite": "tex_mote", "material": "mat_spark", "forces": ["f_drift"]}))
     add(node("e_motes", "emitter", {
-        "shape": "sphere", "radius": 0.14, "position": [-0.3, 0.0, 0.0], "direction": [0.0, 0.0, 0.0],
-        "velocity": 0.5, "velocity_variance": 0.4, "inherit_velocity": 0.1, "rate": rate(150.0),
-        "start_time": 0.24, "duration": round(T_IMPACT - 0.24, 4),
+        "shape": "sphere", "radius": 0.26, "position": [round(GEM_TAIL_X, 4), 0.0, 0.0], "direction": [0.0, 0.0, 0.0],
+        "velocity": 0.55, "velocity_variance": 0.45, "inherit_velocity": 0.1, "rate": rate(200.0),
+        "start_time": 0.22, "duration": round(T_IMPACT - 0.22, 4),
     }, layer="motes", parent="body", inputs={"particle": "ps_motes"}))
-    add(node("ps_glints", "particle_system", {
-        "max_particles": 40, "lifetime": 0.42, "lifetime_variance": 0.12, "size": 0.15, "size_variance": 0.05,
-        "size_over_life": [[0.0, 0.0], [0.2, 1.0], [0.45, 0.5], [0.65, 0.9], [1.0, 0.0]],
-        "rotation_variance": 180.0, "angular_velocity": 40.0, "angular_velocity_variance": 60.0,
-        "color": rgba(mix(hot, AZURE, 0.25)), "opacity_over_life": [[0.0, 1.0], [0.75, 0.8], [1.0, 0.0]],
-        "emissive": 2.6, "drag": 2.0, "render_mode": "billboard", "blend": "additive",
+    # a few larger, slower twinkles with a soft halo (round: no star glyphs)
+    add(node("ps_twinkles", "particle_system", {
+        "max_particles": 50, "lifetime": 0.5, "lifetime_variance": 0.15, "size": 0.2, "size_variance": 0.07,
+        "size_over_life": [[0.0, 0.0], [0.18, 1.0], [0.4, 0.45], [0.6, 0.9], [1.0, 0.0]],
+        "color": rgba(mix(hot, AZURE, 0.3)), "color_over_life": [[0.0, rgba(hot)], [1.0, rgba(mix(violet, AZURE, 0.4))]],
+        "opacity": 0.8, "opacity_over_life": [[0.0, 1.0], [0.75, 0.8], [1.0, 0.0]],
+        "emissive": 2.2, "drag": 2.0, "render_mode": "billboard", "blend": "additive",
         "soft_particle_distance": 0.05,
-    }, layer="motes", inputs={"sprite": "tex_glint", "material": "mat_spark", "forces": ["f_drift"]}))
-    add(node("e_glints", "emitter", {
-        "shape": "sphere", "radius": 0.22, "position": [-0.35, 0.0, 0.0], "direction": [0.0, 0.0, 0.0],
-        "velocity": 0.35, "velocity_variance": 0.25, "inherit_velocity": 0.06, "rate": rate(26.0),
-        "start_time": 0.24, "duration": round(T_IMPACT - 0.24, 4),
-    }, layer="motes", parent="body", inputs={"particle": "ps_glints"}))
+    }, layer="motes", inputs={"sprite": "tex_core", "material": "mat_spark", "forces": ["f_drift"]}))
+    add(node("e_twinkles", "emitter", {
+        "shape": "sphere", "radius": 0.36, "position": [round(GEM_TAIL_X - 0.1, 4), 0.0, 0.0],
+        "direction": [0.0, 0.0, 0.0], "velocity": 0.4, "velocity_variance": 0.3, "inherit_velocity": 0.06,
+        "rate": rate(30.0), "start_time": 0.22, "duration": round(T_IMPACT - 0.22, 4),
+    }, layer="motes", parent="body", inputs={"particle": "ps_twinkles"}))
     add(node("ps_haze", "particle_system", {
-        "max_particles": 40, "lifetime": 0.42, "lifetime_variance": 0.1, "size": 0.5, "size_variance": 0.14,
+        "max_particles": 40, "lifetime": 0.44, "lifetime_variance": 0.1, "size": 0.8, "size_variance": 0.2,
         "size_over_life": [[0.0, 0.5], [0.4, 1.0], [1.0, 1.25]], "rotation_variance": 180.0,
-        "color": rgba(mix(deep, violet, 0.5)), "opacity": 0.2,
+        "color": rgba(mix(deep, violet, 0.5)), "opacity": 0.16,
         "opacity_over_life": [[0.0, 0.0], [0.2, 1.0], [0.55, 0.6], [1.0, 0.0]], "emissive": 0.9, "drag": 1.0,
         "render_mode": "billboard", "blend": "additive", "soft_particle_distance": 0.25,
     }, layer="braid", inputs={"sprite": "tex_mist", "material": "mat_glow"}))
     add(node("e_haze", "emitter", {
-        "shape": "sphere", "radius": 0.1, "position": [-0.45, 0.0, 0.0], "velocity": 0.0,
-        "inherit_velocity": 0.08, "rate": rate(54.0), "start_time": 0.24,
-        "duration": round(T_IMPACT - 0.24, 4),
+        "shape": "sphere", "radius": 0.14, "position": [round(GEM_TAIL_X - 0.2, 4), 0.0, 0.0], "velocity": 0.0,
+        "inherit_velocity": 0.08, "rate": rate(50.0), "start_time": 0.22,
+        "duration": round(T_IMPACT - 0.22, 4),
     }, layer="braid", parent="body", inputs={"particle": "ps_haze"}))
 
     # ---------------- spawn / charge and the launch kick (at the missile hub, which is still here) ----------------
     add(node("ps_orb", "particle_system", {
-        "max_particles": 4, "lifetime": 0.34, "size": 0.95,
+        "max_particles": 4, "lifetime": 0.34, "size": 1.3,
         "size_over_life": [[0.0, 0.12], [0.45, 0.62], [0.6, 0.72], [0.72, 1.25], [1.0, 0.3]],
         "color": rgba(mix(violet, hot, 0.3)),
         "color_over_life": [[0.0, rgba(violet)], [0.6, rgba(mix(violet, hot, 0.5))], [0.74, rgba(hot)], [1.0, rgba(violet)]],
@@ -883,7 +881,7 @@ def build() -> dict[str, Any]:
         "shape": "point", "velocity": 0.0, "rate": 0.0, "burst_count": 1, "burst_times": [0.0], "duration": 0.1,
     }, layer="charge", parent="missile", inputs={"particle": "ps_orb"}))
     add(node("ps_halo_ring", "particle_system", {
-        "max_particles": 6, "lifetime": 0.24, "size": 1.5,
+        "max_particles": 6, "lifetime": 0.24, "size": 2.0,
         "size_over_life": [[0.0, 1.0], [0.7, 0.42], [1.0, 0.3]],
         "color": rgba(mix(violet, AZURE, 0.3)), "opacity": 0.75,
         "opacity_over_life": [[0.0, 0.0], [0.3, 1.0], [0.8, 0.8], [1.0, 0.0]], "emissive": 2.4,
@@ -895,7 +893,7 @@ def build() -> dict[str, Any]:
         "duration": 0.15,
     }, layer="charge", parent="missile", inputs={"particle": "ps_halo_ring"}))
     add(node("ps_gather", "particle_system", {
-        "max_particles": 90, "lifetime": 0.19, "lifetime_variance": 0.03, "size": 0.05, "size_variance": 0.02,
+        "max_particles": 110, "lifetime": 0.2, "lifetime_variance": 0.03, "size": 0.06, "size_variance": 0.025,
         "size_over_life": [[0.0, 0.4], [0.5, 1.0], [1.0, 0.5]], "color": rgba(mix(violet, hot, 0.5)),
         "color_over_life": [[0.0, rgba(violet)], [1.0, rgba(hot)]],
         "opacity_over_life": [[0.0, 0.0], [0.25, 1.0], [0.85, 1.0], [1.0, 0.0]], "emissive": 3.0,
@@ -903,12 +901,12 @@ def build() -> dict[str, Any]:
         "soft_particle_distance": 0.05,
     }, layer="charge", inputs={"sprite": "tex_mote", "material": "mat_spark"}))
     add(node("e_gather", "emitter", {
-        "shape": "sphere", "radius": 0.85, "surface_only": True, "direction": [0.0, 0.0, 0.0], "velocity": 0.0,
-        "radial_velocity": -4.3, "rate": track([(0.0, 260.0), (0.12, 200.0), (0.17, 0.0)]), "duration": 0.18,
+        "shape": "sphere", "radius": 1.1, "surface_only": True, "direction": [0.0, 0.0, 0.0], "velocity": 0.0,
+        "radial_velocity": -5.2, "rate": track([(0.0, 300.0), (0.12, 220.0), (0.17, 0.0)]), "duration": 0.18,
     }, layer="charge", parent="missile", inputs={"particle": "ps_gather"}))
     # the kick: a soft ring left hanging at the launch point and a fan of sparks thrown backwards
     add(node("ps_kick_ring", "particle_system", {
-        "max_particles": 2, "lifetime": 0.3, "size": 1.9,
+        "max_particles": 2, "lifetime": 0.3, "size": 2.4,
         "size_over_life": [[0.0, 0.18], [0.4, 0.75], [1.0, 1.0]], "color": rgba(violet), "opacity": 0.5,
         "opacity_over_life": [[0.0, 0.9], [0.4, 0.5], [1.0, 0.0]], "emissive": 1.8,
         "render_mode": "billboard", "blend": "additive", "soft_particle_distance": 0.1,
@@ -918,7 +916,7 @@ def build() -> dict[str, Any]:
         "burst_times": [0.0], "start_time": round(T_LAUNCH + 0.01, 4), "duration": 0.1,
     }, layer="charge", inputs={"particle": "ps_kick_ring"}))
     add(node("ps_kick_sparks", "particle_system", {
-        "max_particles": 60, "lifetime": 0.3, "lifetime_variance": 0.12, "size": 0.045, "size_variance": 0.02,
+        "max_particles": 70, "lifetime": 0.32, "lifetime_variance": 0.12, "size": 0.05, "size_variance": 0.02,
         "size_over_life": [[0.0, 1.0], [1.0, 0.1]], "color": rgba(hot),
         "color_over_life": [[0.0, rgba(hot)], [0.5, rgba(violet)], [1.0, rgba(deep)]],
         "opacity_over_life": [[0.0, 1.0], [0.6, 0.8], [1.0, 0.0]], "emissive": 3.2, "drag": 4.0,
@@ -927,8 +925,8 @@ def build() -> dict[str, Any]:
     }, layer="charge", inputs={"sprite": "tex_mote", "material": "mat_spark", "forces": ["f_drift"]}))
     launch_back = scale3(direction_of(fl.azimuth[F_LAUNCH + 2], fl.elevation[F_LAUNCH + 2]), -1.0)
     add(node("e_kick_sparks", "emitter", {
-        "shape": "sphere", "radius": 0.1, "position": vec(fl.pos[F_LAUNCH]), "direction": vec(launch_back, 3),
-        "spread": 38.0, "velocity": 3.4, "velocity_variance": 2.2, "rate": 0.0, "burst_count": 44,
+        "shape": "sphere", "radius": 0.14, "position": vec(fl.pos[F_LAUNCH]), "direction": vec(launch_back, 3),
+        "spread": 38.0, "velocity": 3.8, "velocity_variance": 2.4, "rate": 0.0, "burst_count": 54,
         "burst_times": [0.0], "start_time": round(T_LAUNCH + 0.01, 4), "duration": 0.1,
     }, layer="charge", inputs={"particle": "ps_kick_sparks"}))
 
@@ -942,67 +940,67 @@ def build() -> dict[str, Any]:
         add(node(eid, "emitter", p, layer=layer, parent="missile", inputs={"particle": system}))
 
     add(node("ps_flash", "particle_system", {
-        "max_particles": 3, "lifetime": 0.17, "size": 2.5,
-        "size_over_life": [[0.0, 0.3], [0.22, 1.0], [1.0, 0.72]], "color": rgba(hot),
-        "color_over_life": [[0.0, rgba(hot)], [0.4, rgba(mix(violet, hot, 0.45))], [1.0, rgba(violet)]],
-        "opacity": 0.85, "opacity_over_life": [[0.0, 1.0], [0.3, 0.7], [1.0, 0.0]], "emissive": 2.2,
+        "max_particles": 3, "lifetime": 0.17, "size": 4.8,
+        "size_over_life": [[0.0, 0.45], [0.18, 1.0], [1.0, 0.7]], "color": rgba(hot),
+        "color_over_life": [[0.0, rgba(hot)], [0.35, rgba(mix(violet, hot, 0.5))], [1.0, rgba(violet)]],
+        "opacity": 1.0, "opacity_over_life": [[0.0, 1.0], [0.3, 0.75], [1.0, 0.0]], "emissive": 3.8,
         "render_mode": "billboard", "blend": "additive", "soft_particle_distance": 0.3,
     }, layer="impact", inputs={"sprite": "tex_core", "material": "mat_glow"}))
     burst("e_flash", "ps_flash", 1, {"shape": "point", "velocity": 0.0})
     add(node("ps_rays", "particle_system", {
-        "max_particles": 6, "lifetime": 0.21, "lifetime_variance": 0.03, "size": 3.0, "size_variance": 0.7,
-        "size_over_life": [[0.0, 0.25], [0.3, 0.9], [1.0, 1.12]], "rotation_variance": 180.0,
+        "max_particles": 8, "lifetime": 0.25, "lifetime_variance": 0.03, "size": 5.0, "size_variance": 1.2,
+        "size_over_life": [[0.0, 0.5], [0.25, 0.92], [1.0, 1.15]], "rotation_variance": 180.0,
         "angular_velocity_variance": 25.0, "color": rgba(mix(violet, hot, 0.5)),
         "color_over_life": [[0.0, rgba(hot)], [0.5, rgba(mix(violet, hot, 0.3))], [1.0, rgba(violet)]],
-        "opacity": 0.8, "opacity_over_life": [[0.0, 1.0], [0.35, 0.7], [1.0, 0.0]], "emissive": 2.0,
+        "opacity": 0.9, "opacity_over_life": [[0.0, 1.0], [0.35, 0.7], [1.0, 0.0]], "emissive": 2.9,
         "render_mode": "billboard", "blend": "additive", "soft_particle_distance": 0.3,
     }, layer="impact", inputs={"sprite": "tex_rays", "material": "mat_glow"}))
-    burst("e_rays", "ps_rays", 3, {"shape": "point", "velocity": 0.0})
+    burst("e_rays", "ps_rays", 5, {"shape": "point", "velocity": 0.0})
     add(node("ps_shock", "particle_system", {
-        "max_particles": 2, "lifetime": 0.38, "size": 3.3,
+        "max_particles": 2, "lifetime": 0.36, "size": 4.2,
         "size_over_life": [[0.0, 0.1], [0.25, 0.55], [0.6, 0.85], [1.0, 1.0]], "rotation_variance": 180.0,
-        "color": rgba(mix(violet, AZURE, 0.25)), "opacity": 0.42,
+        "color": rgba(mix(violet, AZURE, 0.25)), "opacity": 0.36,
         "opacity_over_life": [[0.0, 1.0], [0.4, 0.55], [1.0, 0.0]], "emissive": 1.6,
         "render_mode": "billboard", "blend": "additive", "soft_particle_distance": 0.2,
     }, layer="impact", inputs={"sprite": "tex_ring", "material": "mat_glow"}))
     burst("e_shock", "ps_shock", 1, {"shape": "point", "velocity": 0.0})
     add(node("ps_streaks", "particle_system", {
-        "max_particles": 50, "lifetime": 0.22, "lifetime_variance": 0.08, "size": 0.07, "size_variance": 0.025,
+        "max_particles": 60, "lifetime": 0.24, "lifetime_variance": 0.08, "size": 0.085, "size_variance": 0.03,
         "size_over_life": [[0.0, 1.0], [0.6, 0.8], [1.0, 0.0]], "color": rgba(hot),
         "color_over_life": [[0.0, rgba(hot)], [0.45, rgba(mix(violet, hot, 0.35))], [1.0, rgba(violet)]],
         "opacity_over_life": [[0.0, 1.0], [0.6, 0.7], [1.0, 0.0]], "emissive": 3.6, "drag": 7.0,
         "render_mode": "stretched_billboard", "velocity_stretch": 0.3, "blend": "additive",
         "soft_particle_distance": 0.05,
     }, layer="impact", inputs={"sprite": "tex_mote", "material": "mat_spark"}))
-    burst("e_streaks", "ps_streaks", 30, {"shape": "sphere", "radius": 0.08, "direction": [0.0, 0.0, 0.0],
-                                          "velocity": 9.5, "velocity_variance": 5.5})
+    burst("e_streaks", "ps_streaks", 38, {"shape": "sphere", "radius": 0.1, "direction": [0.0, 0.0, 0.0],
+                                          "velocity": 11.0, "velocity_variance": 6.0})
     add(node("mesh_burst_shard", "mesh", {
-        "primitive": "crystal", "radius": 0.3, "height": 1.0, "segments": 5, "irregularity": 0.55,
+        "primitive": "crystal", "radius": 0.36, "height": 1.0, "segments": 5, "irregularity": 0.55,
         "variants": 6, "visible": False,
     }, seed=77))
     add(node("ps_burst_shards", "particle_system", {
-        "max_particles": 40, "lifetime": 0.4, "lifetime_variance": 0.09, "size": 0.15, "size_variance": 0.06,
-        "size_over_life": [[0.0, 0.35], [0.1, 1.0], [0.62, 0.85], [1.0, 0.0]], "color": rgba(mix(violet, hot, 0.4)),
-        "emissive": 1.2, "render_mode": "mesh", "blend": "alpha", "orientation": "tumble",
-        "angular_velocity": 340.0, "angular_velocity_variance": 160.0, "mesh_scale": [0.55, 1.5, 0.45],
-        "mesh_scale_variance": [0.15, 0.5, 0.12], "drag": 3.4,
+        "max_particles": 60, "lifetime": 0.42, "lifetime_variance": 0.09, "size": 0.2, "size_variance": 0.1,
+        "size_over_life": [[0.0, 0.35], [0.1, 1.0], [0.62, 0.85], [1.0, 0.0]], "color": rgba(mix(violet, hot, 0.3)),
+        "emissive": 1.0, "render_mode": "mesh", "blend": "alpha", "orientation": "tumble",
+        "angular_velocity": 340.0, "angular_velocity_variance": 160.0, "mesh_scale": [0.6, 1.4, 0.5],
+        "mesh_scale_variance": [0.15, 0.5, 0.12], "drag": 3.2,
     }, layer="impact", inputs={"mesh": "mesh_burst_shard", "material": "mat_burst_shard", "forces": ["f_fall"]}))
-    burst("e_burst_shards", "ps_burst_shards", 22, {"shape": "sphere", "radius": 0.12, "direction": [0.0, 0.0, 0.0],
-                                                    "velocity": 5.6, "velocity_variance": 2.6})
+    burst("e_burst_shards", "ps_burst_shards", 36, {"shape": "sphere", "radius": 0.16, "direction": [0.0, 0.0, 0.0],
+                                                    "velocity": 6.4, "velocity_variance": 3.0})
     add(node("ps_burst_sparks", "particle_system", {
-        "max_particles": 180, "lifetime": 0.32, "lifetime_variance": 0.13, "size": 0.042, "size_variance": 0.02,
+        "max_particles": 200, "lifetime": 0.32, "lifetime_variance": 0.13, "size": 0.046, "size_variance": 0.022,
         "size_over_life": [[0.0, 1.0], [0.5, 0.8], [1.0, 0.0]], "color": rgba(hot),
         "color_over_life": [[0.0, rgba(hot)], [0.4, rgba(mix(violet, hot, 0.3))], [1.0, rgba(deep)]],
         "opacity_over_life": [[0.0, 1.0], [0.7, 0.8], [1.0, 0.0]], "emissive": 3.4, "drag": 4.6,
         "render_mode": "stretched_billboard", "velocity_stretch": 0.07, "blend": "additive",
         "soft_particle_distance": 0.05,
     }, layer="impact", inputs={"sprite": "tex_mote", "material": "mat_spark", "forces": ["f_drift", "f_fall"]}))
-    burst("e_burst_sparks", "ps_burst_sparks", 120, {"shape": "sphere", "radius": 0.1, "direction": [0.0, 0.0, 0.0],
-                                                     "velocity": 4.6, "velocity_variance": 3.2})
+    burst("e_burst_sparks", "ps_burst_sparks", 140, {"shape": "sphere", "radius": 0.12, "direction": [0.0, 0.0, 0.0],
+                                                     "velocity": 5.2, "velocity_variance": 3.6})
 
     # ---------------- dissipate: a loose ring of motes that hangs and fades ----------------
     add(node("ps_ring_motes", "particle_system", {
-        "max_particles": 90, "lifetime": 0.34, "lifetime_variance": 0.05, "size": 0.06, "size_variance": 0.03,
+        "max_particles": 100, "lifetime": 0.34, "lifetime_variance": 0.05, "size": 0.065, "size_variance": 0.03,
         "size_over_life": twinkle, "color": rgba(mix(violet, hot, 0.5)),
         "color_over_life": [[0.0, rgba(hot)], [0.4, rgba(mix(violet, hot, 0.25))], [1.0, rgba(deep)]],
         "opacity_over_life": [[0.0, 1.0], [0.55, 0.85], [1.0, 0.0]], "emissive": 3.0, "drag": 5.2,
@@ -1010,14 +1008,14 @@ def build() -> dict[str, Any]:
     }, layer="aftermath", inputs={"sprite": "tex_mote", "material": "mat_spark", "forces": ["f_drift"]}))
     # the ring emitter lies in XZ: stand it up and turn it to face the camera
     to_camera = heading_of(sub(tuple(CAMERA["position"]), TARGET))      # type: ignore[arg-type]
-    burst("e_ring_motes", "ps_ring_motes", 64, {
-        "shape": "ring", "radius": 0.42, "inner_radius": 0.3, "direction": [0.0, 0.0, 0.0], "velocity": 0.0,
-        "velocity_variance": 0.5, "radial_velocity": 3.3,
+    burst("e_ring_motes", "ps_ring_motes", 72, {
+        "shape": "ring", "radius": 0.5, "inner_radius": 0.36, "direction": [0.0, 0.0, 0.0], "velocity": 0.0,
+        "velocity_variance": 0.5, "radial_velocity": 3.8,
         "rotation": [round(90.0 - to_camera[1], 2),
                      round(to_camera[0] - fl.pivot_azimuth - fl.swing_side[F_IMPACT] + 90.0, 2), 0.0],
     }, layer="aftermath", times=[0.0, 0.05])
     add(node("ps_afterglow", "particle_system", {
-        "max_particles": 2, "lifetime": 0.4, "size": 1.7, "size_over_life": [[0.0, 0.6], [1.0, 1.15]],
+        "max_particles": 2, "lifetime": 0.4, "size": 2.0, "size_over_life": [[0.0, 0.6], [1.0, 1.15]],
         "color": rgba(mix(deep, violet, 0.6)), "opacity": 0.5,
         "opacity_over_life": [[0.0, 0.0], [0.2, 1.0], [0.55, 0.5], [1.0, 0.0]], "emissive": 1.0,
         "render_mode": "billboard", "blend": "additive", "soft_particle_distance": 0.3,
@@ -1025,21 +1023,34 @@ def build() -> dict[str, Any]:
     burst("e_afterglow", "ps_afterglow", 1, {"shape": "point", "velocity": 0.0}, layer="aftermath")
 
     # ---------------- lights ----------------
+    # a tight pool on the ground straight under the head (a spot, so it stays small at any height)
     add(node("l_missile", "light", {
-        "light_type": "point", "position": [0.0, -0.6, 0.0], "color": rgba(mix(violet, AZURE, 0.2)), "radius": 5.0,
-        "flicker_amplitude": 0.1, "flicker_frequency": 16.0,
-        "intensity": track([(0.0, 0.0), (0.16, 1.6), (0.24, 5.0), (0.4, 3.6), (1.3, 3.8), (T_IMPACT - 0.01, 5.0),
+        "light_type": "spot", "position": [0.0, -0.35, 0.0], "direction": [0.0, -1.0, 0.0], "cone_angle": 30.0,
+        "color": rgba(mix(violet, AZURE, 0.2)), "radius": 6.0, "flicker_amplitude": 0.1, "flicker_frequency": 16.0,
+        "intensity": track([(0.0, 0.0), (0.16, 1.2), (0.24, 3.4), (0.4, 2.6), (1.3, 2.8), (T_IMPACT - 0.01, 3.6),
                             (T_IMPACT + 0.02, 0.0)]),
         "duration": round(T_IMPACT + 0.03, 4),
     }, layer="light", parent="missile"))
+    # the facets are shaped by two lights that travel with the missile: a pale key above on the camera
+    # side and an azure rim from below on the far side (a spot aimed upwards, so it never reaches the ground)
     add(node("l_key", "light", {
-        "light_type": "point", "position": [0.2, 0.8, 0.9], "color": rgba(mix(ICE, hot, 0.5)), "radius": 2.4,
-        "intensity": track([(T_LAUNCH, 0.0), (0.3, 1.5), (1.38, 1.5), (T_IMPACT, 0.0)]),
+        "light_type": "point", "position": [0.5, 1.9, 1.5], "color": rgba(mix(ICE, hot, 0.6)), "radius": 4.5,
+        "intensity": track([(T_LAUNCH, 0.0), (0.3, 5.5), (1.38, 5.5), (T_IMPACT, 0.0)]),
         "start_time": round(T_LAUNCH, 4), "duration": round(T_IMPACT - T_LAUNCH, 4),
     }, layer="light", parent="missile"))
+    add(node("l_rim", "light", {
+        "light_type": "spot", "position": [-0.6, -1.3, -1.0], "direction": [0.343, 0.743, 0.572],
+        "cone_angle": 32.0, "color": rgba(AZURE), "radius": 4.0,
+        "intensity": track([(T_LAUNCH, 0.0), (0.3, 3.2), (1.38, 3.2), (T_IMPACT, 0.0)]),
+        "start_time": round(T_LAUNCH, 4), "duration": round(T_IMPACT - T_LAUNCH, 4),
+    }, layer="light", parent="missile"))
+    # the impact flash sits between the burst and the camera so the shards show lit facets
+    rig_at_impact = fl.rig_rotation(F_IMPACT, 1.0, 1.0)
+    towards_camera = unit(sub(tuple(CAMERA["position"]), TARGET))      # type: ignore[arg-type]
+    flash_offset = mat_vec(mat_t(rig_at_impact), add3(scale3(towards_camera, 1.3), (0.0, 0.5, 0.0)))
     add(node("l_impact", "light", {
-        "light_type": "point", "position": [0.0, 0.25, 0.45], "color": rgba(mix(violet, hot, 0.35)), "radius": 7.0,
-        "intensity": track([(hit, 0.0), (T_IMPACT + 0.03, 15.0), (1.52, 5.0), (1.66, 1.2), (1.78, 0.0)]),
+        "light_type": "point", "position": vec(flash_offset, 3), "color": rgba(mix(violet, hot, 0.45)), "radius": 6.0,
+        "intensity": track([(hit, 0.0), (T_IMPACT + 0.03, 8.0), (1.5, 4.0), (1.64, 1.6), (1.78, 0.0)]),
         "start_time": hit,
     }, layer="light", parent="missile"))
 
@@ -1075,8 +1086,8 @@ def build() -> dict[str, Any]:
             },
             "render_settings": {
                 "background": [0.0, 0.0, 0.0, 1.0],
-                "ground_albedo": 0.05,
-                "bloom_intensity": 0.24,
+                "ground_albedo": 0.03,
+                "bloom_intensity": 0.26,
                 "bloom_radius": 0.045,
                 "exposure": 0.95,
                 "grid": False,
@@ -1120,10 +1131,10 @@ def build_controls(nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [
         multiplier("missile_size", "Missile size", "Crystal head",
                    [bind("body", "scale"), bind("ps_halo", "size"), bind("ps_aura", "size")]
-                   + [bind(r, "width") for r in ribbons], 0.4, 2.5),
+                   + [bind(r, "width") for r in ribbons], 0.4, 1.6),
         multiplier("trail_intensity", "Braid glow", "Energy braid",
                    [bind(r, "color") for r in ribbons] + [bind("ps_haze", "color"), bind("ps_motes", "color"),
-                                                          bind("ps_glints", "color")]),
+                                                          bind("ps_twinkles", "color")]),
         multiplier("trail_length", "Braid length", "Energy braid",
                    [bind(r, "lifetime") for r in ribbons] + [bind("ps_haze", "lifetime"), bind("ps_motes", "lifetime")],
                    0.3, 2.5),
