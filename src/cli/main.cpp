@@ -99,7 +99,7 @@ Usage:
   aetherfx run <file.json> [--out DIR] [--fps N] [--width W] [--height H]
                            [--start S] [--end S] [--video] [--no-contact-sheet]
   aetherfx render <file.json> --time T [--out PATH] [--width W] [--height H]
-  aetherfx export <file.json> --format flipbook|frames|json --out PATH
+  aetherfx export <file.json> --format flipbook|frames|json|package --out PATH
                               [--fps N] [--columns N] [--width W] [--height H]
 
   serve      newline-delimited JSON-RPC 2.0 over stdin/stdout (the agent transport)
@@ -109,7 +109,8 @@ Usage:
   tool       call one tool on a fresh session and print its JSON result
   run        load, simulate and render a preview sequence with a contact sheet
   render     render a single frame at a given time
-  export     export json, a PNG frame sequence, or a flipbook sprite sheet
+  export     export json, a PNG frame sequence, a flipbook sprite sheet, or an
+             engine-agnostic interchange package (docs/PACKAGE_FORMAT.md)
 
 Add --help after any command for its own options. Exit codes: 0 ok, 1 failure, 2 usage.
 )";
@@ -328,14 +329,19 @@ int command_render(const Options& options) {
 
 int command_export(const Options& options) {
     if (options.has("help") || options.positional.empty()) {
-        std::cout << "aetherfx export <file.json> --format flipbook|frames|json --out PATH\n"
+        std::cout << "aetherfx export <file.json> --format flipbook|frames|json|package --out PATH\n"
                      "                            [--fps N] [--columns N] [--width W] [--height H]\n"
-                     "  Exports the effect: the document as json, a PNG frame sequence, or a flipbook\n"
-                     "  sprite sheet with a <path>.manifest.json describing the grid.\n";
+                     "  Exports the effect: the document as json, a PNG frame sequence, a flipbook\n"
+                     "  sprite sheet with a <path>.manifest.json describing the grid, or an\n"
+                     "  engine-agnostic interchange package - a directory (--out DIR, which may end\n"
+                     "  in .aetherfx) holding manifest.json, effect.json, the resolved runtime.json,\n"
+                     "  baked textures as PNG, meshes as OBJ and preview images, so an Unreal, Unity\n"
+                     "  or Godot importer can rebuild the effect. See docs/PACKAGE_FORMAT.md.\n"
+                     "  For package, --fps sets the animated-parameter sampling rate (default 30).\n";
         return options.positional.empty() && !options.has("help") ? kUsage : kOk;
     }
     if (!options.has("format") || !options.has("out")) {
-        std::cerr << "usage: aetherfx export <file.json> --format flipbook|frames|json --out PATH\n";
+        std::cerr << "usage: aetherfx export <file.json> --format flipbook|frames|json|package --out PATH\n";
         return kUsage;
     }
     Session session = make_session(options);

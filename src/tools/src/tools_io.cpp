@@ -11,6 +11,7 @@
 #include "aether/core/serialization.hpp"
 #include "aether/core/validation.hpp"
 #include "aether/render/image_io.hpp"
+#include "package_export.hpp"
 #include "tool_support.hpp"
 
 namespace aether::tools {
@@ -134,8 +135,9 @@ nlohmann::json export_effect(Session& session, const nlohmann::json& args) {
     if (format == "json") return export_json(session, doc, path);
     if (format == "frames") return export_frames(session, doc, options, path);
     if (format == "flipbook") return export_flipbook(session, doc, options, path);
-    throw Error("bad_argument",
-                "export_effect: unknown format \"" + format + "\"; expected \"json\", \"frames\" or \"flipbook\"");
+    if (format == "package") return export_package(session, doc, options, path);
+    throw Error("bad_argument", "export_effect: unknown format \"" + format +
+                                    "\"; expected \"json\", \"frames\", \"flipbook\" or \"package\"");
 }
 
 }  // namespace
@@ -157,12 +159,20 @@ void register_io_tools(ToolRegistry& registry) {
 
     registry.add({"export_effect",
                   "Export the effect: \"json\" writes the document, \"frames\" renders a PNG sequence into a "
-                  "directory, and \"flipbook\" renders a sprite sheet plus a <path>.manifest.json describing the grid "
-                  "(fps, frames, columns, rows, frame size, effect hash) so a game engine can play it back. "
-                  "Returns {path, files, manifest}.",
-                  make_schema({{"format", prop("string", "\"json\", \"frames\" or \"flipbook\".")},
-                               {"path", prop("string", "Destination file (json/flipbook) or directory (frames).")},
-                               {"options", prop("object", "fps, columns, width, height, start, end, camera, settings.")}},
+                  "directory, \"flipbook\" renders a sprite sheet plus a <path>.manifest.json describing the grid "
+                  "(fps, frames, columns, rows, frame size, effect hash) so a game engine can play it back, and "
+                  "\"package\" writes an engine-agnostic interchange directory (manifest.json, effect.json, the "
+                  "resolved runtime.json, baked textures as PNG, meshes as OBJ and preview images) that an Unreal, "
+                  "Unity or Godot importer can rebuild the effect from without this compiler - see "
+                  "docs/PACKAGE_FORMAT.md. Returns {path, files, manifest}.",
+                  make_schema({{"format", prop("string", "\"json\", \"frames\", \"flipbook\" or \"package\".")},
+                               {"path", prop("string", "Destination file (json/flipbook) or directory "
+                                                       "(frames/package; may end in .aetherfx).")},
+                               {"options", prop("object", "frames/flipbook: fps, columns, width, height, start, end, "
+                                                          "camera, settings. package: fps (animated-parameter "
+                                                          "sampling rate, default 30), curve_samples (32), exr "
+                                                          "(false), preview (true), obj (true), plus width, height, "
+                                                          "camera and settings for the preview images.")}},
                               {"format", "path"}),
                   false, "io"},
                  export_effect);

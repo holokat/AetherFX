@@ -111,11 +111,29 @@ content so the agent can see it.
 |---|---|---|
 | `save_effect` | `path?` | `{path}` |
 | `load_effect` | `path` | `{effect_id, effect, diagnostics}` becomes active |
-| `export_effect` | `format` (`json`, `flipbook`, `frames`), `path`, `options?` | `{path, files, manifest}` |
+| `export_effect` | `format` (`json`, `flipbook`, `frames`, `package`), `path`, `options?` | `{path, files, manifest}` |
 
-`flipbook` options: `fps`, `columns`, `width`, `height`, `start`, `end`,
-`camera`, `settings`; the manifest records frame count, grid, fps, duration,
-and the effect hash. Engine-specific exporters are future work.
+| format | `path` | writes |
+|---|---|---|
+| `json` | file | the effect document (the same bytes `save_effect` writes) |
+| `frames` | directory | `frame_0000.png` ... at `fps` over `start`..`end` |
+| `flipbook` | file | one sprite sheet plus `<path>.manifest.json` describing the grid |
+| `package` | directory | the engine-agnostic interchange package (docs/PACKAGE_FORMAT.md) |
+
+`frames`/`flipbook` options: `fps`, `columns`, `width`, `height`, `start`,
+`end`, `camera`, `settings`; the flipbook manifest records frame count, grid,
+fps, duration and the effect hash.
+
+`package` options: `fps` (sampling rate for animated parameters, default 30),
+`curve_samples` (32), `exr` (false: also write linear EXR next to each PNG),
+`preview` (true), `obj` (true), plus `width`, `height`, `camera` and `settings`
+for the preview images. `path` is a directory and may end in `.aetherfx`. It
+holds `manifest.json`, `effect.json` (the source document), `runtime.json` (the
+resolved, compiler-free description: phases, layers, every enabled node with
+its window, seed, effective parameters, sampled tracks and resolved
+references, plus the texture/mesh/material tables), `textures/<id>.png`,
+`meshes/<id>.obj` and `preview/`. Field-by-field reference:
+docs/PACKAGE_FORMAT.md.
 
 ## history
 
