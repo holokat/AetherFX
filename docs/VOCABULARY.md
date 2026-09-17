@@ -316,6 +316,11 @@ segments: int = 16 [1..256]
 noise_amplitude: float = 0 [0..]        displacement of interior points (m)
 noise_frequency: float = 4 [0..]
 jitter_rate: float = 30 [0..]           re-randomizations per second (0 = static)
+noise_scroll: float = 0                 m/s the displacement travels along the beam, origin -> target
+noise_loop: float = 0 [0..]             seconds; > 0 repeats the scrolling displacement exactly
+noise_offset: float = 0                 m; reads the displacement field further along (a phase shift)
+noise_seed: int = 0 [0..]               > 0: beams with the same number share one displacement field
+noise_taper: float = 0 [0..0.5]         fraction of the length the displacement eases in over, per end
 detail: int = 0 [0..5]                  octaves of midpoint displacement on top
 width_profile: enum = uniform [uniform, taper_end, taper_both, bulge]
 width_variance: float = 0 [0..1]        per-vertex seeded width jitter
@@ -367,6 +372,51 @@ did. Turn them on to get a lightning *strike* instead of a neon tube:
   at three times the core radius, and the faint outer glow. Small `core_width`
   (0.1-0.2) with a large `glow_width` (3-4) is a crisp white line inside a broad
   coloured haze; the defaults reproduce the V1 ratios.
+
+The `noise_scroll` / `noise_loop` / `noise_offset` / `noise_seed` /
+`noise_taper` flow parameters are the other half of the primitive: a **channel**
+(a drain, a heal, a tether, a chain) instead of a strike. They are also off at
+0, and they only shape the path, so every renderer and every engine bridge gets
+them for free through the beam vertices. A flowing field is measured from the
+*target* end, the end the flow arrives at, so the shape stays put in the hand
+that holds it while the origin extends, retracts or follows a moving victim.
+
+* `noise_scroll` slides the displacement field along the beam at that many
+  metres per second, from the origin to the target (negative = toward the
+  origin). The path then undulates continuously, like a rope or a stream, instead
+  of jumping to a new shape `jitter_rate` times a second - so set
+  `jitter_rate: 0`, and `detail: 0` (the midpoint octaves are seeded per re-roll
+  and would stand still while the wave passes through them); take the
+  smoothness from `segments` (40-60) and a low `noise_frequency` (0.15-0.3: the
+  fbm has three octaves, so the finest wave is a quarter of that wavelength).
+  The direction of travel is the read of a drain: put the *origin* on the victim
+  and the *target* on the caster and both the undulation and `pulse_speed` run
+  toward the caster.
+* `noise_loop` makes that motion exactly periodic: the field is cross-faded with
+  a copy of itself one period behind, both travelling at `noise_scroll`, so the
+  shape at `t + noise_loop` is the shape at `t` and a sustain phase of that
+  length (or a whole multiple) can be held by wrapping time without a pop. The
+  cross-fade is renormalised, so the amplitude does not sag in the middle of the
+  loop. Choose `pulse_speed = n / noise_loop` and the pulses close too.
+* `noise_seed` and `noise_offset` are what turn several strands into a braid.
+  Beams normally get a displacement field of their own (seeded by the node), so
+  five strands are five unrelated wiggles. Give them the same `noise_seed` (any
+  number above 0) and they all read ONE field - one shared spine - and then give
+  each a different `noise_offset` (0.3-1.5 m apart) and a different
+  `noise_amplitude`: every strand is now a phase-shifted, scaled copy of the same
+  travelling wave, so the strands separate and re-cross along the stream and
+  wind round each other in depth. Slightly different `noise_scroll` speeds make
+  them slide past one another over time.
+* `noise_taper` multiplies the displacement by
+  `smoothstep(0, taper, s) * smoothstep(0, taper, 1 - s)`, so the path leaves
+  both anchors along the straight line and swells in between. Several beams
+  between the same two points then braid into a spindle instead of fanning out
+  of each anchor in a burst of kinks. 0.2-0.35 for a channel.
+* A glow-only strand (`core_width: 0`, `glow_width: 1`) is a soft band of pure
+  colour with no white line in it; layer a few of different widths under one or
+  two thin cored strands for silk-like energy (see `tools/generators/drain_variants.py`).
+  Keep `pulse_speed` for the cored strands: the pulse multiplies both colour and
+  alpha, and on a glow-only band that burns out.
 
 ### light  (Tier 0)
 transform, window, plus:

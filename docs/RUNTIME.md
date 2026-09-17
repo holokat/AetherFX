@@ -198,6 +198,29 @@ emissive = emissive_base * emissive_over_life(u)
   Everything below is off at its default, so a beam with default parameters
   emits exactly the polyline and width described above.
 
+  * **flow** (`noise_scroll` m/s, `noise_loop` s, `noise_offset` m, `noise_seed`,
+    `noise_taper`): when `noise_scroll != 0` or `noise_offset != 0` the
+    displacement is read at `d + offset` instead of `along`, where `d = (1 - f) *
+    |path|` is the distance from the path's LAST point (the target, the end the
+    flow arrives at - so the shape stays put where it is held while the origin
+    extends, retracts or follows a moving victim) and `offset = noise_offset +
+    noise_scroll * t1`: the field travels from the origin to the target and the
+    path undulates instead of re-rolling. With `noise_loop = P > 0` the phase is
+    `tau = fmod(t1, P)`, `w = tau / P`, and the displacement is
+    `((1 - w) * n(d + noise_offset + noise_scroll * tau) + w * n(d + noise_offset +
+    noise_scroll * (tau - P))) / sqrt((1 - w)^2 + w^2)`: two copies of one field a
+    period apart, both moving at `noise_scroll`, cross-faded so that the path at
+    `t1 + P` equals the path at `t1` exactly (at `w = 0` the second term is
+    skipped, at `w -> 1` it has become the first), and renormalised because two
+    uncorrelated samples average to a smaller one. `noise_seed = k > 0` seeds the
+    field with `derive_seed(effect.seed, "$beam_noise", k)` instead of the node
+    stream, so every beam with the same `k` reads the same field (flicker,
+    `detail`, width and intensity jitter and branches stay per node).
+    `noise_taper = k > 0` multiplies the displacement by
+    `smoothstep(0, k, f) * smoothstep(0, k, 1 - f)` with `f = i / segments`.
+    Branches use the same terms along their own length. All of it is a pure
+    function of `t1`; with every one of these parameters at 0 the V1 expression
+    is evaluated unchanged, bit for bit.
   * **detail**: after the polyline is laid out, `detail` octaves of midpoint
     displacement refine it. Octave `o` inserts the midpoint of every segment
     and pushes it off the chord by `noise_amplitude * 0.5^(o+1)` along two

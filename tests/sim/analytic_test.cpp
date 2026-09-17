@@ -518,6 +518,199 @@ TEST_CASE("beam impact_flare marks both ends of the bolt", "[sim][analytic]") {
 }
 
 // ---------------------------------------------------------------------------
+// beams: flow (noise_scroll, noise_loop, noise_taper) - the channel / tether /
+// drain half of the primitive
+// ---------------------------------------------------------------------------
+
+namespace {
+
+// A horizontal channel with a static shape (no re-rolls), 6 m long.
+Effect channel_effect() {
+    Effect e;
+    e.seed = 4321;
+    e.duration = 4.0;
+    Node beam = node_of(NodeType::Beam, "bolt");
+    beam.parameters["origin"] = Parameter{Vec3{3.0f, 1.25f, 0.0f}};
+    beam.parameters["target"] = Parameter{Vec3{-3.0f, 1.35f, 0.0f}};
+    beam.parameters["segments"] = Parameter{48};
+    beam.parameters["width"] = Parameter{0.08f};
+    beam.parameters["noise_amplitude"] = Parameter{0.3f};
+    beam.parameters["noise_frequency"] = Parameter{0.5f};
+    beam.parameters["jitter_rate"] = Parameter{0.0f};
+    e.add_node(beam);
+    return e;
+}
+
+float largest_move(const std::vector<Vec3>& a, const std::vector<Vec3>& b) {
+    REQUIRE(a.size() == b.size());
+    float out = 0.0f;
+    for (size_t i = 0; i < a.size(); ++i) out = std::max(out, distance(a[i], b[i]));
+    return out;
+}
+
+}  // namespace
+
+TEST_CASE("beam noise_scroll makes the path travel smoothly instead of re-rolling", "[sim][analytic]") {
+    Effect e = channel_effect();
+    std::unique_ptr<sim::IRuntime> rt;
+    const std::vector<Vec3> still_a = stepped_bolt(rt, e, 0.5).paths.front().points;
+    const std::vector<Vec3> still_b = stepped_bolt(rt, e, 1.5).paths.front().points;
+    CHECK(still_a == still_b);  // jitter_rate 0 and no scroll: a frozen shape
+
+    e.find_node("bolt")->parameters["noise_scroll"] = Parameter{2.0f};
+    std::unique_ptr<sim::IRuntime> a, b, c;
+    const std::vector<Vec3> at_050 = stepped_bolt(a, e, 0.5).paths.front().points;
+    const std::vector<Vec3> again = stepped_bolt(b, e, 0.5).paths.front().points;
+    const std::vector<Vec3> next_frame = stepped_bolt(c, e, 0.5 + 1.0 / 60.0).paths.front().points;
+    CHECK(at_050 == again);                                // a pure function of time
+    CHECK(at_050 != still_a);                              // it moves ...
+    CHECK(largest_move(at_050, next_frame) > 1e-4f);       // ... every frame ...
+    CHECK(largest_move(at_050, next_frame) < 0.05f);       // ... and by a little: no re-roll jump
+    // the endpoints never leave the anchors
+    CHECK(distance(at_050.front(), Vec3{3.0f, 1.25f, 0.0f}) < 1e-5f);
+    CHECK(distance(at_050.back(), Vec3{-3.0f, 1.35f, 0.0f}) < 1e-5f);
+
+    // The field travels origin -> target at noise_scroll m/s and is measured from the
+    // target end (the end the flow arrives at): at t = 0.5 s and 2 m/s a vertex
+    // `d` metres from the target reads the displacement field at `d + 1`.
+    const uint64_t stream = derive_seed(e.seed, "bolt", std::optional<uint32_t>{});
+    const uint32_t seed = static_cast<uint32_t>(stream ^ (stream >> 32));
+    const procedural::FbmParams fbm{3, 2.0f, 0.5f, procedural::NoiseBasis::Simplex};
+    const Vec3 origin{3.0f, 1.25f, 0.0f}, target{-3.0f, 1.35f, 0.0f};
+    const Vec3 span = target - origin;
+    const float span_length = length(span);
+    const Vec3 forward = span / span_length;
+    const Vec3 u = orthogonal(forward);
+    const Vec3 v = cross(forward, u);
+    for (int i = 1; i < 48; ++i) {
+        const float f = static_cast<float>(i) / 48.0f;
+        const float along = ((1.0f - f) * span_length + 2.0f * 0.5f) * 0.5f;
+        const Vec3 expected = origin + span * f +
+                              u * (0.3f * procedural::fbm3(Vec3{along, 0.0f, 0.0f}, seed, fbm)) +
+                              v * (0.3f * procedural::fbm3(Vec3{along, 17.0f, 0.0f}, seed, fbm));
+        INFO("vertex " << i);
+        CHECK(distance(at_050[static_cast<size_t>(i)], expected) < 1e-5f);
+    }
+}
+
+TEST_CASE("beam noise_loop repeats the flow exactly", "[sim][analytic]") {
+    Effect e = channel_effect();
+    Node* node = e.find_node("bolt");
+    node->parameters["noise_scroll"] = Parameter{1.5f};
+    node->parameters["noise_loop"] = Parameter{1.5f};  // 90 steps of 1/60: frame times land on the period
+
+    std::unique_ptr<sim::IRuntime> a, b, c, d;
+    const std::vector<Vec3> start = stepped_bolt(a, e, 0.5).paths.front().points;
+    const std::vector<Vec3> one_loop = stepped_bolt(b, e, 2.0).paths.front().points;
+    const std::vector<Vec3> two_loops = stepped_bolt(c, e, 3.5).paths.front().points;
+    const std::vector<Vec3> half_way = stepped_bolt(d, e, 1.25).paths.front().points;
+    CHECK(largest_move(start, one_loop) < 1e-4f);
+    CHECK(largest_move(start, two_loops) < 1e-4f);
+    CHECK(largest_move(start, half_way) > 0.02f);  // it is a loop, not a freeze
+
+    // No pop where the loop wraps (t = 1.5): consecutive frames across the seam move
+    // about as much as consecutive frames anywhere else.
+    std::unique_ptr<sim::IRuntime> rt = runtime_for(e);
+    rt->simulate_to(1.5 - 1.0 / 60.0);
+    const std::vector<Vec3> before = beam_of(rt->state(), "bolt")->paths.front().points;
+    rt->step();
+    const std::vector<Vec3> at_seam = beam_of(rt->state(), "bolt")->paths.front().points;
+    rt->step();
+    const std::vector<Vec3> after = beam_of(rt->state(), "bolt")->paths.front().points;
+    const float across = largest_move(before, at_seam);
+    const float beyond = largest_move(at_seam, after);
+    CHECK(across < 0.05f);
+    CHECK(beyond < 0.05f);
+
+    // The cross-fade is renormalised, so the loop's mid point keeps its amplitude.
+    const auto reach = [&](const std::vector<Vec3>& points) {
+        float out = 0.0f;
+        for (size_t i = 0; i < points.size(); ++i) {
+            const float f = static_cast<float>(i) / static_cast<float>(points.size() - 1);
+            out = std::max(out, distance(points[i], lerp(points.front(), points.back(), f)));
+        }
+        return out;
+    };
+    CHECK(reach(half_way) > 0.4f * reach(start));
+    CHECK(reach(half_way) < 2.5f * reach(start));
+}
+
+TEST_CASE("beams sharing a noise_seed follow one field and noise_offset shifts its phase", "[sim][analytic]") {
+    // Three strands between the same anchors: two read the shared field 7, the
+    // third keeps the field its own node id seeds.
+    Effect e = channel_effect();
+    const Vec3 origin{3.0f, 1.25f, 0.0f}, target{-3.0f, 1.35f, 0.0f};
+    const float span_length = length(target - origin);
+    const float spacing = span_length / 48.0f;  // metres between vertices
+    {
+        Node* bolt = e.find_node("bolt");
+        bolt->parameters["noise_scroll"] = Parameter{2.0f};
+        bolt->parameters["noise_seed"] = Parameter{7};
+    }
+    Node twin = *e.find_node("bolt");
+    twin.id = "twin";
+    Node shifted = twin;
+    shifted.id = "shifted";
+    shifted.parameters["noise_offset"] = Parameter{8.0f * spacing};
+    Node loner = twin;
+    loner.id = "loner";
+    loner.parameters["noise_seed"] = Parameter{0};
+    e.add_node(twin);
+    e.add_node(shifted);
+    e.add_node(loner);
+
+    std::unique_ptr<sim::IRuntime> rt = runtime_for(e);
+    rt->simulate_to(0.75);
+    const std::vector<Vec3> bolt = beam_of(rt->state(), "bolt")->paths.front().points;
+    const std::vector<Vec3> same = beam_of(rt->state(), "twin")->paths.front().points;
+    const std::vector<Vec3> moved = beam_of(rt->state(), "shifted")->paths.front().points;
+    const std::vector<Vec3> own = beam_of(rt->state(), "loner")->paths.front().points;
+    REQUIRE(bolt.size() == 49u);
+    CHECK(same == bolt);                       // one field, one path - whatever the node is called
+    CHECK(largest_move(own, bolt) > 0.02f);    // noise_seed 0 keeps the node's own field
+    CHECK(largest_move(moved, bolt) > 0.02f);  // a phase shift is a different path ...
+
+    // ... but the same wave: the field is measured from the target end, so a strand
+    // reading it 8 vertex spacings further along has, at vertex i, the displacement
+    // the unshifted strand has 8 vertices nearer the origin.
+    const auto displacement = [&](const std::vector<Vec3>& points, size_t i) {
+        return points[i] - lerp(origin, target, static_cast<float>(i) / 48.0f);
+    };
+    for (size_t i = 9; i < 48; ++i) {
+        INFO("vertex " << i);
+        CHECK(distance(displacement(moved, i), displacement(bolt, i - 8)) < 2e-5f);
+    }
+}
+
+TEST_CASE("beam noise_taper eases the displacement in from both anchors", "[sim][analytic]") {
+    Effect e = channel_effect();
+    std::unique_ptr<sim::IRuntime> rt;
+    const std::vector<Vec3> plain = stepped_bolt(rt, e, 0.5).paths.front().points;
+
+    e.find_node("bolt")->parameters["noise_taper"] = Parameter{0.25f};
+    std::unique_ptr<sim::IRuntime> tapered_rt;
+    const std::vector<Vec3> tapered = stepped_bolt(tapered_rt, e, 0.5).paths.front().points;
+    REQUIRE(tapered.size() == plain.size());
+
+    const Vec3 origin = plain.front(), target = plain.back();
+    const auto offset = [&](const std::vector<Vec3>& points, size_t i) {
+        const float f = static_cast<float>(i) / static_cast<float>(points.size() - 1);
+        return distance(points[i], lerp(origin, target, f));
+    };
+    const size_t last = plain.size() - 1;
+    for (size_t i = 0; i <= last; ++i) {
+        const float f = static_cast<float>(i) / static_cast<float>(last);
+        const float expected = smoothstep(0.0f, 0.25f, f) * smoothstep(0.0f, 0.25f, 1.0f - f);
+        INFO("vertex " << i);
+        CHECK(offset(tapered, i) == Approx(offset(plain, i) * expected).margin(1e-5));
+    }
+    // beside the anchors the path hugs the straight line; the middle is untouched
+    CHECK(offset(tapered, 1) < 0.05f * std::max(offset(plain, 1), 1e-3f) + 1e-4f);
+    CHECK(offset(tapered, last - 1) < 0.05f * std::max(offset(plain, last - 1), 1e-3f) + 1e-4f);
+    CHECK(distance(tapered[last / 2], plain[last / 2]) < 1e-6f);
+}
+
+// ---------------------------------------------------------------------------
 // decals, meshes, camera, post effects, volumes
 // ---------------------------------------------------------------------------
 

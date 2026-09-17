@@ -431,6 +431,21 @@
             "noise_frequency": {
               "$ref": "#/$defs/param_float_min0"
             },
+            "noise_loop": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "noise_offset": {
+              "$ref": "#/$defs/param_float"
+            },
+            "noise_scroll": {
+              "$ref": "#/$defs/param_float"
+            },
+            "noise_seed": {
+              "$ref": "#/$defs/param_int_min0"
+            },
+            "noise_taper": {
+              "$ref": "#/$defs/param_float_min0_max0p5"
+            },
             "origin": {
               "$ref": "#/$defs/param_vec3"
             },
@@ -3246,6 +3261,32 @@
               "$ref": "#/$defs/keyframe_track"
             },
             "value": {
+              "minimum": 0,
+              "type": "number"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_float_min0_max0p5": {
+      "anyOf": [
+        {
+          "maximum": 0.5,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "maximum": 0.5,
               "minimum": 0,
               "type": "number"
             }

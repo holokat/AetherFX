@@ -271,6 +271,56 @@
           "type": "float",
           "units": "1/m"
         },
+        "noise_loop": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "when > 0 the scrolling displacement repeats exactly with this period, so a sustain phase of that length (or a multiple) loops without a pop (0 = never repeats)",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "s"
+        },
+        "noise_offset": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "reads the displacement field this much further along: beams that share a `noise_seed` but differ in `noise_offset` are phase-shifted copies of one wave, so they separate and re-cross like a braid",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "m"
+        },
+        "noise_scroll": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "speed the displacement travels along the beam, origin to target (negative = toward the origin): the path undulates like a flowing stream instead of re-rolling; use it with jitter_rate 0 and detail 0 for channels, tethers and drains",
+          "enum": [],
+          "max": null,
+          "min": null,
+          "type": "float",
+          "units": "m/s"
+        },
+        "noise_seed": {
+          "animatable": false,
+          "default": 0,
+          "description": "when > 0 the displacement field is seeded by this number (with the effect seed) instead of by the node, so several beams can follow one shared spine",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "int",
+          "units": ""
+        },
+        "noise_taper": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "fraction of the beam length over which the displacement eases in from each end, so the path leaves both anchors smoothly (0 = full displacement beside the endpoints)",
+          "enum": [],
+          "max": 0.5,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
         "origin": {
           "animatable": true,
           "default": [
