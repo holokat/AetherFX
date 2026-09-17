@@ -12,8 +12,8 @@
 namespace aether::tools {
 namespace {
 
-// `template`: "empty", the name of a file in examples/effects ("fireball",
-// "fireball.json"), or an absolute/relative path to a document.
+// `template`: "empty", the name of a file in examples/effects ("fire_bolt",
+// "fire_bolt.json"), or an absolute/relative path to a document.
 std::filesystem::path resolve_template(const std::string& name) {
     std::filesystem::path direct(name);
     std::error_code ec;
@@ -143,7 +143,7 @@ nlohmann::json get_effect_json(Session& session, const nlohmann::json& args) {
 void register_effect_tools(ToolRegistry& registry) {
     registry.add({"create_effect",
                   "Create a new effect document and make it the active one. Use `template` to start from one of the "
-                  "bundled examples (\"fireball\", \"fire_aoe\", \"lightning_strike\") or a path to an effect .json; "
+                  "bundled examples (\"fire_bolt\", \"fire_aoe\", \"lightning_strike\") or a path to an effect .json; "
                   "\"empty\" (the default) starts from nothing. Returns {effect_id, effect, diagnostics}.",
                   make_schema({{"name", prop("string", "Effect name, e.g. \"Fire AOE\" (default \"untitled\").")},
                                {"duration", prop("number", "Effect duration in seconds (default 2).")},

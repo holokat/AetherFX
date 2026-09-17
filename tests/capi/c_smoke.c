@@ -41,7 +41,7 @@ int main(void) {
     CHECK(aetherfx_abi_version() == AETHERFX_ABI_VERSION, "abi version");
     printf("aetherfx %s (abi %d)\n", aetherfx_version_string(), aetherfx_abi_version());
 
-    snprintf(path, sizeof(path), "%s/examples/effects/fireball.json", AETHER_SOURCE_DIR);
+    snprintf(path, sizeof(path), "%s/tests/fixtures/effects/fireball.json", AETHER_SOURCE_DIR);
     effect = aetherfx_effect_load_file(path);
     CHECK(effect != NULL, "load fireball.json");
     CHECK(strcmp(aetherfx_effect_name(effect), "Fireball") == 0, "effect name");

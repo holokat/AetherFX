@@ -13,6 +13,7 @@
 #include "aether/core/controls.hpp"
 #include "aether/core/serialization.hpp"
 #include "aether/sim/runtime.hpp"
+#include "../support/example_path.hpp"
 
 using namespace aether;
 using Catch::Approx;
@@ -95,8 +96,7 @@ TEST_CASE("default controls change nothing in any example", "[sim][controls]") {
 }
 
 TEST_CASE("a control that is moved does change the simulation", "[sim][controls]") {
-    const Effect plain = load_effect_file(std::filesystem::path(AETHER_SOURCE_DIR) / "examples" / "effects" /
-                                          "fireball.json");
+    const Effect plain = load_effect_file(aether_example_file("fireball.json"));
     Effect controlled = plain;
     controlled.controls = generate_default_controls(controlled);
     Control* density = controlled.find_control("global_density");
@@ -119,8 +119,7 @@ TEST_CASE("a control that is moved does change the simulation", "[sim][controls]
 // ---------------------------------------------------------------------------
 
 TEST_CASE("time_scale leaves the simulation bit-identical", "[sim][controls]") {
-    const Effect plain = load_effect_file(std::filesystem::path(AETHER_SOURCE_DIR) / "examples" / "effects" /
-                                          "fireball.json");
+    const Effect plain = load_effect_file(aether_example_file("fireball.json"));
     Effect fast = plain;
     fast.time_scale = 2.0;
     Effect slow = plain;
@@ -158,8 +157,7 @@ TEST_CASE("time_scale leaves the simulation bit-identical", "[sim][controls]") {
 }
 
 TEST_CASE("the generated Speed control moves time_scale and nothing else", "[sim][controls]") {
-    const Effect plain = load_effect_file(std::filesystem::path(AETHER_SOURCE_DIR) / "examples" / "effects" /
-                                          "fireball.json");
+    const Effect plain = load_effect_file(aether_example_file("fireball.json"));
     Effect controlled = plain;
     controlled.controls = generate_default_controls(controlled);
     Control* speed = controlled.find_control("global_speed");

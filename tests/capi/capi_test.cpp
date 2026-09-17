@@ -12,13 +12,14 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <aetherfx/aetherfx.h>
+#include "../support/example_path.hpp"
 
 using Catch::Approx;
 
 namespace {
 
 std::string example(const char* name) {
-    return std::string(AETHER_SOURCE_DIR) + "/examples/effects/" + name;
+    return aether_example_file(name).string();
 }
 
 // --- a dependency-free JSON well-formedness check ---------------------------

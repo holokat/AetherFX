@@ -26,6 +26,7 @@ from aetherfx.studio.stream import STREAM_VERSION, decode_header, encode_frame
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EXAMPLES_DIR = REPO_ROOT / "examples" / "effects"
+FIXTURES_DIR = REPO_ROOT / "tests" / "fixtures" / "effects"   # documents kept only for tests (the first Fireball)
 
 
 def _document_camera(name: str) -> dict:
@@ -45,12 +46,15 @@ if HAVE_NATIVE:  # pragma: no branch - the module is skipped otherwise
 
 
 def effect_document(name: str) -> dict:
-    return json.loads((EXAMPLES_DIR / f"{name}.json").read_text())
+    path = EXAMPLES_DIR / f"{name}.json"
+    if not path.exists():
+        path = FIXTURES_DIR / f"{name}.json"          # test-only documents such as the first Fireball
+    return json.loads(path.read_text())
 
 
 @pytest.fixture(scope="module")
 def fireball() -> native.Compiled:
-    with native.Effect.from_file(EXAMPLES_DIR / "fireball.json") as effect:
+    with native.Effect.from_file(FIXTURES_DIR / "fireball.json") as effect:
         compiled = effect.compile(1.0 / 60.0)
     yield compiled
     compiled.close()
@@ -93,7 +97,7 @@ class TestLibrary:
 
 class TestEffect:
     def test_fireball_loads_validates_and_compiles(self, fireball: native.Compiled):
-        with native.Effect.from_file(EXAMPLES_DIR / "fireball.json") as effect:
+        with native.Effect.from_file(FIXTURES_DIR / "fireball.json") as effect:
             assert effect.name == "Fireball"
             assert effect.duration == pytest.approx(2.5)
             diagnostics = effect.validate()
@@ -105,7 +109,7 @@ class TestEffect:
         assert set(fireball.plan) >= {"nodes", "tiers", "resources", "diagnostics"}
 
     def test_to_json_round_trips_and_set_parameter_takes_effect(self):
-        with native.Effect.from_file(EXAMPLES_DIR / "fireball.json") as effect:
+        with native.Effect.from_file(FIXTURES_DIR / "fireball.json") as effect:
             document = effect.to_dict()
             assert document["name"] == "Fireball"
             effect.set_parameter("cam", "fov", 63.5)
@@ -118,7 +122,7 @@ class TestEffect:
     def test_controls_scale_the_effect_before_it_compiles(self):
         # A game spawns a weaker instance of the same effect: set the control,
         # then compile.  The authored values never change (docs/CONTROLS.md).
-        document = json.loads((EXAMPLES_DIR / "fireball.json").read_text())
+        document = json.loads((FIXTURES_DIR / "fireball.json").read_text())
         document["controls"] = [
             {
                 "id": "brightness",
@@ -169,7 +173,7 @@ class TestEffect:
 
     def test_time_scale_maps_wall_time_onto_effect_time(self):
         # The default: an effect plays at the speed it was authored at.
-        with native.Effect.from_file(EXAMPLES_DIR / "fireball.json") as effect:
+        with native.Effect.from_file(FIXTURES_DIR / "fireball.json") as effect:
             assert effect.time_scale == pytest.approx(1.0)
             assert effect.wall_duration == pytest.approx(effect.duration)
             with effect.compile(1.0 / 60.0) as compiled:
@@ -178,7 +182,7 @@ class TestEffect:
 
         # An authored speed, plus a Speed control bound to the reserved
         # "$effect" target, which only folds in when the effect compiles.
-        document = json.loads((EXAMPLES_DIR / "fireball.json").read_text())
+        document = json.loads((FIXTURES_DIR / "fireball.json").read_text())
         document["time_scale"] = 1.5
         document["controls"] = [
             {
@@ -221,11 +225,11 @@ class TestEffect:
             assert effect.to_dict()["time_scale"] == pytest.approx(1.5)
 
     def test_an_effect_without_controls_has_none(self):
-        with native.Effect.from_file(EXAMPLES_DIR / "fireball.json") as effect:
+        with native.Effect.from_file(FIXTURES_DIR / "fireball.json") as effect:
             assert effect.controls() == []
 
     def test_closed_handles_refuse_to_be_used(self):
-        effect = native.Effect.from_file(EXAMPLES_DIR / "fireball.json")
+        effect = native.Effect.from_file(FIXTURES_DIR / "fireball.json")
         effect.close()
         effect.close()  # idempotent
         assert effect.closed

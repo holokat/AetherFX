@@ -8,6 +8,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <nlohmann/json.hpp>
+#include "../support/example_path.hpp"
 
 namespace {
 
@@ -160,7 +161,7 @@ TEST_CASE("aetherfx serve survives a malformed line", "[integration][cli]") {
 
 TEST_CASE("the CLI commands work on the example effects", "[integration][cli]") {
     const std::filesystem::path example =
-        std::filesystem::path(AETHER_SOURCE_DIR) / "examples" / "effects" / "fireball.json";
+        aether_example_file("fireball.json");
     const std::filesystem::path dir = test_output_dir();
 
     SECTION("tools lists the registry by category") {

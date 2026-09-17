@@ -13,6 +13,7 @@ file, which keeps it well under ten seconds.
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 
 import pytest
@@ -23,7 +24,7 @@ from aetherfx.studio.server import StudioConfig, create_app, slugify
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EXAMPLES_DIR = REPO_ROOT / "examples" / "effects"
-FIREBALL = EXAMPLES_DIR / "fireball.json"
+FIXTURES_DIR = REPO_ROOT / "tests" / "fixtures" / "effects"
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 
 BINARY = find_binary(None)
@@ -40,11 +41,25 @@ def output_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
 
 
 @pytest.fixture(scope="module")
-def client(output_dir: Path):
+def examples_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """The shipped library plus the test-only Fireball, which is a hidden built-in in this studio."""
+    folder = tmp_path_factory.mktemp("studio-examples")
+    for source in list(EXAMPLES_DIR.glob("*.json")) + list(FIXTURES_DIR.glob("*.json")):
+        shutil.copy(source, folder / source.name)
+    return folder
+
+
+@pytest.fixture(scope="module")
+def fireball(examples_dir: Path) -> Path:
+    return examples_dir / "fireball.json"
+
+
+@pytest.fixture(scope="module")
+def client(output_dir: Path, examples_dir: Path):
     """The studio with a real engine and no generator backend."""
     config = StudioConfig(
         output_dir=output_dir,
-        examples_dir=EXAMPLES_DIR,
+        examples_dir=examples_dir,
         binary=BINARY,
         generator="none",
         port=8779,
@@ -54,9 +69,9 @@ def client(output_dir: Path):
 
 
 @pytest.fixture(scope="module")
-def loaded(client: TestClient) -> dict:
+def loaded(client: TestClient, fireball: Path) -> dict:
     """Load the fireball example once; the whole module edits that effect."""
-    response = client.post("/api/effects/load", json={"path": str(FIREBALL)})
+    response = client.post("/api/effects/load", json={"path": str(fireball)})
     assert response.status_code == 200, response.text
     return response.json()
 
@@ -326,7 +341,7 @@ def test_frame_needs_an_effect(output_dir: Path) -> None:
 
 @pytest.mark.parametrize(
     "path",
-    [str(FIREBALL), "../../etc/hosts", "/etc/hosts", str(REPO_ROOT / "README.md")],
+    [str(EXAMPLES_DIR / "fire_aoe.json"), "../../etc/hosts", "/etc/hosts", str(REPO_ROOT / "README.md")],
 )
 def test_file_refuses_paths_outside_the_output_dir(client: TestClient, path: str) -> None:
     response = client.get("/api/file", params={"path": path})

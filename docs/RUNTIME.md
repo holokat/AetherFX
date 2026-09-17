@@ -312,7 +312,7 @@ from `FrameState::hash()`.
 
 ## 10. Determinism test contract
 
-`tests/sim`: simulate `examples/effects/fireball.json` for 60 steps twice
+`tests/sim`: simulate `tests/fixtures/effects/fireball.json` for 60 steps twice
 from fresh runtimes; the sequence of `FrameState::hash()` must be identical.
 Changing `effect.seed` must change the hash. Simulating to `t` in one
 `simulate_to` call must equal stepping manually.

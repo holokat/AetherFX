@@ -18,7 +18,7 @@ using nlohmann::json;
 
 namespace {
 
-// examples/effects/fireball.json, node "tex_puff".
+// tests/fixtures/effects/fireball.json, node "tex_puff".
 const char* kTexPuff = R"JSON({
   "nodes": [
     {"id": "r", "op": "gradient_radial", "params": {"radius": 0.5, "falloff": "smooth"}},
@@ -54,7 +54,7 @@ const char* kTexScorch = R"JSON({
   "output": "l"
 })JSON";
 
-// examples/effects/fireball.json, node "tex_spark".
+// tests/fixtures/effects/fireball.json, node "tex_spark".
 const char* kTexSpark = R"JSON({
   "nodes": [{"id": "r", "op": "gradient_radial", "params": {"radius": 0.5, "falloff": "quadratic"}}],
   "output": "r"

@@ -180,7 +180,7 @@ Five calls carry the whole integration.
 if (aetherfx_abi_version() != AETHERFX_ABI_VERSION) { /* bail out */ }
 
 /* 2. once per effect asset, at load time (this is the expensive step) */
-aetherfx_effect* effect = aetherfx_effect_load_file("effects/fireball.json");
+aetherfx_effect* effect = aetherfx_effect_load_file("effects/fire_bolt.json");
 /* optional: a weaker or stronger instance of the same effect, set before the
    compile (docs/CONTROLS.md) */
 aetherfx_effect_set_control(effect, "flames_intensity", 0.4);
@@ -482,7 +482,7 @@ and a small RAII layer turns handles into objects and statuses into
 ```python
 from aetherfx.native import Effect
 
-with Effect.from_file("examples/effects/fireball.json") as effect:
+with Effect.from_file("examples/effects/fire_bolt.json") as effect:
     print(effect.name, effect.duration, effect.validate()["ok"])
     compiled = effect.compile(1.0 / 60.0)      # bakes textures and meshes; share it
 assert compiled.ok, compiled.diagnostics       # errors are data, not an exception

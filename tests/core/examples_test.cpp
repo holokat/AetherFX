@@ -14,6 +14,7 @@
 #include "aether/core/serialization.hpp"
 #include "aether/core/spec.hpp"
 #include "aether/core/validation.hpp"
+#include "../support/example_path.hpp"
 
 using namespace aether;
 using Catch::Approx;
@@ -21,7 +22,7 @@ using Catch::Approx;
 namespace {
 
 std::filesystem::path example_path(const std::string& name) {
-    return std::filesystem::path(AETHER_SOURCE_DIR) / "examples" / "effects" / name;
+    return aether_example_file(name);
 }
 
 const std::vector<std::string>& example_names() {

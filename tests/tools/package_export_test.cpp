@@ -14,6 +14,7 @@
 #include "aether/core/error.hpp"
 #include "aether/render/image_io.hpp"
 #include "aether/tools/registry.hpp"
+#include "../support/example_path.hpp"
 
 using namespace aether;
 using namespace aether::tools;
@@ -29,7 +30,7 @@ std::filesystem::path output_dir() {
 }
 
 std::filesystem::path example(const std::string& file) {
-    return std::filesystem::path(AETHER_SOURCE_DIR) / "examples" / "effects" / file;
+    return aether_example_file(file);
 }
 
 std::string read_text(const std::filesystem::path& path) {

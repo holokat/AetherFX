@@ -7,7 +7,7 @@ code never sees a raw pointer:
 
     from aetherfx.native import Effect
 
-    with Effect.from_file("examples/effects/fireball.json") as effect:
+    with Effect.from_file("examples/effects/fire_bolt.json") as effect:
         compiled = effect.compile(fixed_dt=1.0 / 60.0)
         runtime = compiled.runtime()
         runtime.simulate_to(1.0)

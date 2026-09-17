@@ -16,6 +16,7 @@
 #include "aether/core/serialization.hpp"
 #include "aether/core/spec.hpp"
 #include "aether/imageio/image_io.hpp"
+#include "../support/example_path.hpp"
 
 using namespace aether;
 using compiler::CompiledEffect;
@@ -26,7 +27,7 @@ using compiler::Tier;
 namespace {
 
 std::filesystem::path example_path(const std::string& name) {
-    return std::filesystem::path(AETHER_SOURCE_DIR) / "examples" / "effects" / name;
+    return aether_example_file(name);
 }
 
 Effect load_example(const std::string& name) { return load_effect_file(example_path(name)); }

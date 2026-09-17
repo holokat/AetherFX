@@ -522,7 +522,7 @@ def test_guard_uses_the_mcp_path_too(studio: TestClient) -> None:
     with pytest.raises(StudioError):
         instance.guard_tool("save_effect", {"path": str(SAMPLE)})
     with pytest.raises(StudioError):
-        instance.guard_tool("save_effect", {"path": str(EXAMPLES_DIR / "fireball.json")})
+        instance.guard_tool("save_effect", {"path": str(EXAMPLES_DIR / "fire_bolt.json")})
     instance.guard_tool("save_effect", {"path": str(instance.effects_dir / "mine.json")})
 
 

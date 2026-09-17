@@ -11,6 +11,7 @@
 #include "aether/core/controls.hpp"
 #include "aether/core/serialization.hpp"
 #include "aether/core/spec.hpp"
+#include "../support/example_path.hpp"
 
 using namespace aether;
 using Catch::Approx;
@@ -18,7 +19,7 @@ using Catch::Approx;
 namespace {
 
 Effect load_example(const std::string& name) {
-    return load_effect_file(std::filesystem::path(AETHER_SOURCE_DIR) / "examples" / "effects" / name);
+    return load_effect_file(aether_example_file(name));
 }
 
 compiler::CompileOptions no_textures() {

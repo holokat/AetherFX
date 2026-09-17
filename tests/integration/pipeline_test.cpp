@@ -13,6 +13,7 @@
 #include "aether/core/serialization.hpp"
 #include "aether/sim/runtime.hpp"
 #include "aether/tools/registry.hpp"
+#include "../support/example_path.hpp"
 
 using namespace aether;
 using namespace aether::tools;
@@ -28,7 +29,7 @@ std::filesystem::path output_dir(const std::string& name) {
 }
 
 std::filesystem::path example(const std::string& name) {
-    return std::filesystem::path(AETHER_SOURCE_DIR) / "examples" / "effects" / name;
+    return aether_example_file(name);
 }
 
 const std::vector<std::string>& example_names() {

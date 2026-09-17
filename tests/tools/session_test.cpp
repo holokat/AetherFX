@@ -9,6 +9,7 @@
 #include "aether/core/error.hpp"
 #include "aether/core/serialization.hpp"
 #include "aether/tools/registry.hpp"
+#include "../support/example_path.hpp"
 
 using namespace aether;
 using namespace aether::tools;
@@ -24,7 +25,7 @@ std::filesystem::path output_dir() {
 }
 
 std::filesystem::path example(const std::string& name) {
-    return std::filesystem::path(AETHER_SOURCE_DIR) / "examples" / "effects" / name;
+    return aether_example_file(name);
 }
 
 nlohmann::json call(Session& session, const std::string& tool, nlohmann::json args = nlohmann::json::object()) {
@@ -426,15 +427,15 @@ TEST_CASE("the timeline stages the effect and binds nodes to phases", "[tools][s
 
 TEST_CASE("create_effect starts from a bundled example", "[tools][session]") {
     Session session(output_dir());
-    const nlohmann::json created = call(session, "create_effect", {{"template", "fireball"}});
-    CHECK(created["effect"]["name"] == "Fireball");
-    CHECK(created["effect"]["duration"] == Approx(2.5));
-    CHECK(created["effect"]["nodes"].size() == 22);
+    const nlohmann::json created = call(session, "create_effect", {{"template", "fire_bolt"}});
+    CHECK(created["effect"]["name"] == "Fire Bolt");
+    CHECK(created["effect"]["duration"] == Approx(3.0));
+    CHECK(created["effect"]["nodes"].size() == 80);
     CHECK(created["diagnostics"]["errors"] == 0);
 
     const nlohmann::json renamed =
-        call(session, "create_effect", {{"template", "fireball.json"}, {"name", "My Fireball"}});
-    CHECK(renamed["effect"]["name"] == "My Fireball");
+        call(session, "create_effect", {{"template", "fire_bolt.json"}, {"name", "My Fire Bolt"}});
+    CHECK(renamed["effect"]["name"] == "My Fire Bolt");
 
     const nlohmann::json from_path = call(session, "create_effect", {{"template", example("fire_aoe.json").string()}});
     CHECK(from_path["effect"]["name"] == "Fire AOE");
