@@ -21,7 +21,11 @@
 | ![Heal](docs/media/effects/heal.jpg) | ![Teleport](docs/media/effects/teleport.jpg) | ![Poison Target](docs/media/effects/poison_target.jpg) | ![Ice AOE](docs/media/effects/ice_aoe.jpg) |
 | Heal (+5 variants) | Teleport (+3 variants) | Poison Target | Ice AOE |
 
-Also in the library: Lesser Fireball, Shadow AOE, Void Nebula. All of them live in [`examples/effects`](examples/effects) as plain JSON.
+Also in the library: Lesser Fireball, Shadow AOE, Void Nebula.
+
+New and still being polished: Shield Buff (standard, ice, fire and poison, each in a basic and a rune style), Life Drain, Corruption Drain and Soul Drain (each as a flowing stream, a thin beam and a thick volumetric beam), Homing Arcane Missile, Chain Lightning, Meteor and Flame Wave.
+
+All of them live in [`examples/effects`](examples/effects) as plain JSON, and the scripts that generate the effect families are in [`tools/generators`](tools/generators).
 
 ## Quick start
 
