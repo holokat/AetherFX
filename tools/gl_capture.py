@@ -8,6 +8,10 @@ to each requested time and captures the viewport.
     python tools/gl_capture.py --url http://127.0.0.1:8781/ --effect "Fire AOE" \
         --times 0.5,1.2,2.4 --out out/work/fire/shots/fire --size 1280x800
 
+``--controls '{"primary_intensity": 2.0}'`` moves the effect's controls through
+the studio API before the capture, which is how paired before/after shots of a
+slider are taken at the same time stamp.
+
 Writes ``<out>_t0.50.png`` etc.  Needs the ``websockets`` package (the studio
 venv has it) and Google Chrome.  Each parallel user should pass a distinct
 ``--cdp-port`` and ``--profile`` directory.
@@ -42,6 +46,24 @@ SELECT_SCRIPT = """
   if (typeof S !== 'undefined' && S.playing) document.getElementById('btn-play').click();
   await new Promise(r => setTimeout(r, 400));
   return 'OK ' + document.getElementById('time-readout').textContent;
+})()
+"""
+
+# Moves the effect's controls (docs/CONTROLS.md) through the studio API from
+# inside the page, so the Style panel, the GPU stream and the capture all agree.
+CONTROLS_SCRIPT = """
+(async () => {
+  const wanted = %(controls)s;
+  const ids = Object.keys(wanted);
+  for (const id of ids) {
+    const res = await fetch('/api/controls/' + encodeURIComponent(id),
+      {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: wanted[id]})});
+    if (!res.ok) return 'FAILED:' + id + ':' + res.status + ':' + (await res.text());
+  }
+  if (typeof refreshControls === 'function') await refreshControls();
+  if (typeof invalidatePreview === 'function') invalidatePreview();
+  await new Promise(r => setTimeout(r, %(wait_ms)d));
+  return 'OK ' + ids.map(id => id + '=' + wanted[id]).join(' ');
 })()
 """
 
@@ -118,6 +140,12 @@ async def run(args: argparse.Namespace) -> int:
             if status.startswith("NO_GPU"):
                 print("GPU viewer is not active in this page; refusing to capture the CPU fallback:", status, file=sys.stderr)
                 return 4
+            if args.controls:
+                status = await evaluate(CONTROLS_SCRIPT % {"controls": args.controls,
+                                                           "wait_ms": int(args.settle * 1000)})
+                print("controls:", status)
+                if status.startswith("FAILED"):
+                    return 5
             if args.camera:
                 cam = json.loads(args.camera)
                 expr = """(() => { const a = window.aetherViewer; const v = a && a.gl; if (!v || !v.camera) return 'no viewer';
@@ -157,6 +185,9 @@ def main() -> int:
     parser.add_argument("--settle", type=float, default=2.0, help="seconds to wait after seeking before capture")
     parser.add_argument("--duration", type=float, default=3.0, help="fallback effect duration if the readout is unparsable")
     parser.add_argument("--camera", default=None, help='optional JSON {"position":[x,y,z],"target":[x,y,z]} applied to the three.js camera before capture')
+    parser.add_argument("--controls", default=None,
+                        help='optional JSON {"control_id": value} set through the studio API after loading the '
+                             'effect and before capturing, e.g. \'{"primary_intensity": 2.0}\'')
     args = parser.parse_args()
     return asyncio.run(run(args))
 

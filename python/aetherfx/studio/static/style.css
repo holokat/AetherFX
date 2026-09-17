@@ -456,8 +456,11 @@ label.check, label.field, label.toggle-chip {
 
 #panel-generate { flex: 0 1 auto; }
 #panel-effects  { flex: 1 1 auto; min-height: 120px; }
-#panel-graph    { flex: 1 1 50%; min-height: 160px; }
-#panel-params   { flex: 1 1 50%; min-height: 150px; }
+/* Fixed shares with their own scroll, so folding a Style group moves nothing
+ * outside that panel. */
+#panel-graph    { flex: 1 1 34%; min-height: 130px; }
+#panel-style    { flex: 1 1 34%; min-height: 120px; }
+#panel-params   { flex: 1 1 32%; min-height: 130px; }
 
 #panel-generate .panel-body { display: flex; flex-direction: column; gap: 10px; }
 #panel-effects .panel-body  { display: flex; flex-direction: column; gap: 8px; }
@@ -1204,6 +1207,72 @@ body.gl-active #viewport { cursor: default; }
 .param-group[open] > summary::before { transform: rotate(90deg) translateX(1px); }
 .param-group > summary:hover { color: var(--text-2); background: var(--hover); }
 
+/* -- style: the effect's controls --------------------------------- */
+
+#panel-style .panel-tools button { height: 20px; font-size: 10.5px; padding: 0 7px; }
+#controls-body { padding: 4px 12px 10px 14px; }
+#controls-body > p { font-size: 11.5px; line-height: 1.5; color: var(--text-3); margin-bottom: 8px; }
+#controls-body > button { height: 24px; font-size: 11.5px; }
+
+.ctl-group + .ctl-group { margin-top: 2px; }
+.ctl-group > summary {
+  display: flex; align-items: center; gap: 6px;
+  height: 22px; font: 500 10.5px/1 var(--sans);
+  text-transform: uppercase; letter-spacing: .07em; color: var(--text-3);
+  border-radius: 6px; padding: 0 4px;
+  transition: color var(--t), background var(--t);
+}
+.ctl-group > summary::before {
+  content: ""; width: 0; height: 0; flex: none;
+  border: 3.5px solid transparent; border-left-color: currentColor; border-right: 0;
+  transition: transform var(--t);
+}
+.ctl-group[open] > summary::before { transform: rotate(90deg) translateX(1px); }
+.ctl-group > summary:hover { color: var(--text-2); background: var(--hover); }
+.ctl-group > summary .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ctl-group > summary .count {
+  margin-left: auto; font: 400 10px/1 var(--mono); color: var(--text-3);
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: 999px; padding: 2px 6px; flex: none;
+}
+.ctl-list { padding: 1px 0 4px 4px; }
+
+/* Two rows that never reflow: label + value on top, the track underneath. */
+.ctl-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 8px 48px 18px;
+  align-items: center; gap: 0 5px;
+  padding: 0 0 4px;
+}
+.ctl-label {
+  font-size: 11px; line-height: 1.2; color: var(--text-2);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ctl-label .unit { font-style: normal; color: var(--text-3); font-size: 10px; margin-left: 3px; }
+.ctl-row .dot-changed {
+  width: 4px; height: 4px; border-radius: 50%; flex: none;
+  background: var(--accent); box-shadow: 0 0 6px -1px var(--accent-glow);
+}
+.ctl-row .dot-changed.off { background: transparent; box-shadow: none; }
+.ctl-group > summary .dot-changed { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); flex: none; }
+.ctl-number {
+  height: 20px; width: 100%; padding: 0 3px; text-align: right;
+  font-size: 11px; border-radius: 6px;
+}
+.ctl-number::-webkit-outer-spin-button, .ctl-number::-webkit-inner-spin-button {
+  -webkit-appearance: none; margin: 0;
+}
+.ctl-number { -moz-appearance: textfield; }
+.ctl-reset {
+  width: 18px; height: 18px; padding: 0; flex: none;
+  font: 400 11px/1 var(--sans); color: var(--text-3);
+}
+.ctl-reset:hover { color: var(--accent-hover); }
+.ctl-slider { grid-column: 1 / -1; width: 100%; height: 12px; margin: -2px 0 0; }
+.ctl-slider::-webkit-slider-thumb { background: var(--accent); }
+.ctl-slider:hover::-webkit-slider-thumb { background: var(--accent-hover); }
+.ctl-slider::-moz-range-thumb { background: var(--accent); }
+
 /* -- ports -------------------------------------------------------- */
 
 .ports { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 10px; }
@@ -1292,6 +1361,7 @@ body.gl-active #viewport { cursor: default; }
   .statline { font-size: 10px; padding: 6px 12px; }
   .statline b { margin: 0 12px 0 4px; }
   .param-row { grid-template-columns: 106px minmax(0, 1fr); }
+  .ctl-number { font-size: 10.5px; }
   #topbar .actions button > span { display: none; }
   #topbar .actions button { width: var(--h); padding: 0; }
   .export-pop > summary.btn-like > span { display: none; }

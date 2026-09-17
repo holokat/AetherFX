@@ -305,8 +305,31 @@ class Studio:
         except (OSError, ValueError):
             name = path.stem
         result = await self.acall("create_effect", name=name, template=str(path))
+        # A library effect that ships no controls still gets sliders: the
+        # defaults land on the working copy only, before it counts as clean.
+        await self.ensure_controls()
         await self._replace_working(result.get("effect_id"), {"path": str(path), "builtin": self.is_builtin_path(path), "name": name})
         return result
+
+    async def ensure_controls(self) -> int:
+        """Give the working copy a default control set when the effect ships none.
+
+        Only the in-memory document changes - the library file on disk is never
+        touched, so a built-in stays protected and "Save as" keeps the controls
+        and the values the user left them at.
+        """
+        try:
+            listed = await self.acall("list_controls")
+        except (AetherError, TransportError):
+            return 0
+        if listed.get("count"):
+            return 0
+        try:
+            result = await self.acall("generate_default_controls")
+        except (AetherError, TransportError):
+            LOGGER.warning("could not generate default controls", exc_info=True)
+            return 0
+        return int(result.get("added") or 0)
 
     async def _replace_working(self, new_id: str | None, source: JsonDict | None) -> None:
         previous = self.working_id
@@ -879,6 +902,40 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
         LOGGER.info("deleted node %s", node_id)
         return {"ok": True, "dangling": result.get("dangling"), "diagnostics": result.get("diagnostics")}
 
+    # -- controls -------------------------------------------------------
+
+    @endpoint
+    async def api_controls(_request: Request) -> JsonDict:
+        await studio.require_active_effect()
+        return await studio.acall("list_controls")
+
+    @endpoint
+    async def api_controls_reset(request: Request) -> JsonDict:
+        data = await read_json(request)
+        args: JsonDict = {}
+        if data.get("id"):
+            args["id"] = str(data["id"])
+        result = await run_in_threadpool(lambda: studio.call_with_args("reset_controls", args))
+        return {"ok": True, "reset": result.get("reset"), "controls": result.get("controls"),
+                "groups": result.get("groups"), "count": result.get("count")}
+
+    @endpoint
+    async def api_controls_generate(request: Request) -> JsonDict:
+        data = await read_json(request)
+        result = await studio.acall("generate_default_controls", replace=bool(data.get("replace", False)))
+        return {"ok": True, "added": result.get("added"), "controls": result.get("controls"),
+                "groups": result.get("groups"), "count": result.get("count"),
+                "diagnostics": result.get("diagnostics")}
+
+    @endpoint
+    async def api_control_set(request: Request) -> JsonDict:
+        data = await read_json(request)
+        control_id = request.path_params["control_id"]
+        if "value" not in data or not isinstance(data["value"], (int, float)) or isinstance(data["value"], bool):
+            raise StudioError(400, "bad_request", "value is required and must be a number")
+        result = await studio.acall("set_control", id=control_id, value=float(data["value"]))
+        return {"ok": True, "control": result.get("control"), "diagnostics": result.get("diagnostics")}
+
     def history_endpoint(tool: str) -> Callable[[Request], Any]:
         @endpoint
         async def handler(_request: Request) -> JsonDict:
@@ -1233,6 +1290,10 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
         Route("/api/node/delete", api_node_delete, methods=["POST"]),
         Route("/api/node/{node_id}", api_node),
         Route("/api/param", api_param, methods=["POST"]),
+        Route("/api/controls", api_controls),
+        Route("/api/controls/reset", api_controls_reset, methods=["POST"]),
+        Route("/api/controls/generate", api_controls_generate, methods=["POST"]),
+        Route("/api/controls/{control_id}", api_control_set, methods=["POST"]),
         Route("/api/undo", history_endpoint("undo"), methods=["POST"]),
         Route("/api/redo", history_endpoint("redo"), methods=["POST"]),
         Route("/api/frame", api_frame),

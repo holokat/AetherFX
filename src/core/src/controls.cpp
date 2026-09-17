@@ -185,16 +185,26 @@ bool node_bool_or(const Node& node, const char* name, bool fallback) {
     }
 }
 
+// `emissive` is a small extra glow on most shipped effects (0.05 - 0.2), so an
+// intensity control that only scaled it would look broken. What actually makes
+// an additive sprite bright is the HDR magnitude of its `color`, and scaling
+// rgb uniformly keeps the hue, so both are bound.
 void bind_intensity(std::vector<ControlBinding>& into, const Node& node) {
     switch (node.type) {
-        case NodeType::ParticleSystem: bind(into, node, "emissive", ControlOp::Multiply); break;
-        case NodeType::Material: bind(into, node, "emissive_intensity", ControlOp::Multiply); break;
-        case NodeType::Light: bind(into, node, "intensity", ControlOp::Multiply); break;
+        case NodeType::ParticleSystem:
         case NodeType::Beam:
         case NodeType::Decal:
         case NodeType::Trail:
-        case NodeType::Mesh: bind(into, node, "emissive", ControlOp::Multiply); break;
-        case NodeType::Volume: bind(into, node, "emission", ControlOp::Multiply); break;
+        case NodeType::Mesh:
+            bind(into, node, "emissive", ControlOp::Multiply);
+            bind(into, node, "color", ControlOp::Multiply);
+            break;
+        case NodeType::Material: bind(into, node, "emissive_intensity", ControlOp::Multiply); break;
+        case NodeType::Light: bind(into, node, "intensity", ControlOp::Multiply); break;
+        case NodeType::Volume:
+            bind(into, node, "emission", ControlOp::Multiply);
+            bind(into, node, "color", ControlOp::Multiply);
+            break;
         case NodeType::PostEffect: bind(into, node, "intensity", ControlOp::Multiply); break;
         default: break;
     }
