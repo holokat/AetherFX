@@ -32,9 +32,12 @@ physics (Tier 2) are stubs with compile warnings. See docs/ROADMAP.md.
 ## Studio
 
 `aetherfx-studio` is a local web app (default http://127.0.0.1:8770) that
-spawns the engine itself: preview any effect with play/scrub, edit every
-parameter live in the graph panel, and generate or modify effects from a text
-prompt. Generation is done by an AI agent driving the same tool API and
+spawns the engine itself. It is a library and a generator: the Library lists
+the built-in effects (protected, never overwritten) and your own; clicking one
+opens a working copy that auto-plays, every parameter is editable live, the
+camera orbits/zooms with the mouse, stage controls set ground/background/bloom,
+Random mutates values for exploration, and "Save as" adds a new library entry.
+The Generate box builds or modifies effects from a text prompt. Generation is done by an AI agent driving the same tool API and
 looking at its own renders; the backend is picked automatically: Anthropic
 API key, a logged-in Claude Code (Agent SDK), or a worker attached from an
 interactive Claude Code session (`aetherfx.studio.worker_cli`).
