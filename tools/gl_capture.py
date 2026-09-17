@@ -331,11 +331,25 @@ def main() -> int:
     parser.add_argument("--controls", default=None,
                         help='optional JSON {"control_id": value} set through the studio API after loading the '
                              'effect and before capturing, e.g. \'{"primary_intensity": 2.0}\'')
+    parser.add_argument("--gpu-lock", default="/tmp/aetherfx-gpu.lock",
+                        help="captures from every agent on this machine take this lock in turn, so --perf timings "
+                             "are not measured while another capture is using the GPU (empty string disables)")
     args = parser.parse_args()
     if ":8770" in args.url and not args.allow_user_studio:
         parser.error("refusing to drive the user's live studio on port 8770; start your own instance "
                      "and pass its --url (or --allow-user-studio if you really mean it)")
-    return asyncio.run(run(args))
+    if not args.gpu_lock:
+        return asyncio.run(run(args))
+    import fcntl
+    with open(args.gpu_lock, "a") as lock:
+        waited = time.time()
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        if time.time() - waited > 1.0:
+            print(f"waited {time.time() - waited:.0f} s for the GPU lock", file=sys.stderr)
+        try:
+            return asyncio.run(run(args))
+        finally:
+            fcntl.flock(lock, fcntl.LOCK_UN)
 
 
 if __name__ == "__main__":
