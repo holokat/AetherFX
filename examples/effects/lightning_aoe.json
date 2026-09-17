@@ -7800,11 +7800,11 @@
             }
           ]
         },
-        "segments": 12,
+        "segments": 10,
         "noise_amplitude": 0.26,
         "noise_frequency": 4.6,
         "jitter_rate": 58,
-        "branching": 4,
+        "branching": 2,
         "branch_probability": 0.7,
         "branch_length": 0.34,
         "color": [
@@ -7980,12 +7980,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.4,
         "flicker_frequency": 56,
-        "afterglow": 0.05,
+        "afterglow": 0.0,
         "core_width": 0.16,
         "glow_width": 2.8
       }
@@ -8251,11 +8251,11 @@
             }
           ]
         },
-        "segments": 12,
+        "segments": 10,
         "noise_amplitude": 0.26,
         "noise_frequency": 4.6,
         "jitter_rate": 58,
-        "branching": 4,
+        "branching": 2,
         "branch_probability": 0.7,
         "branch_length": 0.34,
         "color": [
@@ -8461,12 +8461,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.4,
         "flicker_frequency": 56,
-        "afterglow": 0.05,
+        "afterglow": 0.0,
         "core_width": 0.16,
         "glow_width": 2.8
       }
@@ -8732,11 +8732,11 @@
             }
           ]
         },
-        "segments": 12,
+        "segments": 10,
         "noise_amplitude": 0.26,
         "noise_frequency": 4.6,
         "jitter_rate": 58,
-        "branching": 4,
+        "branching": 2,
         "branch_probability": 0.7,
         "branch_length": 0.34,
         "color": [
@@ -8942,12 +8942,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.4,
         "flicker_frequency": 56,
-        "afterglow": 0.05,
+        "afterglow": 0.0,
         "core_width": 0.16,
         "glow_width": 2.8
       }
@@ -9137,11 +9137,11 @@
             }
           ]
         },
-        "segments": 12,
+        "segments": 10,
         "noise_amplitude": 0.26,
         "noise_frequency": 4.6,
         "jitter_rate": 58,
-        "branching": 4,
+        "branching": 2,
         "branch_probability": 0.7,
         "branch_length": 0.34,
         "color": [
@@ -9287,12 +9287,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.4,
         "flicker_frequency": 56,
-        "afterglow": 0.05,
+        "afterglow": 0.0,
         "core_width": 0.16,
         "glow_width": 2.8
       }
@@ -9520,11 +9520,11 @@
             }
           ]
         },
-        "segments": 12,
+        "segments": 10,
         "noise_amplitude": 0.26,
         "noise_frequency": 4.6,
         "jitter_rate": 58,
-        "branching": 4,
+        "branching": 2,
         "branch_probability": 0.7,
         "branch_length": 0.34,
         "color": [
@@ -9700,12 +9700,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.4,
         "flicker_frequency": 56,
-        "afterglow": 0.05,
+        "afterglow": 0.0,
         "core_width": 0.16,
         "glow_width": 2.8
       }
@@ -9933,11 +9933,11 @@
             }
           ]
         },
-        "segments": 12,
+        "segments": 10,
         "noise_amplitude": 0.26,
         "noise_frequency": 4.6,
         "jitter_rate": 58,
-        "branching": 4,
+        "branching": 2,
         "branch_probability": 0.7,
         "branch_length": 0.34,
         "color": [
@@ -10113,12 +10113,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.4,
         "flicker_frequency": 56,
-        "afterglow": 0.05,
+        "afterglow": 0.0,
         "core_width": 0.16,
         "glow_width": 2.8
       }
@@ -10422,11 +10422,11 @@
             }
           ]
         },
-        "segments": 12,
+        "segments": 10,
         "noise_amplitude": 0.26,
         "noise_frequency": 4.6,
         "jitter_rate": 58,
-        "branching": 4,
+        "branching": 2,
         "branch_probability": 0.7,
         "branch_length": 0.34,
         "color": [
@@ -10662,12 +10662,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.4,
         "flicker_frequency": 56,
-        "afterglow": 0.05,
+        "afterglow": 0.0,
         "core_width": 0.16,
         "glow_width": 2.8
       }
@@ -10895,11 +10895,11 @@
             }
           ]
         },
-        "segments": 12,
+        "segments": 10,
         "noise_amplitude": 0.26,
         "noise_frequency": 4.6,
         "jitter_rate": 58,
-        "branching": 4,
+        "branching": 2,
         "branch_probability": 0.7,
         "branch_length": 0.34,
         "color": [
@@ -11075,12 +11075,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.4,
         "flicker_frequency": 56,
-        "afterglow": 0.05,
+        "afterglow": 0.0,
         "core_width": 0.16,
         "glow_width": 2.8
       }
@@ -11270,11 +11270,11 @@
             }
           ]
         },
-        "segments": 12,
+        "segments": 10,
         "noise_amplitude": 0.26,
         "noise_frequency": 4.6,
         "jitter_rate": 58,
-        "branching": 4,
+        "branching": 2,
         "branch_probability": 0.7,
         "branch_length": 0.34,
         "color": [
@@ -11420,12 +11420,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.4,
         "flicker_frequency": 56,
-        "afterglow": 0.05,
+        "afterglow": 0.0,
         "core_width": 0.16,
         "glow_width": 2.8
       }
@@ -11691,11 +11691,11 @@
             }
           ]
         },
-        "segments": 12,
+        "segments": 10,
         "noise_amplitude": 0.26,
         "noise_frequency": 4.6,
         "jitter_rate": 58,
-        "branching": 4,
+        "branching": 2,
         "branch_probability": 0.7,
         "branch_length": 0.34,
         "color": [
@@ -11901,12 +11901,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.4,
         "flicker_frequency": 56,
-        "afterglow": 0.05,
+        "afterglow": 0.0,
         "core_width": 0.16,
         "glow_width": 2.8
       }
@@ -12096,11 +12096,11 @@
             }
           ]
         },
-        "segments": 12,
+        "segments": 10,
         "noise_amplitude": 0.26,
         "noise_frequency": 4.6,
         "jitter_rate": 58,
-        "branching": 4,
+        "branching": 2,
         "branch_probability": 0.7,
         "branch_length": 0.34,
         "color": [
@@ -12246,12 +12246,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.4,
         "flicker_frequency": 56,
-        "afterglow": 0.05,
+        "afterglow": 0.0,
         "core_width": 0.16,
         "glow_width": 2.8
       }
@@ -12479,11 +12479,11 @@
             }
           ]
         },
-        "segments": 12,
+        "segments": 10,
         "noise_amplitude": 0.26,
         "noise_frequency": 4.6,
         "jitter_rate": 58,
-        "branching": 4,
+        "branching": 2,
         "branch_probability": 0.7,
         "branch_length": 0.34,
         "color": [
@@ -12659,12 +12659,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.4,
         "flicker_frequency": 56,
-        "afterglow": 0.05,
+        "afterglow": 0.0,
         "core_width": 0.16,
         "glow_width": 2.8
       }
@@ -12892,11 +12892,11 @@
             }
           ]
         },
-        "segments": 12,
+        "segments": 10,
         "noise_amplitude": 0.26,
         "noise_frequency": 4.6,
         "jitter_rate": 58,
-        "branching": 4,
+        "branching": 2,
         "branch_probability": 0.7,
         "branch_length": 0.34,
         "color": [
@@ -13072,12 +13072,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.4,
         "flicker_frequency": 56,
-        "afterglow": 0.05,
+        "afterglow": 0.0,
         "core_width": 0.16,
         "glow_width": 2.8
       }
@@ -13343,11 +13343,11 @@
             }
           ]
         },
-        "segments": 12,
+        "segments": 10,
         "noise_amplitude": 0.26,
         "noise_frequency": 4.6,
         "jitter_rate": 58,
-        "branching": 4,
+        "branching": 2,
         "branch_probability": 0.7,
         "branch_length": 0.34,
         "color": [
@@ -13553,12 +13553,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.4,
         "flicker_frequency": 56,
-        "afterglow": 0.05,
+        "afterglow": 0.0,
         "core_width": 0.16,
         "glow_width": 2.8
       }
@@ -13786,11 +13786,11 @@
             }
           ]
         },
-        "segments": 12,
+        "segments": 10,
         "noise_amplitude": 0.26,
         "noise_frequency": 4.6,
         "jitter_rate": 58,
-        "branching": 4,
+        "branching": 2,
         "branch_probability": 0.7,
         "branch_length": 0.34,
         "color": [
@@ -13966,12 +13966,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.4,
         "flicker_frequency": 56,
-        "afterglow": 0.05,
+        "afterglow": 0.0,
         "core_width": 0.16,
         "glow_width": 2.8
       }
@@ -14199,11 +14199,11 @@
             }
           ]
         },
-        "segments": 12,
+        "segments": 10,
         "noise_amplitude": 0.26,
         "noise_frequency": 4.6,
         "jitter_rate": 58,
-        "branching": 4,
+        "branching": 2,
         "branch_probability": 0.7,
         "branch_length": 0.34,
         "color": [
@@ -14379,12 +14379,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.4,
         "flicker_frequency": 56,
-        "afterglow": 0.05,
+        "afterglow": 0.0,
         "core_width": 0.16,
         "glow_width": 2.8
       }
@@ -14574,11 +14574,11 @@
             }
           ]
         },
-        "segments": 12,
+        "segments": 10,
         "noise_amplitude": 0.26,
         "noise_frequency": 4.6,
         "jitter_rate": 58,
-        "branching": 4,
+        "branching": 2,
         "branch_probability": 0.7,
         "branch_length": 0.34,
         "color": [
@@ -14724,12 +14724,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.4,
         "flicker_frequency": 56,
-        "afterglow": 0.05,
+        "afterglow": 0.0,
         "core_width": 0.16,
         "glow_width": 2.8
       }
@@ -14957,11 +14957,11 @@
             }
           ]
         },
-        "segments": 12,
+        "segments": 10,
         "noise_amplitude": 0.26,
         "noise_frequency": 4.6,
         "jitter_rate": 58,
-        "branching": 4,
+        "branching": 2,
         "branch_probability": 0.7,
         "branch_length": 0.34,
         "color": [
@@ -15137,12 +15137,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.4,
         "flicker_frequency": 56,
-        "afterglow": 0.05,
+        "afterglow": 0.0,
         "core_width": 0.16,
         "glow_width": 2.8
       }
@@ -15370,11 +15370,11 @@
             }
           ]
         },
-        "segments": 12,
+        "segments": 10,
         "noise_amplitude": 0.26,
         "noise_frequency": 4.6,
         "jitter_rate": 58,
-        "branching": 4,
+        "branching": 2,
         "branch_probability": 0.7,
         "branch_length": 0.34,
         "color": [
@@ -15550,12 +15550,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.4,
         "flicker_frequency": 56,
-        "afterglow": 0.05,
+        "afterglow": 0.0,
         "core_width": 0.16,
         "glow_width": 2.8
       }
@@ -15783,11 +15783,11 @@
             }
           ]
         },
-        "segments": 12,
+        "segments": 10,
         "noise_amplitude": 0.26,
         "noise_frequency": 4.6,
         "jitter_rate": 58,
-        "branching": 4,
+        "branching": 2,
         "branch_probability": 0.7,
         "branch_length": 0.34,
         "color": [
@@ -15963,12 +15963,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.4,
         "flicker_frequency": 56,
-        "afterglow": 0.05,
+        "afterglow": 0.0,
         "core_width": 0.16,
         "glow_width": 2.8
       }
@@ -16158,11 +16158,11 @@
             }
           ]
         },
-        "segments": 12,
+        "segments": 10,
         "noise_amplitude": 0.26,
         "noise_frequency": 4.6,
         "jitter_rate": 58,
-        "branching": 4,
+        "branching": 2,
         "branch_probability": 0.7,
         "branch_length": 0.34,
         "color": [
@@ -16308,12 +16308,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.4,
         "flicker_frequency": 56,
-        "afterglow": 0.05,
+        "afterglow": 0.0,
         "core_width": 0.16,
         "glow_width": 2.8
       }
@@ -16503,11 +16503,11 @@
             }
           ]
         },
-        "segments": 12,
+        "segments": 10,
         "noise_amplitude": 0.26,
         "noise_frequency": 4.6,
         "jitter_rate": 58,
-        "branching": 4,
+        "branching": 2,
         "branch_probability": 0.7,
         "branch_length": 0.34,
         "color": [
@@ -16653,12 +16653,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.4,
         "flicker_frequency": 56,
-        "afterglow": 0.05,
+        "afterglow": 0.0,
         "core_width": 0.16,
         "glow_width": 2.8
       }
@@ -16928,7 +16928,7 @@
         "noise_amplitude": 0.22,
         "noise_frequency": 5.0,
         "jitter_rate": 62,
-        "branching": 4,
+        "branching": 2,
         "branch_probability": 0.7,
         "branch_length": 0.34,
         "color": [
@@ -17134,12 +17134,12 @@
         "width_profile": "taper_end",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.45,
         "flicker_frequency": 56,
-        "afterglow": 0.05,
+        "afterglow": 0.0,
         "core_width": 0.14,
         "glow_width": 3.0
       }
@@ -17409,7 +17409,7 @@
         "noise_amplitude": 0.22,
         "noise_frequency": 5.0,
         "jitter_rate": 62,
-        "branching": 4,
+        "branching": 2,
         "branch_probability": 0.7,
         "branch_length": 0.34,
         "color": [
@@ -17615,12 +17615,12 @@
         "width_profile": "taper_end",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.45,
         "flicker_frequency": 56,
-        "afterglow": 0.05,
+        "afterglow": 0.0,
         "core_width": 0.14,
         "glow_width": 3.0
       }
@@ -17928,7 +17928,7 @@
         "noise_amplitude": 0.22,
         "noise_frequency": 5.0,
         "jitter_rate": 62,
-        "branching": 4,
+        "branching": 2,
         "branch_probability": 0.7,
         "branch_length": 0.34,
         "color": [
@@ -18164,12 +18164,12 @@
         "width_profile": "taper_end",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.45,
         "flicker_frequency": 56,
-        "afterglow": 0.05,
+        "afterglow": 0.0,
         "core_width": 0.14,
         "glow_width": 3.0
       }
@@ -18439,7 +18439,7 @@
         "noise_amplitude": 0.22,
         "noise_frequency": 5.0,
         "jitter_rate": 62,
-        "branching": 4,
+        "branching": 2,
         "branch_probability": 0.7,
         "branch_length": 0.34,
         "color": [
@@ -18645,12 +18645,12 @@
         "width_profile": "taper_end",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.45,
         "flicker_frequency": 56,
-        "afterglow": 0.05,
+        "afterglow": 0.0,
         "core_width": 0.14,
         "glow_width": 3.0
       }
@@ -18768,7 +18768,7 @@
         "noise_amplitude": 0.18,
         "noise_frequency": 5.6,
         "jitter_rate": 64,
-        "branching": 3,
+        "branching": 1,
         "branch_probability": 0.6,
         "branch_length": 0.34,
         "color": [
@@ -18854,12 +18854,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.45,
         "flicker_frequency": 56,
-        "afterglow": 0.04,
+        "afterglow": 0.0,
         "core_width": 0.18,
         "glow_width": 2.6
       }
@@ -19015,7 +19015,7 @@
         "noise_amplitude": 0.18,
         "noise_frequency": 5.6,
         "jitter_rate": 64,
-        "branching": 3,
+        "branching": 1,
         "branch_probability": 0.6,
         "branch_length": 0.34,
         "color": [
@@ -19131,12 +19131,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.45,
         "flicker_frequency": 56,
-        "afterglow": 0.04,
+        "afterglow": 0.0,
         "core_width": 0.18,
         "glow_width": 2.6
       }
@@ -19292,7 +19292,7 @@
         "noise_amplitude": 0.18,
         "noise_frequency": 5.6,
         "jitter_rate": 64,
-        "branching": 3,
+        "branching": 1,
         "branch_probability": 0.6,
         "branch_length": 0.34,
         "color": [
@@ -19408,12 +19408,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.45,
         "flicker_frequency": 56,
-        "afterglow": 0.04,
+        "afterglow": 0.0,
         "core_width": 0.18,
         "glow_width": 2.6
       }
@@ -19531,7 +19531,7 @@
         "noise_amplitude": 0.18,
         "noise_frequency": 5.6,
         "jitter_rate": 64,
-        "branching": 3,
+        "branching": 1,
         "branch_probability": 0.6,
         "branch_length": 0.34,
         "color": [
@@ -19617,12 +19617,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.45,
         "flicker_frequency": 56,
-        "afterglow": 0.04,
+        "afterglow": 0.0,
         "core_width": 0.18,
         "glow_width": 2.6
       }
@@ -19740,7 +19740,7 @@
         "noise_amplitude": 0.18,
         "noise_frequency": 5.6,
         "jitter_rate": 64,
-        "branching": 3,
+        "branching": 1,
         "branch_probability": 0.6,
         "branch_length": 0.34,
         "color": [
@@ -19826,12 +19826,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.45,
         "flicker_frequency": 56,
-        "afterglow": 0.04,
+        "afterglow": 0.0,
         "core_width": 0.18,
         "glow_width": 2.6
       }
@@ -19949,7 +19949,7 @@
         "noise_amplitude": 0.18,
         "noise_frequency": 5.6,
         "jitter_rate": 64,
-        "branching": 3,
+        "branching": 1,
         "branch_probability": 0.6,
         "branch_length": 0.34,
         "color": [
@@ -20035,12 +20035,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.45,
         "flicker_frequency": 56,
-        "afterglow": 0.04,
+        "afterglow": 0.0,
         "core_width": 0.18,
         "glow_width": 2.6
       }
@@ -20158,7 +20158,7 @@
         "noise_amplitude": 0.18,
         "noise_frequency": 5.6,
         "jitter_rate": 64,
-        "branching": 3,
+        "branching": 1,
         "branch_probability": 0.6,
         "branch_length": 0.34,
         "color": [
@@ -20244,12 +20244,12 @@
         "width_profile": "taper_both",
         "width_variance": 0.24,
         "branch_width": 0.45,
-        "branch_depth": 2,
+        "branch_depth": 1,
         "branch_intensity": 0.5,
         "intensity_noise": 0.36,
         "flicker": 0.45,
         "flicker_frequency": 56,
-        "afterglow": 0.04,
+        "afterglow": 0.0,
         "core_width": 0.18,
         "glow_width": 2.6
       }

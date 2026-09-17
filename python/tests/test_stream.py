@@ -19,7 +19,7 @@ from starlette.testclient import TestClient
 from aetherfx.client import Client
 from aetherfx.jsonrpc import InMemoryTransport
 from aetherfx.studio.server import StudioConfig, create_app
-from aetherfx.studio.stream import MockFrameSource, decode_header, encode_frame
+from aetherfx.studio.stream import STREAM_VERSION, MockFrameSource, decode_header, encode_frame
 from aetherfx.studio import stream_server
 from aetherfx.studio.stream_server import (ResourceCache, create_frame_source, mesh_payload,
                                            public_resources)
@@ -62,7 +62,7 @@ class TestFrameEncoding:
         header, blob = decode_header(message)
 
         assert header["type"] == "frame"
-        assert header["version"] == 1
+        assert header["version"] == STREAM_VERSION
         assert header["time"] == pytest.approx(0.75)
         assert header["fps"] == pytest.approx(60.0)
         assert len(header["systems"]) == 1

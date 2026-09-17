@@ -33,8 +33,12 @@ Header (frame message)::
                   "climb", "scatter", "march_steps", "seed", "time"}],   # plain JSON, nothing in the blob
      "beams": [{"id", "width", "color", "emissive", "blend", "material", "pulse_phase",
                 "core_width", "glow_width",                     # cross-section, fractions of "width"
-                "paths":  [{"offset", "count", "depth", "fade"}],   # 5 f32 per vertex: xyz, width, intensity
-                "ghosts": [{"offset", "count", "depth", "fade"}],   # afterglow copies, same layout
+                # A bolt is hundreds of short paths, so the per-path metadata lives in the blob
+                # too: one contiguous vertex run (5 f32 per vertex: xyz, width, intensity) plus
+                # one record per path (4 f32: first vertex, vertex count, branch depth, fade).
+                # "vertices"/"offset" are byte offsets, "total" vertices and "count" paths.
+                "paths":  {"vertices", "total", "offset", "count"},
+                "ghosts": {"vertices", "total", "offset", "count"},  # afterglow copies, same layout
                 "flares": [{"position", "radius", "intensity"}]}],  # plain JSON, nothing in the blob
      "trails": [{"id", "blend", "material", "twist_deg",
                  "ribbons": [{"offset", "count"}]}],            # 12 f32 per vertex: pos3, width, age_norm, u, color4, opacity, emissive
@@ -65,7 +69,16 @@ from typing import Any, Protocol
 
 import numpy as np
 
-STREAM_VERSION = 1
+# 2: a beam's per-path metadata moved from the JSON header into the blob.  A
+# lightning AOE is ~620 paths a frame, which was 40 KB of header (and 620
+# short-lived objects on the client) every frame just to say where each one is.
+STREAM_VERSION = 2
+
+#: One beam path record in the blob: first vertex, vertex count, branch depth, fade.
+BEAM_PATH_RECORD = 4
+
+#: One beam vertex in the blob: xyz, width (m), intensity.
+BEAM_VERTEX_STRIDE = 5
 
 
 @dataclass
@@ -117,6 +130,35 @@ class Frame:
     post_effects: list[dict[str, Any]] = field(default_factory=list)
 
 
+_NO_BEAM_VERTICES = np.zeros((0, BEAM_VERTEX_STRIDE), dtype=np.float32)
+
+
+def beam_is_dark(beam: dict[str, Any]) -> bool:
+    """True when a beam cannot put a single photon on the screen this frame.
+
+    A bolt keeps re-rolling its fractal paths for the whole of its node window,
+    including the dark gaps between flashes - on the built-in Lightning AOE that
+    is **half of every frame's beam geometry**, several hundred kilobytes a
+    second of paths whose pixels are guaranteed to be discarded. The renderers
+    all shade a beam as ``blend(rgb * emissive * gain, alpha)``
+    (docs/RUNTIME.md section 11), so two cases are exactly, not approximately,
+    nothing:
+
+    * ``color[3] == 0`` - every fragment discards, whatever the blend mode;
+    * ``emissive == 0`` **and** additive blending - the colour term is zero and
+      additive leaves the destination untouched. Under alpha blending a black
+      beam would still darken what is behind it, so that case is left alone.
+
+    ``width == 0`` zeroes every vertex width too, but a beam's ``impact_flare``
+    has its own radius and still draws, so that one only empties the paths (see
+    :func:`encode_frame`).
+    """
+    color = beam.get("color") or (1.0, 1.0, 1.0, 1.0)
+    if len(color) > 3 and float(color[3]) == 0.0:
+        return True
+    return float(beam.get("emissive", 0.0)) == 0.0 and beam.get("blend") == "additive"
+
+
 def encode_frame(frame: Frame, fps: float = 60.0) -> bytes:
     """Pack a Frame into one binary WebSocket message (see module docstring)."""
     chunks: list[bytes] = []
@@ -150,15 +192,35 @@ def encode_frame(frame: Frame, fps: float = 60.0) -> bytes:
         })
     beams_json = []
     for b in frame.beams:
-        def paths_of(key: str) -> list[dict[str, Any]]:
-            out = []
-            for path in b.get(key, []):
-                vertices = np.asarray(path["vertices"], dtype=np.float32)
-                out.append({"offset": put(vertices), "count": int(len(vertices)),
-                            "depth": int(path.get("depth", 0)), "fade": float(path.get("fade", 1.0))})
-            return out
+        if beam_is_dark(b):
+            continue
+        # A zero-width bolt has zero-width vertices, so its ribbons are degenerate;
+        # its impact flare has its own radius and still draws, so the entry stays.
+        alive = float(b.get("width", 0.0)) != 0.0
+
+        def group_of(key: str) -> dict[str, int]:
+            """One beam's live paths or its ghosts, entirely in the blob.
+
+            A fractal bolt is dozens of paths and every one of them used to cost
+            a JSON object in the header; at 44 bolts a frame that was more header
+            than the rest of the message put together. The vertices of a group go
+            out as one contiguous run and the per-path records (first vertex,
+            vertex count, branch depth, fade) as a second array beside them, so
+            the client reads two typed-array views per beam and no objects.
+            """
+            paths = b.get(key, []) if alive else []
+            blocks = [np.ascontiguousarray(p["vertices"], dtype=np.float32).reshape(-1, BEAM_VERTEX_STRIDE)
+                      for p in paths]
+            records = np.empty((len(blocks), BEAM_PATH_RECORD), dtype=np.float32)
+            first = 0
+            for i, block in enumerate(blocks):
+                records[i] = (first, len(block), int(paths[i].get("depth", 0)), float(paths[i].get("fade", 1.0)))
+                first += len(block)
+            vertices = np.concatenate(blocks) if blocks else _NO_BEAM_VERTICES
+            return {"vertices": put(vertices), "total": int(first),
+                    "offset": put(records), "count": len(blocks)}
         rest = {k: v for k, v in b.items() if k not in ("paths", "ghosts")}
-        beams_json.append({**rest, "paths": paths_of("paths"), "ghosts": paths_of("ghosts")})
+        beams_json.append({**rest, "paths": group_of("paths"), "ghosts": group_of("ghosts")})
     trails_json = []
     for t in frame.trails:
         ribbons = [{"offset": put(np.asarray(r, dtype=np.float32)), "count": int(len(r))} for r in t.get("ribbons", [])]

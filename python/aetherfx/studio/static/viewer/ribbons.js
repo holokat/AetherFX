@@ -2,16 +2,19 @@
  *
  * Trails and beams arrive as polylines; the viewer turns each one into a
  * camera-facing triangle strip on the CPU every frame (the strip has to face
- * the camera, and the camera moves).  All the ribbons of one node share one
- * geometry and one draw call.
+ * the camera, and the camera moves).  A trail node owns one strip and one draw
+ * call; every beam in the frame - every path, every afterglow ghost, both
+ * cross-section passes - shares one strip per blend mode, because everything
+ * that used to be a per-beam uniform now travels in a vertex attribute.
  */
 
 import * as THREE from 'three';
-import { BEAM_FLARE_FRAGMENT, BEAM_FRAGMENT, BEAM_VERTEX, RIBBON_FRAGMENT, RIBBON_VERTEX } from './shaders.js';
+import { RIBBON_FRAGMENT, RIBBON_VERTEX } from './shaders.js';
 import { LAYER_TRANSPARENT, applyBlend, colorOf } from './particles.js';
 
 const TRAIL_STRIDE = 12;      // pos3, width, age_norm, u, color4, opacity, emissive
 const BEAM_STRIDE = 5;        // pos3, width (m), intensity
+const BEAM_RECORD = 4;        // one path inside a beam group: first vertex, count, depth, fade
 
 /* Texture tiles per metre along a trail.
  *
@@ -27,41 +30,165 @@ const BEAM_STRIDE = 5;        // pos3, width (m), intensity
 const TRAIL_U_PER_METRE = 1.0;
 
 /* ------------------------------------------------------------------ *
- * strip builder
+ * the batched beam material
  * ------------------------------------------------------------------ */
 
+/* Same cross-section as docs/RUNTIME.md section 11 and as the CPU reference
+ * renderer's `beam_cross_section`, but every term that used to be a uniform -
+ * the tint, the emissive gain, the pulse phase and the three layer radii - is a
+ * vertex attribute, so a frame's 40-odd bolts draw as one mesh instead of 40.
+ * The values are constant along a path and a triangle never spans two paths, so
+ * the interpolators hand the fragment shader exactly the authored numbers.
+ *
+ * (`shaders.js` still holds the one-beam-per-uniform BEAM_* pair these are
+ * derived from; keep the two in step - the kernel and its weights are the
+ * renderer-parity contract.) */
+const BEAM_BATCH_VERTEX = `
+precision highp float;
+attribute vec4 color;           // base_color * beam colour in .rgb, alpha in .a
+attribute float gain;           // per-vertex intensity * path fade
+attribute float beamEmissive;   // the beam's emissive, per vertex
+attribute float pulse;          // [0,1) travelling pulse, < 0 = none
+attribute vec3 frac;            // core / inner / outer radius, as fractions of the ribbon's
+varying vec4 vColor;
+varying vec2 vUv;
+varying float vGain;
+varying float vEmissive;
+varying float vPulse;
+varying vec3 vFrac;
+void main() {
+  vColor = color;
+  vUv = uv;                     // x = along the bolt, y = across it
+  vGain = gain;
+  vEmissive = beamEmissive;
+  vPulse = pulse;
+  vFrac = frac;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+`;
+
+const BEAM_KERNEL = `
+float beamKernel(float t, float r) {
+  if (r <= 0.0) return 0.0;
+  float x = min(t / max(r, 1e-3), 1.0);
+  float f = 1.0 - x * x;
+  return f * f;
+}
+`;
+
+const BEAM_BATCH_VARYINGS = `
+varying vec4 vColor;
+varying vec2 vUv;
+varying float vGain;
+varying float vEmissive;
+varying float vPulse;
+varying vec3 vFrac;
+`;
+
+const BEAM_BATCH_FRAGMENT = `
+precision highp float;
+uniform float uPremultiply;
+${BEAM_BATCH_VARYINGS}
+${BEAM_KERNEL}
+void main() {
+  float t = abs(vUv.y * 2.0 - 1.0);
+  float core = beamKernel(t, vFrac.x) * 2.2;
+  float inner = beamKernel(t, vFrac.y) * 0.8;
+  float outer = beamKernel(t, vFrac.z) * 0.28;
+  float luminance = core + inner + outer;
+  if (luminance <= 0.0) discard;
+
+  vec3 tint = vColor.rgb;
+  vec3 hot = mix(tint, vec3(1.0), 0.85);
+  vec3 rgb = hot * core + tint * (inner + outer);
+
+  float gain = vGain;
+  if (vPulse >= 0.0) {
+    float d = abs(vUv.x - vPulse);
+    d = min(d, 1.0 - d);
+    gain *= 1.0 + 3.0 * exp(-(d * d) / 0.0036);
+  }
+  float alpha = clamp(luminance * gain, 0.0, 1.0) * vColor.a;
+  if (alpha <= 0.0) discard;
+  vec3 out_ = rgb * (vEmissive * gain);
+  gl_FragColor = vec4(out_ * mix(1.0, alpha, uPremultiply), alpha);
+}
+`;
+
+/* An impact flare: the same three-layer falloff, radial instead of across a
+ * ribbon, on a camera-facing quad. */
+const BEAM_BATCH_FLARE_FRAGMENT = `
+precision highp float;
+uniform float uPremultiply;
+${BEAM_BATCH_VARYINGS}
+${BEAM_KERNEL}
+void main() {
+  float t = length(vUv * 2.0 - 1.0);
+  if (t >= 1.0) discard;
+  float core = beamKernel(t, vFrac.x) * 2.2;
+  float inner = beamKernel(t, vFrac.y) * 0.8;
+  float outer = beamKernel(t, vFrac.z) * 0.28;
+  float luminance = core + inner + outer;
+  vec3 tint = vColor.rgb;
+  vec3 rgb = mix(tint, vec3(1.0), 0.85) * core + tint * (inner + outer);
+  float alpha = clamp(luminance * vGain, 0.0, 1.0) * vColor.a;
+  if (alpha <= 0.0) discard;
+  vec3 out_ = rgb * (vEmissive * vGain);
+  gl_FragColor = vec4(out_ * mix(1.0, alpha, uPremultiply), alpha);
+}
+`;
+
+/* A flare's cross-section is the profile the CPU renderer uses radially. */
+const FLARE_CORE_FRAC = 0.22;
+const FLARE_INNER_FRAC = 0.66;
+
+/* ------------------------------------------------------------------ *
+ * strip builders
+ * ------------------------------------------------------------------ */
+
+const TRAIL_LAYOUT = [['position', 3], ['color', 4], ['uv', 2], ['emissive', 1]];
+const BEAM_LAYOUT = [['position', 3], ['color', 4], ['uv', 2], ['gain', 1],
+                     ['beamEmissive', 1], ['pulse', 1], ['frac', 3]];
+
+/* One dynamic BufferGeometry filled in place every frame.
+ *
+ * The buffers grow by doubling and never shrink, so a steady scene reaches its
+ * capacity within the first frames and from then on the builder allocates
+ * nothing at all: the typed arrays are written over, `addUpdateRange` uploads
+ * only the part in use, and `setDrawRange` says how much of it to draw.  Nothing
+ * here creates a geometry, a mesh or a Float32Array per frame, which is what
+ * keeps `renderer.info.memory.geometries` flat and the garbage collector out of
+ * the frame. */
 class StripBuilder {
-  constructor() {
+  constructor(layout) {
+    this.layout = layout;
+    this.arrays = {};
     this.capacity = 0;
     this.indexCapacity = 0;
     this.vertexCount = 0;
     this.indexCount = 0;
     this.geometry = new THREE.BufferGeometry();
-    this.ensure(256, 512);
+    this.ensure(1024, 2048);
   }
 
   /* Growing happens mid-build, so everything written so far is carried over. */
   ensure(vertices, indices) {
     if (vertices > this.capacity) {
-      const capacity = Math.max(256, Math.ceil(vertices * 1.5));
+      const capacity = Math.max(1024, vertices, this.capacity * 2);
       const written = this.vertexCount;
-      const grow = (previous, components) => {
+      for (let i = 0; i < this.layout.length; i++) {
+        const name = this.layout[i][0];
+        const components = this.layout[i][1];
+        const previous = this.arrays[name];
         const next = new Float32Array(capacity * components);
         if (previous && written) next.set(previous.subarray(0, written * components));
-        return next;
-      };
-      this.position = grow(this.position, 3);
-      this.color = grow(this.color, 4);
-      this.uv = grow(this.uv, 2);
-      this.emissive = grow(this.emissive, 1);
-      this.geometry.setAttribute('position', new THREE.BufferAttribute(this.position, 3).setUsage(THREE.DynamicDrawUsage));
-      this.geometry.setAttribute('color', new THREE.BufferAttribute(this.color, 4).setUsage(THREE.DynamicDrawUsage));
-      this.geometry.setAttribute('uv', new THREE.BufferAttribute(this.uv, 2).setUsage(THREE.DynamicDrawUsage));
-      this.geometry.setAttribute('emissive', new THREE.BufferAttribute(this.emissive, 1).setUsage(THREE.DynamicDrawUsage));
+        this.arrays[name] = next;
+        this.geometry.setAttribute(name, new THREE.BufferAttribute(next, components).setUsage(THREE.DynamicDrawUsage));
+      }
       this.capacity = capacity;
     }
     if (indices > this.indexCapacity) {
-      const capacity = Math.max(512, Math.ceil(indices * 1.5));
+      const capacity = Math.max(2048, indices, this.indexCapacity * 2);
       const next = new Uint32Array(capacity);
       if (this.index && this.indexCount) next.set(this.index.subarray(0, this.indexCount));
       this.index = next;
@@ -72,10 +199,43 @@ class StripBuilder {
 
   begin() { this.vertexCount = 0; this.indexCount = 0; }
 
+  link(previousBase, base) {
+    const i = this.index;
+    let o = this.indexCount;
+    i[o] = previousBase; i[o + 1] = previousBase + 1; i[o + 2] = base;
+    i[o + 3] = previousBase + 1; i[o + 4] = base + 1; i[o + 5] = base;
+    this.indexCount += 6;
+  }
+
+  end() {
+    const geometry = this.geometry;
+    const vertices = this.vertexCount;
+    for (let i = 0; i < this.layout.length; i++) {
+      const attribute = geometry.getAttribute(this.layout[i][0]);
+      // Upload only what is in use: the buffer stays at the high-water mark, and
+      // a full bufferSubData of a megabyte-sized batch every frame is exactly
+      // the cost this batching is here to remove.
+      attribute.clearUpdateRanges();
+      if (vertices) attribute.addUpdateRange(0, vertices * this.layout[i][1]);
+      attribute.needsUpdate = true;
+    }
+    const index = geometry.index;
+    index.clearUpdateRanges();
+    if (this.indexCount) index.addUpdateRange(0, this.indexCount);
+    index.needsUpdate = true;
+    geometry.setDrawRange(0, this.indexCount);
+    geometry.boundingSphere = null;
+    geometry.boundingBox = null;
+  }
+}
+
+class TrailBuilder extends StripBuilder {
+  constructor() { super(TRAIL_LAYOUT); }
+
   /* Two vertices per sample, offset along the strip's side vector. */
   pushPair(x, y, z, sx, sy, sz, half, u, r, g, b, a, emissive) {
     const base = this.vertexCount;
-    const p = this.position, c = this.color, t = this.uv, e = this.emissive;
+    const p = this.arrays.position, c = this.arrays.color, t = this.arrays.uv, e = this.arrays.emissive;
     let o = base * 3;
     p[o] = x - sx * half; p[o + 1] = y - sy * half; p[o + 2] = z - sz * half;
     p[o + 3] = x + sx * half; p[o + 4] = y + sy * half; p[o + 5] = z + sz * half;
@@ -88,26 +248,33 @@ class StripBuilder {
     this.vertexCount += 2;
     return base;
   }
+}
 
-  link(previousBase, base) {
-    const i = this.index;
-    let o = this.indexCount;
-    i[o] = previousBase; i[o + 1] = previousBase + 1; i[o + 2] = base;
-    i[o + 3] = previousBase + 1; i[o + 4] = base + 1; i[o + 5] = base;
-    this.indexCount += 6;
-  }
+class BeamBuilder extends StripBuilder {
+  constructor() { super(BEAM_LAYOUT); }
 
-  end() {
-    const geometry = this.geometry;
-    ['position', 'color', 'uv', 'emissive'].forEach(function (name) {
-      const attribute = geometry.getAttribute(name);
-      attribute.needsUpdate = true;
-      attribute.clearUpdateRanges();
-    });
-    geometry.index.needsUpdate = true;
-    geometry.setDrawRange(0, this.indexCount);
-    geometry.boundingSphere = null;
-    geometry.boundingBox = null;
+  /* `gain` is the vertex's own (intensity * path fade); `style` is everything
+   * the beam says about itself, which used to be a material's uniforms. */
+  pushPair(x, y, z, sx, sy, sz, half, u, gain, style) {
+    const base = this.vertexCount;
+    const a = this.arrays;
+    const p = a.position, c = a.color, t = a.uv, g = a.gain, e = a.beamEmissive, u2 = a.pulse, f = a.frac;
+    let o = base * 3;
+    p[o] = x - sx * half; p[o + 1] = y - sy * half; p[o + 2] = z - sz * half;
+    p[o + 3] = x + sx * half; p[o + 4] = y + sy * half; p[o + 5] = z + sz * half;
+    o = base * 4;
+    c[o] = style.r; c[o + 1] = style.g; c[o + 2] = style.b; c[o + 3] = style.a;
+    c[o + 4] = style.r; c[o + 5] = style.g; c[o + 6] = style.b; c[o + 7] = style.a;
+    o = base * 2;
+    t[o] = u; t[o + 1] = 0; t[o + 2] = u; t[o + 3] = 1;
+    g[base] = gain; g[base + 1] = gain;
+    e[base] = style.emissive; e[base + 1] = style.emissive;
+    u2[base] = style.pulse; u2[base + 1] = style.pulse;
+    o = base * 3;
+    f[o] = style.core; f[o + 1] = style.inner; f[o + 2] = style.outer;
+    f[o + 3] = style.core; f[o + 4] = style.inner; f[o + 5] = style.outer;
+    this.vertexCount += 2;
+    return base;
   }
 }
 
@@ -166,77 +333,93 @@ function appendTrail(builder, data, count, cameraPosition, twistDegrees) {
   }
 }
 
-/* Vertex indices of one strip through a beam path.  `scale` is the ribbon's
- * half-width per unit of vertex width; when `decimate` is set, a vertex is kept
- * only once the path has travelled the ribbon's full width since the last one.
- * That is what keeps the wide outer glow from becoming a fan of spikes on a
- * fractal bolt, whose segments are far shorter than the glow is wide. */
-function beamStripIndices(data, count, scale, decimate) {
-  const out = [0];
+/* Scratch for one strip's vertex indices, reused by every path of every frame:
+ * a `[]` per path per pass is ~1300 short-lived arrays a frame on a bolt-heavy
+ * effect, which is the garbage that shows up as a long task. */
+let STRIP_INDEX = new Int32Array(1024);
+
+/* Vertex indices of one strip through a beam path, written into STRIP_INDEX;
+ * returns how many.  The path starts at float `origin` inside its group's
+ * vertex run, and the indices are absolute float offsets into that run.  `scale`
+ * is the ribbon's half-width per unit of vertex width; when `decimate` is set, a
+ * vertex is kept only once the path has travelled the ribbon's full width since
+ * the last one.  That is what keeps the wide outer glow from becoming a fan of
+ * spikes on a fractal bolt, whose segments are far shorter than the glow is
+ * wide. */
+function beamStripIndices(data, origin, count, scale, decimate) {
+  if (STRIP_INDEX.length < count) STRIP_INDEX = new Int32Array(Math.max(count, STRIP_INDEX.length * 2));
+  const out = STRIP_INDEX;
+  let n = 0;
+  out[n++] = origin;
   if (decimate) {
     let travelled = 0;
     for (let i = 1; i < count - 1; i++) {
-      const o = i * BEAM_STRIDE, p = (i - 1) * BEAM_STRIDE;
+      const o = origin + i * BEAM_STRIDE, p = o - BEAM_STRIDE;
       const dx = data[o] - data[p], dy = data[o + 1] - data[p + 1], dz = data[o + 2] - data[p + 2];
       travelled += Math.sqrt(dx * dx + dy * dy + dz * dz);
-      if (travelled >= 2 * scale * data[o + 3]) { out.push(i); travelled = 0; }
+      if (travelled >= 2 * scale * data[o + 3]) { out[n++] = o; travelled = 0; }
     }
   } else {
-    for (let i = 1; i < count - 1; i++) out.push(i);
+    for (let i = 1; i < count - 1; i++) out[n++] = origin + i * BEAM_STRIDE;
   }
-  out.push(count - 1);
-  return out;
+  out[n++] = origin + (count - 1) * BEAM_STRIDE;
+  return n;
 }
 
-/* One strip of one beam path: 5 floats per vertex (xyz, width in metres,
- * intensity).  The per-vertex "emissive" attribute carries intensity * path fade;
- * the fragment shader places the glow layers across the ribbon, exactly as the CPU
- * renderer does. */
-function appendBeam(builder, data, count, cameraPosition, options) {
+/* One strip of one beam path, `count` vertices from vertex `first` of its
+ * group's run: 5 floats per vertex (xyz, width in metres, intensity).  The
+ * per-vertex `gain` carries intensity * path fade; the fragment shader places
+ * the glow layers across the ribbon, exactly as the CPU renderer does. */
+function appendBeam(builder, data, first, count, cameraPosition, scale, decimate, fade, style) {
   if (count < 2) return;
-  const index = beamStripIndices(data, count, options.scale, options.decimate);
-  if (index.length < 2) return;
-  builder.ensure(builder.vertexCount + index.length * 2, builder.indexCount + (index.length - 1) * 6);
-  const color = options.color;
-  const alpha = (color[3] === undefined ? 1 : color[3]) * options.alpha;
-  const fade = options.fade;
+  const origin = first * BEAM_STRIDE;
+  const n = beamStripIndices(data, origin, count, scale, decimate);
+  if (n < 2) return;
+  const index = STRIP_INDEX;
+  builder.ensure(builder.vertexCount + n * 2, builder.indexCount + (n - 1) * 6);
+  const span = 1 / ((count - 1) * BEAM_STRIDE);
   let previous = -1;
   TMP_PREV_SIDE.set(0, 0, 0);
-  for (let k = 0; k < index.length; k++) {
-    const o = index[k] * BEAM_STRIDE;
+  for (let k = 0; k < n; k++) {
+    const o = index[k];
     const x = data[o], y = data[o + 1], z = data[o + 2];
-    const before = index[Math.max(0, k - 1)] * BEAM_STRIDE;
-    const after = index[Math.min(index.length - 1, k + 1)] * BEAM_STRIDE;
+    const before = index[k > 0 ? k - 1 : 0];
+    const after = index[k + 1 < n ? k + 1 : n - 1];
     TMP_TANGENT.set(data[after] - data[before], data[after + 1] - data[before + 1], data[after + 2] - data[before + 2]);
     if (TMP_TANGENT.lengthSq() < 1e-12) TMP_TANGENT.set(0, 1, 0);
-    const along = count > 1 ? index[k] / (count - 1) : 0;
     const side = sideVector(TMP_TANGENT, x, y, z, cameraPosition, 0, TMP_PREV_SIDE);
     TMP_PREV_SIDE.copy(side);
-    const base = builder.pushPair(x, y, z, side.x, side.y, side.z, data[o + 3] * options.scale, along,
-                                  color[0], color[1], color[2], alpha, data[o + 4] * fade);
+    const base = builder.pushPair(x, y, z, side.x, side.y, side.z, data[o + 3] * scale,
+                                  (o - origin) * span, data[o + 4] * fade, style);
     if (previous >= 0) builder.link(previous, base);
     previous = base;
   }
 }
 
+/* Every path of one beam group (its live paths, or its ghosts). */
+function appendGroup(builder, group, cameraPosition, scale, decimate, style) {
+  if (!group || !group.count) return;
+  const records = group.records, vertices = group.vertices;
+  for (let i = 0; i < group.count; i++) {
+    const o = i * BEAM_RECORD;
+    appendBeam(builder, vertices, records[o], records[o + 1], cameraPosition, scale, decimate, records[o + 3], style);
+  }
+}
+
 /* An impact flare: one camera-facing quad, shaded radially by the flare shader. */
-function appendFlare(builder, flare, camera, options) {
+function appendFlare(builder, flare, camera, style) {
   const position = flare.position || [0, 0, 0];
   const radius = typeof flare.radius === 'number' ? flare.radius : 0;
   if (!(radius > 0)) return;
   builder.ensure(builder.vertexCount + 4, builder.indexCount + 6);
-  const color = options.color;
-  const alpha = (color[3] === undefined ? 1 : color[3]) * options.alpha;
   const gain = typeof flare.intensity === 'number' ? flare.intensity : 1;
   TMP_A.set(1, 0, 0).applyQuaternion(camera.quaternion).multiplyScalar(radius);
   TMP_B.set(0, 1, 0).applyQuaternion(camera.quaternion).multiplyScalar(radius);
   // (-,-) (+,-) then (-,+) (+,+): two pushPair rows the strip linker joins.
   const bottom = builder.pushPair(position[0] - TMP_B.x, position[1] - TMP_B.y, position[2] - TMP_B.z,
-                                  TMP_A.x, TMP_A.y, TMP_A.z, 1, 0,
-                                  color[0], color[1], color[2], alpha, gain);
+                                  TMP_A.x, TMP_A.y, TMP_A.z, 1, 0, gain, style);
   const top = builder.pushPair(position[0] + TMP_B.x, position[1] + TMP_B.y, position[2] + TMP_B.z,
-                               TMP_A.x, TMP_A.y, TMP_A.z, 1, 1,
-                               color[0], color[1], color[2], alpha, gain);
+                               TMP_A.x, TMP_A.y, TMP_A.z, 1, 1, gain, style);
   builder.link(bottom, top);
 }
 
@@ -264,37 +447,18 @@ export function makeRibbonMaterial() {
   return material;
 }
 
-/* The beam / flare material: the cross-section lives in the fragment shader so
- * the bolt is one strip with one draw call instead of a stack of ribbons. */
+/* The beam / flare material.  The cross-section lives in the fragment shader and
+ * everything that varies per beam lives in the vertex attributes, so a whole
+ * frame of bolts is one strip with one draw call instead of five per beam. */
 export function makeBeamMaterial(flare) {
   return new THREE.ShaderMaterial({
-    vertexShader: BEAM_VERTEX,
-    fragmentShader: flare ? BEAM_FLARE_FRAGMENT : BEAM_FRAGMENT,
-    uniforms: {
-      uColor: { value: new THREE.Color(1, 1, 1) },
-      uEmissive: { value: 4 },
-      uCoreFrac: { value: 0.21 },
-      uInnerFrac: { value: 0.63 },
-      uOuterFrac: { value: 1 },
-      uPulse: { value: -1 },
-      uPremultiply: { value: 0 }
-    },
+    vertexShader: BEAM_BATCH_VERTEX,
+    fragmentShader: flare ? BEAM_BATCH_FLARE_FRAGMENT : BEAM_BATCH_FRAGMENT,
+    uniforms: { uPremultiply: { value: 0 } },
     side: THREE.DoubleSide,
     transparent: true,
     depthWrite: false
   });
-}
-
-function configureBeamMaterial(material, style, blend) {
-  material.uniforms.uColor.value.copy(style.color);
-  material.uniforms.uEmissive.value = style.emissive;
-  material.uniforms.uCoreFrac.value = style.coreFrac;
-  material.uniforms.uInnerFrac.value = style.innerFrac;
-  material.uniforms.uOuterFrac.value = style.outerFrac;
-  material.uniforms.uPulse.value = style.pulse;
-  material.uniforms.uPremultiply.value = style.premultiply;
-  applyBlend(material, blend);
-  material.renderOrder = blend === 'additive' ? 20 : 10;
 }
 
 function configureMaterial(material, desc, blend, context, textureId, circle) {
@@ -311,13 +475,14 @@ function configureMaterial(material, desc, blend, context, textureId, circle) {
 }
 
 /* ------------------------------------------------------------------ *
- * trails
+ * trails and beams
  * ------------------------------------------------------------------ */
 
+/* One trail node: its own material (texture, tint, emissive), its own strip. */
 class RibbonNode {
-  constructor(scene, material) {
-    this.builder = new StripBuilder();
-    this.material = material || makeRibbonMaterial();
+  constructor(scene, builder, material) {
+    this.builder = builder;
+    this.material = material;
     this.mesh = new THREE.Mesh(this.builder.geometry, this.material);
     this.mesh.frustumCulled = false;
     this.mesh.layers.set(LAYER_TRANSPARENT);
@@ -332,26 +497,64 @@ class RibbonNode {
   }
 }
 
+/* One bucket of beam geometry: everything in the frame that blends the same way.
+ * These live for as long as the renderer does - an empty frame draws nothing
+ * rather than disposing the buffers, so nothing churns when the bolts flicker
+ * out and back. */
+class BeamBatch extends RibbonNode {
+  constructor(scene, blend, flare) {
+    const material = makeBeamMaterial(flare);
+    material.uniforms.uPremultiply.value = blend === 'premultiplied' ? 1 : 0;
+    applyBlend(material, blend);
+    material.renderOrder = blend === 'additive' ? 20 : 10;
+    super(scene, new BeamBuilder(), material);
+    this.mesh.renderOrder = material.renderOrder;
+    this.mesh.visible = false;
+  }
+
+  finish() {
+    this.builder.end();
+    this.mesh.visible = this.builder.indexCount > 0;
+  }
+}
+
+/* Per-beam style, reused every frame: the numbers the batched shader reads out
+ * of its vertex attributes. */
+const BEAM_STYLE = { r: 1, g: 1, b: 1, a: 1, emissive: 4, pulse: -1, core: 0, inner: 0, outer: 0 };
+
+/* rgb from a material / beam colour without allocating a THREE.Color per beam. */
+const WHITE_RGB = [1, 1, 1];
+function rgbOf(value, fallback) {
+  return Array.isArray(value) && value.length >= 3 ? value : fallback;
+}
+
 export class RibbonRenderer {
   constructor(scene) {
     this.scene = scene;
-    this.nodes = new Map();
+    this.nodes = new Map();        // trails, keyed by 'trail:<id>'
+    this.batches = new Map();      // beams, keyed by '<blend>' / '<blend>:flare'
+    this.seen = new Set();
   }
 
   node(key) {
     let node = this.nodes.get(key);
-    if (!node) { node = new RibbonNode(this.scene); this.nodes.set(key, node); }
+    if (!node) {
+      node = new RibbonNode(this.scene, new TrailBuilder(), makeRibbonMaterial());
+      this.nodes.set(key, node);
+    }
     return node;
   }
 
-  beamNode(key, flare) {
-    let node = this.nodes.get(key);
-    if (!node) { node = new RibbonNode(this.scene, makeBeamMaterial(flare)); this.nodes.set(key, node); }
-    return node;
+  batch(blend, flare) {
+    const key = flare ? blend + ':flare' : blend;
+    let batch = this.batches.get(key);
+    if (!batch) { batch = new BeamBatch(this.scene, blend, flare); this.batches.set(key, batch); }
+    return batch;
   }
 
   update(frame, context) {
-    const seen = new Set();
+    const seen = this.seen;
+    seen.clear();
     const cameraPosition = context.camera.position;
 
     (frame.trails || []).forEach((trail) => {
@@ -370,13 +573,31 @@ export class RibbonRenderer {
       node.mesh.renderOrder = node.material.renderOrder;
     });
 
-    (frame.beams || []).forEach((beam) => {
+    this.batches.forEach(function (batch) { batch.builder.begin(); });
+    const beams = frame.beams || [];
+    const style = BEAM_STYLE;
+    for (let b = 0; b < beams.length; b++) {
+      const beam = beams[b];
       const desc = context.materials[beam.material] || {};
       const blend = beam.blend || desc.blend || 'additive';
-      const color = beam.color || [1, 1, 1, 1];
-      let emissive = typeof beam.emissive === 'number' ? beam.emissive : 4;
+      const color = beam.color || WHITE_RGB;
+      const base = rgbOf(desc.base_color, WHITE_RGB);
       const opacity = typeof desc.opacity === 'number' ? desc.opacity : 1;
+      let emissive = typeof beam.emissive === 'number' ? beam.emissive : 4;
       if (typeof desc.emissive_intensity === 'number') emissive *= 1 + desc.emissive_intensity;
+      style.r = base[0] * color[0];
+      style.g = base[1] * color[1];
+      style.b = base[2] * color[2];
+      style.a = (color[3] === undefined ? 1 : color[3]) * opacity;
+      style.emissive = emissive;
+      style.pulse = typeof beam.pulse_phase === 'number' ? beam.pulse_phase : -1;
+      // A bolt keeps re-rolling its paths through the dark gaps between flashes.
+      // `blend(rgb * emissive * gain, alpha)` is exactly zero at alpha 0 (every
+      // fragment discards) and, under additive blending, at emissive 0 - so there
+      // is nothing to build. `stream.py`'s beam_is_dark() drops these before they
+      // reach the wire; this is the same test for a source that does not.
+      if (style.a === 0 || (style.emissive === 0 && blend === 'additive')) continue;
+
       const coreWidth = typeof beam.core_width === 'number' ? beam.core_width : 0.55;
       const glowWidth = typeof beam.glow_width === 'number' ? beam.glow_width : 2.6;
       // Radii as fractions of `width`. A ribbon wider than its segments are long
@@ -387,54 +608,29 @@ export class RibbonRenderer {
       const innerR = 1.5 * coreWidth;
       const outerR = 0.5 * glowWidth;
       const split = outerR > innerR * 1.05 && innerR > 1e-5;
-      const passes = split
-        ? [{ scale: innerR, core: coreR / innerR, inner: 1, outer: 0, decimate: false },
-           { scale: outerR, core: 0, inner: 0, outer: 1, decimate: true }]
-        : [(function () {
-            const scale = Math.max(innerR, outerR, 1e-5);
-            return { scale: scale, core: Math.min(coreR / scale, 1), inner: Math.min(innerR / scale, 1),
-                     outer: Math.min(outerR / scale, 1), decimate: false };
-          })()];
-      const pulse = typeof beam.pulse_phase === 'number' ? beam.pulse_phase : -1;
-      const baseColor = colorOf(desc.base_color, [1, 1, 1]);
-      const premultiply = blend === 'premultiplied' ? 1 : 0;
-      // Ghosts first (they sit behind the live bolt), then the bolt, then the flares.
-      passes.forEach((pass, index) => {
-        [['ghosts', beam.ghosts || []], ['paths', beam.paths || []]].forEach(([which, paths]) => {
-          const key = 'beam:' + beam.id + ':' + which + ':' + index;
-          seen.add(key);
-          const node = this.beamNode(key, false);
-          const builder = node.builder;
-          builder.begin();
-          paths.forEach(function (path) {
-            appendBeam(builder, path.vertices, path.count, cameraPosition,
-                       { color: color, alpha: opacity, scale: pass.scale, decimate: pass.decimate,
-                         fade: path.fade });
-          });
-          builder.end();
-          configureBeamMaterial(node.material, {
-            color: baseColor, emissive: emissive, coreFrac: pass.core, innerFrac: pass.inner,
-            outerFrac: pass.outer, pulse: pulse, premultiply: premultiply
-          }, blend);
-          node.mesh.visible = builder.indexCount > 0;
-          node.mesh.renderOrder = node.material.renderOrder;
-        });
-      });
-      const style = { color: baseColor, emissive: emissive, coreFrac: 0.22, innerFrac: 0.66,
-                      outerFrac: 1, pulse: -1, premultiply: premultiply };
+      const builder = this.batch(blend, false).builder;
+      // Ghosts first (they sit behind the live bolt), then the bolt.
+      if (split) {
+        style.core = coreR / innerR; style.inner = 1; style.outer = 0;
+        this.appendPaths(builder, beam, cameraPosition, innerR, false, style);
+        style.core = 0; style.inner = 0; style.outer = 1;
+        this.appendPaths(builder, beam, cameraPosition, outerR, true, style);
+      } else {
+        const scale = Math.max(innerR, outerR, 1e-5);
+        style.core = Math.min(coreR / scale, 1);
+        style.inner = Math.min(innerR / scale, 1);
+        style.outer = Math.min(outerR / scale, 1);
+        this.appendPaths(builder, beam, cameraPosition, scale, false, style);
+      }
 
-      const flareKey = 'beam:' + beam.id + ':flares';
-      seen.add(flareKey);
-      const flareNode = this.beamNode(flareKey, true);
-      flareNode.builder.begin();
-      (beam.flares || []).forEach((flare) => {
-        appendFlare(flareNode.builder, flare, context.camera, { color: color, alpha: opacity });
-      });
-      flareNode.builder.end();
-      configureBeamMaterial(flareNode.material, style, blend);
-      flareNode.mesh.visible = flareNode.builder.indexCount > 0;
-      flareNode.mesh.renderOrder = flareNode.material.renderOrder;
-    });
+      const flares = beam.flares;
+      if (flares && flares.length) {
+        const flareBuilder = this.batch(blend, true).builder;
+        style.core = FLARE_CORE_FRAC; style.inner = FLARE_INNER_FRAC; style.outer = 1; style.pulse = -1;
+        for (let f = 0; f < flares.length; f++) appendFlare(flareBuilder, flares[f], context.camera, style);
+      }
+    }
+    this.batches.forEach(function (batch) { batch.finish(); });
 
     this.nodes.forEach((node, key) => {
       if (seen.has(key)) return;
@@ -443,9 +639,19 @@ export class RibbonRenderer {
     });
   }
 
+  /* Ghosts then live paths, both strips of the same pass into the same buffer.
+   * A group is two typed arrays: the vertex run and one 4-float record per path
+   * (first vertex, vertex count, branch depth, fade). */
+  appendPaths(builder, beam, cameraPosition, scale, decimate, style) {
+    appendGroup(builder, beam.ghosts, cameraPosition, scale, decimate, style);
+    appendGroup(builder, beam.paths, cameraPosition, scale, decimate, style);
+  }
+
   dispose() {
     this.nodes.forEach((node) => node.dispose());
     this.nodes.clear();
+    this.batches.forEach((batch) => batch.dispose());
+    this.batches.clear();
   }
 }
 

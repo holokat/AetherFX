@@ -43,6 +43,27 @@ Two details the viewer depends on:
 * **Playback is paced by the wall clock, and frames are dropped, not queued.**
   `_Connection._play_loop` derives the next target time from `time.monotonic()`,
   so a slow frame or a slow client skips ahead. The viewer never shows a backlog.
+* **A beam's paths are wholly in the blob** (stream version 2). A fractal bolt is
+  dozens of paths and a lightning AOE is forty-odd bolts, so `{"offset", "count",
+  "depth", "fade"}` per path used to be *more header than message* - 40 KB of
+  JSON a frame, and 600-odd short-lived objects on the client to match. Each of
+  `paths` / `ghosts` is now one descriptor, `{"vertices", "total", "offset",
+  "count"}`: one contiguous run of `total` vertices at byte offset `vertices`,
+  and `count` records of four float32 (first vertex, vertex count, branch depth,
+  fade) at byte offset `offset`. The client makes two typed-array views per beam
+  and allocates nothing per path.
+* **A beam that cannot light a pixel never reaches the wire.** A bolt keeps
+  re-rolling its paths through the dark gaps between flashes - on the built-in
+  Lightning AOE that is *half of every frame's beam geometry*. Every renderer
+  shades a beam as `blend(rgb * emissive * gain, alpha)` (docs/RUNTIME.md section
+  11), so `encode_frame` drops a beam whose `color[3]` is 0 (every fragment
+  discards) or whose `emissive` is 0 under additive blending (the colour term is
+  zero and additive leaves the destination alone) - `stream.beam_is_dark()`. A
+  black beam under *alpha* blending would still darken what is behind it, so
+  that case is deliberately left alone. `width == 0` zeroes every vertex width,
+  which makes the ribbons degenerate but leaves the `impact_flare` drawing, so
+  that one only empties the paths. `ribbons.js` repeats the same test for a
+  frame source that does not.
 
 ## Plugging in a frame source
 
@@ -182,16 +203,40 @@ from the frame's column-major 16-float matrix.
 the CPU every frame (the strip has to face the camera, and the camera moves).
 Trails read the 12-float vertex layout directly (pos3, width, age_norm, u,
 colour4, opacity, emissive) and honour `twist_deg`. Beams read the 5-float beam
-layout (pos3, width, intensity) and are shaded *across* the ribbon by
-`BEAM_FRAGMENT`, which evaluates the same three-layer cross-section as the CPU
-reference renderer (docs/RUNTIME.md section 11): a white-hot core, a coloured
+layout (pos3, width, intensity) and are shaded *across* the ribbon by the
+beam fragment shader, which evaluates the same three-layer cross-section as the
+CPU reference renderer (docs/RUNTIME.md section 11): a white-hot core, a coloured
 inner glow and a wide faint outer glow, with `pulse_phase` brightening a
 gaussian travelling along the path. A ribbon wider than its segments are long
 rasterises as a fan of spikes, so on a fractal bolt the wide outer glow gets its
 own strip through a path decimated to its own width; the two strips sum to the
 one-pass formula. Afterglow ghosts are the same strips at a lower `fade`, and
-`impact_flare`s are camera-facing quads with the same falloff, radially. All the
-ribbons of one node share one geometry and one draw call.
+`impact_flare`s are camera-facing quads with the same falloff, radially.
+
+A trail node owns one strip and one draw call. **Every beam in the frame shares
+one strip per blend mode** - every path, every ghost, both cross-section passes,
+forty bolts or one. That is only possible because nothing about a beam is a
+uniform any more: the tint (`base_color * beam colour`), the alpha, the emissive,
+the pulse phase and the three layer radii are all vertex attributes, filled in
+`BeamBuilder.pushPair`. They are constant along a path and a triangle never spans
+two paths, so the interpolators hand the fragment shader exactly the authored
+numbers and the image is unchanged - Lightning Strike renders pixel-for-pixel
+identically either way. The batched GLSL lives in `ribbons.js`
+(`BEAM_BATCH_VERTEX` / `BEAM_BATCH_FRAGMENT` / `BEAM_BATCH_FLARE_FRAGMENT`);
+`shaders.js` still carries the one-beam-per-uniform `BEAM_*` pair they are
+derived from, and the kernel and its weights are the renderer-parity contract, so
+the two have to stay in step.
+
+`StripBuilder` is what keeps this out of the garbage collector. One dynamic
+`BufferGeometry` per bucket, buffers that grow by doubling and never shrink, so a
+steady scene reaches its capacity in the first frames and after that allocates
+nothing at all: the typed arrays are written over, `addUpdateRange(0, in-use)`
+uploads only the part that is live (a full `bufferSubData` of a megabyte batch
+every frame is exactly the cost this removes) and `setDrawRange` says how much to
+draw. The buckets live as long as the renderer, so a frame with no bolts draws
+nothing rather than disposing a geometry - which is what stops
+`renderer.info.memory.geometries` from sawtoothing as bolts flicker in and out.
+On Lightning AOE that was 68 -> 263 geometries *per frame*; it is now flat.
 
 A trail's `u` is the runtime's own: `cumulative distance + uv_scroll * time`
 (docs/RUNTIME.md section 7), in metres, accumulated along the source's whole
@@ -332,3 +377,31 @@ timed with `EXT_disjoint_timer_query_webgl2`:
 |---|---|---|---|
 | fire_aoe at peak, ~2000 particles | - | 1.8 ms | 40 |
 | 20 000 stretched billboards + 500 mesh instances (8 variants) | 0.40 ms | 3.5 ms | 38 |
+
+### Beams
+
+Beam-heavy effects were the viewer's worst case until the batching above, because
+every bolt cost five nodes (two cross-section passes x live/ghost, plus flares)
+and every one of those was created and disposed as the bolt flickered. Measured
+on the Lightning AOE probe (`tools/gl_capture.py --perf`, headless Chrome with
+ANGLE/Metal, 1920x1854 drawing buffer):
+
+| | before | after |
+|---|---|---|
+| draw calls (whole frame) | 144 | 59 |
+| of those, beams | 85 on average, 181 at the peak frame | **2** (one strip bucket, one flare bucket) |
+| `memory.geometries` over a run | 68 -> 263, every frame | 70 -> 78, flat |
+| `ribbons.update` | 0.93 ms avg, 2.1 ms worst | 0.34 ms avg, 1.1 ms worst |
+| triangles | 48 700 | 26 900 |
+| frame payload | 276 KB avg / 528 KB peak | 149 KB avg / 310 KB peak |
+| of which JSON header | 34 KB avg / 63 KB peak | 16 KB avg / 23 KB peak |
+| `frame_at` + `encode_frame` | 4.7 + 0.64 ms | 2.9 + 0.31 ms |
+| stream fps (60 Hz target) | 46.6 | 55.4 |
+
+Holy AOE, which also draws beams, went from 76 to 41 draw calls and 79 to 39
+geometries on the same probe for free. The last third of the win is the effect
+itself: `examples/effects/lightning_aoe.json` gives its hero bolt and its ten
+ring bolts the full fractal treatment (`detail` 3, `branch_depth` 2, afterglow)
+and its thirty-three small ground / fork / air arcs a single generation of one or
+two branches and no afterglow, which is invisible at the default framing and was
+half the frame's geometry.

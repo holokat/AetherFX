@@ -375,6 +375,20 @@ function addFresnel(material, power, color, intensity) {
   material.customProgramCacheKey = () => 'fresnel' + power.toFixed(2);
 }
 
+
+/* A cheap, stable signature of the fields a mesh material is built from. */
+const MESH_MATERIAL_FIELDS = ['base_color', 'shading', 'emissive_color', 'emissive_intensity', 'double_sided',
+  'opacity', 'fresnel_power', 'dissolve', 'erosion', 'temperature_gradient'];
+function materialSignature(desc) {
+  if (!desc) return '';
+  let out = '';
+  for (let i = 0; i < MESH_MATERIAL_FIELDS.length; i++) {
+    const value = desc[MESH_MATERIAL_FIELDS[i]];
+    if (value !== undefined) out += MESH_MATERIAL_FIELDS[i] + '=' + JSON.stringify(value) + ';';
+  }
+  return out;
+}
+
 class MeshParticleSystem {
   constructor(scene) {
     this.scene = scene;
@@ -455,10 +469,15 @@ class MeshParticleSystem {
       this.byVariant.forEach((mesh) => { mesh.count = 0; });
       return 0;
     }
-    if (!this.material || this.materialKey !== system.material + '|' + blend) {
+    // Key on the description itself, not just its id: effects reuse ids such as mat_rock, and the
+    // first frame can arrive before (or the authored top-up after) the material description does.
+    // Keyed on the id alone, a rock kept the previous effect's glassy ice material, or an empty one.
+    const materialKey = system.material + '|' + blend + '|' + materialSignature(desc);
+    if (!this.material || this.materialKey !== materialKey) {
       if (this.material) this.material.dispose();
       this.material = this.buildMaterial(desc, blend);
-      this.materialKey = system.material + '|' + blend;
+      this.materialKey = materialKey;
+      this.byVariant.forEach((mesh) => { mesh.material = this.material; });
     }
 
     // bucket the instances by variant so each InstancedMesh gets a contiguous run

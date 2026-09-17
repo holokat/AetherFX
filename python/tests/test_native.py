@@ -22,7 +22,7 @@ import pytest
 from PIL import Image
 
 from aetherfx import native
-from aetherfx.studio.stream import decode_header, encode_frame
+from aetherfx.studio.stream import STREAM_VERSION, decode_header, encode_frame
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EXAMPLES_DIR = REPO_ROOT / "examples" / "effects"
@@ -485,7 +485,7 @@ class TestNativeFrameSource:
             assert sum(s.count for s in frame.systems) > 0
 
             header, blob = decode_header(encode_frame(frame, fps=60.0))
-            assert header["type"] == "frame" and header["version"] == 1
+            assert header["type"] == "frame" and header["version"] == STREAM_VERSION
             assert header["fps"] == 60.0
             mesh_system = next(s for s in header["systems"] if s["render_mode"] == "mesh")
             assert set(mesh_system["arrays"]) == {
@@ -536,14 +536,24 @@ class TestNativeFrameSource:
             header, blob = decode_header(encode_frame(frame, fps=60.0))
             wire = header["beams"][0]
             paths = wire["paths"]
-            assert paths and paths[0]["count"] >= 2
-            assert paths[0]["depth"] == 0 and paths[0]["fade"] == pytest.approx(1.0)
+            assert paths["count"] == len(frame.beams[0]["paths"])
             assert "material" in wire and "ghosts" in wire and "flares" in wire
             assert wire["core_width"] > 0.0 and wire["glow_width"] > 0.0
-            # the offsets really do address 5-float vertices in the blob
-            first = np.frombuffer(blob, dtype=np.float32, count=paths[0]["count"] * 5,
-                                  offset=paths[0]["offset"]).reshape(-1, 5)
-            assert np.allclose(first, frame.beams[0]["paths"][0]["vertices"])
+
+            # The per-path metadata lives in the blob: one 4-float record per path
+            # (first vertex, vertex count, branch depth, fade) beside one contiguous
+            # run of 5-float vertices.
+            records = np.frombuffer(blob, dtype=np.float32, count=paths["count"] * 4,
+                                    offset=paths["offset"]).reshape(-1, 4)
+            assert records[0][0] == 0 and records[0][1] >= 2
+            assert records[0][2] == 0 and records[0][3] == pytest.approx(1.0)
+            assert records[:, 1].sum() == paths["total"]
+
+            run = np.frombuffer(blob, dtype=np.float32, count=paths["total"] * 5,
+                                offset=paths["vertices"]).reshape(-1, 5)
+            for record, source_path in zip(records, frame.beams[0]["paths"]):
+                start, count = int(record[0]), int(record[1])
+                assert np.allclose(run[start:start + count], source_path["vertices"])
 
     def test_a_broken_effect_reports_its_diagnostics(self):
         broken = effect_document("fireball")

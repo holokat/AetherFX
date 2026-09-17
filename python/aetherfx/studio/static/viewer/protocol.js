@@ -41,22 +41,25 @@ export function decodeFrame(buffer) {
     return Object.assign({}, system, { count: count, views: views });
   });
 
-  /* A beam path is 5 floats per vertex: xyz, width (m), intensity. */
-  const beamPaths = function (list) {
-    return (list || []).map(function (p) {
-      return {
-        vertices: arrayView(buffer, base, { offset: p.offset, dtype: 'f32', components: 5 }, p.count | 0),
-        count: p.count | 0,
-        depth: p.depth | 0,
-        fade: typeof p.fade === 'number' ? p.fade : 1
-      };
-    });
+  /* A beam's live paths (or its ghosts): one contiguous vertex run of 5 floats
+   * per vertex (xyz, width in metres, intensity) and one record array of 4
+   * floats per path (first vertex, vertex count, branch depth, fade).  Two
+   * typed-array views, whatever the bolt's fractal depth - a lightning AOE is
+   * ~620 paths a frame, and one object each was pure garbage. */
+  const EMPTY_F32 = new Float32Array(0);
+  const beamGroup = function (group) {
+    if (!group) return { count: 0, vertices: EMPTY_F32, records: EMPTY_F32 };
+    return {
+      count: group.count | 0,
+      vertices: arrayView(buffer, base, { offset: group.vertices, dtype: 'f32', components: 5 }, group.total | 0),
+      records: arrayView(buffer, base, { offset: group.offset, dtype: 'f32', components: 4 }, group.count | 0)
+    };
   };
 
   const beams = (header.beams || []).map(function (beam) {
     return Object.assign({}, beam, {
-      paths: beamPaths(beam.paths),
-      ghosts: beamPaths(beam.ghosts)
+      paths: beamGroup(beam.paths),
+      ghosts: beamGroup(beam.ghosts)
     });
   });
 
