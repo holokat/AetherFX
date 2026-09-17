@@ -79,7 +79,8 @@ ANCHORS: dict[str, tuple[float, float, float]] = {
     "t4": (3.4, 1.2, 1.7),
 }
 SOURCE = "src"
-FADE_STOP = 106          # last frame that may emit a 0.22 s fade mote: nothing outlives the 2.0 s
+FADE_STOP = 108          # last frame that may emit a 0.2 s fade mote: nothing outlives the 2.0 s
+MOTES_STOP = 90          # ... and the last frame for a 0.5 s drifting mote
 
 
 @dataclass(frozen=True)
@@ -117,6 +118,7 @@ TIERS: dict[int, dict[str, float]] = {
         "sparks": 150, "spark_speed": 5.6, "light": 6.2, "veins": 2.7},
 }
 STROKE_TRAVEL = 4        # frames the stroke takes from `a` to `b` (0.067 s)
+LINGER_DELAY = 10        # frames after the hit before the lingering link fades in under the dying stroke
 CAPSULE_RADIUS = 0.45    # the human-sized region around a target: crawl arcs live on it
 CAPSULE_Y = (0.3, 1.8)
 
@@ -235,6 +237,12 @@ def hops_into(anchor: str) -> list[Hop]:
 
 def hops_out_of(anchor: str) -> list[Hop]:
     return [h for h in HOPS if h.a == anchor]
+
+
+def chain_depth(hop: Hop) -> int:
+    """1 for a hop leaving the source, 2 for the next one down the chain, ..."""
+    feeding = hops_into(hop.a)
+    return 1 if not feeding else 1 + chain_depth(feeding[0])
 
 
 # ---------------------------------------------------------------------------
@@ -457,15 +465,16 @@ def build_shared() -> None:
          {"sprite": "tex_spark", "forces": ["gravity"], "colliders": ["ground"]}, layer="sparks")
 
     mote = {
-        "size": 0.06, "size_variance": 0.035, "size_over_life": [[0.0, 0.5], [0.2, 1.0], [1.0, 0.4]],
+        "size": 0.085, "size_variance": 0.05, "size_over_life": [[0.0, 0.5], [0.2, 1.0], [1.0, 0.45]],
         "color": [1.0, 1.0, 1.0, 1.0], "color_over_life": [[0.0, HOT], [0.3, MID], [1.0, DEEP]],
-        "emissive": 3.4, "opacity_over_life": [[0.0, 0.0], [0.1, 1.0], [0.75, 0.9], [1.0, 0.0]],
+        "emissive": 4.2, "opacity_over_life": [[0.0, 0.0], [0.1, 1.0], [0.75, 0.9], [1.0, 0.0]],
         "render_mode": "billboard", "drag": 1.6, "blend": "additive",
     }
-    node("ps_motes", "particle_system", {"max_particles": 500, "lifetime": 0.55, "lifetime_variance": 0.14, **mote},
+    node("ps_motes", "particle_system", {"max_particles": 500, "lifetime": 0.4, "lifetime_variance": 0.1, **mote},
          {"sprite": "tex_spark", "forces": ["drift_gravity", "drift_curl"]}, layer="sparks")
     # What is left when the links die: short lives, so the last one is gone at 2.0 s.
-    node("ps_fade", "particle_system", {"max_particles": 1100, "lifetime": 0.2, "lifetime_variance": 0.02, **mote},
+    node("ps_fade", "particle_system", {"max_particles": 1400, "lifetime": 0.185, "lifetime_variance": 0.015, **mote,
+                                        "emissive": 5.5},
          {"sprite": "tex_spark", "forces": ["drift_gravity", "drift_curl"]}, layer="sparks")
 
     node("ps_crackle", "particle_system", {
@@ -489,7 +498,8 @@ def restrike_keys(hop: Hop, rng: random.Random) -> list[tuple]:
     bumps: dict[int, float] = {}
     for later in hits_after(hop.hit):
         if later.hit - hop.hit >= 4:
-            bumps[later.hit] = max(bumps.get(later.hit, 0.0), 3.4 * later.power)
+            far = max(0, chain_depth(later) - chain_depth(hop) - 1)   # how far down the chain the new hit is
+            bumps[later.hit] = max(bumps.get(later.hit, 0.0), 3.3 * later.power * 0.72 ** far)
     # its own re-strikes, dimmer each time, in the gaps
     frame = hop.hit + 24 + int(rng.uniform(0, 8))
     own = 3.0
@@ -498,9 +508,12 @@ def restrike_keys(hop: Hop, rng: random.Random) -> list[tuple]:
             bumps[frame] = own
             own = max(2.1, own * 0.82)
         frame += 15 + int(rng.uniform(0, 12))
-    keys: list[tuple] = [(hop.hit + 1, 0.0, "step"), (hop.hit + 2, 0.0), (hop.hit + 9, base)]
+    # it takes over as the stroke dies, so there is one main channel at a time
+    start = hop.hit + LINGER_DELAY
+    ramp_end = min(start + 9, hop.end - 6)
+    keys: list[tuple] = [(start - 1, 0.0, "step"), (start, 0.0), (ramp_end, base)]
     for frame in sorted(bumps):
-        if frame <= hop.hit + 10:
+        if frame <= ramp_end + 1 or frame >= hop.end - 14:
             continue
         keys += [(frame - 1, base), (frame, bumps[frame]), (frame + 3, base + (bumps[frame] - base) * 0.35),
                  (frame + 8, base)]
@@ -563,7 +576,7 @@ def build_hop(hop: Hop, index: int) -> list[str]:
     # --- linger: the link that stays, flickers and re-strikes ---------------------------
     beams.append(node(f"{hop.id}_linger", "beam", {
         "origin": v3(a), "target": v3(b),
-        "width": track([(h + 2, 0.08), (h + 14, 0.07), (hop.end, 0.05)], p),
+        "width": track([(h + LINGER_DELAY, 0.075), (min(h + 22, hop.end - 4), 0.068), (hop.end, 0.05)], p),
         "segments": 9, "detail": 3,
         "noise_amplitude": 0.34, "noise_frequency": 1.2, "jitter_rate": 15.0,
         "width_profile": "taper_both", "width_variance": 0.3,
@@ -572,11 +585,11 @@ def build_hop(hop: Hop, index: int) -> list[str]:
         "intensity_noise": 0.45, "flicker": 0.55, "flicker_frequency": 36.0, "afterglow": 0.06,
         "impact_flare": r4(0.15 * p), "core_width": 0.12, "glow_width": 3.3,
         "color": BOLT, "emissive": track(restrike_keys(hop, rng)),
-        "blend": "additive", **window(h + 1, hop.end),
+        "blend": "additive", **window(h + LINGER_DELAY - 1, hop.end),
     }, layer="links"))
 
     # --- companions: thin arcs on slightly different end points, blinking ----------------
-    for k in range(2):
+    for k in range(1 if prong < 1.0 else 2):
         oa = [rng.uniform(-0.12, 0.12), rng.uniform(-0.14, 0.14), rng.uniform(-0.12, 0.12)]
         ob = [rng.uniform(-0.2, 0.2), rng.uniform(-0.3, 0.3), rng.uniform(-0.2, 0.2)]
         level = 1.5 - 0.3 * k
@@ -688,7 +701,7 @@ def build_orb_arcs() -> list[str]:
         target_keys, width_keys, glow_keys = [], [], []
         for on, off in blip_schedule(rng, 4 + k, last, busy):
             grow = min(1.0, 0.45 + on / 14.0)                        # the arcs reach further as the orb charges
-            reach = rng.uniform(0.3, 0.58) * grow
+            reach = rng.uniform(0.42, 0.8) * grow
             theta, phi = rng.uniform(0.0, 2.0 * math.pi), rng.uniform(-0.9, 1.1)
             end = [centre[0] + math.cos(theta) * math.cos(phi) * reach, centre[1] + math.sin(phi) * reach,
                    centre[2] + math.sin(theta) * math.cos(phi) * reach]
@@ -724,7 +737,7 @@ def build_cast() -> None:
 
     white = [0.9, 0.95, 1.0, 1.0]
     node("ps_orb", "particle_system", {
-        "max_particles": 24, "lifetime": 0.16, "lifetime_variance": 0.04, "size": 0.74, "size_variance": 0.16,
+        "max_particles": 24, "lifetime": 0.16, "lifetime_variance": 0.04, "size": 0.98, "size_variance": 0.2,
         "size_over_life": [[0.0, 0.55], [0.3, 1.0], [1.0, 0.8]],
         "rotation_variance": 180.0, "angular_velocity": 60.0, "angular_velocity_variance": 120.0,
         "color": [1.0, 1.0, 1.0, 1.0], "color_over_life": [[0.0, HOT], [0.5, MID], [1.0, BOLT_VIOLET]],
@@ -735,7 +748,7 @@ def build_cast() -> None:
         "shape": "sphere", "radius": 0.03, "position": v3(src), "velocity": 0.0,
         "rate": track([(0, 26.0), (12, 40.0), (depart, 46.0), (hit + 4, 24.0), (hit + 20, 13.0),
                        (end - 4, 10.0), (end, 0.0)]),
-        **window(0, end),
+        "burst_count": 2, "burst_times": [0.0], **window(0, end),
     }, {"particle": "ps_orb"}, layer="cast")
 
     node("ps_orb_core", "particle_system", {
@@ -748,7 +761,7 @@ def build_cast() -> None:
     node("orb_core", "emitter", {
         "shape": "point", "position": v3(src), "velocity": 0.0,
         "rate": track([(0, 22.0), (12, 34.0), (hit, 40.0), (hit + 10, 22.0), (end - 3, 16.0), (end, 0.0)]),
-        **window(0, end),
+        "burst_count": 1, "burst_times": [0.0], **window(0, end),
     }, {"particle": "ps_orb_core"}, layer="cast")
 
     # charge gathering: streaks falling into the orb, and again wherever a jump is about to leave
@@ -853,17 +866,20 @@ def build_target(anchor: str, index: int) -> None:
     node(f"{anchor}_crackle", "emitter", {**body, "rate": track(crackle), **window(h - 1, end + 1)},
          {"particle": "ps_crackle"}, layer="crawl")
 
-    motes_stop = min(end - 6, 78)          # 0.55 s lives: nothing may outlast the effect
+    motes_stop = min(end - 6, MOTES_STOP)  # 0.5 s lives: nothing may outlast the effect
     if motes_stop > h + 6:
         node(f"{anchor}_motes", "emitter", {
             **body, "velocity": 0.5, "velocity_variance": 0.4, "direction": [0, 1, 0], "spread": 70.0,
-            "rate": track([(h - 1, 0.0), (h, 90.0 * p), (h + 6, 26.0), (motes_stop - 2, 20.0), (motes_stop, 0.0)]),
+            "rate": track([(h - 1, 0.0), (h, 110.0 * p), (h + 6, 50.0), (motes_stop - 2, 50.0), (motes_stop, 0.0)]),
             **window(h - 1, motes_stop),
         }, {"particle": "ps_motes"}, layer="sparks")
+    fade_from = max(h + 1, MOTES_STOP)
     node(f"{anchor}_fade", "emitter", {
         **body, "velocity": 0.7, "velocity_variance": 0.5, "direction": [0, 0, 0],
-        "rate": track([(end - 1, 0.0), (end, 150.0 * p), (FADE_STOP - 1, 80.0), (FADE_STOP, 0.0)]),
-        "burst_count": int(round(46 * p)), "burst_times": [0.0], **window(end - 1, FADE_STOP),
+        "rate": track([(fade_from - 1, 0.0), (fade_from, 70.0), (end - 1, 80.0), (end, 190.0 * p),
+                       (FADE_STOP - 1, 170.0), (FADE_STOP, 0.0)]),
+        "burst_count": int(round(46 * p)), "burst_times": [r4(fs(end) - fs(fade_from - 1))],
+        **window(fade_from - 1, FADE_STOP),
     }, {"particle": "ps_fade"}, layer="sparks")
 
     # pre-jump gather: charge falls into the target just before the chain leaves it
@@ -937,7 +953,7 @@ def build_link_fades() -> None:
         a, b = ANCHORS[hop.a], ANCHORS[hop.b]
         mid = lerp3(a, b, 0.5)
         length = dist(a, b)
-        common = {"shape": "box", "size": [r4(length * 0.94), 0.62, 0.62], "position": v3(mid),
+        common = {"shape": "box", "size": [r4(length * 0.94), 0.9, 0.9], "position": v3(mid),
                   "rotation": link_rotation(a, b)}
         h = hop.hit
         node(f"{hop.id}_light", "light", {
@@ -945,19 +961,21 @@ def build_link_fades() -> None:
             "radius": 3.0, "intensity": track([(h - 3, 0.0), (h, 2.2 * hop.power), (h + 4, 0.9), (h + 12, 0.0)]),
             "flicker_amplitude": 0.4, "flicker_frequency": 46.0, **window(h - 3, h + 12),
         }, layer="light")
+        fade_from = max(h + 1, MOTES_STOP)
+        lead_in = fs(hop.end - 1) - fs(fade_from - 1)
         node(f"{hop.id}_fade", "emitter", {
-            **common, "velocity": 0.6, "velocity_variance": 0.5, "direction": [0, 1, 0], "spread": 180.0,
-            "rate": track([(hop.end - 2, 0.0), (hop.end, 170.0 * length / 3.0), (FADE_STOP - 1, 90.0),
-                           (FADE_STOP, 0.0)]),
-            "burst_count": int(round(36 * length / 3.0)), "burst_times": [0.0, 0.035],
-            **window(hop.end - 2, FADE_STOP),
+            **common, "velocity": 0.9, "velocity_variance": 0.8, "direction": [0, 1, 0], "spread": 180.0,
+            "rate": track([(fade_from - 1, 0.0), (fade_from, 60.0), (hop.end - 1, 70.0),
+                           (hop.end, 200.0 * length / 3.0), (FADE_STOP - 1, 170.0), (FADE_STOP, 0.0)]),
+            "burst_count": int(round(36 * length / 3.0)), "burst_times": [r4(lead_in), r4(lead_in + 0.035)],
+            **window(fade_from - 1, FADE_STOP),
         }, {"particle": "ps_fade"}, layer="sparks")
-        stop = min(hop.end - 8, 80)
-        if stop > hop.hit + 8:
+        stop = min(hop.end - 8, MOTES_STOP)
+        if stop > h + 8:
             node(f"{hop.id}_motes", "emitter", {
                 **common, "velocity": 0.5, "velocity_variance": 0.4, "direction": [0, 1, 0], "spread": 180.0,
-                "rate": track([(hop.hit, 0.0), (hop.hit + 1, 34.0), (hop.hit + 8, 12.0), (stop - 2, 10.0), (stop, 0.0)]),
-                **window(hop.hit, stop),
+                "rate": track([(h, 0.0), (h + 1, 60.0), (h + 8, 36.0), (stop - 2, 36.0), (stop, 0.0)]),
+                **window(h, stop),
             }, {"particle": "ps_motes"}, layer="sparks")
 
 
