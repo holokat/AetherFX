@@ -21,7 +21,8 @@ from aetherfx.jsonrpc import InMemoryTransport
 from aetherfx.studio.server import StudioConfig, create_app
 from aetherfx.studio.stream import MockFrameSource, decode_header, encode_frame
 from aetherfx.studio import stream_server
-from aetherfx.studio.stream_server import create_frame_source, mesh_payload, public_resources
+from aetherfx.studio.stream_server import (ResourceCache, create_frame_source, mesh_payload,
+                                           public_resources)
 
 
 @pytest.fixture
@@ -104,14 +105,18 @@ class TestResourceShapes:
     def test_texture_bytes_are_replaced_by_a_url(self) -> None:
         public = public_resources({"textures": {"tex_puff": {"png": b"\x89PNG", "width": 256, "frames": 4}}})
         texture = public["textures"]["tex_puff"]
-        assert texture["url"] == "/api/stream/texture/tex_puff.png"
+        # content addressed: effects reuse ids, so the id alone is not an address
+        assert texture["url"].startswith("/api/stream/texture/tex_puff.png?v=")
+        assert len(texture["url"].split("?v=")[1]) == 16
         assert texture["width"] == 256 and texture["frames"] == 4
         assert "png" not in texture
         assert json.dumps(public)          # must survive JSON encoding
 
     def test_mesh_entries_report_variant_count_and_url(self) -> None:
         public = public_resources({"meshes": {"rock": {"positions": [0, 0, 0], "variants": [{}, {}, {}]}}})
-        assert public["meshes"]["rock"] == {"variants": 3, "url": "/api/stream/mesh/rock.json"}
+        rock = public["meshes"]["rock"]
+        assert rock["variants"] == 3
+        assert rock["url"].startswith("/api/stream/mesh/rock.json?v=")
 
     def test_mesh_payload_flattens_numpy_arrays(self) -> None:
         payload = mesh_payload({
@@ -182,3 +187,36 @@ class TestResourceRoutes:
             response = studio_client.get(asset)
             assert response.status_code == 200, asset
             assert response.content
+
+
+class TestContentAddressedResources:
+    """Two effects both call their flame flipbook ``tex_flame``; they must never share pixels."""
+
+    FIRE_AOE = {"textures": {"tex_flame": {"png": b"\x89PNG-fire-aoe", "frames": 24}},
+                "meshes": {"rock_mesh": {"positions": [0, 0, 0, 1, 0, 0, 0, 1, 0], "indices": [0, 1, 2]}}}
+    FIRE_BOLT = {"textures": {"tex_flame": {"png": b"\x89PNG-fire-bolt", "frames": 26}},
+                 "meshes": {"rock_mesh": {"positions": [0, 0, 0, 2, 0, 0, 0, 2, 0], "indices": [0, 1, 2]}}}
+
+    def test_same_id_with_different_pixels_gets_a_different_url(self) -> None:
+        a = public_resources(self.FIRE_AOE)["textures"]["tex_flame"]["url"]
+        b = public_resources(self.FIRE_BOLT)["textures"]["tex_flame"]["url"]
+        assert a != b
+        assert a == public_resources(self.FIRE_AOE)["textures"]["tex_flame"]["url"]   # stable for equal bytes
+        ma = public_resources(self.FIRE_AOE)["meshes"]["rock_mesh"]["url"]
+        mb = public_resources(self.FIRE_BOLT)["meshes"]["rock_mesh"]["url"]
+        assert ma != mb
+
+    def test_a_versioned_request_never_returns_another_effects_bytes(self) -> None:
+        cache = ResourceCache()
+        version_a = public_resources(self.FIRE_AOE)["textures"]["tex_flame"]["url"].split("?v=")[1]
+        version_b = public_resources(self.FIRE_BOLT)["textures"]["tex_flame"]["url"].split("?v=")[1]
+        cache.update(self.FIRE_AOE)
+        cache.update(self.FIRE_BOLT)           # a second client (or an effect switch) replaces "latest"
+        assert cache.texture("tex_flame") == b"\x89PNG-fire-bolt"
+        assert cache.texture("tex_flame", version_a) == b"\x89PNG-fire-aoe"   # a late request still gets its own
+        assert cache.texture("tex_flame", version_b) == b"\x89PNG-fire-bolt"
+        assert cache.texture("tex_flame", "0" * 16) is None                    # unknown version: 404, not a sibling
+
+        mesh_a = public_resources(self.FIRE_AOE)["meshes"]["rock_mesh"]["url"].split("?v=")[1]
+        assert cache.mesh("rock_mesh", mesh_a)["positions"][3] == 1
+        assert cache.mesh("rock_mesh")["positions"][3] == 2

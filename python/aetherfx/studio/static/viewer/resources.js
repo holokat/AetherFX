@@ -49,6 +49,12 @@ export class ResourceSet {
     const meshes = message.meshes || {};
     this.dropMissing(this.textures, textures, (texture) => texture.dispose());
     this.dropMissing(this.meshes, meshes, (list) => list.forEach((geometry) => geometry.dispose()));
+    // Effects reuse ids such as tex_flame and rock_mesh.  The URL is content addressed
+    // (?v=<hash>), so a changed URL means different pixels or geometry under the same id:
+    // drop the old asset now instead of drawing it with the new frame layout until the
+    // replacement arrives (a strip sliced with the wrong frame count draws as hard blades).
+    this.dropChanged(this.textures, textures, (texture) => texture.dispose());
+    this.dropChanged(this.meshes, meshes, (list) => list.forEach((geometry) => geometry.dispose()));
     this.infos.clear();
 
     Object.keys(textures).forEach((id) => {
@@ -124,6 +130,20 @@ export class ResourceSet {
   }
 
   /* Dispose what the new message no longer mentions. */
+  dropChanged(current, next, disposeOne) {
+    if (!this.urls) this.urls = new Map();
+    Object.keys(next).forEach((id) => {
+      const url = (next[id] || {}).url || '';
+      const key = (current === this.textures ? 't:' : 'm:') + id;
+      const before = this.urls.get(key);
+      if (before !== undefined && before !== url && current.has(id)) {
+        disposeOne(current.get(id));
+        current.delete(id);
+      }
+      this.urls.set(key, url);
+    });
+  }
+
   dropMissing(current, next, disposeOne) {
     [...current.keys()].forEach((id) => {
       if (Object.prototype.hasOwnProperty.call(next, id)) return;

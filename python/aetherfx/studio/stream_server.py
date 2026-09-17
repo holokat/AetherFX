@@ -41,10 +41,12 @@ source may serve its own bytes from elsewhere).
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import logging
 import threading
 import time
+from collections import OrderedDict
 from typing import Any
 from urllib.parse import quote
 
@@ -67,6 +69,10 @@ MAX_FPS = 240.0
 MIN_SPEED = 0.1
 MAX_SPEED = 8.0
 NO_STORE = {"Cache-Control": "no-store"}
+#: Versioned (content-addressed) resource URLs never change their bytes.
+IMMUTABLE = {"Cache-Control": "public, max-age=31536000, immutable"}
+#: How many versioned blobs the cache keeps across effect switches and clients.
+MAX_VERSIONED_BLOBS = 256
 
 
 # =========================================================================
@@ -148,6 +154,38 @@ def _variant_count(desc: Any) -> int:
         return 1
 
 
+
+def _texture_bytes(desc: Any) -> bytes | None:
+    if not isinstance(desc, dict):
+        return None
+    png = desc.get("png") or desc.get("data") or desc.get("bytes")
+    return bytes(png) if isinstance(png, (bytes, bytearray, memoryview)) else None
+
+
+def texture_digest(desc: Any) -> str | None:
+    """Short content hash of a texture's PNG bytes (``None`` when there are no bytes)."""
+    png = _texture_bytes(desc)
+    return hashlib.sha1(png).hexdigest()[:16] if png else None
+
+
+def mesh_digest(desc: Any) -> str | None:
+    """Short content hash of a mesh's JSON payload (``None`` for an empty mesh)."""
+    payload = mesh_payload(desc)
+    if not payload.get("positions"):
+        return None
+    return hashlib.sha1(json.dumps(payload, sort_keys=True).encode("utf-8")).hexdigest()[:16]
+
+
+def versioned_url(url: str, digest: str | None) -> str:
+    """``url?v=<digest>``: effects reuse ids such as ``tex_flame``, so the id alone is not an address.
+
+    Without the version a browser (or a second client on the same studio) can be handed another
+    effect's pixels for the same URL, and a flipbook sliced with the wrong frame count draws as
+    hard-edged blades.
+    """
+    return f"{url}?v={digest}" if digest else url
+
+
 def public_resources(raw: dict[str, Any]) -> dict[str, Any]:
     """Strip the bytes out of a source's ``resources()`` and point at our routes."""
     out: dict[str, Any] = {k: v for k, v in (raw or {}).items() if k not in ("textures", "meshes")}
@@ -158,7 +196,8 @@ def public_resources(raw: dict[str, Any]) -> dict[str, Any]:
         desc = desc if isinstance(desc, dict) else {}
         meta = {k: v for k, v in desc.items() if k not in ("png", "data", "pixels", "bytes")}
         meta.setdefault("frames", 1)
-        meta["url"] = desc.get("url") or f"/api/stream/texture/{quote(str(tid), safe='')}.png"
+        meta["url"] = desc.get("url") or versioned_url(
+            f"/api/stream/texture/{quote(str(tid), safe='')}.png", texture_digest(desc))
         textures[str(tid)] = meta
     out["textures"] = textures
 
@@ -167,7 +206,8 @@ def public_resources(raw: dict[str, Any]) -> dict[str, Any]:
         desc = desc if isinstance(desc, dict) else {}
         meta = {k: v for k, v in desc.items() if k in ("name", "bounds", "triangles")}
         meta["variants"] = _variant_count(desc)
-        meta["url"] = desc.get("url") or f"/api/stream/mesh/{quote(str(mid), safe='')}.json"
+        meta["url"] = desc.get("url") or versioned_url(
+            f"/api/stream/mesh/{quote(str(mid), safe='')}.json", mesh_digest(desc))
         meshes[str(mid)] = meta
     out["meshes"] = meshes
     return out
@@ -197,30 +237,48 @@ class ResourceCache:
         self._lock = threading.Lock()
         self._textures: dict[str, bytes] = {}
         self._meshes: dict[str, dict[str, Any]] = {}
+        # (id, digest) -> bytes / payload, across effect switches and clients (bounded LRU)
+        self._texture_versions: OrderedDict[tuple[str, str], bytes] = OrderedDict()
+        self._mesh_versions: OrderedDict[tuple[str, str], dict[str, Any]] = OrderedDict()
 
     def update(self, raw: dict[str, Any]) -> None:
         textures: dict[str, bytes] = {}
+        texture_versions: dict[tuple[str, str], bytes] = {}
         for tid, desc in ((raw or {}).get("textures") or {}).items():
-            if not isinstance(desc, dict):
-                continue
-            png = desc.get("png") or desc.get("data") or desc.get("bytes")
-            if isinstance(png, (bytes, bytearray, memoryview)):
-                textures[str(tid)] = bytes(png)
+            png = _texture_bytes(desc)
+            if png is not None:
+                textures[str(tid)] = png
+                texture_versions[(str(tid), hashlib.sha1(png).hexdigest()[:16])] = png
         meshes: dict[str, dict[str, Any]] = {}
+        mesh_versions: dict[tuple[str, str], dict[str, Any]] = {}
         for mid, desc in ((raw or {}).get("meshes") or {}).items():
             payload = mesh_payload(desc)
             if payload["positions"]:
                 meshes[str(mid)] = payload
+                digest = mesh_digest(desc)
+                if digest:
+                    mesh_versions[(str(mid), digest)] = payload
         with self._lock:
             self._textures = textures
             self._meshes = meshes
+            for store, fresh in ((self._texture_versions, texture_versions), (self._mesh_versions, mesh_versions)):
+                for key, value in fresh.items():
+                    store[key] = value
+                    store.move_to_end(key)
+                while len(store) > MAX_VERSIONED_BLOBS:
+                    store.popitem(last=False)
 
-    def texture(self, tid: str) -> bytes | None:
+    def texture(self, tid: str, version: str | None = None) -> bytes | None:
+        """The PNG for ``tid``; with ``version`` exactly that content or ``None``, never a sibling's."""
         with self._lock:
+            if version:
+                return self._texture_versions.get((tid, version))
             return self._textures.get(tid)
 
-    def mesh(self, mid: str) -> dict[str, Any] | None:
+    def mesh(self, mid: str, version: str | None = None) -> dict[str, Any] | None:
         with self._lock:
+            if version:
+                return self._mesh_versions.get((mid, version))
             return self._meshes.get(mid)
 
 
@@ -511,18 +569,20 @@ def stream_routes(studio: Any) -> list[Route | WebSocketRoute]:
             LOGGER.info("stream client disconnected")
 
     async def texture_endpoint(request: Request) -> Response:
-        png = resource_cache(studio).texture(str(request.path_params["id"]))
+        version = request.query_params.get("v") or None
+        png = resource_cache(studio).texture(str(request.path_params["id"]), version)
         if png is None:
             return JSONResponse({"error": {"code": "not_found", "message": "unknown texture"}},
                                 status_code=404, headers=NO_STORE)
-        return Response(png, media_type="image/png", headers=NO_STORE)
+        return Response(png, media_type="image/png", headers=IMMUTABLE if version else NO_STORE)
 
     async def mesh_endpoint(request: Request) -> Response:
-        mesh = resource_cache(studio).mesh(str(request.path_params["id"]))
+        version = request.query_params.get("v") or None
+        mesh = resource_cache(studio).mesh(str(request.path_params["id"]), version)
         if mesh is None:
             return JSONResponse({"error": {"code": "not_found", "message": "unknown mesh"}},
                                 status_code=404, headers=NO_STORE)
-        return JSONResponse(mesh, headers=NO_STORE)
+        return JSONResponse(mesh, headers=IMMUTABLE if version else NO_STORE)
 
     return [
         WebSocketRoute("/ws/stream", stream_endpoint, name="stream"),

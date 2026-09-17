@@ -395,8 +395,8 @@ class TestNativeFrameSource:
             resources = source.resources()
             public = public_resources(resources)
             assert public["meshes"]["rock_mesh"]["variants"] == 8
-            assert public["meshes"]["rock_mesh"]["url"] == "/api/stream/mesh/rock_mesh.json"
-            assert public["textures"]["tex_puff"]["url"] == "/api/stream/texture/tex_puff.png"
+            assert public["meshes"]["rock_mesh"]["url"].startswith("/api/stream/mesh/rock_mesh.json?v=")
+            assert public["textures"]["tex_puff"]["url"].startswith("/api/stream/texture/tex_puff.png?v=")
             assert "png" not in public["textures"]["tex_puff"]
             json.dumps(public)
 
