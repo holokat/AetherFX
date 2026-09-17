@@ -35,11 +35,10 @@ SELECT_SCRIPT = """
   const rows = [...document.querySelectorAll('#list-library li')];
   const row = rows.find(li => li.textContent.trim().toLowerCase().startsWith(wanted.toLowerCase()));
   if (!row) return 'NO_ROW:' + rows.map(li => li.textContent.trim()).join('|');
-  const current = document.getElementById('effect-name').textContent.trim().toLowerCase();
-  if (!current.startsWith(wanted.toLowerCase())) {
-    row.click();
-    await new Promise(r => setTimeout(r, %(load_ms)d));
-  }
+  // Always click: loading a row re-reads the JSON from disk, otherwise the
+  // studio keeps serving its in-memory working copy of an earlier version.
+  row.click();
+  await new Promise(r => setTimeout(r, %(load_ms)d));
   if (typeof S !== 'undefined' && S.playing) document.getElementById('btn-play').click();
   await new Promise(r => setTimeout(r, 400));
   return 'OK ' + document.getElementById('time-readout').textContent;
