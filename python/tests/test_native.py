@@ -79,8 +79,8 @@ class TestLibrary:
     def test_every_abi_function_is_declared(self):
         library = native.load_library()
         # 74 through ABI 1, plus the additive entry points: two for volumes, four for beam
-        # strike data and four for effect controls.
-        assert len(native._SIGNATURES) == 84
+        # strike data, four for effect controls and three for time_scale.
+        assert len(native._SIGNATURES) == 87
         for name in native._SIGNATURES:
             assert getattr(library, name).argtypes is not None, name
 
@@ -166,6 +166,59 @@ class TestEffect:
             # the document still carries what the author wrote
             glow = next(n for n in effect.to_dict()["nodes"] if n["id"] == "glow")
             assert glow["parameters"]["intensity"] == pytest.approx(authored)
+
+    def test_time_scale_maps_wall_time_onto_effect_time(self):
+        # The default: an effect plays at the speed it was authored at.
+        with native.Effect.from_file(EXAMPLES_DIR / "fireball.json") as effect:
+            assert effect.time_scale == pytest.approx(1.0)
+            assert effect.wall_duration == pytest.approx(effect.duration)
+            with effect.compile(1.0 / 60.0) as compiled:
+                assert compiled.time_scale == pytest.approx(1.0)
+                assert compiled.wall_duration == pytest.approx(effect.duration)
+
+        # An authored speed, plus a Speed control bound to the reserved
+        # "$effect" target, which only folds in when the effect compiles.
+        document = json.loads((EXAMPLES_DIR / "fireball.json").read_text())
+        document["time_scale"] = 1.5
+        document["controls"] = [
+            {
+                "id": "global_speed",
+                "label": "Speed",
+                "group": "Global",
+                "min": 0.25,
+                "max": 4.0,
+                "default": 1.0,
+                "value": 1.0,
+                "step": 0.05,
+                "unit": "x",
+                "bindings": [{"node": "$effect", "parameter": "time_scale", "op": "multiply"}],
+            }
+        ]
+        duration = document["duration"]
+
+        with native.Effect.from_json(json.dumps(document)) as effect:
+            assert effect.validate()["ok"] is True
+            assert effect.time_scale == pytest.approx(1.5)
+            with effect.compile(1.0 / 60.0) as compiled:
+                assert compiled.time_scale == pytest.approx(1.5)
+                assert compiled.wall_duration == pytest.approx(duration / 1.5)
+                assert compiled.plan["time_scale"] == pytest.approx(1.5)
+
+            effect.set_control("global_speed", 2.0)
+            with effect.compile(1.0 / 60.0) as compiled:
+                assert compiled.time_scale == pytest.approx(3.0)
+                assert compiled.wall_duration == pytest.approx(duration / 3.0)
+                # The simulation is untouched: same timestep, and a host simply
+                # reaches effect time faster for the same wall seconds.
+                assert compiled.fixed_dt == pytest.approx(1.0 / 60.0)
+                runtime = compiled.runtime()
+                runtime.simulate_to(0.2 * compiled.time_scale)
+                assert runtime.time == pytest.approx(0.6, abs=1.0 / 60.0)
+                runtime.close()
+
+            # The authored document is never rewritten by a control.
+            assert effect.time_scale == pytest.approx(1.5)
+            assert effect.to_dict()["time_scale"] == pytest.approx(1.5)
 
     def test_an_effect_without_controls_has_none(self):
         with native.Effect.from_file(EXAMPLES_DIR / "fireball.json") as effect:

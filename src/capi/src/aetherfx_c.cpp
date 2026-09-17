@@ -373,6 +373,11 @@ double aetherfx_effect_duration(const aetherfx_effect* effect) {
                               static_cast<double>(AETHERFX_ERROR_INVALID_ARGUMENT));
 }
 
+double aetherfx_effect_time_scale(const aetherfx_effect* effect) {
+    return guard_value<double>([&]() { return require(effect, "effect")->effect.time_scale; },
+                              static_cast<double>(AETHERFX_ERROR_INVALID_ARGUMENT));
+}
+
 int aetherfx_effect_validate(const aetherfx_effect* effect, char* buf, size_t cap) {
     return guard_status([&]() -> int {
         const aether::Diagnostics diagnostics = aether::validate(require(effect, "effect")->effect);
@@ -503,6 +508,16 @@ int aetherfx_compiled_ok(const aetherfx_compiled* compiled) {
 
 double aetherfx_compiled_fixed_dt(const aetherfx_compiled* compiled) {
     return guard_value<double>([&]() { return require(compiled, "compiled")->compiled.fixed_dt; },
+                              static_cast<double>(AETHERFX_ERROR_INVALID_ARGUMENT));
+}
+
+double aetherfx_compiled_time_scale(const aetherfx_compiled* compiled) {
+    return guard_value<double>([&]() { return require(compiled, "compiled")->compiled.time_scale(); },
+                              static_cast<double>(AETHERFX_ERROR_INVALID_ARGUMENT));
+}
+
+double aetherfx_compiled_wall_duration(const aetherfx_compiled* compiled) {
+    return guard_value<double>([&]() { return require(compiled, "compiled")->compiled.wall_duration(); },
                               static_cast<double>(AETHERFX_ERROR_INVALID_ARGUMENT));
 }
 
