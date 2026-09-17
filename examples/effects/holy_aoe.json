@@ -1,0 +1,8022 @@
+{
+  "schema_version": "0.1.0",
+  "name": "Holy AOE",
+  "description": "A gold rune circle opens and a white-gold pillar of light erupts, ringed by candle pillars, spiral ribbons, glyph tablets, feathers and warm mist.",
+  "duration": 3.0,
+  "seed": 777,
+  "timeline": {
+    "phases": [
+      {
+        "name": "cast",
+        "start": 0.0,
+        "end": 0.4
+      },
+      {
+        "name": "rise",
+        "start": 0.4,
+        "end": 0.8
+      },
+      {
+        "name": "peak",
+        "start": 0.8,
+        "end": 1.6
+      },
+      {
+        "name": "sustain",
+        "start": 1.6,
+        "end": 2.4
+      },
+      {
+        "name": "fade",
+        "start": 2.4,
+        "end": 3.0
+      }
+    ]
+  },
+  "layers": [
+    {
+      "id": "telegraph",
+      "name": "Rune circle",
+      "role": "telegraph"
+    },
+    {
+      "id": "rise",
+      "name": "Candle pillars",
+      "role": "ignition"
+    },
+    {
+      "id": "primary",
+      "name": "Pillar of light",
+      "role": "primary"
+    },
+    {
+      "id": "secondary",
+      "name": "Ribbons, tablets, feathers",
+      "role": "secondary"
+    },
+    {
+      "id": "interaction",
+      "name": "Light and mist",
+      "role": "interaction"
+    },
+    {
+      "id": "aftermath",
+      "name": "Dissipation",
+      "role": "aftermath"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "tex_rune",
+      "type": "texture",
+      "parameters": {
+        "width": 512,
+        "height": 512,
+        "graph": {
+          "nodes": [
+            {
+              "id": "rr0",
+              "op": "ring",
+              "params": {
+                "radius": 0.482,
+                "thickness": 0.01,
+                "softness": 0.004
+              }
+            },
+            {
+              "id": "rr1",
+              "op": "ring",
+              "params": {
+                "radius": 0.462,
+                "thickness": 0.005,
+                "softness": 0.003
+              }
+            },
+            {
+              "id": "rr2",
+              "op": "ring",
+              "params": {
+                "radius": 0.405,
+                "thickness": 0.008,
+                "softness": 0.004
+              }
+            },
+            {
+              "id": "rr3",
+              "op": "ring",
+              "params": {
+                "radius": 0.332,
+                "thickness": 0.006,
+                "softness": 0.003
+              }
+            },
+            {
+              "id": "rr4",
+              "op": "ring",
+              "params": {
+                "radius": 0.268,
+                "thickness": 0.009,
+                "softness": 0.004
+              }
+            },
+            {
+              "id": "rr5",
+              "op": "ring",
+              "params": {
+                "radius": 0.15,
+                "thickness": 0.005,
+                "softness": 0.003
+              }
+            },
+            {
+              "id": "rr6",
+              "op": "ring",
+              "params": {
+                "radius": 0.088,
+                "thickness": 0.007,
+                "softness": 0.003
+              }
+            },
+            {
+              "id": "gcell",
+              "op": "voronoi",
+              "params": {
+                "cells": 22,
+                "mode": "edges",
+                "seed": 12
+              }
+            },
+            {
+              "id": "gband",
+              "op": "ring",
+              "params": {
+                "radius": 0.434,
+                "thickness": 0.05,
+                "softness": 0.006
+              }
+            },
+            {
+              "id": "gmul",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "gcell",
+                "b": "gband"
+              }
+            },
+            {
+              "id": "glyph",
+              "op": "levels",
+              "params": {
+                "in_low": 0.38,
+                "in_high": 0.8,
+                "out_high": 0.3
+              },
+              "inputs": {
+                "a": "gmul"
+              }
+            },
+            {
+              "id": "tick",
+              "op": "spokes",
+              "params": {
+                "count": 32,
+                "width": 0.0035,
+                "softness": 0.002,
+                "inner_radius": 0.272,
+                "outer_radius": 0.328
+              }
+            },
+            {
+              "id": "tick_lv",
+              "op": "levels",
+              "params": {
+                "out_high": 0.28
+              },
+              "inputs": {
+                "a": "tick"
+              }
+            },
+            {
+              "id": "sp8",
+              "op": "spokes",
+              "params": {
+                "count": 8,
+                "width": 0.006,
+                "softness": 0.003,
+                "inner_radius": 0.09,
+                "outer_radius": 0.462,
+                "rotation": 22.5
+              }
+            },
+            {
+              "id": "sp8_lv",
+              "op": "levels",
+              "params": {
+                "out_high": 0.42
+              },
+              "inputs": {
+                "a": "sp8"
+              }
+            },
+            {
+              "id": "st4",
+              "op": "star",
+              "params": {
+                "points": 4,
+                "width": 0.07,
+                "outer_radius": 0.455,
+                "core_radius": 0.052,
+                "softness": 0.006,
+                "rotation": 45
+              }
+            },
+            {
+              "id": "st4b",
+              "op": "star",
+              "params": {
+                "points": 4,
+                "width": 0.04,
+                "outer_radius": 0.3,
+                "core_radius": 0.0,
+                "softness": 0.005,
+                "rotation": 0
+              }
+            },
+            {
+              "id": "st8",
+              "op": "star",
+              "params": {
+                "points": 8,
+                "width": 0.022,
+                "outer_radius": 0.18,
+                "core_radius": 0.0,
+                "softness": 0.004,
+                "rotation": 22.5
+              }
+            },
+            {
+              "id": "iglow",
+              "op": "gradient_radial",
+              "params": {
+                "radius": 0.47,
+                "falloff": "smooth"
+              }
+            },
+            {
+              "id": "iglow_lv",
+              "op": "levels",
+              "params": {
+                "out_high": 0.07
+              },
+              "inputs": {
+                "a": "iglow"
+              }
+            },
+            {
+              "id": "rm0",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "rr0",
+                "b": "rr1"
+              }
+            },
+            {
+              "id": "rm1",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "rm0",
+                "b": "rr2"
+              }
+            },
+            {
+              "id": "rm2",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "rm1",
+                "b": "rr3"
+              }
+            },
+            {
+              "id": "rm3",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "rm2",
+                "b": "rr4"
+              }
+            },
+            {
+              "id": "rm4",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "rm3",
+                "b": "rr5"
+              }
+            },
+            {
+              "id": "rm5",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "rm4",
+                "b": "rr6"
+              }
+            },
+            {
+              "id": "rm6",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "rm5",
+                "b": "glyph"
+              }
+            },
+            {
+              "id": "rm7",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "rm6",
+                "b": "tick_lv"
+              }
+            },
+            {
+              "id": "rm8",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "rm7",
+                "b": "sp8_lv"
+              }
+            },
+            {
+              "id": "rm9",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "rm8",
+                "b": "st4"
+              }
+            },
+            {
+              "id": "rm10",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "rm9",
+                "b": "st4b"
+              }
+            },
+            {
+              "id": "rm11",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "rm10",
+                "b": "st8"
+              }
+            },
+            {
+              "id": "rm12",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "rm11",
+                "b": "iglow_lv"
+              }
+            }
+          ],
+          "output": "rm12"
+        }
+      }
+    },
+    {
+      "id": "tex_sigil",
+      "type": "texture",
+      "parameters": {
+        "width": 384,
+        "height": 384,
+        "graph": {
+          "nodes": [
+            {
+              "id": "a0",
+              "op": "ring",
+              "params": {
+                "radius": 0.47,
+                "thickness": 0.008,
+                "softness": 0.004
+              }
+            },
+            {
+              "id": "a1",
+              "op": "ring",
+              "params": {
+                "radius": 0.33,
+                "thickness": 0.005,
+                "softness": 0.003
+              }
+            },
+            {
+              "id": "a2",
+              "op": "ring",
+              "params": {
+                "radius": 0.21,
+                "thickness": 0.007,
+                "softness": 0.003
+              }
+            },
+            {
+              "id": "a3",
+              "op": "spokes",
+              "params": {
+                "count": 16,
+                "width": 0.005,
+                "softness": 0.003,
+                "inner_radius": 0.21,
+                "outer_radius": 0.47
+              }
+            },
+            {
+              "id": "a4",
+              "op": "star",
+              "params": {
+                "points": 4,
+                "width": 0.05,
+                "outer_radius": 0.28,
+                "core_radius": 0.03,
+                "softness": 0.005
+              }
+            },
+            {
+              "id": "a5",
+              "op": "cracks",
+              "params": {
+                "density": 11.0,
+                "width": 0.004,
+                "seed": 31
+              }
+            },
+            {
+              "id": "a5m",
+              "op": "ring",
+              "params": {
+                "radius": 0.4,
+                "thickness": 0.11,
+                "softness": 0.015
+              }
+            },
+            {
+              "id": "a5x",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "a5",
+                "b": "a5m"
+              }
+            },
+            {
+              "id": "a5l",
+              "op": "levels",
+              "params": {
+                "out_high": 0.3
+              },
+              "inputs": {
+                "a": "a5x"
+              }
+            },
+            {
+              "id": "sm0",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "a0",
+                "b": "a1"
+              }
+            },
+            {
+              "id": "sm1",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "sm0",
+                "b": "a2"
+              }
+            },
+            {
+              "id": "sm2",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "sm1",
+                "b": "a3"
+              }
+            },
+            {
+              "id": "sm3",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "sm2",
+                "b": "a4"
+              }
+            },
+            {
+              "id": "sm4",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "sm3",
+                "b": "a5l"
+              }
+            }
+          ],
+          "output": "sm4"
+        }
+      }
+    },
+    {
+      "id": "tex_pool",
+      "type": "texture",
+      "parameters": {
+        "width": 256,
+        "height": 256,
+        "graph": {
+          "nodes": [
+            {
+              "id": "r",
+              "op": "gradient_radial",
+              "params": {
+                "radius": 0.5,
+                "inner_radius": 0.0,
+                "falloff": "quadratic"
+              }
+            },
+            {
+              "id": "n",
+              "op": "fbm",
+              "params": {
+                "frequency": 3.0,
+                "octaves": 3,
+                "seed": 8
+              }
+            },
+            {
+              "id": "n2",
+              "op": "levels",
+              "params": {
+                "in_low": 0.2,
+                "in_high": 0.9,
+                "out_low": 0.55,
+                "out_high": 1.0
+              },
+              "inputs": {
+                "a": "n"
+              }
+            },
+            {
+              "id": "m",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "r",
+                "b": "n2"
+              }
+            }
+          ],
+          "output": "m"
+        }
+      }
+    },
+    {
+      "id": "tex_edge",
+      "type": "texture",
+      "parameters": {
+        "width": 512,
+        "height": 512,
+        "graph": {
+          "nodes": [
+            {
+              "id": "e0",
+              "op": "ring",
+              "params": {
+                "radius": 0.47,
+                "thickness": 0.012,
+                "softness": 0.006
+              }
+            },
+            {
+              "id": "e1",
+              "op": "ring",
+              "params": {
+                "radius": 0.47,
+                "thickness": 0.075,
+                "softness": 0.04
+              }
+            },
+            {
+              "id": "e1l",
+              "op": "levels",
+              "params": {
+                "out_high": 0.3
+              },
+              "inputs": {
+                "a": "e1"
+              }
+            },
+            {
+              "id": "e2",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "e0",
+                "b": "e1l"
+              }
+            }
+          ],
+          "output": "e2"
+        }
+      }
+    },
+    {
+      "id": "tex_star",
+      "type": "texture",
+      "parameters": {
+        "width": 128,
+        "height": 128,
+        "graph": {
+          "nodes": [
+            {
+              "id": "s",
+              "op": "star",
+              "params": {
+                "points": 4,
+                "width": 0.105,
+                "outer_radius": 0.48,
+                "core_radius": 0.05,
+                "softness": 0.012
+              }
+            },
+            {
+              "id": "s2",
+              "op": "star",
+              "params": {
+                "points": 4,
+                "width": 0.045,
+                "outer_radius": 0.24,
+                "core_radius": 0.0,
+                "softness": 0.008,
+                "rotation": 45
+              }
+            },
+            {
+              "id": "sm",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "s",
+                "b": "s2"
+              }
+            },
+            {
+              "id": "gl",
+              "op": "gradient_radial",
+              "params": {
+                "radius": 0.22,
+                "falloff": "quadratic"
+              }
+            },
+            {
+              "id": "gll",
+              "op": "levels",
+              "params": {
+                "out_high": 0.45
+              },
+              "inputs": {
+                "a": "gl"
+              }
+            },
+            {
+              "id": "out",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "sm",
+                "b": "gll"
+              }
+            }
+          ],
+          "output": "out"
+        }
+      }
+    },
+    {
+      "id": "tex_spark",
+      "type": "texture",
+      "parameters": {
+        "width": 32,
+        "height": 32,
+        "graph": {
+          "nodes": [
+            {
+              "id": "r",
+              "op": "gradient_radial",
+              "params": {
+                "radius": 0.5,
+                "falloff": "quadratic"
+              }
+            }
+          ],
+          "output": "r"
+        }
+      }
+    },
+    {
+      "id": "tex_streak",
+      "type": "texture",
+      "parameters": {
+        "width": 96,
+        "height": 256,
+        "graph": {
+          "nodes": [
+            {
+              "id": "body",
+              "op": "spokes",
+              "params": {
+                "count": 2,
+                "rotation": 90,
+                "width": 0.3,
+                "inner_radius": 0.0,
+                "outer_radius": 0.497,
+                "softness": 0.032
+              }
+            },
+            {
+              "id": "core",
+              "op": "spokes",
+              "params": {
+                "count": 2,
+                "rotation": 90,
+                "width": 0.07,
+                "inner_radius": 0.0,
+                "outer_radius": 0.497,
+                "softness": 0.014
+              }
+            },
+            {
+              "id": "plug0",
+              "op": "gradient_radial",
+              "params": {
+                "radius": 0.14,
+                "falloff": "smooth"
+              }
+            },
+            {
+              "id": "plug",
+              "op": "levels",
+              "params": {
+                "in_low": 0.0,
+                "in_high": 0.32
+              },
+              "inputs": {
+                "a": "plug0"
+              }
+            },
+            {
+              "id": "fib",
+              "op": "fbm",
+              "params": {
+                "frequency": 1.8,
+                "octaves": 3,
+                "seed": 19,
+                "animate": 1.0
+              }
+            },
+            {
+              "id": "fil",
+              "op": "levels",
+              "params": {
+                "in_low": 0.2,
+                "in_high": 0.85,
+                "out_low": 0.72,
+                "out_high": 1.0
+              },
+              "inputs": {
+                "a": "fib"
+              }
+            },
+            {
+              "id": "bodyn",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "body",
+                "b": "fil"
+              }
+            },
+            {
+              "id": "b1",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "bodyn",
+                "b": "core"
+              }
+            },
+            {
+              "id": "out",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "b1",
+                "b": "plug"
+              }
+            }
+          ],
+          "output": "out"
+        },
+        "frames": 14
+      }
+    },
+    {
+      "id": "tex_flare",
+      "type": "texture",
+      "parameters": {
+        "width": 128,
+        "height": 128,
+        "graph": {
+          "nodes": [
+            {
+              "id": "r",
+              "op": "gradient_radial",
+              "params": {
+                "radius": 0.5,
+                "falloff": "smooth"
+              }
+            },
+            {
+              "id": "n",
+              "op": "fbm",
+              "params": {
+                "frequency": 2.5,
+                "octaves": 3,
+                "seed": 23,
+                "animate": 1.0
+              }
+            },
+            {
+              "id": "nl",
+              "op": "levels",
+              "params": {
+                "in_low": 0.15,
+                "in_high": 0.9,
+                "out_low": 0.45,
+                "out_high": 1.0
+              },
+              "inputs": {
+                "a": "n"
+              }
+            },
+            {
+              "id": "m",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "r",
+                "b": "nl"
+              }
+            }
+          ],
+          "output": "m"
+        },
+        "frames": 8
+      }
+    },
+    {
+      "id": "tex_feather",
+      "type": "texture",
+      "parameters": {
+        "width": 128,
+        "height": 128,
+        "graph": {
+          "nodes": [
+            {
+              "id": "vane",
+              "op": "star",
+              "params": {
+                "points": 2,
+                "rotation": 99,
+                "width": 0.24,
+                "outer_radius": 0.478,
+                "core_radius": 0.0,
+                "softness": 0.014
+              }
+            },
+            {
+              "id": "tap",
+              "op": "gradient_linear",
+              "params": {
+                "angle": 99,
+                "start": 1.0,
+                "end": 0.28
+              }
+            },
+            {
+              "id": "vanet",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "vane",
+                "b": "tap"
+              }
+            },
+            {
+              "id": "barb",
+              "op": "fbm",
+              "params": {
+                "frequency": 17.0,
+                "octaves": 2,
+                "seed": 41
+              }
+            },
+            {
+              "id": "barbl",
+              "op": "levels",
+              "params": {
+                "in_low": 0.3,
+                "in_high": 0.8,
+                "out_low": 0.45,
+                "out_high": 1.0
+              },
+              "inputs": {
+                "a": "barb"
+              }
+            },
+            {
+              "id": "vaneb",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "vanet",
+                "b": "barbl"
+              }
+            },
+            {
+              "id": "vaned",
+              "op": "levels",
+              "params": {
+                "out_high": 0.72
+              },
+              "inputs": {
+                "a": "vaneb"
+              }
+            },
+            {
+              "id": "shaft",
+              "op": "spokes",
+              "params": {
+                "count": 2,
+                "width": 0.01,
+                "softness": 0.005,
+                "inner_radius": 0.0,
+                "outer_radius": 0.462,
+                "rotation": 99
+              }
+            },
+            {
+              "id": "shaftt",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "shaft",
+                "b": "tap"
+              }
+            },
+            {
+              "id": "flat",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "vaned",
+                "b": "shaftt"
+              }
+            },
+            {
+              "id": "warp",
+              "op": "fbm",
+              "params": {
+                "frequency": 1.3,
+                "octaves": 2,
+                "seed": 7
+              }
+            },
+            {
+              "id": "out",
+              "op": "distort",
+              "params": {
+                "amount": 0.1
+              },
+              "inputs": {
+                "a": "flat",
+                "by": "warp"
+              }
+            }
+          ],
+          "output": "out"
+        }
+      }
+    },
+    {
+      "id": "tex_tablet",
+      "type": "texture",
+      "parameters": {
+        "width": 256,
+        "height": 256,
+        "graph": {
+          "nodes": [
+            {
+              "id": "outer",
+              "op": "spokes",
+              "params": {
+                "count": 2,
+                "rotation": 90,
+                "width": 0.29,
+                "inner_radius": 0.0,
+                "outer_radius": 0.492,
+                "softness": 0.004
+              }
+            },
+            {
+              "id": "inner",
+              "op": "spokes",
+              "params": {
+                "count": 2,
+                "rotation": 90,
+                "width": 0.252,
+                "inner_radius": 0.0,
+                "outer_radius": 0.474,
+                "softness": 0.004
+              }
+            },
+            {
+              "id": "inner2",
+              "op": "spokes",
+              "params": {
+                "count": 2,
+                "rotation": 90,
+                "width": 0.218,
+                "inner_radius": 0.0,
+                "outer_radius": 0.458,
+                "softness": 0.004
+              }
+            },
+            {
+              "id": "border",
+              "op": "math",
+              "params": {
+                "mode": "subtract"
+              },
+              "inputs": {
+                "a": "outer",
+                "b": "inner"
+              }
+            },
+            {
+              "id": "border2",
+              "op": "math",
+              "params": {
+                "mode": "subtract"
+              },
+              "inputs": {
+                "a": "inner2",
+                "b": "inner"
+              }
+            },
+            {
+              "id": "fill",
+              "op": "levels",
+              "params": {
+                "out_high": 0.075
+              },
+              "inputs": {
+                "a": "inner"
+              }
+            },
+            {
+              "id": "st",
+              "op": "star",
+              "params": {
+                "points": 4,
+                "width": 0.105,
+                "outer_radius": 0.245,
+                "core_radius": 0.022,
+                "softness": 0.007
+              }
+            },
+            {
+              "id": "spine",
+              "op": "spokes",
+              "params": {
+                "count": 2,
+                "rotation": 90,
+                "width": 0.005,
+                "softness": 0.003,
+                "inner_radius": 0.27,
+                "outer_radius": 0.4
+              }
+            },
+            {
+              "id": "spine_lv",
+              "op": "levels",
+              "params": {
+                "out_high": 0.45
+              },
+              "inputs": {
+                "a": "spine"
+              }
+            },
+            {
+              "id": "stm",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "st",
+                "b": "inner"
+              }
+            },
+            {
+              "id": "rg",
+              "op": "ring",
+              "params": {
+                "radius": 0.205,
+                "thickness": 0.0035,
+                "softness": 0.0025
+              }
+            },
+            {
+              "id": "rgx",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "rg",
+                "b": "inner"
+              }
+            },
+            {
+              "id": "rgm",
+              "op": "levels",
+              "params": {
+                "out_high": 0.28
+              },
+              "inputs": {
+                "a": "rgx"
+              }
+            },
+            {
+              "id": "gc",
+              "op": "voronoi",
+              "params": {
+                "cells": 14,
+                "mode": "edges",
+                "seed": 5
+              }
+            },
+            {
+              "id": "gcm",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "gc",
+                "b": "inner2"
+              }
+            },
+            {
+              "id": "gcl",
+              "op": "levels",
+              "params": {
+                "in_low": 0.55,
+                "in_high": 0.95,
+                "out_high": 0.08
+              },
+              "inputs": {
+                "a": "gcm"
+              }
+            },
+            {
+              "id": "m1",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "fill",
+                "b": "gcl"
+              }
+            },
+            {
+              "id": "m2",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "m1",
+                "b": "stm"
+              }
+            },
+            {
+              "id": "m3",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "m2",
+                "b": "rgm"
+              }
+            },
+            {
+              "id": "m4",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "m3",
+                "b": "border"
+              }
+            },
+            {
+              "id": "m5",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "m4",
+                "b": "border2"
+              }
+            },
+            {
+              "id": "m6",
+              "op": "math",
+              "params": {
+                "mode": "max"
+              },
+              "inputs": {
+                "a": "m5",
+                "b": "spine_lv"
+              }
+            }
+          ],
+          "output": "m6"
+        }
+      }
+    },
+    {
+      "id": "mat_holy",
+      "type": "material",
+      "parameters": {
+        "blend": "additive",
+        "emissive_color": [
+          1.0,
+          0.97,
+          0.85,
+          1.0
+        ],
+        "emissive_intensity": 0.55,
+        "soft_particle": true,
+        "depth_fade": 0.18,
+        "dissolve": 0.28,
+        "erosion": 0.3
+      }
+    },
+    {
+      "id": "mat_core",
+      "type": "material",
+      "parameters": {
+        "blend": "additive",
+        "emissive_color": [
+          1.0,
+          0.97,
+          0.85,
+          1.0
+        ],
+        "emissive_intensity": 1.4,
+        "soft_particle": true,
+        "depth_fade": 0.1
+      }
+    },
+    {
+      "id": "mat_haze",
+      "type": "material",
+      "parameters": {
+        "blend": "additive",
+        "emissive_color": [
+          1.0,
+          0.72,
+          0.34,
+          1.0
+        ],
+        "emissive_intensity": 0.3,
+        "soft_particle": true,
+        "depth_fade": 0.45,
+        "dissolve": 0.22,
+        "erosion": 0.35
+      }
+    },
+    {
+      "id": "mat_soft",
+      "type": "material",
+      "parameters": {
+        "blend": "additive",
+        "soft_particle": true,
+        "depth_fade": 0.12
+      }
+    },
+    {
+      "id": "mat_bead",
+      "type": "material",
+      "parameters": {
+        "blend": "additive",
+        "base_color": [
+          1.0,
+          0.97,
+          0.85,
+          1.0
+        ],
+        "emissive_color": [
+          1.0,
+          0.97,
+          0.85,
+          1.0
+        ],
+        "emissive_intensity": 6.0
+      }
+    },
+    {
+      "id": "mat_ribbon",
+      "type": "material",
+      "parameters": {
+        "blend": "additive",
+        "emissive_color": [
+          1.0,
+          0.86,
+          0.52,
+          1.0
+        ],
+        "emissive_intensity": 1.1,
+        "soft_particle": true,
+        "depth_fade": 0.12
+      }
+    },
+    {
+      "id": "f_rise",
+      "type": "force",
+      "parameters": {
+        "force_type": "buoyancy",
+        "strength": 2.6
+      }
+    },
+    {
+      "id": "f_rise_soft",
+      "type": "force",
+      "parameters": {
+        "force_type": "buoyancy",
+        "strength": 0.85
+      }
+    },
+    {
+      "id": "f_lift",
+      "type": "force",
+      "parameters": {
+        "force_type": "buoyancy",
+        "strength": 1.5
+      }
+    },
+    {
+      "id": "f_curl_wide",
+      "type": "force",
+      "parameters": {
+        "force_type": "curl_noise",
+        "strength": 0.6,
+        "frequency": 0.5,
+        "octaves": 2,
+        "speed": 0.4
+      }
+    },
+    {
+      "id": "f_turb",
+      "type": "force",
+      "parameters": {
+        "force_type": "turbulence",
+        "strength": 0.75,
+        "frequency": 0.7,
+        "octaves": 2
+      }
+    },
+    {
+      "id": "f_spin",
+      "type": "force",
+      "parameters": {
+        "force_type": "vortex",
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "strength": 1.1,
+        "radius": 1.2,
+        "falloff": "smooth"
+      }
+    },
+    {
+      "id": "f_spin_band",
+      "type": "force",
+      "parameters": {
+        "force_type": "vortex",
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "strength": 1.5,
+        "radius": 4.2,
+        "falloff": "linear"
+      }
+    },
+    {
+      "id": "f_gather",
+      "type": "force",
+      "parameters": {
+        "force_type": "attractor",
+        "position": [
+          0.0,
+          0.35,
+          0.0
+        ],
+        "strength": 6.5,
+        "radius": 6.0,
+        "falloff": "smooth"
+      }
+    },
+    {
+      "id": "f_hold",
+      "type": "force",
+      "parameters": {
+        "force_type": "attractor",
+        "position": [
+          0.0,
+          0.6,
+          0.0
+        ],
+        "strength": 0.9,
+        "radius": 5.0,
+        "falloff": "linear"
+      }
+    },
+    {
+      "id": "cam",
+      "type": "camera",
+      "parameters": {
+        "position": [
+          0.0,
+          4.5,
+          9.5
+        ],
+        "target": [
+          0.0,
+          1.8,
+          0.0
+        ],
+        "fov": 44
+      }
+    },
+    {
+      "id": "rune",
+      "type": "decal",
+      "layer": "telegraph",
+      "parameters": {
+        "shape": "circle",
+        "size": [
+          7.0,
+          7.0
+        ],
+        "color": [
+          1.0,
+          0.82,
+          0.45,
+          1.0
+        ],
+        "emissive": 2.3,
+        "blend": "additive",
+        "fade_in": 0.0,
+        "fade_out": 0.0,
+        "rotation": {
+          "value": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "track": [
+            {
+              "time": 0.0,
+              "value": [
+                0.0,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "time": 3.0,
+              "value": [
+                0.0,
+                6.0,
+                0.0
+              ]
+            }
+          ]
+        },
+        "opacity": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 0.0
+            },
+            {
+              "time": 0.1,
+              "value": 0.25
+            },
+            {
+              "time": 0.34,
+              "value": 0.95
+            },
+            {
+              "time": 0.8,
+              "value": 1.0
+            },
+            {
+              "time": 2.4,
+              "value": 1.0
+            },
+            {
+              "time": 2.75,
+              "value": 0.85
+            },
+            {
+              "time": 3.0,
+              "value": 0.3
+            }
+          ]
+        }
+      },
+      "inputs": {
+        "texture": "tex_rune"
+      }
+    },
+    {
+      "id": "sigil",
+      "type": "decal",
+      "layer": "telegraph",
+      "parameters": {
+        "shape": "circle",
+        "size": [
+          3.5,
+          3.5
+        ],
+        "color": [
+          1.0,
+          0.9,
+          0.68,
+          1.0
+        ],
+        "emissive": 1.6,
+        "blend": "additive",
+        "fade_in": 0.0,
+        "fade_out": 0.0,
+        "rotation": {
+          "value": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "track": [
+            {
+              "time": 0.0,
+              "value": [
+                0.0,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "time": 3.0,
+              "value": [
+                0.0,
+                -38.0,
+                0.0
+              ]
+            }
+          ]
+        },
+        "opacity": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 0.0
+            },
+            {
+              "time": 0.18,
+              "value": 0.5
+            },
+            {
+              "time": 0.45,
+              "value": 1.0
+            },
+            {
+              "time": 2.4,
+              "value": 0.95
+            },
+            {
+              "time": 2.9,
+              "value": 0.35
+            },
+            {
+              "time": 3.0,
+              "value": 0.15
+            }
+          ]
+        }
+      },
+      "inputs": {
+        "texture": "tex_sigil"
+      }
+    },
+    {
+      "id": "pool",
+      "type": "decal",
+      "layer": "telegraph",
+      "parameters": {
+        "shape": "circle",
+        "size": [
+          8.8,
+          8.8
+        ],
+        "color": [
+          1.0,
+          0.66,
+          0.28,
+          1.0
+        ],
+        "emissive": 0.35,
+        "blend": "additive",
+        "fade_in": 0.0,
+        "fade_out": 0.0,
+        "opacity": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 0.0
+            },
+            {
+              "time": 0.35,
+              "value": 0.045
+            },
+            {
+              "time": 0.9,
+              "value": 0.1
+            },
+            {
+              "time": 2.1,
+              "value": 0.09
+            },
+            {
+              "time": 2.6,
+              "value": 0.045
+            },
+            {
+              "time": 3.0,
+              "value": 0.0
+            }
+          ]
+        }
+      },
+      "inputs": {
+        "texture": "tex_pool"
+      }
+    },
+    {
+      "id": "edge_ring",
+      "type": "decal",
+      "layer": "telegraph",
+      "parameters": {
+        "shape": "circle",
+        "size": [
+          7.35,
+          7.35
+        ],
+        "color": [
+          1.0,
+          0.97,
+          0.85,
+          1.0
+        ],
+        "emissive": 1.5,
+        "blend": "additive",
+        "fade_in": 0.0,
+        "fade_out": 0.0,
+        "opacity": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 0.0
+            },
+            {
+              "time": 0.3,
+              "value": 0.22
+            },
+            {
+              "time": 0.75,
+              "value": 0.62
+            },
+            {
+              "time": 1.2,
+              "value": 0.48
+            },
+            {
+              "time": 1.6,
+              "value": 0.62
+            },
+            {
+              "time": 2.0,
+              "value": 0.5
+            },
+            {
+              "time": 2.3,
+              "value": 0.4
+            },
+            {
+              "time": 2.7,
+              "value": 0.16
+            },
+            {
+              "time": 3.0,
+              "value": 0.0
+            }
+          ]
+        }
+      },
+      "inputs": {
+        "texture": "tex_edge"
+      }
+    },
+    {
+      "id": "gather_ps",
+      "type": "particle_system",
+      "layer": "telegraph",
+      "parameters": {
+        "max_particles": 900,
+        "lifetime": 0.95,
+        "lifetime_variance": 0.25,
+        "size": 0.1,
+        "size_variance": 0.05,
+        "size_over_life": [
+          [
+            0.0,
+            0.3
+          ],
+          [
+            0.25,
+            1.0
+          ],
+          [
+            1.0,
+            0.15
+          ]
+        ],
+        "color": [
+          1.0,
+          0.82,
+          0.45,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              0.82,
+              0.45,
+              1.0
+            ]
+          ],
+          [
+            0.6,
+            [
+              1.0,
+              0.9,
+              0.68,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              1.0,
+              0.97,
+              0.85,
+              1.0
+            ]
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.2,
+            1.0
+          ],
+          [
+            0.8,
+            0.9
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 4.0,
+        "drag": 0.5,
+        "blend": "additive",
+        "rotation_variance": 180.0,
+        "angular_velocity": 30.0,
+        "angular_velocity_variance": 40.0
+      },
+      "inputs": {
+        "sprite": "tex_star",
+        "material": "mat_soft",
+        "forces": [
+          "f_gather",
+          "f_turb"
+        ]
+      }
+    },
+    {
+      "id": "gather",
+      "type": "emitter",
+      "layer": "telegraph",
+      "parameters": {
+        "shape": "ring",
+        "radius": 5.0,
+        "inner_radius": 3.6,
+        "position": [
+          0.0,
+          0.35,
+          0.0
+        ],
+        "rate": {
+          "value": 260.0,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 260.0
+            },
+            {
+              "time": 0.25,
+              "value": 620.0
+            },
+            {
+              "time": 0.55,
+              "value": 420.0
+            },
+            {
+              "time": 0.85,
+              "value": 0.0
+            }
+          ]
+        },
+        "velocity": 0.35,
+        "velocity_variance": 0.25,
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 40
+      },
+      "inputs": {
+        "particle": "gather_ps"
+      }
+    },
+    {
+      "id": "cardinal_ps",
+      "type": "particle_system",
+      "layer": "telegraph",
+      "parameters": {
+        "max_particles": 24,
+        "lifetime": 2.3,
+        "lifetime_variance": 0.0,
+        "size": 1.95,
+        "size_variance": 0.0,
+        "size_over_life": [
+          [
+            0.0,
+            0.2
+          ],
+          [
+            0.1,
+            1.0
+          ],
+          [
+            0.35,
+            0.85
+          ],
+          [
+            0.55,
+            1.0
+          ],
+          [
+            0.8,
+            0.9
+          ],
+          [
+            1.0,
+            0.3
+          ]
+        ],
+        "color": [
+          1.0,
+          0.9,
+          0.68,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              0.97,
+              0.85,
+              1.0
+            ]
+          ],
+          [
+            0.6,
+            [
+              1.0,
+              0.82,
+              0.45,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              1.0,
+              0.62,
+              0.24,
+              1.0
+            ]
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.08,
+            0.9
+          ],
+          [
+            0.35,
+            0.6
+          ],
+          [
+            0.55,
+            0.85
+          ],
+          [
+            0.85,
+            0.5
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 2.6,
+        "blend": "additive",
+        "rotation": 0.0,
+        "angular_velocity": 4.0
+      },
+      "inputs": {
+        "sprite": "tex_star",
+        "material": "mat_soft"
+      }
+    },
+    {
+      "id": "cardinal0",
+      "type": "emitter",
+      "layer": "telegraph",
+      "parameters": {
+        "shape": "point",
+        "position": [
+          2.4748737341529163,
+          0.46,
+          2.474873734152916
+        ],
+        "rate": 0,
+        "burst_count": 1,
+        "burst_times": [
+          0.0
+        ],
+        "velocity": 0.0,
+        "start_time": 0.42,
+        "duration": 2.55
+      },
+      "inputs": {
+        "particle": "cardinal_ps"
+      }
+    },
+    {
+      "id": "cardinal1",
+      "type": "emitter",
+      "layer": "telegraph",
+      "parameters": {
+        "shape": "point",
+        "position": [
+          -2.474873734152916,
+          0.46,
+          2.4748737341529163
+        ],
+        "rate": 0,
+        "burst_count": 1,
+        "burst_times": [
+          0.0
+        ],
+        "velocity": 0.0,
+        "start_time": 0.47,
+        "duration": 2.55
+      },
+      "inputs": {
+        "particle": "cardinal_ps"
+      }
+    },
+    {
+      "id": "cardinal2",
+      "type": "emitter",
+      "layer": "telegraph",
+      "parameters": {
+        "shape": "point",
+        "position": [
+          -2.474873734152917,
+          0.46,
+          -2.474873734152916
+        ],
+        "rate": 0,
+        "burst_count": 1,
+        "burst_times": [
+          0.0
+        ],
+        "velocity": 0.0,
+        "start_time": 0.52,
+        "duration": 2.55
+      },
+      "inputs": {
+        "particle": "cardinal_ps"
+      }
+    },
+    {
+      "id": "cardinal3",
+      "type": "emitter",
+      "layer": "telegraph",
+      "parameters": {
+        "shape": "point",
+        "position": [
+          2.474873734152916,
+          0.46,
+          -2.474873734152917
+        ],
+        "rate": 0,
+        "burst_count": 1,
+        "burst_times": [
+          0.0
+        ],
+        "velocity": 0.0,
+        "start_time": 0.5700000000000001,
+        "duration": 2.55
+      },
+      "inputs": {
+        "particle": "cardinal_ps"
+      }
+    },
+    {
+      "id": "foot0",
+      "type": "beam",
+      "layer": "rise",
+      "parameters": {
+        "origin": [
+          2.9318409768520346,
+          0.01,
+          1.0671028471760864
+        ],
+        "target": [
+          2.9318409768520346,
+          0.62,
+          1.0671028471760864
+        ],
+        "width": 0.07,
+        "segments": 3,
+        "noise_amplitude": 0.0,
+        "jitter_rate": 0.0,
+        "color": [
+          1.0,
+          0.82,
+          0.45,
+          0.92
+        ],
+        "blend": "additive",
+        "emissive": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.4,
+              "value": 0.0
+            },
+            {
+              "time": 0.5,
+              "value": 3.4
+            },
+            {
+              "time": 0.8,
+              "value": 2.2
+            },
+            {
+              "time": 1.2,
+              "value": 2.6
+            },
+            {
+              "time": 1.7,
+              "value": 2.0
+            },
+            {
+              "time": 2.1,
+              "value": 2.5
+            },
+            {
+              "time": 2.45,
+              "value": 1.2
+            },
+            {
+              "time": 2.88,
+              "value": 0.0
+            }
+          ]
+        },
+        "start_time": 0.4,
+        "duration": 2.6
+      }
+    },
+    {
+      "id": "candle0",
+      "type": "beam",
+      "layer": "rise",
+      "parameters": {
+        "origin": [
+          2.9318409768520346,
+          0.02,
+          1.0671028471760864
+        ],
+        "width": 0.03,
+        "segments": 10,
+        "noise_amplitude": 0.018,
+        "noise_frequency": 2.0,
+        "jitter_rate": 9.0,
+        "pulse_speed": 0.55,
+        "pulse_frequency": 0.7,
+        "color": [
+          1.0,
+          0.82,
+          0.45,
+          0.8
+        ],
+        "blend": "additive",
+        "target": {
+          "value": [
+            2.9318409768520346,
+            0.06,
+            1.0671028471760864
+          ],
+          "track": [
+            {
+              "time": 0.4,
+              "value": [
+                2.9318409768520346,
+                0.06,
+                1.0671028471760864
+              ]
+            },
+            {
+              "time": 0.7,
+              "value": [
+                2.9318409768520346,
+                2.3375,
+                1.0671028471760864
+              ]
+            },
+            {
+              "time": 0.8600000000000001,
+              "value": [
+                2.9318409768520346,
+                2.75,
+                1.0671028471760864
+              ]
+            },
+            {
+              "time": 2.25,
+              "value": [
+                2.9318409768520346,
+                2.75,
+                1.0671028471760864
+              ]
+            },
+            {
+              "time": 2.6,
+              "value": [
+                2.9318409768520346,
+                1.2375,
+                1.0671028471760864
+              ]
+            },
+            {
+              "time": 2.9,
+              "value": [
+                2.9318409768520346,
+                0.08,
+                1.0671028471760864
+              ]
+            }
+          ]
+        },
+        "emissive": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.4,
+              "value": 0.0
+            },
+            {
+              "time": 0.52,
+              "value": 1.5
+            },
+            {
+              "time": 0.8200000000000001,
+              "value": 0.85
+            },
+            {
+              "time": 1.2,
+              "value": 1.15
+            },
+            {
+              "time": 1.7,
+              "value": 0.8
+            },
+            {
+              "time": 2.1,
+              "value": 1.1
+            },
+            {
+              "time": 2.45,
+              "value": 0.5
+            },
+            {
+              "time": 2.88,
+              "value": 0.0
+            }
+          ]
+        },
+        "start_time": 0.4,
+        "duration": 2.6
+      }
+    },
+    {
+      "id": "foot1",
+      "type": "beam",
+      "layer": "rise",
+      "parameters": {
+        "origin": [
+          1.3185689766309823,
+          0.01,
+          2.827680295554348
+        ],
+        "target": [
+          1.3185689766309823,
+          0.62,
+          2.827680295554348
+        ],
+        "width": 0.08800000000000001,
+        "segments": 3,
+        "noise_amplitude": 0.0,
+        "jitter_rate": 0.0,
+        "color": [
+          1.0,
+          0.82,
+          0.45,
+          0.92
+        ],
+        "blend": "additive",
+        "emissive": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.43000000000000005,
+              "value": 0.0
+            },
+            {
+              "time": 0.53,
+              "value": 3.4
+            },
+            {
+              "time": 0.8300000000000001,
+              "value": 2.2
+            },
+            {
+              "time": 1.2,
+              "value": 2.6
+            },
+            {
+              "time": 1.7,
+              "value": 2.0
+            },
+            {
+              "time": 2.1,
+              "value": 2.5
+            },
+            {
+              "time": 2.45,
+              "value": 1.2
+            },
+            {
+              "time": 2.88,
+              "value": 0.0
+            }
+          ]
+        },
+        "start_time": 0.43000000000000005,
+        "duration": 2.57
+      }
+    },
+    {
+      "id": "candle1",
+      "type": "beam",
+      "layer": "rise",
+      "parameters": {
+        "origin": [
+          1.3185689766309823,
+          0.02,
+          2.827680295554348
+        ],
+        "width": 0.044,
+        "segments": 10,
+        "noise_amplitude": 0.018,
+        "noise_frequency": 2.0,
+        "jitter_rate": 9.0,
+        "pulse_speed": 0.55,
+        "pulse_frequency": 0.76,
+        "color": [
+          1.0,
+          0.82,
+          0.45,
+          0.8
+        ],
+        "blend": "additive",
+        "target": {
+          "value": [
+            1.3185689766309823,
+            0.06,
+            2.827680295554348
+          ],
+          "track": [
+            {
+              "time": 0.43000000000000005,
+              "value": [
+                1.3185689766309823,
+                0.06,
+                2.827680295554348
+              ]
+            },
+            {
+              "time": 0.73,
+              "value": [
+                1.3185689766309823,
+                3.435416666666667,
+                2.827680295554348
+              ]
+            },
+            {
+              "time": 0.8900000000000001,
+              "value": [
+                1.3185689766309823,
+                4.041666666666667,
+                2.827680295554348
+              ]
+            },
+            {
+              "time": 2.25,
+              "value": [
+                1.3185689766309823,
+                4.041666666666667,
+                2.827680295554348
+              ]
+            },
+            {
+              "time": 2.6,
+              "value": [
+                1.3185689766309823,
+                1.81875,
+                2.827680295554348
+              ]
+            },
+            {
+              "time": 2.9,
+              "value": [
+                1.3185689766309823,
+                0.08,
+                2.827680295554348
+              ]
+            }
+          ]
+        },
+        "emissive": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.43000000000000005,
+              "value": 0.0
+            },
+            {
+              "time": 0.55,
+              "value": 1.5
+            },
+            {
+              "time": 0.8500000000000001,
+              "value": 0.85
+            },
+            {
+              "time": 1.2,
+              "value": 1.15
+            },
+            {
+              "time": 1.7,
+              "value": 0.8
+            },
+            {
+              "time": 2.1,
+              "value": 1.1
+            },
+            {
+              "time": 2.45,
+              "value": 0.5
+            },
+            {
+              "time": 2.88,
+              "value": 0.0
+            }
+          ]
+        },
+        "start_time": 0.43000000000000005,
+        "duration": 2.57
+      }
+    },
+    {
+      "id": "foot2",
+      "type": "beam",
+      "layer": "rise",
+      "parameters": {
+        "origin": [
+          -1.0671028471760864,
+          0.01,
+          2.9318409768520346
+        ],
+        "target": [
+          -1.0671028471760864,
+          0.62,
+          2.9318409768520346
+        ],
+        "width": 0.10600000000000001,
+        "segments": 3,
+        "noise_amplitude": 0.0,
+        "jitter_rate": 0.0,
+        "color": [
+          1.0,
+          0.82,
+          0.45,
+          0.92
+        ],
+        "blend": "additive",
+        "emissive": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.46,
+              "value": 0.0
+            },
+            {
+              "time": 0.56,
+              "value": 3.4
+            },
+            {
+              "time": 0.8600000000000001,
+              "value": 2.2
+            },
+            {
+              "time": 1.2,
+              "value": 2.6
+            },
+            {
+              "time": 1.7,
+              "value": 2.0
+            },
+            {
+              "time": 2.1,
+              "value": 2.5
+            },
+            {
+              "time": 2.45,
+              "value": 1.2
+            },
+            {
+              "time": 2.88,
+              "value": 0.0
+            }
+          ]
+        },
+        "start_time": 0.46,
+        "duration": 2.54
+      }
+    },
+    {
+      "id": "candle2",
+      "type": "beam",
+      "layer": "rise",
+      "parameters": {
+        "origin": [
+          -1.0671028471760864,
+          0.02,
+          2.9318409768520346
+        ],
+        "width": 0.057999999999999996,
+        "segments": 10,
+        "noise_amplitude": 0.018,
+        "noise_frequency": 2.0,
+        "jitter_rate": 9.0,
+        "pulse_speed": 0.55,
+        "pulse_frequency": 0.82,
+        "color": [
+          1.0,
+          0.82,
+          0.45,
+          0.8
+        ],
+        "blend": "additive",
+        "target": {
+          "value": [
+            -1.0671028471760864,
+            0.06,
+            2.9318409768520346
+          ],
+          "track": [
+            {
+              "time": 0.46,
+              "value": [
+                -1.0671028471760864,
+                0.06,
+                2.9318409768520346
+              ]
+            },
+            {
+              "time": 0.76,
+              "value": [
+                -1.0671028471760864,
+                2.99625,
+                2.9318409768520346
+              ]
+            },
+            {
+              "time": 0.92,
+              "value": [
+                -1.0671028471760864,
+                3.525,
+                2.9318409768520346
+              ]
+            },
+            {
+              "time": 2.25,
+              "value": [
+                -1.0671028471760864,
+                3.525,
+                2.9318409768520346
+              ]
+            },
+            {
+              "time": 2.6,
+              "value": [
+                -1.0671028471760864,
+                1.58625,
+                2.9318409768520346
+              ]
+            },
+            {
+              "time": 2.9,
+              "value": [
+                -1.0671028471760864,
+                0.08,
+                2.9318409768520346
+              ]
+            }
+          ]
+        },
+        "emissive": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.46,
+              "value": 0.0
+            },
+            {
+              "time": 0.5800000000000001,
+              "value": 1.5
+            },
+            {
+              "time": 0.88,
+              "value": 0.85
+            },
+            {
+              "time": 1.2,
+              "value": 1.15
+            },
+            {
+              "time": 1.7,
+              "value": 0.8
+            },
+            {
+              "time": 2.1,
+              "value": 1.1
+            },
+            {
+              "time": 2.45,
+              "value": 0.5
+            },
+            {
+              "time": 2.88,
+              "value": 0.0
+            }
+          ]
+        },
+        "start_time": 0.46,
+        "duration": 2.54
+      }
+    },
+    {
+      "id": "foot3",
+      "type": "beam",
+      "layer": "rise",
+      "parameters": {
+        "origin": [
+          -2.827680295554348,
+          0.01,
+          1.3185689766309825
+        ],
+        "target": [
+          -2.827680295554348,
+          0.62,
+          1.3185689766309825
+        ],
+        "width": 0.07,
+        "segments": 3,
+        "noise_amplitude": 0.0,
+        "jitter_rate": 0.0,
+        "color": [
+          1.0,
+          0.82,
+          0.45,
+          0.92
+        ],
+        "blend": "additive",
+        "emissive": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.49,
+              "value": 0.0
+            },
+            {
+              "time": 0.59,
+              "value": 3.4
+            },
+            {
+              "time": 0.89,
+              "value": 2.2
+            },
+            {
+              "time": 1.2,
+              "value": 2.6
+            },
+            {
+              "time": 1.7,
+              "value": 2.0
+            },
+            {
+              "time": 2.1,
+              "value": 2.5
+            },
+            {
+              "time": 2.45,
+              "value": 1.2
+            },
+            {
+              "time": 2.88,
+              "value": 0.0
+            }
+          ]
+        },
+        "start_time": 0.49,
+        "duration": 2.51
+      }
+    },
+    {
+      "id": "candle3",
+      "type": "beam",
+      "layer": "rise",
+      "parameters": {
+        "origin": [
+          -2.827680295554348,
+          0.02,
+          1.3185689766309825
+        ],
+        "width": 0.03,
+        "segments": 10,
+        "noise_amplitude": 0.018,
+        "noise_frequency": 2.0,
+        "jitter_rate": 9.0,
+        "pulse_speed": 0.55,
+        "pulse_frequency": 0.8799999999999999,
+        "color": [
+          1.0,
+          0.82,
+          0.45,
+          0.8
+        ],
+        "blend": "additive",
+        "target": {
+          "value": [
+            -2.827680295554348,
+            0.06,
+            1.3185689766309825
+          ],
+          "track": [
+            {
+              "time": 0.49,
+              "value": [
+                -2.827680295554348,
+                0.06,
+                1.3185689766309825
+              ]
+            },
+            {
+              "time": 0.79,
+              "value": [
+                -2.827680295554348,
+                2.5570833333333334,
+                1.3185689766309825
+              ]
+            },
+            {
+              "time": 0.95,
+              "value": [
+                -2.827680295554348,
+                3.0083333333333333,
+                1.3185689766309825
+              ]
+            },
+            {
+              "time": 2.25,
+              "value": [
+                -2.827680295554348,
+                3.0083333333333333,
+                1.3185689766309825
+              ]
+            },
+            {
+              "time": 2.6,
+              "value": [
+                -2.827680295554348,
+                1.35375,
+                1.3185689766309825
+              ]
+            },
+            {
+              "time": 2.9,
+              "value": [
+                -2.827680295554348,
+                0.08,
+                1.3185689766309825
+              ]
+            }
+          ]
+        },
+        "emissive": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.49,
+              "value": 0.0
+            },
+            {
+              "time": 0.61,
+              "value": 1.5
+            },
+            {
+              "time": 0.9099999999999999,
+              "value": 0.85
+            },
+            {
+              "time": 1.2,
+              "value": 1.15
+            },
+            {
+              "time": 1.7,
+              "value": 0.8
+            },
+            {
+              "time": 2.1,
+              "value": 1.1
+            },
+            {
+              "time": 2.45,
+              "value": 0.5
+            },
+            {
+              "time": 2.88,
+              "value": 0.0
+            }
+          ]
+        },
+        "start_time": 0.49,
+        "duration": 2.51
+      }
+    },
+    {
+      "id": "foot4",
+      "type": "beam",
+      "layer": "rise",
+      "parameters": {
+        "origin": [
+          -2.9318409768520346,
+          0.01,
+          -1.0671028471760862
+        ],
+        "target": [
+          -2.9318409768520346,
+          0.62,
+          -1.0671028471760862
+        ],
+        "width": 0.08800000000000001,
+        "segments": 3,
+        "noise_amplitude": 0.0,
+        "jitter_rate": 0.0,
+        "color": [
+          1.0,
+          0.82,
+          0.45,
+          0.92
+        ],
+        "blend": "additive",
+        "emissive": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.52,
+              "value": 0.0
+            },
+            {
+              "time": 0.62,
+              "value": 3.4
+            },
+            {
+              "time": 0.92,
+              "value": 2.2
+            },
+            {
+              "time": 1.2,
+              "value": 2.6
+            },
+            {
+              "time": 1.7,
+              "value": 2.0
+            },
+            {
+              "time": 2.1,
+              "value": 2.5
+            },
+            {
+              "time": 2.45,
+              "value": 1.2
+            },
+            {
+              "time": 2.88,
+              "value": 0.0
+            }
+          ]
+        },
+        "start_time": 0.52,
+        "duration": 2.48
+      }
+    },
+    {
+      "id": "candle4",
+      "type": "beam",
+      "layer": "rise",
+      "parameters": {
+        "origin": [
+          -2.9318409768520346,
+          0.02,
+          -1.0671028471760862
+        ],
+        "width": 0.044,
+        "segments": 10,
+        "noise_amplitude": 0.018,
+        "noise_frequency": 2.0,
+        "jitter_rate": 9.0,
+        "pulse_speed": 0.55,
+        "pulse_frequency": 0.94,
+        "color": [
+          1.0,
+          0.82,
+          0.45,
+          0.8
+        ],
+        "blend": "additive",
+        "target": {
+          "value": [
+            -2.9318409768520346,
+            0.06,
+            -1.0671028471760862
+          ],
+          "track": [
+            {
+              "time": 0.52,
+              "value": [
+                -2.9318409768520346,
+                0.06,
+                -1.0671028471760862
+              ]
+            },
+            {
+              "time": 0.8200000000000001,
+              "value": [
+                -2.9318409768520346,
+                3.655,
+                -1.0671028471760862
+              ]
+            },
+            {
+              "time": 0.98,
+              "value": [
+                -2.9318409768520346,
+                4.3,
+                -1.0671028471760862
+              ]
+            },
+            {
+              "time": 2.25,
+              "value": [
+                -2.9318409768520346,
+                4.3,
+                -1.0671028471760862
+              ]
+            },
+            {
+              "time": 2.6,
+              "value": [
+                -2.9318409768520346,
+                1.935,
+                -1.0671028471760862
+              ]
+            },
+            {
+              "time": 2.9,
+              "value": [
+                -2.9318409768520346,
+                0.08,
+                -1.0671028471760862
+              ]
+            }
+          ]
+        },
+        "emissive": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.52,
+              "value": 0.0
+            },
+            {
+              "time": 0.64,
+              "value": 1.5
+            },
+            {
+              "time": 0.94,
+              "value": 0.85
+            },
+            {
+              "time": 1.2,
+              "value": 1.15
+            },
+            {
+              "time": 1.7,
+              "value": 0.8
+            },
+            {
+              "time": 2.1,
+              "value": 1.1
+            },
+            {
+              "time": 2.45,
+              "value": 0.5
+            },
+            {
+              "time": 2.88,
+              "value": 0.0
+            }
+          ]
+        },
+        "start_time": 0.52,
+        "duration": 2.48
+      }
+    },
+    {
+      "id": "foot5",
+      "type": "beam",
+      "layer": "rise",
+      "parameters": {
+        "origin": [
+          -1.3185689766309814,
+          0.01,
+          -2.827680295554348
+        ],
+        "target": [
+          -1.3185689766309814,
+          0.62,
+          -2.827680295554348
+        ],
+        "width": 0.10600000000000001,
+        "segments": 3,
+        "noise_amplitude": 0.0,
+        "jitter_rate": 0.0,
+        "color": [
+          1.0,
+          0.82,
+          0.45,
+          0.92
+        ],
+        "blend": "additive",
+        "emissive": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.55,
+              "value": 0.0
+            },
+            {
+              "time": 0.65,
+              "value": 3.4
+            },
+            {
+              "time": 0.9500000000000001,
+              "value": 2.2
+            },
+            {
+              "time": 1.2,
+              "value": 2.6
+            },
+            {
+              "time": 1.7,
+              "value": 2.0
+            },
+            {
+              "time": 2.1,
+              "value": 2.5
+            },
+            {
+              "time": 2.45,
+              "value": 1.2
+            },
+            {
+              "time": 2.88,
+              "value": 0.0
+            }
+          ]
+        },
+        "start_time": 0.55,
+        "duration": 2.45
+      }
+    },
+    {
+      "id": "candle5",
+      "type": "beam",
+      "layer": "rise",
+      "parameters": {
+        "origin": [
+          -1.3185689766309814,
+          0.02,
+          -2.827680295554348
+        ],
+        "width": 0.057999999999999996,
+        "segments": 10,
+        "noise_amplitude": 0.018,
+        "noise_frequency": 2.0,
+        "jitter_rate": 9.0,
+        "pulse_speed": 0.55,
+        "pulse_frequency": 1.0,
+        "color": [
+          1.0,
+          0.82,
+          0.45,
+          0.8
+        ],
+        "blend": "additive",
+        "target": {
+          "value": [
+            -1.3185689766309814,
+            0.06,
+            -2.827680295554348
+          ],
+          "track": [
+            {
+              "time": 0.55,
+              "value": [
+                -1.3185689766309814,
+                0.06,
+                -2.827680295554348
+              ]
+            },
+            {
+              "time": 0.8500000000000001,
+              "value": [
+                -1.3185689766309814,
+                3.2158333333333333,
+                -2.827680295554348
+              ]
+            },
+            {
+              "time": 1.01,
+              "value": [
+                -1.3185689766309814,
+                3.783333333333333,
+                -2.827680295554348
+              ]
+            },
+            {
+              "time": 2.25,
+              "value": [
+                -1.3185689766309814,
+                3.783333333333333,
+                -2.827680295554348
+              ]
+            },
+            {
+              "time": 2.6,
+              "value": [
+                -1.3185689766309814,
+                1.7025,
+                -2.827680295554348
+              ]
+            },
+            {
+              "time": 2.9,
+              "value": [
+                -1.3185689766309814,
+                0.08,
+                -2.827680295554348
+              ]
+            }
+          ]
+        },
+        "emissive": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.55,
+              "value": 0.0
+            },
+            {
+              "time": 0.67,
+              "value": 1.5
+            },
+            {
+              "time": 0.97,
+              "value": 0.85
+            },
+            {
+              "time": 1.2,
+              "value": 1.15
+            },
+            {
+              "time": 1.7,
+              "value": 0.8
+            },
+            {
+              "time": 2.1,
+              "value": 1.1
+            },
+            {
+              "time": 2.45,
+              "value": 0.5
+            },
+            {
+              "time": 2.88,
+              "value": 0.0
+            }
+          ]
+        },
+        "start_time": 0.55,
+        "duration": 2.45
+      }
+    },
+    {
+      "id": "foot6",
+      "type": "beam",
+      "layer": "rise",
+      "parameters": {
+        "origin": [
+          1.0671028471760873,
+          0.01,
+          -2.931840976852034
+        ],
+        "target": [
+          1.0671028471760873,
+          0.62,
+          -2.931840976852034
+        ],
+        "width": 0.07,
+        "segments": 3,
+        "noise_amplitude": 0.0,
+        "jitter_rate": 0.0,
+        "color": [
+          1.0,
+          0.82,
+          0.45,
+          0.92
+        ],
+        "blend": "additive",
+        "emissive": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.5800000000000001,
+              "value": 0.0
+            },
+            {
+              "time": 0.68,
+              "value": 3.4
+            },
+            {
+              "time": 0.9800000000000001,
+              "value": 2.2
+            },
+            {
+              "time": 1.2,
+              "value": 2.6
+            },
+            {
+              "time": 1.7,
+              "value": 2.0
+            },
+            {
+              "time": 2.1,
+              "value": 2.5
+            },
+            {
+              "time": 2.45,
+              "value": 1.2
+            },
+            {
+              "time": 2.88,
+              "value": 0.0
+            }
+          ]
+        },
+        "start_time": 0.5800000000000001,
+        "duration": 2.42
+      }
+    },
+    {
+      "id": "candle6",
+      "type": "beam",
+      "layer": "rise",
+      "parameters": {
+        "origin": [
+          1.0671028471760873,
+          0.02,
+          -2.931840976852034
+        ],
+        "width": 0.03,
+        "segments": 10,
+        "noise_amplitude": 0.018,
+        "noise_frequency": 2.0,
+        "jitter_rate": 9.0,
+        "pulse_speed": 0.55,
+        "pulse_frequency": 1.06,
+        "color": [
+          1.0,
+          0.82,
+          0.45,
+          0.8
+        ],
+        "blend": "additive",
+        "target": {
+          "value": [
+            1.0671028471760873,
+            0.06,
+            -2.931840976852034
+          ],
+          "track": [
+            {
+              "time": 0.5800000000000001,
+              "value": [
+                1.0671028471760873,
+                0.06,
+                -2.931840976852034
+              ]
+            },
+            {
+              "time": 0.8800000000000001,
+              "value": [
+                1.0671028471760873,
+                2.7766666666666664,
+                -2.931840976852034
+              ]
+            },
+            {
+              "time": 1.04,
+              "value": [
+                1.0671028471760873,
+                3.2666666666666666,
+                -2.931840976852034
+              ]
+            },
+            {
+              "time": 2.25,
+              "value": [
+                1.0671028471760873,
+                3.2666666666666666,
+                -2.931840976852034
+              ]
+            },
+            {
+              "time": 2.6,
+              "value": [
+                1.0671028471760873,
+                1.47,
+                -2.931840976852034
+              ]
+            },
+            {
+              "time": 2.9,
+              "value": [
+                1.0671028471760873,
+                0.08,
+                -2.931840976852034
+              ]
+            }
+          ]
+        },
+        "emissive": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.5800000000000001,
+              "value": 0.0
+            },
+            {
+              "time": 0.7000000000000001,
+              "value": 1.5
+            },
+            {
+              "time": 1.0,
+              "value": 0.85
+            },
+            {
+              "time": 1.2,
+              "value": 1.15
+            },
+            {
+              "time": 1.7,
+              "value": 0.8
+            },
+            {
+              "time": 2.1,
+              "value": 1.1
+            },
+            {
+              "time": 2.45,
+              "value": 0.5
+            },
+            {
+              "time": 2.88,
+              "value": 0.0
+            }
+          ]
+        },
+        "start_time": 0.5800000000000001,
+        "duration": 2.42
+      }
+    },
+    {
+      "id": "foot7",
+      "type": "beam",
+      "layer": "rise",
+      "parameters": {
+        "origin": [
+          2.827680295554348,
+          0.01,
+          -1.3185689766309816
+        ],
+        "target": [
+          2.827680295554348,
+          0.62,
+          -1.3185689766309816
+        ],
+        "width": 0.08800000000000001,
+        "segments": 3,
+        "noise_amplitude": 0.0,
+        "jitter_rate": 0.0,
+        "color": [
+          1.0,
+          0.82,
+          0.45,
+          0.92
+        ],
+        "blend": "additive",
+        "emissive": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.61,
+              "value": 0.0
+            },
+            {
+              "time": 0.71,
+              "value": 3.4
+            },
+            {
+              "time": 1.01,
+              "value": 2.2
+            },
+            {
+              "time": 1.2,
+              "value": 2.6
+            },
+            {
+              "time": 1.7,
+              "value": 2.0
+            },
+            {
+              "time": 2.1,
+              "value": 2.5
+            },
+            {
+              "time": 2.45,
+              "value": 1.2
+            },
+            {
+              "time": 2.88,
+              "value": 0.0
+            }
+          ]
+        },
+        "start_time": 0.61,
+        "duration": 2.39
+      }
+    },
+    {
+      "id": "candle7",
+      "type": "beam",
+      "layer": "rise",
+      "parameters": {
+        "origin": [
+          2.827680295554348,
+          0.02,
+          -1.3185689766309816
+        ],
+        "width": 0.044,
+        "segments": 10,
+        "noise_amplitude": 0.018,
+        "noise_frequency": 2.0,
+        "jitter_rate": 9.0,
+        "pulse_speed": 0.55,
+        "pulse_frequency": 1.1199999999999999,
+        "color": [
+          1.0,
+          0.82,
+          0.45,
+          0.8
+        ],
+        "blend": "additive",
+        "target": {
+          "value": [
+            2.827680295554348,
+            0.06,
+            -1.3185689766309816
+          ],
+          "track": [
+            {
+              "time": 0.61,
+              "value": [
+                2.827680295554348,
+                0.06,
+                -1.3185689766309816
+              ]
+            },
+            {
+              "time": 0.9099999999999999,
+              "value": [
+                2.827680295554348,
+                2.3375,
+                -1.3185689766309816
+              ]
+            },
+            {
+              "time": 1.07,
+              "value": [
+                2.827680295554348,
+                2.75,
+                -1.3185689766309816
+              ]
+            },
+            {
+              "time": 2.25,
+              "value": [
+                2.827680295554348,
+                2.75,
+                -1.3185689766309816
+              ]
+            },
+            {
+              "time": 2.6,
+              "value": [
+                2.827680295554348,
+                1.2375,
+                -1.3185689766309816
+              ]
+            },
+            {
+              "time": 2.9,
+              "value": [
+                2.827680295554348,
+                0.08,
+                -1.3185689766309816
+              ]
+            }
+          ]
+        },
+        "emissive": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.61,
+              "value": 0.0
+            },
+            {
+              "time": 0.73,
+              "value": 1.5
+            },
+            {
+              "time": 1.03,
+              "value": 0.85
+            },
+            {
+              "time": 1.2,
+              "value": 1.15
+            },
+            {
+              "time": 1.7,
+              "value": 0.8
+            },
+            {
+              "time": 2.1,
+              "value": 1.1
+            },
+            {
+              "time": 2.45,
+              "value": 0.5
+            },
+            {
+              "time": 2.88,
+              "value": 0.0
+            }
+          ]
+        },
+        "start_time": 0.61,
+        "duration": 2.39
+      }
+    },
+    {
+      "id": "curtain_ps",
+      "type": "particle_system",
+      "layer": "rise",
+      "parameters": {
+        "max_particles": 900,
+        "lifetime": 0.6,
+        "lifetime_variance": 0.18,
+        "size": 0.15,
+        "size_variance": 0.055,
+        "size_over_life": [
+          [
+            0.0,
+            0.5
+          ],
+          [
+            0.25,
+            1.0
+          ],
+          [
+            1.0,
+            0.45
+          ]
+        ],
+        "color": [
+          1.0,
+          0.82,
+          0.45,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              0.97,
+              0.85,
+              1.0
+            ]
+          ],
+          [
+            0.55,
+            [
+              1.0,
+              0.9,
+              0.68,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              1.0,
+              0.82,
+              0.45,
+              1.0
+            ]
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.12,
+            0.16
+          ],
+          [
+            0.6,
+            0.11
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 1.0,
+        "drag": 1.1,
+        "blend": "additive",
+        "render_mode": "stretched_billboard",
+        "velocity_stretch": 0.95,
+        "sprite_fps": 0.0
+      },
+      "inputs": {
+        "sprite": "tex_streak",
+        "material": "mat_holy",
+        "forces": [
+          "f_lift"
+        ]
+      }
+    },
+    {
+      "id": "curtain",
+      "type": "emitter",
+      "layer": "rise",
+      "parameters": {
+        "shape": "ring",
+        "radius": 3.2800000000000002,
+        "inner_radius": 2.96,
+        "position": [
+          0.0,
+          0.03,
+          0.0
+        ],
+        "rate": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.4,
+              "value": 0.0
+            },
+            {
+              "time": 0.62,
+              "value": 200.0
+            },
+            {
+              "time": 0.95,
+              "value": 280.0
+            },
+            {
+              "time": 2.0,
+              "value": 230.0
+            },
+            {
+              "time": 2.35,
+              "value": 90.0
+            },
+            {
+              "time": 2.62,
+              "value": 0.0
+            }
+          ]
+        },
+        "velocity": 5.2,
+        "velocity_variance": 1.8,
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 6,
+        "start_time": 0.4
+      },
+      "inputs": {
+        "particle": "curtain_ps"
+      }
+    },
+    {
+      "id": "flare_ps",
+      "type": "particle_system",
+      "layer": "rise",
+      "parameters": {
+        "max_particles": 260,
+        "lifetime": 0.85,
+        "lifetime_variance": 0.3,
+        "size": 0.8,
+        "size_variance": 0.35,
+        "size_over_life": [
+          [
+            0.0,
+            0.15
+          ],
+          [
+            0.25,
+            1.0
+          ],
+          [
+            1.0,
+            0.35
+          ]
+        ],
+        "color": [
+          1.0,
+          0.9,
+          0.68,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              0.97,
+              0.85,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              1.0,
+              0.82,
+              0.45,
+              1.0
+            ]
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.2,
+            0.8
+          ],
+          [
+            0.6,
+            0.5
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 1.2,
+        "blend": "additive",
+        "rotation_variance": 30.0,
+        "angular_velocity": 12.0,
+        "angular_velocity_variance": 18.0
+      },
+      "inputs": {
+        "sprite": "tex_star",
+        "material": "mat_soft"
+      }
+    },
+    {
+      "id": "flares",
+      "type": "emitter",
+      "layer": "rise",
+      "parameters": {
+        "shape": "ring",
+        "radius": 3.17,
+        "inner_radius": 3.0700000000000003,
+        "position": [
+          0.0,
+          0.1,
+          0.0
+        ],
+        "rate": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.4,
+              "value": 0.0
+            },
+            {
+              "time": 0.7,
+              "value": 26.0
+            },
+            {
+              "time": 1.2,
+              "value": 20.0
+            },
+            {
+              "time": 2.05,
+              "value": 17.0
+            },
+            {
+              "time": 2.45,
+              "value": 7.0
+            },
+            {
+              "time": 2.78,
+              "value": 0.0
+            }
+          ]
+        },
+        "velocity": 0.15,
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 20,
+        "start_time": 0.4
+      },
+      "inputs": {
+        "particle": "flare_ps"
+      }
+    },
+    {
+      "id": "beam_core",
+      "type": "beam",
+      "layer": "primary",
+      "parameters": {
+        "origin": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "segments": 12,
+        "noise_amplitude": 0.035,
+        "noise_frequency": 1.6,
+        "jitter_rate": 12.0,
+        "color": [
+          1.0,
+          0.93,
+          0.74,
+          0.9
+        ],
+        "blend": "additive",
+        "target": {
+          "value": [
+            0.0,
+            0.25,
+            0.0
+          ],
+          "track": [
+            {
+              "time": 0.3,
+              "value": [
+                0.0,
+                0.25,
+                0.0
+              ]
+            },
+            {
+              "time": 0.48,
+              "value": [
+                0.0,
+                2.6,
+                0.0
+              ]
+            },
+            {
+              "time": 0.62,
+              "value": [
+                0.0,
+                8.5,
+                0.0
+              ]
+            },
+            {
+              "time": 0.78,
+              "value": [
+                0.0,
+                14.0,
+                0.0
+              ]
+            },
+            {
+              "time": 2.1,
+              "value": [
+                0.0,
+                14.0,
+                0.0
+              ]
+            },
+            {
+              "time": 2.55,
+              "value": [
+                0.0,
+                5.5,
+                0.0
+              ]
+            },
+            {
+              "time": 2.85,
+              "value": [
+                0.0,
+                1.5,
+                0.0
+              ]
+            },
+            {
+              "time": 3.0,
+              "value": [
+                0.0,
+                0.6,
+                0.0
+              ]
+            }
+          ]
+        },
+        "width": {
+          "value": 0.035,
+          "track": [
+            {
+              "time": 0.3,
+              "value": 0.035
+            },
+            {
+              "time": 0.6,
+              "value": 0.13
+            },
+            {
+              "time": 0.9,
+              "value": 0.24
+            },
+            {
+              "time": 1.3,
+              "value": 0.27
+            },
+            {
+              "time": 1.6,
+              "value": 0.24
+            },
+            {
+              "time": 2.0,
+              "value": 0.27
+            },
+            {
+              "time": 2.3,
+              "value": 0.19
+            },
+            {
+              "time": 2.6,
+              "value": 0.1
+            },
+            {
+              "time": 2.85,
+              "value": 0.03
+            }
+          ]
+        },
+        "emissive": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.3,
+              "value": 0.0
+            },
+            {
+              "time": 0.55,
+              "value": 1.5
+            },
+            {
+              "time": 0.85,
+              "value": 2.3
+            },
+            {
+              "time": 1.05,
+              "value": 1.9
+            },
+            {
+              "time": 1.45,
+              "value": 2.2
+            },
+            {
+              "time": 1.6,
+              "value": 1.9
+            },
+            {
+              "time": 2.0,
+              "value": 2.1
+            },
+            {
+              "time": 2.3,
+              "value": 1.2
+            },
+            {
+              "time": 2.62,
+              "value": 0.45
+            },
+            {
+              "time": 2.85,
+              "value": 0.0
+            }
+          ]
+        },
+        "start_time": 0.3
+      }
+    },
+    {
+      "id": "shaft0",
+      "type": "beam",
+      "layer": "primary",
+      "parameters": {
+        "origin": [
+          0.2544144288469278,
+          1.1,
+          0.15897577926996145
+        ],
+        "target": [
+          1.144864929811175,
+          9.0,
+          0.7153910067148267
+        ],
+        "width": 0.28,
+        "segments": 6,
+        "noise_amplitude": 0.05,
+        "noise_frequency": 1.2,
+        "jitter_rate": 5.0,
+        "color": [
+          1.0,
+          0.78,
+          0.4,
+          0.16
+        ],
+        "blend": "additive",
+        "emissive": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.82,
+              "value": 0.0
+            },
+            {
+              "time": 1.05,
+              "value": 0.55
+            },
+            {
+              "time": 1.45,
+              "value": 0.42
+            },
+            {
+              "time": 1.9,
+              "value": 0.52
+            },
+            {
+              "time": 2.25,
+              "value": 0.34
+            },
+            {
+              "time": 2.7,
+              "value": 0.0
+            }
+          ]
+        },
+        "start_time": 0.82
+      }
+    },
+    {
+      "id": "shaft1",
+      "type": "beam",
+      "layer": "primary",
+      "parameters": {
+        "origin": [
+          -0.15897577926996143,
+          1.1,
+          0.25441442884692783
+        ],
+        "target": [
+          -0.9339827032110235,
+          10.1,
+          1.494684769475701
+        ],
+        "width": 0.39,
+        "segments": 6,
+        "noise_amplitude": 0.05,
+        "noise_frequency": 1.2,
+        "jitter_rate": 5.0,
+        "color": [
+          1.0,
+          0.78,
+          0.4,
+          0.16
+        ],
+        "blend": "additive",
+        "emissive": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.87,
+              "value": 0.0
+            },
+            {
+              "time": 1.05,
+              "value": 0.55
+            },
+            {
+              "time": 1.45,
+              "value": 0.42
+            },
+            {
+              "time": 1.9,
+              "value": 0.52
+            },
+            {
+              "time": 2.25,
+              "value": 0.34
+            },
+            {
+              "time": 2.7,
+              "value": 0.0
+            }
+          ]
+        },
+        "start_time": 0.87
+      }
+    },
+    {
+      "id": "shaft2",
+      "type": "beam",
+      "layer": "primary",
+      "parameters": {
+        "origin": [
+          -0.25441442884692783,
+          1.1,
+          -0.15897577926996143
+        ],
+        "target": [
+          -1.2614715430326837,
+          11.2,
+          -0.7882549055468921
+        ],
+        "width": 0.5,
+        "segments": 6,
+        "noise_amplitude": 0.05,
+        "noise_frequency": 1.2,
+        "jitter_rate": 5.0,
+        "color": [
+          1.0,
+          0.78,
+          0.4,
+          0.16
+        ],
+        "blend": "additive",
+        "emissive": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.9199999999999999,
+              "value": 0.0
+            },
+            {
+              "time": 1.05,
+              "value": 0.55
+            },
+            {
+              "time": 1.45,
+              "value": 0.42
+            },
+            {
+              "time": 1.9,
+              "value": 0.52
+            },
+            {
+              "time": 2.25,
+              "value": 0.34
+            },
+            {
+              "time": 2.7,
+              "value": 0.0
+            }
+          ]
+        },
+        "start_time": 0.9199999999999999
+      }
+    },
+    {
+      "id": "shaft3",
+      "type": "beam",
+      "layer": "primary",
+      "parameters": {
+        "origin": [
+          0.1589757792699614,
+          1.1,
+          -0.25441442884692783
+        ],
+        "target": [
+          1.006846602043089,
+          9.55,
+          -1.61129138269721
+        ],
+        "width": 0.28,
+        "segments": 6,
+        "noise_amplitude": 0.05,
+        "noise_frequency": 1.2,
+        "jitter_rate": 5.0,
+        "color": [
+          1.0,
+          0.78,
+          0.4,
+          0.16
+        ],
+        "blend": "additive",
+        "emissive": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.97,
+              "value": 0.0
+            },
+            {
+              "time": 1.05,
+              "value": 0.55
+            },
+            {
+              "time": 1.45,
+              "value": 0.42
+            },
+            {
+              "time": 1.9,
+              "value": 0.52
+            },
+            {
+              "time": 2.25,
+              "value": 0.34
+            },
+            {
+              "time": 2.7,
+              "value": 0.0
+            }
+          ]
+        },
+        "start_time": 0.97
+      }
+    },
+    {
+      "id": "pillar_ps",
+      "type": "particle_system",
+      "layer": "primary",
+      "parameters": {
+        "max_particles": 1500,
+        "lifetime": 0.8,
+        "lifetime_variance": 0.22,
+        "size": 0.24,
+        "size_variance": 0.1,
+        "size_over_life": [
+          [
+            0.0,
+            0.45
+          ],
+          [
+            0.2,
+            1.0
+          ],
+          [
+            0.75,
+            1.0
+          ],
+          [
+            1.0,
+            0.55
+          ]
+        ],
+        "color": [
+          1.0,
+          0.9,
+          0.68,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              0.97,
+              0.85,
+              1.0
+            ]
+          ],
+          [
+            0.18,
+            [
+              1.0,
+              0.9,
+              0.68,
+              1.0
+            ]
+          ],
+          [
+            0.45,
+            [
+              1.0,
+              0.82,
+              0.45,
+              1.0
+            ]
+          ],
+          [
+            0.8,
+            [
+              1.0,
+              0.62,
+              0.24,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.62,
+              0.26,
+              0.06,
+              1.0
+            ]
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.06,
+            0.2
+          ],
+          [
+            0.18,
+            0.8
+          ],
+          [
+            0.65,
+            0.6
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 1.25,
+        "emissive_over_life": [
+          [
+            0.0,
+            1.2
+          ],
+          [
+            0.5,
+            1.0
+          ],
+          [
+            1.0,
+            0.35
+          ]
+        ],
+        "drag": 0.5,
+        "blend": "additive",
+        "render_mode": "stretched_billboard",
+        "velocity_stretch": 0.6,
+        "sprite_fps": 0.0
+      },
+      "inputs": {
+        "sprite": "tex_streak",
+        "material": "mat_holy",
+        "forces": [
+          "f_rise",
+          "f_spin"
+        ]
+      }
+    },
+    {
+      "id": "pillar",
+      "type": "emitter",
+      "layer": "primary",
+      "parameters": {
+        "shape": "disc",
+        "radius": 0.3,
+        "position": [
+          0.0,
+          0.1,
+          0.0
+        ],
+        "rate": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.42,
+              "value": 0.0
+            },
+            {
+              "time": 0.6,
+              "value": 190.0
+            },
+            {
+              "time": 0.95,
+              "value": 640.0
+            },
+            {
+              "time": 1.6,
+              "value": 610.0
+            },
+            {
+              "time": 2.05,
+              "value": 540.0
+            },
+            {
+              "time": 2.45,
+              "value": 250.0
+            },
+            {
+              "time": 2.8,
+              "value": 0.0
+            }
+          ]
+        },
+        "velocity": 8.6,
+        "velocity_variance": 2.2,
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 2,
+        "start_time": 0.42
+      },
+      "inputs": {
+        "particle": "pillar_ps"
+      }
+    },
+    {
+      "id": "core_ps",
+      "type": "particle_system",
+      "layer": "primary",
+      "parameters": {
+        "max_particles": 520,
+        "lifetime": 0.55,
+        "lifetime_variance": 0.15,
+        "size": 0.09,
+        "size_variance": 0.035,
+        "size_over_life": [
+          [
+            0.0,
+            0.5
+          ],
+          [
+            0.2,
+            1.0
+          ],
+          [
+            1.0,
+            0.6
+          ]
+        ],
+        "color": [
+          1.0,
+          0.97,
+          0.85,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              1.0,
+              0.95,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              1.0,
+              0.82,
+              0.45,
+              1.0
+            ]
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.05,
+            0.16
+          ],
+          [
+            0.15,
+            0.92
+          ],
+          [
+            0.7,
+            0.74
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 2.0,
+        "drag": 0.2,
+        "blend": "additive",
+        "render_mode": "stretched_billboard",
+        "velocity_stretch": 0.95,
+        "sprite_fps": 0.0
+      },
+      "inputs": {
+        "sprite": "tex_streak",
+        "material": "mat_core",
+        "forces": [
+          "f_rise"
+        ]
+      }
+    },
+    {
+      "id": "core",
+      "type": "emitter",
+      "layer": "primary",
+      "parameters": {
+        "shape": "disc",
+        "radius": 0.17,
+        "position": [
+          0.0,
+          0.03,
+          0.0
+        ],
+        "rate": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.45,
+              "value": 0.0
+            },
+            {
+              "time": 0.7,
+              "value": 190.0
+            },
+            {
+              "time": 0.95,
+              "value": 380.0
+            },
+            {
+              "time": 2.05,
+              "value": 350.0
+            },
+            {
+              "time": 2.4,
+              "value": 155.0
+            },
+            {
+              "time": 2.75,
+              "value": 0.0
+            }
+          ]
+        },
+        "velocity": 12.5,
+        "velocity_variance": 2.5,
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 3,
+        "start_time": 0.45
+      },
+      "inputs": {
+        "particle": "core_ps"
+      }
+    },
+    {
+      "id": "haze_ps",
+      "type": "particle_system",
+      "layer": "primary",
+      "parameters": {
+        "max_particles": 320,
+        "lifetime": 1.7,
+        "lifetime_variance": 0.4,
+        "size": 2.1,
+        "size_variance": 0.6,
+        "size_over_life": [
+          [
+            0.0,
+            0.55
+          ],
+          [
+            0.5,
+            1.0
+          ],
+          [
+            1.0,
+            1.1
+          ]
+        ],
+        "color": [
+          1.0,
+          0.7,
+          0.32,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              0.86,
+              0.56,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              1.0,
+              0.52,
+              0.16,
+              1.0
+            ]
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.3,
+            0.035
+          ],
+          [
+            0.75,
+            0.025
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.3,
+        "drag": 0.9,
+        "blend": "additive",
+        "angular_velocity": 12.0,
+        "angular_velocity_variance": 16.0,
+        "rotation_variance": 180.0
+      },
+      "inputs": {
+        "sprite": "tex_flare",
+        "material": "mat_haze",
+        "forces": [
+          "f_lift",
+          "f_curl_wide"
+        ]
+      }
+    },
+    {
+      "id": "haze",
+      "type": "emitter",
+      "layer": "primary",
+      "parameters": {
+        "shape": "disc",
+        "radius": 0.95,
+        "position": [
+          0.0,
+          0.25,
+          0.0
+        ],
+        "rate": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.5,
+              "value": 0.0
+            },
+            {
+              "time": 0.95,
+              "value": 130.0
+            },
+            {
+              "time": 1.6,
+              "value": 115.0
+            },
+            {
+              "time": 2.1,
+              "value": 95.0
+            },
+            {
+              "time": 2.5,
+              "value": 42.0
+            },
+            {
+              "time": 2.85,
+              "value": 0.0
+            }
+          ]
+        },
+        "velocity": 2.6,
+        "velocity_variance": 0.9,
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 12,
+        "start_time": 0.5
+      },
+      "inputs": {
+        "particle": "haze_ps"
+      }
+    },
+    {
+      "id": "base_flare_ps",
+      "type": "particle_system",
+      "layer": "primary",
+      "parameters": {
+        "max_particles": 140,
+        "lifetime": 0.8,
+        "lifetime_variance": 0.2,
+        "size": 1.7,
+        "size_variance": 0.4,
+        "size_over_life": [
+          [
+            0.0,
+            0.2
+          ],
+          [
+            0.3,
+            1.0
+          ],
+          [
+            1.0,
+            0.5
+          ]
+        ],
+        "color": [
+          1.0,
+          0.97,
+          0.85,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              1.0,
+              0.92,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              1.0,
+              0.82,
+              0.45,
+              1.0
+            ]
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.2,
+            0.1
+          ],
+          [
+            0.6,
+            0.065
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.9,
+        "blend": "additive",
+        "rotation_variance": 20.0,
+        "angular_velocity": 8.0
+      },
+      "inputs": {
+        "sprite": "tex_star",
+        "material": "mat_soft"
+      }
+    },
+    {
+      "id": "base_flare",
+      "type": "emitter",
+      "layer": "primary",
+      "parameters": {
+        "shape": "disc",
+        "radius": 0.2,
+        "position": [
+          0.0,
+          0.4,
+          0.0
+        ],
+        "rate": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.35,
+              "value": 0.0
+            },
+            {
+              "time": 0.55,
+              "value": 22.0
+            },
+            {
+              "time": 0.95,
+              "value": 30.0
+            },
+            {
+              "time": 2.05,
+              "value": 22.0
+            },
+            {
+              "time": 2.45,
+              "value": 9.0
+            },
+            {
+              "time": 2.8,
+              "value": 0.0
+            }
+          ]
+        },
+        "velocity": 0.2,
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 25,
+        "start_time": 0.35
+      },
+      "inputs": {
+        "particle": "base_flare_ps"
+      }
+    },
+    {
+      "id": "band_ps",
+      "type": "particle_system",
+      "layer": "primary",
+      "parameters": {
+        "max_particles": 1400,
+        "lifetime": 0.7,
+        "lifetime_variance": 0.18,
+        "size": 0.105,
+        "size_variance": 0.045,
+        "size_over_life": [
+          [
+            0.0,
+            0.3
+          ],
+          [
+            0.25,
+            1.0
+          ],
+          [
+            0.8,
+            0.9
+          ],
+          [
+            1.0,
+            0.2
+          ]
+        ],
+        "color": [
+          1.0,
+          0.82,
+          0.45,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              0.97,
+              0.85,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              1.0,
+              0.82,
+              0.45,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              1.0,
+              0.62,
+              0.22,
+              1.0
+            ]
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.15,
+            1.0
+          ],
+          [
+            0.75,
+            0.85
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 2.4,
+        "drag": 0.9,
+        "blend": "additive"
+      },
+      "inputs": {
+        "sprite": "tex_spark",
+        "material": "mat_soft",
+        "forces": [
+          "f_spin_band",
+          "f_hold"
+        ]
+      }
+    },
+    {
+      "id": "band0",
+      "type": "emitter",
+      "layer": "primary",
+      "parameters": {
+        "shape": "ring",
+        "radius": 2.6,
+        "inner_radius": 2.6,
+        "position": [
+          0.0,
+          0.32,
+          0.0
+        ],
+        "rate": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.45,
+              "value": 0.0
+            },
+            {
+              "time": 0.85,
+              "value": 700.0
+            },
+            {
+              "time": 1.6,
+              "value": 640.0
+            },
+            {
+              "time": 2.05,
+              "value": 540.0
+            },
+            {
+              "time": 2.5,
+              "value": 240.0
+            },
+            {
+              "time": 2.88,
+              "value": 0.0
+            }
+          ]
+        },
+        "velocity": 0.18,
+        "velocity_variance": 0.1,
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 18,
+        "radial_velocity": 0.1,
+        "start_time": 0.45
+      },
+      "inputs": {
+        "particle": "band_ps"
+      }
+    },
+    {
+      "id": "band1",
+      "type": "emitter",
+      "layer": "primary",
+      "parameters": {
+        "shape": "ring",
+        "radius": 1.72,
+        "inner_radius": 1.72,
+        "position": [
+          0.0,
+          1.3,
+          0.0
+        ],
+        "rate": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.53,
+              "value": 0.0
+            },
+            {
+              "time": 0.85,
+              "value": 700.0
+            },
+            {
+              "time": 1.6,
+              "value": 640.0
+            },
+            {
+              "time": 2.05,
+              "value": 540.0
+            },
+            {
+              "time": 2.5,
+              "value": 240.0
+            },
+            {
+              "time": 2.88,
+              "value": 0.0
+            }
+          ]
+        },
+        "velocity": 0.18,
+        "velocity_variance": 0.1,
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 18,
+        "radial_velocity": -0.08,
+        "start_time": 0.53
+      },
+      "inputs": {
+        "particle": "band_ps"
+      }
+    },
+    {
+      "id": "band2",
+      "type": "emitter",
+      "layer": "primary",
+      "parameters": {
+        "shape": "ring",
+        "radius": 2.98,
+        "inner_radius": 2.98,
+        "position": [
+          0.0,
+          0.11,
+          0.0
+        ],
+        "rate": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.61,
+              "value": 0.0
+            },
+            {
+              "time": 0.85,
+              "value": 700.0
+            },
+            {
+              "time": 1.6,
+              "value": 640.0
+            },
+            {
+              "time": 2.05,
+              "value": 540.0
+            },
+            {
+              "time": 2.5,
+              "value": 240.0
+            },
+            {
+              "time": 2.88,
+              "value": 0.0
+            }
+          ]
+        },
+        "velocity": 0.18,
+        "velocity_variance": 0.1,
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 18,
+        "radial_velocity": 0.05,
+        "start_time": 0.61
+      },
+      "inputs": {
+        "particle": "band_ps"
+      }
+    },
+    {
+      "id": "bead0",
+      "type": "mesh",
+      "layer": "secondary",
+      "parameters": {
+        "primitive": "sphere",
+        "radius": 0.055,
+        "segments": 10,
+        "color": [
+          1.0,
+          0.97,
+          0.85,
+          1.0
+        ],
+        "emissive": 2.2,
+        "position": {
+          "value": [
+            1.55,
+            0.18,
+            0.0
+          ],
+          "track": [
+            {
+              "time": 0.46,
+              "value": [
+                1.55,
+                0.18,
+                0.0
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 0.48454545454545456,
+              "value": [
+                1.4696108061223496,
+                0.2723647662222438,
+                0.44981510895858773
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 0.5090909090909091,
+              "value": [
+                1.2627614685987314,
+                0.3752624484182923,
+                0.8529099159126039
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 0.5336363636363637,
+              "value": [
+                0.9496133490709341,
+                0.4825500927859301,
+                1.1749601609536673
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 0.5581818181818182,
+              "value": [
+                0.5592614327087001,
+                0.5927918612446419,
+                1.3892952629195
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 0.5827272727272728,
+              "value": [
+                0.12703998985995008,
+                0.7052837188179812,
+                1.479099742271614
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 0.6072727272727273,
+              "value": [
+                -0.30867246660181513,
+                0.8196018124964952,
+                1.4387146303908898
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 0.6318181818181818,
+              "value": [
+                -0.7098603082508219,
+                0.9354612946513865,
+                1.273939888157136
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 0.6563636363636364,
+              "value": [
+                -1.0421875834313452,
+                1.0526568886649932,
+                1.0013282664240932
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 0.6809090909090909,
+              "value": [
+                -1.2779350951063413,
+                1.1710332953642069,
+                0.6465498070729933
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 0.7054545454545456,
+              "value": [
+                -1.3983066706893172,
+                1.2904687344075554,
+                0.2419864933632049
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 0.73,
+              "value": [
+                -1.3949132700481561,
+                1.4108650361572455,
+                -0.17621852639141183
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 0.7545454545454546,
+              "value": [
+                -1.2703191455360079,
+                1.5321413091691058,
+                -0.5713886628398022
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 0.7790909090909091,
+              "value": [
+                -1.0376187332924487,
+                1.6542296984851477,
+                -0.9095304168616943
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 0.8036363636363637,
+              "value": [
+                -0.7190987175298685,
+                1.7770724347847446,
+                -1.1622566293480228
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 0.8281818181818181,
+              "value": [
+                -0.3441191814673653,
+                1.9006197164503345,
+                -1.309165151501104
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 0.8527272727272728,
+              "value": [
+                0.05358596335624352,
+                2.024828149078124,
+                -1.3394740237248586
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 0.8772727272727273,
+              "value": [
+                0.43894161294458633,
+                2.1496595697528633,
+                -1.2527832337134541
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 0.9018181818181819,
+              "value": [
+                0.778624723738293,
+                2.275080143993924,
+                -1.0589123231781319
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 0.9263636363636365,
+              "value": [
+                1.0439454035712903,
+                2.401059660396471,
+                -0.7768453546917674
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 0.9509090909090909,
+              "value": [
+                1.2132667847974605,
+                2.5275709714963,
+                -0.4328927183511489
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 0.9754545454545456,
+              "value": [
+                1.273759872724366,
+                2.654589544707921,
+                -0.05824614221978745
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.0,
+              "value": [
+                1.2223519493443324,
+                2.782093097428889,
+                0.31384663760204684
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.0245454545454546,
+              "value": [
+                1.0658008102928223,
+                2.910061297407795,
+                0.651031911763575
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.049090909090909,
+              "value": [
+                0.8199053987200569,
+                3.038475514360056,
+                0.9246630281686955
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.0736363636363637,
+              "value": [
+                0.5079392658977622,
+                3.1673186122870147,
+                1.112231848865297
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.0981818181818181,
+              "value": [
+                0.15846007024528339,
+                3.2965747744603306,
+                1.1992124658997108
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.1227272727272728,
+              "value": [
+                -0.19729971235451563,
+                3.426229354870367,
+                1.1801668730727082
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.1472727272727272,
+              "value": [
+                -0.5282228691660386,
+                3.556268751301528,
+                1.0590303402863503
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.1718181818181819,
+              "value": [
+                -0.8060291731394453,
+                3.686680296223447,
+                0.8485682137403312
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.1963636363636363,
+              "value": [
+                -1.0076906874304332,
+                3.8174521624672213,
+                0.569069102794412
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.220909090909091,
+              "value": [
+                -1.1173345032802415,
+                3.9485732812556673,
+                0.2464054399508001
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.2454545454545456,
+              "value": [
+                -1.1274762569892833,
+                4.080033270622073,
+                -0.09035449382036558
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.27,
+              "value": [
+                -1.0394901112230654,
+                4.21182237261646,
+                -0.4115632499014692
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.2945454545454547,
+              "value": [
+                -0.8632902842824437,
+                4.343931397986286,
+                -0.6896042228967942
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.319090909090909,
+              "value": [
+                -0.6162693689627182,
+                4.476351677247679,
+                -0.9012652256839012
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.3436363636363637,
+              "value": [
+                -0.32160335898166,
+                4.609075017247023,
+                -1.0296716993378683
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.3681818181818182,
+              "value": [
+                -0.006086867575983303,
+                4.742093662461092,
+                -1.0656189795359525
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.3927272727272728,
+              "value": [
+                0.3023000454793147,
+                4.8754002604044056,
+                -1.0081996907297195
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.4172727272727275,
+              "value": [
+                0.5768727660708818,
+                5.0089878306111055,
+                -0.8646869744779586
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.4418181818181819,
+              "value": [
+                0.7945507985559316,
+                5.142849736739591,
+                -0.6497009639547399
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.4663636363636365,
+              "value": [
+                0.9377945096647496,
+                5.276979661415179,
+                -0.38374871658073656
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.490909090909091,
+              "value": [
+                0.9960077361014829,
+                5.4113715834816905,
+                -0.0912812086219641
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.5154545454545456,
+              "value": [
+                0.966295107550435,
+                5.54601975737932,
+                0.20154956694076667
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.54,
+              "value": [
+                0.8535227063627231,
+                5.680918694405155,
+                0.4692280785750709
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.5645454545454547,
+              "value": [
+                0.6696936455169487,
+                5.816063145645485,
+                0.6890984705729328
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.589090909090909,
+              "value": [
+                0.4327106129894496,
+                5.951448086396895,
+                0.8432798059905258
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.6136363636363635,
+              "value": [
+                0.16465006687117187,
+                6.0870687019166585,
+                0.9201116398891409
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.6381818181818182,
+              "value": [
+                -0.11028694621084854,
+                6.2229203743631,
+                0.915013866710415
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.6627272727272728,
+              "value": [
+                -0.36795774770924516,
+                6.3589986708038095,
+                0.8306996682772579
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.6872727272727273,
+              "value": [
+                -0.586398020851004,
+                6.495299332184324,
+                0.6767393915808597
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.711818181818182,
+              "value": [
+                -0.7476926838935141,
+                6.6318182631626765,
+                0.46853093518888733
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.7363636363636363,
+              "value": [
+                -0.8394384123170318,
+                6.76855152272617,
+                0.2257835828992584
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.760909090909091,
+              "value": [
+                -0.8556790470155253,
+                6.9054953155162675,
+                -0.02933725078678264
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.7854545454545454,
+              "value": [
+                -0.7972451779026071,
+                7.042645983795818,
+                -0.27423057324590194
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.81,
+              "value": [
+                -0.6714841053312067,
+                7.18,
+                -0.4878617594027523
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.3600000000000003,
+              "value": [
+                -0.33574205266560336,
+                12.0,
+                -0.24393087970137614
+              ],
+              "interp": "smooth"
+            }
+          ]
+        },
+        "start_time": 0.46,
+        "duration": 1.9000000000000001
+      },
+      "inputs": {
+        "material": "mat_bead"
+      }
+    },
+    {
+      "id": "ribbon0",
+      "type": "trail",
+      "layer": "secondary",
+      "parameters": {
+        "width": 0.175,
+        "lifetime": 1.0,
+        "taper": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            0.15,
+            1.0
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            0.55,
+            0.75
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "color": [
+          1.0,
+          0.82,
+          0.45,
+          1.0
+        ],
+        "emissive": 1.5,
+        "blend": "additive",
+        "noise_amplitude": 0.0,
+        "noise_frequency": 0.0,
+        "min_vertex_distance": 0.03,
+        "max_segments": 128,
+        "start_time": 0.46,
+        "duration": 2.1
+      },
+      "inputs": {
+        "source": "bead0",
+        "material": "mat_ribbon"
+      }
+    },
+    {
+      "id": "bead1",
+      "type": "mesh",
+      "layer": "secondary",
+      "parameters": {
+        "primitive": "sphere",
+        "radius": 0.055,
+        "segments": 10,
+        "color": [
+          1.0,
+          0.97,
+          0.85,
+          1.0
+        ],
+        "emissive": 1.87,
+        "position": {
+          "value": [
+            -1.1429602590889305,
+            0.18,
+            1.0469679298542842
+          ],
+          "track": [
+            {
+              "time": 0.92,
+              "value": [
+                -1.1429602590889305,
+                0.18,
+                1.0469679298542842
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 0.9445454545454546,
+              "value": [
+                -1.3875153168832544,
+                0.2723647662222438,
+                0.6609771547741803
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 0.9690909090909091,
+              "value": [
+                -1.5072616156982805,
+                0.3752624484182923,
+                0.2240184659403752
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 0.9936363636363637,
+              "value": [
+                -1.4938812431376383,
+                0.4825500927859301,
+                -0.22497938564128078
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.0181818181818183,
+              "value": [
+                -1.3508136628402416,
+                0.5927918612446419,
+                -0.6466970898110492
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.0427272727272727,
+              "value": [
+                -1.092755906412323,
+                0.7052837188179812,
+                -1.0048680190017756
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.0672727272727274,
+              "value": [
+                -0.7441856231165104,
+                0.8196018124964952,
+                -1.269396012946919
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.0918181818181818,
+              "value": [
+                -0.33705295846926875,
+                0.9354612946513865,
+                -1.4188797690625101
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.1163636363636364,
+              "value": [
+                0.09214219882280295,
+                1.0526568886649932,
+                -1.4423325106903908
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.1409090909090909,
+              "value": [
+                0.5056207189307629,
+                1.1710332953642069,
+                -1.339959868398497
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.1654545454545455,
+              "value": [
+                0.867649584908174,
+                1.2904687344075554,
+                -1.1229439906215877
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.19,
+              "value": [
+                1.147629405366978,
+                1.4108650361572455,
+                -0.8122701200567682
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.2145454545454546,
+              "value": [
+                1.322677358182619,
+                1.5321413091691058,
+                -0.4367154012491866
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.2390909090909092,
+              "value": [
+                1.3794878412391336,
+                1.6542296984851477,
+                -0.030191236301750742
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.2636363636363637,
+              "value": [
+                1.3153204346363698,
+                1.7770724347847446,
+                0.3713160274544045
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.288181818181818,
+              "value": [
+                1.1380441789108973,
+                1.9006197164503345,
+                0.7329303185199119
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.3127272727272727,
+              "value": [
+                0.8652514317107238,
+                2.024828149078124,
+                1.023915072466961
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.3372727272727274,
+              "value": [
+                0.5225361607103703,
+                2.1496595697528633,
+                1.2202833814315428
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.3618181818181818,
+              "value": [
+                0.1411033076890542,
+                2.275080143993924,
+                1.3067676247727633
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.3863636363636365,
+              "value": [
+                -0.24506834588515095,
+                2.401059660396471,
+                1.2779875651151376
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.4109090909090911,
+              "value": [
+                -0.602252210009679,
+                2.5275709714963,
+                1.1387294113320654
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.4354545454545455,
+              "value": [
+                -0.8999194007769514,
+                2.654589544707921,
+                0.9033282341162228
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.46,
+              "value": [
+                -1.1133464936660649,
+                2.782093097428889,
+                0.5942251972455216
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.4845454545454546,
+              "value": [
+                -1.2256629052888148,
+                2.910061297407795,
+                0.2398423648031214
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.5090909090909093,
+              "value": [
+                -1.2291689182993946,
+                3.038475514360056,
+                -0.12802479759442384
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.5336363636363637,
+              "value": [
+                -1.1258228846944838,
+                3.1673186122870147,
+                -0.4770585035079716
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.5581818181818181,
+              "value": [
+                -0.9268713263363033,
+                3.2965747744603306,
+                -0.7772577929149292
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.5827272727272728,
+              "value": [
+                -0.6516717016984823,
+                3.426229354870367,
+                -1.0035163267225864
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.6072727272727274,
+              "value": [
+                -0.32582777782178307,
+                3.556268751301528,
+                -1.1377174167414086
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.6318181818181818,
+              "value": [
+                0.02118426224828086,
+                3.686680296223447,
+                -1.1701718969259647
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.6563636363636363,
+              "value": [
+                0.35867955399373597,
+                3.8174521624672213,
+                -1.1002859368528304
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.680909090909091,
+              "value": [
+                0.6574776387019764,
+                3.9485732812556673,
+                -0.9364161402201078
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.7054545454545456,
+              "value": [
+                0.8924250400988576,
+                4.080033270622073,
+                -0.6949418626278401
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.73,
+              "value": [
+                1.0445092971595735,
+                4.21182237261646,
+                -0.3986531426531265
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.7545454545454546,
+              "value": [
+                1.1023870920370629,
+                4.343931397986286,
+                -0.07461098098552597
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.7790909090909093,
+              "value": [
+                1.0632046356142761,
+                4.476351677247679,
+                0.24832004541936312
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.8036363636363637,
+              "value": [
+                0.932653616768296,
+                4.609075017247023,
+                0.5420422124287336
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.8281818181818181,
+              "value": [
+                0.7242748030708879,
+                4.742093662461092,
+                0.7816692837388194
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.852727272727273,
+              "value": [
+                0.45808761598670333,
+                4.8754002604044056,
+                0.9476326661549381
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.8772727272727274,
+              "value": [
+                0.15868186159447026,
+                5.0089878306111055,
+                1.027271054233998
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.9018181818181819,
+              "value": [
+                -0.14704768601340526,
+                5.142849736739591,
+                1.0157752173033607
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.9263636363636367,
+              "value": [
+                -0.4323156492618241,
+                5.276979661415179,
+                0.9164195541552125
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.9509090909090911,
+              "value": [
+                -0.6727927497313521,
+                5.4113715834816905,
+                0.7400767428655045
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.9754545454545456,
+              "value": [
+                -0.8486792511904603,
+                5.54601975737932,
+                0.5040753826648522
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.0,
+              "value": [
+                -0.9463285701018507,
+                5.680918694405155,
+                0.23051732561563967
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.024545454545455,
+              "value": [
+                -0.9592885301882313,
+                5.816063145645485,
+                -0.05578348179379172
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.0490909090909093,
+              "value": [
+                -0.8886825465153382,
+                5.951448086396895,
+                -0.32954914247216305
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.0736363636363637,
+              "value": [
+                -0.7429134593159031,
+                6.0870687019166585,
+                -0.5672694830038396
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.098181818181818,
+              "value": [
+                -0.5367332756145085,
+                6.2229203743631,
+                -0.7492202464062085
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.122727272727273,
+              "value": [
+                -0.2897773092718338,
+                6.3589986708038095,
+                -0.8610946254659722
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.1472727272727274,
+              "value": [
+                -0.024706326460104917,
+                6.495299332184324,
+                -0.8951136466438513
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.171818181818182,
+              "value": [
+                0.2348684905899536,
+                6.6318182631626765,
+                -0.8505306454824874
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.1963636363636363,
+              "value": [
+                0.46648811280513147,
+                6.76855152272617,
+                -0.7335011349627704
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.220909090909091,
+              "value": [
+                0.6507885845146364,
+                6.9054953155162675,
+                -0.5563465862666545
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.2454545454545456,
+              "value": [
+                0.7731162391399866,
+                7.042645983795818,
+                -0.33629386222436286
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.27,
+              "value": [
+                0.8246808150325309,
+                7.18,
+                -0.09381659404007742
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.8200000000000003,
+              "value": [
+                0.41234040751626544,
+                12.0,
+                -0.04690829702003871
+              ],
+              "interp": "smooth"
+            }
+          ]
+        },
+        "start_time": 0.92,
+        "duration": 1.9000000000000001
+      },
+      "inputs": {
+        "material": "mat_bead"
+      }
+    },
+    {
+      "id": "ribbon1",
+      "type": "trail",
+      "layer": "secondary",
+      "parameters": {
+        "width": 0.16449999999999998,
+        "lifetime": 1.0,
+        "taper": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            0.15,
+            1.0
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            0.55,
+            0.75
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "color": [
+          1.0,
+          0.82,
+          0.45,
+          1.0
+        ],
+        "emissive": 1.275,
+        "blend": "additive",
+        "noise_amplitude": 0.0,
+        "noise_frequency": 0.0,
+        "min_vertex_distance": 0.03,
+        "max_segments": 128,
+        "start_time": 0.92,
+        "duration": 2.08
+      },
+      "inputs": {
+        "source": "bead1",
+        "material": "mat_ribbon"
+      }
+    },
+    {
+      "id": "bead2",
+      "type": "mesh",
+      "layer": "secondary",
+      "parameters": {
+        "primitive": "sphere",
+        "radius": 0.055,
+        "segments": 10,
+        "color": [
+          1.0,
+          0.97,
+          0.85,
+          1.0
+        ],
+        "emissive": 1.364,
+        "position": {
+          "value": [
+            -0.6212387167239619,
+            0.18,
+            -1.420057201961655
+          ],
+          "track": [
+            {
+              "time": 1.34,
+              "value": [
+                -0.6212387167239619,
+                0.18,
+                -1.420057201961655
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.3645454545454547,
+              "value": [
+                -0.17691351371052,
+                0.2723647662222438,
+                -1.52669288410787
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.3890909090909092,
+              "value": [
+                0.2752932609261035,
+                0.3752624484182923,
+                -1.4987446319264475
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.4136363636363638,
+              "value": [
+                0.6958542323996837,
+                0.4825500927859301,
+                -1.340926463238544
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.4381818181818182,
+              "value": [
+                1.0486734767683163,
+                0.5927918612446419,
+                -1.0692046655381755
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.4627272727272729,
+              "value": [
+                1.304183278167234,
+                0.7052837188179812,
+                -0.70921166344085
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.4872727272727273,
+              "value": [
+                1.4418170061251068,
+                0.8196018124964952,
+                -0.29384043320700004
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.511818181818182,
+              "value": [
+                1.451651754835344,
+                0.9354612946513865,
+                0.13975578181683437
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.5363636363636364,
+              "value": [
+                1.335090769793451,
+                1.0526568886649932,
+                0.5534852234799748
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.560909090909091,
+              "value": [
+                1.104542237742775,
+                1.1710332953642069,
+                0.9116639761297809
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.5854545454545454,
+              "value": [
+                0.7821399382990022,
+                1.2904687344075554,
+                1.1840929546205805
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.61,
+              "value": [
+                0.39763467245467576,
+                1.4108650361572455,
+                1.3486002622207454
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.6345454545454547,
+              "value": [
+                -0.014343967730472668,
+                1.5321413091691058,
+                1.3928352329428406
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.6590909090909092,
+              "value": [
+                -0.4174040571279312,
+                1.6542296984851477,
+                1.3151699768353806
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.6836363636363636,
+              "value": [
+                -0.7766057629401528,
+                1.7770724347847446,
+                1.1246452449482336
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.7081818181818182,
+              "value": [
+                -1.0614898343557928,
+                1.9006197164503345,
+                0.8399825810801016
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.732727272727273,
+              "value": [
+                -1.248657683445737,
+                2.024828149078124,
+                0.4877664454166619
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.7572727272727273,
+              "value": [
+                -1.3236847599187371,
+                2.1496595697528633,
+                0.09997112886633314
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.781818181818182,
+              "value": [
+                -1.2822115451353422,
+                2.275080143993924,
+                -0.28893826696490005
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.8063636363636366,
+              "value": [
+                -1.1301317055387152,
+                2.401059660396471,
+                -0.6450682435835425
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.830909090909091,
+              "value": [
+                -0.8828778856791543,
+                2.5275709714963,
+                -0.9380506573063744
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.8554545454545455,
+              "value": [
+                -0.5638850338654544,
+                2.654589544707921,
+                -1.143630401409842
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.8800000000000001,
+              "value": [
+                -0.20238205055320768,
+                2.782093097428889,
+                -1.2456666912195569
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.9045454545454548,
+              "value": [
+                0.169281178927134,
+                2.910061297407795,
+                -1.2373834489827362
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.9290909090909092,
+              "value": [
+                0.5185273643888595,
+                3.038475514360056,
+                -1.1217735738072723
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.9536363636363636,
+              "value": [
+                0.8154072964595201,
+                3.1673186122870147,
+                -0.9111382575392444
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 1.9781818181818183,
+              "value": [
+                1.0351669472205884,
+                3.2965747744603306,
+                -0.6258190821742434
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.002727272727273,
+              "value": [
+                1.1603062501526402,
+                3.426229354870367,
+                -0.2922506298540811
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.0272727272727273,
+              "value": [
+                1.1819588123899956,
+                3.556268751301528,
+                0.05948131614764565
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.0518181818181818,
+              "value": [
+                1.1004851177038195,
+                3.686680296223447,
+                0.39835103493617907
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.076363636363636,
+              "value": [
+                0.9252433208716327,
+                3.8174521624672213,
+                0.6951294573471111
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.100909090909091,
+              "value": [
+                0.6735750145637986,
+                3.9485732812556673,
+                0.9249047155319459
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.1254545454545455,
+              "value": [
+                0.36911184087067733,
+                4.080033270622073,
+                1.0691693474642636
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.1500000000000004,
+              "value": [
+                0.03956654558589767,
+                4.21182237261646,
+                1.1172996413095277
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.174545454545455,
+              "value": [
+                -0.28578586765153036,
+                4.343931397986286,
+                1.0673099535862185
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.199090909090909,
+              "value": [
+                -0.5787082468898931,
+                4.476351677247679,
+                0.9258313599843045
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.2236363636363636,
+              "value": [
+                -0.814451776950292,
+                4.609075017247023,
+                0.7073336072520034
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.248181818181818,
+              "value": [
+                -0.9738441991195392,
+                4.742093662461092,
+                0.4326757854853396
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.272727272727273,
+              "value": [
+                -1.0448398220357527,
+                4.8754002604044056,
+                0.12712859698979878
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.2972727272727274,
+              "value": [
+                -1.0234068790043458,
+                5.0089878306111055,
+                -0.1819453546334729
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.3218181818181822,
+              "value": [
+                -0.9136891944853193,
+                5.142849736739591,
+                -0.46754076820140006
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.3463636363636367,
+              "value": [
+                -0.7274447654573691,
+                5.276979661415179,
+                -0.7053692175331895
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.370909090909091,
+              "value": [
+                -0.48282781001949,
+                5.4113715834816905,
+                -0.8759229277129759
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.3954545454545455,
+              "value": [
+                -0.20263743129340991,
+                5.54601975737932,
+                -0.9660675619482967
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.42,
+              "value": [
+                0.08779958809523809,
+                5.680918694405155,
+                -0.9700346552213002
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.444545454545455,
+              "value": [
+                0.3629158871346533,
+                5.816063145645485,
+                -0.8897406025674018
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.4690909090909092,
+              "value": [
+                0.599154177960818,
+                5.951448086396895,
+                -0.7344205721636755
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.4936363636363637,
+              "value": [
+                0.7769833319882341,
+                6.0870687019166585,
+                -0.5196267662396031
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.5181818181818185,
+              "value": [
+                0.8825074530660248,
+                6.2229203743631,
+                -0.2656956568327333
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.542727272727273,
+              "value": [
+                0.9085359003869734,
+                6.3589986708038095,
+                0.004166615321624173
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.5672727272727274,
+              "value": [
+                0.8550334198893528,
+                6.495299332184324,
+                0.2660013042214724
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.591818181818182,
+              "value": [
+                0.7289266918082008,
+                6.6318182631626765,
+                0.49722375722245205
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.6163636363636362,
+              "value": [
+                0.5433014483983422,
+                6.76855152272617,
+                0.6785710062686358
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.640909090909091,
+              "value": [
+                0.3160776637612778,
+                6.9054953155162675,
+                0.7957023414923049
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.6654545454545455,
+              "value": [
+                0.0682944972249451,
+                7.042645983795818,
+                0.8403202619481025
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 2.6900000000000004,
+              "value": [
+                -0.17783205232584978,
+                7.18,
+                0.8107254536312378
+              ],
+              "interp": "smooth"
+            },
+            {
+              "time": 3.0,
+              "value": [
+                -0.08891602616292489,
+                12.0,
+                0.4053627268156189
+              ],
+              "interp": "smooth"
+            }
+          ]
+        },
+        "start_time": 1.34,
+        "duration": 1.66
+      },
+      "inputs": {
+        "material": "mat_bead"
+      }
+    },
+    {
+      "id": "ribbon2",
+      "type": "trail",
+      "layer": "secondary",
+      "parameters": {
+        "width": 0.14839999999999998,
+        "lifetime": 1.0,
+        "taper": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            0.15,
+            1.0
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            0.55,
+            0.75
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "color": [
+          1.0,
+          0.82,
+          0.45,
+          1.0
+        ],
+        "emissive": 0.9299999999999999,
+        "blend": "additive",
+        "noise_amplitude": 0.0,
+        "noise_frequency": 0.0,
+        "min_vertex_distance": 0.03,
+        "max_segments": 128,
+        "start_time": 1.34,
+        "duration": 1.66
+      },
+      "inputs": {
+        "source": "bead2",
+        "material": "mat_ribbon"
+      }
+    },
+    {
+      "id": "tablet_ps",
+      "type": "particle_system",
+      "layer": "secondary",
+      "parameters": {
+        "max_particles": 16,
+        "lifetime": 1.85,
+        "lifetime_variance": 0.0,
+        "size": 2.7,
+        "size_variance": 0.0,
+        "size_over_life": [
+          [
+            0.0,
+            0.88
+          ],
+          [
+            0.12,
+            1.0
+          ],
+          [
+            1.0,
+            1.02
+          ]
+        ],
+        "color": [
+          1.0,
+          0.82,
+          0.45,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              0.9,
+              0.68,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              1.0,
+              0.82,
+              0.45,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              1.0,
+              0.68,
+              0.3,
+              1.0
+            ]
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.1,
+            0.62
+          ],
+          [
+            0.72,
+            0.52
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.95,
+        "blend": "additive"
+      },
+      "inputs": {
+        "sprite": "tex_tablet",
+        "material": "mat_soft"
+      }
+    },
+    {
+      "id": "tablet0",
+      "type": "emitter",
+      "layer": "secondary",
+      "parameters": {
+        "shape": "point",
+        "position": [
+          2.466378676309498,
+          1.42,
+          3.5223537904426645
+        ],
+        "rate": 0,
+        "burst_count": 1,
+        "burst_times": [
+          0.0
+        ],
+        "velocity": 0.0,
+        "start_time": 0.76,
+        "duration": 2.24
+      },
+      "inputs": {
+        "particle": "tablet_ps"
+      }
+    },
+    {
+      "id": "tablet1",
+      "type": "emitter",
+      "layer": "secondary",
+      "parameters": {
+        "shape": "point",
+        "position": [
+          -1.817258525485007,
+          1.42,
+          3.897123484257595
+        ],
+        "rate": 0,
+        "burst_count": 1,
+        "burst_times": [
+          0.0
+        ],
+        "velocity": 0.0,
+        "start_time": 0.8,
+        "duration": 2.2
+      },
+      "inputs": {
+        "particle": "tablet_ps"
+      }
+    },
+    {
+      "id": "tablet2",
+      "type": "emitter",
+      "layer": "secondary",
+      "parameters": {
+        "shape": "point",
+        "position": [
+          -4.283637201794505,
+          1.42,
+          0.3747696938149302
+        ],
+        "rate": 0,
+        "burst_count": 1,
+        "burst_times": [
+          0.0
+        ],
+        "velocity": 0.0,
+        "start_time": 0.84,
+        "duration": 2.16
+      },
+      "inputs": {
+        "particle": "tablet_ps"
+      }
+    },
+    {
+      "id": "tablet3",
+      "type": "emitter",
+      "layer": "secondary",
+      "parameters": {
+        "shape": "point",
+        "position": [
+          -2.4663786763094993,
+          1.42,
+          -3.5223537904426636
+        ],
+        "rate": 0,
+        "burst_count": 1,
+        "burst_times": [
+          0.0
+        ],
+        "velocity": 0.0,
+        "start_time": 0.88,
+        "duration": 2.12
+      },
+      "inputs": {
+        "particle": "tablet_ps"
+      }
+    },
+    {
+      "id": "tablet4",
+      "type": "emitter",
+      "layer": "secondary",
+      "parameters": {
+        "shape": "point",
+        "position": [
+          1.8172585254850082,
+          1.42,
+          -3.897123484257594
+        ],
+        "rate": 0,
+        "burst_count": 1,
+        "burst_times": [
+          0.0
+        ],
+        "velocity": 0.0,
+        "start_time": 0.92,
+        "duration": 2.08
+      },
+      "inputs": {
+        "particle": "tablet_ps"
+      }
+    },
+    {
+      "id": "tablet5",
+      "type": "emitter",
+      "layer": "secondary",
+      "parameters": {
+        "shape": "point",
+        "position": [
+          4.283637201794505,
+          1.42,
+          -0.37476969381493075
+        ],
+        "rate": 0,
+        "burst_count": 1,
+        "burst_times": [
+          0.0
+        ],
+        "velocity": 0.0,
+        "start_time": 0.96,
+        "duration": 2.04
+      },
+      "inputs": {
+        "particle": "tablet_ps"
+      }
+    },
+    {
+      "id": "feather_ps",
+      "type": "particle_system",
+      "layer": "secondary",
+      "parameters": {
+        "max_particles": 220,
+        "lifetime": 2.4,
+        "lifetime_variance": 0.6,
+        "size": 0.4,
+        "size_variance": 0.2,
+        "size_over_life": [
+          [
+            0.0,
+            0.7
+          ],
+          [
+            0.3,
+            1.0
+          ],
+          [
+            1.0,
+            0.85
+          ]
+        ],
+        "color": [
+          1.0,
+          0.9,
+          0.68,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              0.97,
+              0.85,
+              1.0
+            ]
+          ],
+          [
+            0.55,
+            [
+              1.0,
+              0.82,
+              0.45,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              1.0,
+              0.66,
+              0.28,
+              1.0
+            ]
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.18,
+            0.95
+          ],
+          [
+            0.7,
+            0.8
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 1.35,
+        "drag": 1.1,
+        "blend": "additive",
+        "rotation_variance": 180.0,
+        "angular_velocity": 16.0,
+        "angular_velocity_variance": 55.0
+      },
+      "inputs": {
+        "sprite": "tex_feather",
+        "material": "mat_soft",
+        "forces": [
+          "f_rise_soft",
+          "f_turb",
+          "f_curl_wide"
+        ]
+      }
+    },
+    {
+      "id": "feathers",
+      "type": "emitter",
+      "layer": "secondary",
+      "parameters": {
+        "shape": "ring",
+        "radius": 3.45,
+        "inner_radius": 1.9,
+        "position": [
+          0.0,
+          0.25,
+          0.0
+        ],
+        "rate": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.4,
+              "value": 0.0
+            },
+            {
+              "time": 0.85,
+              "value": 34.0
+            },
+            {
+              "time": 1.6,
+              "value": 38.0
+            },
+            {
+              "time": 2.1,
+              "value": 32.0
+            },
+            {
+              "time": 2.55,
+              "value": 18.0
+            },
+            {
+              "time": 2.95,
+              "value": 6.0
+            }
+          ]
+        },
+        "velocity": 0.55,
+        "velocity_variance": 0.3,
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 35,
+        "start_time": 0.4
+      },
+      "inputs": {
+        "particle": "feather_ps"
+      }
+    },
+    {
+      "id": "sparkle_ps",
+      "type": "particle_system",
+      "layer": "secondary",
+      "parameters": {
+        "max_particles": 1000,
+        "lifetime": 1.45,
+        "lifetime_variance": 0.5,
+        "size": 0.115,
+        "size_variance": 0.06,
+        "size_over_life": [
+          [
+            0.0,
+            0.2
+          ],
+          [
+            0.18,
+            1.0
+          ],
+          [
+            0.7,
+            0.85
+          ],
+          [
+            1.0,
+            0.1
+          ]
+        ],
+        "color": [
+          1.0,
+          0.9,
+          0.68,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              0.97,
+              0.85,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              1.0,
+              0.82,
+              0.45,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              1.0,
+              0.6,
+              0.22,
+              1.0
+            ]
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.12,
+            1.0
+          ],
+          [
+            0.75,
+            0.9
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 2.4,
+        "drag": 0.8,
+        "blend": "additive",
+        "rotation_variance": 180.0,
+        "angular_velocity": 26.0,
+        "angular_velocity_variance": 45.0
+      },
+      "inputs": {
+        "sprite": "tex_star",
+        "material": "mat_soft",
+        "forces": [
+          "f_rise_soft",
+          "f_turb",
+          "f_spin_band"
+        ]
+      }
+    },
+    {
+      "id": "sparkles",
+      "type": "emitter",
+      "layer": "secondary",
+      "parameters": {
+        "shape": "disc",
+        "radius": 3.4,
+        "position": [
+          0.0,
+          0.1,
+          0.0
+        ],
+        "rate": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.3,
+              "value": 0.0
+            },
+            {
+              "time": 0.75,
+              "value": 320.0
+            },
+            {
+              "time": 1.2,
+              "value": 430.0
+            },
+            {
+              "time": 2.05,
+              "value": 390.0
+            },
+            {
+              "time": 2.55,
+              "value": 230.0
+            },
+            {
+              "time": 2.95,
+              "value": 70.0
+            }
+          ]
+        },
+        "velocity": 1.5,
+        "velocity_variance": 0.9,
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 25,
+        "start_time": 0.3
+      },
+      "inputs": {
+        "particle": "sparkle_ps"
+      }
+    },
+    {
+      "id": "vol_pillar",
+      "type": "volume",
+      "layer": "interaction",
+      "parameters": {
+        "mode": "procedural",
+        "volume_type": "magic",
+        "shape": "column",
+        "position": [
+          0.0,
+          5.0,
+          0.0
+        ],
+        "radius": 0.7,
+        "height": 10.0,
+        "density": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.4,
+              "value": 0.0
+            },
+            {
+              "time": 0.8,
+              "value": 0.055
+            },
+            {
+              "time": 1.1,
+              "value": 0.085
+            },
+            {
+              "time": 2.05,
+              "value": 0.078
+            },
+            {
+              "time": 2.5,
+              "value": 0.038
+            },
+            {
+              "time": 2.9,
+              "value": 0.0
+            }
+          ]
+        },
+        "emission": 1.4,
+        "color": [
+          1.0,
+          0.74,
+          0.4,
+          1.0
+        ],
+        "color_hot": [
+          1.0,
+          0.96,
+          0.82,
+          1.0
+        ],
+        "filament_scale": 1.7,
+        "strands": 0.74,
+        "carve": 0.6,
+        "softness": 0.85,
+        "twist": 0.25,
+        "spin": 0.1,
+        "climb": 2.8,
+        "scatter": 0.18,
+        "march_steps": 32,
+        "start_time": 0.4
+      }
+    },
+    {
+      "id": "vol_mist",
+      "type": "volume",
+      "layer": "interaction",
+      "parameters": {
+        "mode": "procedural",
+        "volume_type": "fog",
+        "shape": "disc",
+        "position": [
+          0.0,
+          0.42,
+          0.0
+        ],
+        "radius": 3.4,
+        "height": 1.7,
+        "density": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.36,
+              "value": 0.0
+            },
+            {
+              "time": 0.75,
+              "value": 0.026
+            },
+            {
+              "time": 1.2,
+              "value": 0.038
+            },
+            {
+              "time": 2.05,
+              "value": 0.034
+            },
+            {
+              "time": 2.55,
+              "value": 0.018
+            },
+            {
+              "time": 3.0,
+              "value": 0.0
+            }
+          ]
+        },
+        "emission": 0.11,
+        "color": [
+          0.95,
+          0.66,
+          0.34,
+          1.0
+        ],
+        "color_hot": [
+          1.0,
+          0.92,
+          0.72,
+          1.0
+        ],
+        "filament_scale": 0.95,
+        "strands": 0.38,
+        "carve": 0.58,
+        "softness": 0.96,
+        "twist": 0.0,
+        "spin": 0.05,
+        "climb": 0.3,
+        "scatter": 0.22,
+        "march_steps": 24,
+        "start_time": 0.36
+      }
+    },
+    {
+      "id": "holy_light",
+      "type": "light",
+      "layer": "interaction",
+      "parameters": {
+        "light_type": "point",
+        "position": [
+          0.0,
+          1.35,
+          0.0
+        ],
+        "color": [
+          1.0,
+          0.8,
+          0.46,
+          1.0
+        ],
+        "radius": 13.0,
+        "flicker_amplitude": 0.05,
+        "flicker_frequency": 6.0,
+        "intensity": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 0.0
+            },
+            {
+              "time": 0.35,
+              "value": 0.8
+            },
+            {
+              "time": 0.65,
+              "value": 2.6
+            },
+            {
+              "time": 1.0,
+              "value": 4.6
+            },
+            {
+              "time": 1.6,
+              "value": 4.0
+            },
+            {
+              "time": 2.1,
+              "value": 3.8
+            },
+            {
+              "time": 2.55,
+              "value": 1.8
+            },
+            {
+              "time": 3.0,
+              "value": 0.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "crown_light",
+      "type": "light",
+      "layer": "interaction",
+      "parameters": {
+        "light_type": "point",
+        "position": [
+          0.0,
+          4.3,
+          0.0
+        ],
+        "color": [
+          1.0,
+          0.88,
+          0.62,
+          1.0
+        ],
+        "radius": 10.0,
+        "intensity": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.45,
+              "value": 0.0
+            },
+            {
+              "time": 0.95,
+              "value": 2.1
+            },
+            {
+              "time": 1.6,
+              "value": 1.8
+            },
+            {
+              "time": 2.1,
+              "value": 1.6
+            },
+            {
+              "time": 2.55,
+              "value": 0.7
+            },
+            {
+              "time": 3.0,
+              "value": 0.0
+            }
+          ]
+        },
+        "start_time": 0.45
+      }
+    },
+    {
+      "id": "mote_ps",
+      "type": "particle_system",
+      "layer": "aftermath",
+      "parameters": {
+        "max_particles": 900,
+        "lifetime": 2.0,
+        "lifetime_variance": 0.7,
+        "size": 0.095,
+        "size_variance": 0.05,
+        "size_over_life": [
+          [
+            0.0,
+            0.25
+          ],
+          [
+            0.2,
+            1.0
+          ],
+          [
+            1.0,
+            0.2
+          ]
+        ],
+        "color": [
+          1.0,
+          0.82,
+          0.45,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              0.9,
+              0.68,
+              1.0
+            ]
+          ],
+          [
+            0.6,
+            [
+              1.0,
+              0.82,
+              0.45,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              1.0,
+              0.55,
+              0.18,
+              1.0
+            ]
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.15,
+            1.0
+          ],
+          [
+            0.7,
+            0.75
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 2.0,
+        "drag": 0.9,
+        "blend": "additive",
+        "rotation_variance": 180.0,
+        "angular_velocity": 18.0,
+        "angular_velocity_variance": 30.0
+      },
+      "inputs": {
+        "sprite": "tex_star",
+        "material": "mat_soft",
+        "forces": [
+          "f_rise_soft",
+          "f_turb"
+        ]
+      }
+    },
+    {
+      "id": "motes",
+      "type": "emitter",
+      "layer": "aftermath",
+      "parameters": {
+        "shape": "disc",
+        "radius": 3.3,
+        "position": [
+          0.0,
+          0.35,
+          0.0
+        ],
+        "rate": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 2.0,
+              "value": 0.0
+            },
+            {
+              "time": 2.35,
+              "value": 600.0
+            },
+            {
+              "time": 2.7,
+              "value": 430.0
+            },
+            {
+              "time": 3.0,
+              "value": 130.0
+            }
+          ]
+        },
+        "velocity": 1.3,
+        "velocity_variance": 0.7,
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 45,
+        "start_time": 2.0
+      },
+      "inputs": {
+        "particle": "mote_ps"
+      }
+    }
+  ],
+  "metadata": {
+    "reference": "Holy Area of Effect concept sheet (heal / protect / purify / empower; 'light drives out darkness')",
+    "analysis": "cast: gold rune circle + inner sigil fade in, sparkles gather inward | rise: eight candle pillars ascend from the ring, the central beam grows | peak: white-gold pillar at full height with volumetric column, spiral ribbons, glyph tablets, holy ring bands | sustain: gentle pulsing, feathers and sparkles rise | fade: pillars sink, motes drift up, the rune fades last",
+    "timing": "cast 0-0.4, rise 0.4-0.8, peak 0.8-1.6, sustain 1.6-2.4, fade 2.4-3.0",
+    "render_settings": {
+      "ground_albedo": 0.06,
+      "background": [
+        0.007,
+        0.008,
+        0.013,
+        1.0
+      ],
+      "bloom_intensity": 0.15,
+      "bloom_radius": 0.055,
+      "exposure": 0.66,
+      "grid": false
+    }
+  }
+}
