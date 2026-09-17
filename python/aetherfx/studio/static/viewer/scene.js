@@ -32,6 +32,10 @@ export class Stage {
     this.settings = Object.assign({}, STAGE_DEFAULTS);
 
     this.groundMaterial = new THREE.MeshStandardMaterial({ color: 0x2e2e2e, roughness: 0.95, metalness: 0.0 });
+    // An albedo of exactly 0 means "the ground takes no light". A black standard material still shows a
+    // specular sheen under strong lights (F0 does not depend on the colour), so that case gets an unlit
+    // black material. It still writes depth, which the soft-particle fade and decals rely on.
+    this.groundUnlitMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
     this.ground = new THREE.Mesh(new THREE.PlaneGeometry(GROUND_SIZE, GROUND_SIZE), this.groundMaterial);
     this.ground.rotation.x = -Math.PI / 2;
     this.ground.receiveShadow = false;
@@ -58,6 +62,7 @@ export class Stage {
     const s = this.settings;
     const albedo = typeof s.ground_albedo === 'number' ? s.ground_albedo : 0.18;
     this.groundMaterial.color.setRGB(albedo, albedo, albedo);
+    this.ground.material = albedo <= 0 ? this.groundUnlitMaterial : this.groundMaterial;
     this.ground.visible = s.ground_plane !== false;
     this.grid.visible = s.grid !== false && s.ground_plane !== false;
     const background = s.background || STAGE_DEFAULTS.background;
@@ -140,6 +145,7 @@ export class Stage {
     this.lights.clear();
     this.ground.geometry.dispose();
     this.groundMaterial.dispose();
+    this.groundUnlitMaterial.dispose();
     this.grid.geometry.dispose();
     this.grid.material.dispose();
   }

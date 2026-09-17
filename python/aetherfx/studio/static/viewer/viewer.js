@@ -59,6 +59,10 @@ export class GLViewer {
     // The composer renders many times per frame and info.render resets on every
     // one of them, so the viewer accumulates the counters itself.
     this.renderer.info.autoReset = false;
+    // Glass meshes (transmission) make three.js re-render the opaque scene into a refraction buffer every
+    // frame. That buffer is only ever sampled blurred by the material's roughness, so half resolution
+    // looks the same at a quarter of the fill: the glassy ice effects were the slowest in the library.
+    this.renderer.transmissionResolutionScale = 0.5;
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(45, 1, 0.05, 600);

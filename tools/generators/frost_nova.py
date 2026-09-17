@@ -535,7 +535,7 @@ def build_burst() -> None:
     # Wide blue flash: soft, short, mostly colour. The white lives in the small core only.
     single("flash", layer, BURST_T, 0.24, 3.4, {
         "size_over_life": [[0.0, 0.35], [0.25, 1.0], [1.0, 1.25]],
-        "color": tint(ICE, 1.0), "opacity": 0.45, "opacity_over_life": [[0.0, 0.0], [0.15, 1.0], [0.4, 0.4], [1.0, 0.0]],
+        "color": tint(ICE, 1.0), "opacity": 0.35, "opacity_over_life": [[0.0, 0.0], [0.15, 1.0], [0.4, 0.4], [1.0, 0.0]],
         "emissive": 0.6, "blend": "additive"}, [0.0, 0.7, 0.0], {"sprite": "tex_glow", "material": "mat_glow"})
     single("flash_core", layer, BURST_T, 0.12, 0.7, {
         "size_over_life": [[0.0, 0.4], [0.3, 1.0], [1.0, 0.7]],

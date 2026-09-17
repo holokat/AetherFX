@@ -23,7 +23,7 @@
 
 Also in the library: Lesser Fireball, Shadow AOE, Void Nebula.
 
-New and still being polished: Shield Buff (standard, ice, fire and poison, each in a basic and a rune style), Life Drain, Corruption Drain and Soul Drain (each as a flowing stream, a thin beam and a thick volumetric beam), Homing Arcane Missile, Chain Lightning, Meteor and Flame Wave.
+New and still being polished: Shield Buff (standard, ice, fire and poison, each in a basic and a rune style), Life Drain, Corruption Drain and Soul Drain (each as a flowing stream, a thin beam and a thick volumetric beam), Homing Arcane Missile, Chain Lightning, Meteor, Flame Wave and Frost Nova.
 
 All of them live in [`examples/effects`](examples/effects) as plain JSON, and the scripts that generate the effect families are in [`tools/generators`](tools/generators).
 
