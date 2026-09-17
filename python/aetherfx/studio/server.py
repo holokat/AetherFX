@@ -163,6 +163,14 @@ def endpoint(handler: Callable[[Request], Any]) -> Callable[[Request], Any]:
 # =========================================================================
 
 
+
+def _library_hidden(document: JsonDict) -> bool:
+    """True when an effect document opts out of the Library (``metadata.library.hidden``)."""
+    metadata = document.get("metadata")
+    library = metadata.get("library") if isinstance(metadata, dict) else None
+    return bool(isinstance(library, dict) and library.get("hidden"))
+
+
 class Studio:
     """The engine session, the lock protecting it, the generator and the jobs."""
 
@@ -281,6 +289,8 @@ class Studio:
                 entry: JsonDict = {"name": path.stem, "path": str(path), "builtin": builtin}
                 try:
                     raw = json.loads(path.read_text(encoding="utf-8"))
+                    if builtin and isinstance(raw, dict) and _library_hidden(raw):
+                        continue        # kept on disk (e.g. a test fixture) but not offered in the Library
                     if isinstance(raw, dict) and raw.get("name"):
                         entry["name"] = str(raw["name"])
                     entry["duration"] = raw.get("duration") if isinstance(raw, dict) else None

@@ -39,11 +39,6 @@
   },
   "layers": [
     {
-      "id": "target",
-      "name": "Target stand-in",
-      "role": "custom"
-    },
-    {
       "id": "impact",
       "name": "Hit splash",
       "role": "ignition"
@@ -694,28 +689,6 @@
       }
     },
     {
-      "id": "mat_body",
-      "type": "material",
-      "parameters": {
-        "blend": "alpha",
-        "shading": "lit",
-        "base_color": [
-          0.015,
-          0.016,
-          0.013,
-          1.0
-        ],
-        "emissive_color": [
-          0.42,
-          0.85,
-          0.12,
-          1.0
-        ],
-        "emissive_intensity": 0.09,
-        "fresnel_power": 2.6
-      }
-    },
-    {
       "id": "mat_vapour",
       "type": "material",
       "parameters": {
@@ -944,37 +917,6 @@
         ],
         "bounce": 0.0,
         "friction": 0.9
-      }
-    },
-    {
-      "id": "target_dummy",
-      "type": "mesh",
-      "layer": "target",
-      "parameters": {
-        "source": "primitive",
-        "primitive": "capsule",
-        "radius": 0.35,
-        "height": 1.8,
-        "segments": 20,
-        "position": [
-          0.0,
-          0.9,
-          0.0
-        ],
-        "color": [
-          0.03,
-          0.032,
-          0.027,
-          1.0
-        ],
-        "emissive": 0.0,
-        "visible": true
-      },
-      "inputs": {
-        "material": "mat_body"
-      },
-      "metadata": {
-        "placeholder": "PLACEHOLDER TARGET STAND-IN - a 1.8 m x 0.35 m capsule standing on the ground at the origin. Game exports replace this node with the character mesh; delete it and the effect still reads (nothing references its geometry)."
       }
     },
     {
@@ -1371,7 +1313,7 @@
             0.0
           ]
         ],
-        "emissive": 1.9,
+        "emissive": 1.33,
         "drag": 5.0,
         "blend": "additive",
         "rotation_variance": 180.0,
@@ -1548,7 +1490,7 @@
             0.0
           ]
         ],
-        "emissive": 1.0,
+        "emissive": 0.65,
         "drag": 4.2,
         "blend": "additive",
         "rotation_variance": 180.0,
@@ -1637,23 +1579,23 @@
             },
             {
               "time": 0.24,
-              "value": 1150.0
+              "value": 805.0
             },
             {
               "time": 0.46,
-              "value": 860.0
+              "value": 602.0
             },
             {
               "time": 0.72,
-              "value": 360.0
+              "value": 252.0
             },
             {
               "time": 1.05,
-              "value": 110.0
+              "value": 77.0
             },
             {
               "time": 2.8,
-              "value": 95.0
+              "value": 66.5
             },
             {
               "time": 3.1,
@@ -1763,7 +1705,7 @@
             0.0
           ]
         ],
-        "emissive": 1.9,
+        "emissive": 0.855,
         "emissive_over_life": [
           [
             0.0,
@@ -1828,27 +1770,27 @@
             },
             {
               "time": 0.34,
-              "value": 280.0
+              "value": 168.0
             },
             {
               "time": 0.62,
-              "value": 500.0
+              "value": 300.0
             },
             {
               "time": 1.1,
-              "value": 690.0
+              "value": 414.0
             },
             {
               "time": 2.8,
-              "value": 600.0
+              "value": 360.0
             },
             {
               "time": 3.05,
-              "value": 380.0
+              "value": 228.0
             },
             {
               "time": 3.3,
-              "value": 150.0
+              "value": 90.0
             },
             {
               "time": 3.55,
@@ -2242,7 +2184,7 @@
             0.0
           ]
         ],
-        "emissive": 1.7,
+        "emissive": 0.884,
         "drag": 6.0,
         "blend": "additive",
         "rotation_variance": 180.0
@@ -2399,7 +2341,7 @@
             0.0
           ]
         ],
-        "emissive": 3.0,
+        "emissive": 1.632,
         "drag": 0.25,
         "render_mode": "stretched_billboard",
         "velocity_stretch": 0.85,
@@ -3174,7 +3116,6 @@
   ],
   "metadata": {
     "description": "A corrupting poison debuff that clings to a humanoid target: an acid-green impact splash spreads over the body into clinging toxic vapour, glowing sludge drips, rising bubbles and corroding surface patches.",
-    "target_stand_in": "`target_dummy` is a PLACEHOLDER: a dark matte capsule 1.8 m tall and 0.35 m in radius standing at the origin. Game exports replace it with the character mesh; every other node is positioned in world space around that volume, so deleting it leaves the effect intact.",
     "reference": "out/references/poison_target_sheet.jpg - POISON / TARGET EFFECT: debuff, corrupting, toxic, persistent. Acid-green vapours wrapping an armoured figure, viscous dripping sludge, translucent bubbles, glowing corrosion.",
     "analysis": "hit 0-0.2: green flash and droplet burst at chest height, arriving from the camera side | spread 0.2-0.6: the emission ellipsoid's scale grows from a chest patch to the whole body so splashes run outward over the target | envelop 0.6-1.0: the raymarched gas volumes bloom and licks wrap the body | active 1.0-2.8: full loop - swirling vapours, drips falling and splashing on the ground, bubbles rising and popping, flickering corrosion patches, green point light | linger 2.8-3.5: rates and density thin out | fade 3.5-4.0: everything falls to zero",
     "timing": "hit 0-0.2, spread 0.2-0.6, envelop 0.6-1.0, active 1.0-2.8 (loopable), linger 2.8-3.5, fade 3.5-4.0",
@@ -3203,6 +3144,17 @@
       "bloom_radius": 0.032,
       "exposure": 0.78,
       "grid": false
+    },
+    "target_volume": {
+      "shape": "capsule",
+      "height": 1.8,
+      "radius": 0.35,
+      "base": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "note": "The effect wraps this invisible volume; attach it to the character's root in the game."
     }
   }
 }

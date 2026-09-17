@@ -69,6 +69,9 @@ RECIPES (proven values from the shipped examples)
 - Lights: ground irradiance is about intensity/(d^2+1). Use 2-6 for hand-held glows, 20-40 for room-scale fire, flashes under ~30 at radius 10-15. Bigger values blow the ground out to white.
 - Event-driven emitters keep rate 0 and burst_times []; an event node (trigger on_time, time t, inputs.targets [emitter ids]) fires them. on_death / on_collision events need inputs.source = the particle_system.
 - Heat haze: post_effect post_type heat_haze intensity 0.3-0.5 inside a window; bloom is on by default in the renderer.
+- Projectiles (bolts, missiles, arrows, thrown orbs) ALWAYS end with an impact phase at the end of the
+  flight: a flash light, a radial burst in the projectile's palette, debris or sparks with gravity, a
+  shock ring facing the camera, and a short lingering residue. Never let a projectile just fade out.
 """
 
 

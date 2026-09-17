@@ -177,7 +177,10 @@ def test_save_writes_into_the_output_directory(client: TestClient, output_dir: P
     listing = client.get("/api/effects").json()
     assert {item["name"] for item in listing["saved"]} == {"fireball_copy"}
     names = {(item["name"], item["builtin"]) for item in listing["library"]}
-    assert ("Fireball", True) in names and ("Fireball copy", False) in names
+    # the first-milestone Fireball is a hidden built-in (metadata.library.hidden): it stays loadable by
+    # path but is not offered in the Library; a saved copy of it is the user's own and is listed
+    assert ("Fireball", True) not in names and ("Fireball copy", False) in names
+    assert ("Fire Bolt", True) in names
 
 
 def test_builtin_library_entries_are_protected(client: TestClient, loaded: dict) -> None:
