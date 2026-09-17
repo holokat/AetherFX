@@ -21,11 +21,11 @@ Conventions:
 
 | tool | args | returns |
 |---|---|---|
-| `create_effect` | `name`, `duration=2`, `seed=1`, `template?` (`empty`, or an example name) | `{effect_id, effect}` becomes active |
+| `create_effect` | `name`, `duration=2`, `seed=1`, `time_scale=1`, `template?` (`empty`, or an example name) | `{effect_id, effect}` becomes active |
 | `delete_effect` | `effect_id` | `{ok}` |
 | `list_effects` | | `{effects:[{effect_id,name,path,dirty,active}]}` |
 | `set_active_effect` | `effect_id` | `{ok}` |
-| `set_effect_property` | `name?`, `duration?`, `seed?`, `metadata?` | `{effect}` |
+| `set_effect_property` | `name?`, `duration?`, `time_scale?`, `seed?`, `metadata?` | `{effect}` |
 | `describe_vocabulary` | `node_type?` | vocabulary json (all node specs, or one), plus `texture_ops` |
 | `get_effect_json` | `effect_id?` | the full document |
 
@@ -87,7 +87,7 @@ parameter type, E024 range problem, W007 a control with no bindings.
 |---|---|---|
 | `set_timeline_phase` | `name`, `start`, `end` | `{timeline}` (creates or updates) |
 | `remove_timeline_phase` | `name` | `{timeline}` |
-| `get_timeline` | | `{duration, phases, bound_nodes:{phase:[ids]}}` |
+| `get_timeline` | | `{duration, time_scale, wall_duration, phases, bound_nodes:{phase:[ids]}}` |
 
 ## simulate
 
