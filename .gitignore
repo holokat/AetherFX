@@ -37,3 +37,17 @@ dist/
 
 # unreal plugin third-party binaries (populated by engines/unreal/scripts/sync_libs.sh)
 engines/unreal/AetherFX/Source/ThirdParty/AetherFXLib/lib/
+
+# agent worktrees and local tooling state
+.claude/
+
+# Reference art never enters the repository (concept sheets, screenshots, pasted images).
+# The only allowed image is the engine-rendered synthetic test reference listed in
+# python/tests/test_repo_hygiene.py.
+out/
+references/*.jpg
+references/*.jpeg
+references/*.webp
+**/references/*.jpg
+**/references/*.jpeg
+**/references/*.webp
