@@ -26,23 +26,28 @@ is authored in CHARACTER SPACE so a game can attach it to any character:
   transit   three runner hubs `wake_1..3` whose keyframed positions go from the
             origin to (8, 0, 0) with y = z = 0 in every key. `blink_distance`
             multiplies those tracks key by key, so the runners always end on the
-            destination: the wakes connect both rings at any distance. The path
-            streaks are line emitters on `path_mid` (the midpoint hub, moved by the
-            same control) whose `length` is bound to it too.
-  afterimage no body is drawn: each runner carries a 0.5 m x 1.8 m column of soft
-            vertical light streaks, horizontal velocity-stretched motes, a soft haze
-            and two tapered light trails. Particles are world space, so the column
-            is laid down along the path and fades within a few frames - a smeared,
-            body-sized wake racing to the destination. Engines can layer real
-            afterimages of the character mesh on top (metadata.attachment).
+            destination: the wakes connect both rings at any distance. Each runner
+            emits from LINE emitters on a `wake_N_tail` hub that covers the last
+            two frames of travel (x-only offset and `length` bound to the same
+            control), and the path residue is a line on `path_mid`, so nothing is
+            stamped at one point per frame at any distance.
+  afterimage no body is drawn: each runner lays a body-high wake of light - tall
+            soft sheets (a noisy glow stretched upward into vertical fibres), a smear
+            of horizontally stretched soft light at seven heights, speed lines and
+            fine vertical wisps - plus one lingering afterimage copy at about 20%,
+            53% and 82% of the path. Particles are world space, so the wake is laid
+            down along the path and fades within a few frames: a smeared, body-sized
+            something racing to the destination. Engines can layer real afterimages
+            of the character mesh on top (metadata.attachment).
   rings     the warp rings use the parent-chain technique of teleport_variants.py,
             rotated to stand across the travel axis: a hub rotated 90 degrees about
             Z (its local XZ plane is the world YZ plane) whose non-uniform keyframed
             scale is the ellipse and its open / flare / contract envelope. Ring
             emitters on that hub lay dense soft glow sprites exactly on the ellipse
-            (never a polygon), and two spinning beads draw short comet arcs.
+            (never a polygon), and two spinning beads draw short comet arcs while
+            the ring is open.
   distortion a brief `heat_haze` post effect at the implosion and at the flare, plus
-            camera-facing soft ripple rings.
+            a faint ellipse that runs outward in the ring plane (a space ripple).
 
 House style: no crosses, plus signs or four-armed stars (bursts are swarms of 40+
 irregular streaks, glints are thin two-tone flakes); nothing is a hard line (rings
