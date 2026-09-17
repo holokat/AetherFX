@@ -53,6 +53,16 @@
         "beam"
       ],
       "parameters": {
+        "afterglow": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "seconds the previous path lingers as a fading ghost after a re-roll",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "s"
+        },
         "blend": {
           "animatable": false,
           "default": "additive",
@@ -65,6 +75,26 @@
           "max": null,
           "min": null,
           "type": "enum",
+          "units": ""
+        },
+        "branch_depth": {
+          "animatable": false,
+          "default": 1,
+          "description": "generations of branches (2 = branches fork again)",
+          "enum": [],
+          "max": 3,
+          "min": 1,
+          "type": "int",
+          "units": ""
+        },
+        "branch_intensity": {
+          "animatable": false,
+          "default": 1.0,
+          "description": "branch brightness as a fraction of the parent's",
+          "enum": [],
+          "max": 1,
+          "min": 0,
+          "type": "float",
           "units": ""
         },
         "branch_length": {
@@ -81,6 +111,16 @@
           "animatable": false,
           "default": 0.5,
           "description": "chance a branch is spawned",
+          "enum": [],
+          "max": 1,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "branch_width": {
+          "animatable": false,
+          "default": 0.6,
+          "description": "branch width as a fraction of the parent's",
           "enum": [],
           "max": 1,
           "min": 0,
@@ -111,6 +151,26 @@
           "type": "color",
           "units": ""
         },
+        "core_width": {
+          "animatable": false,
+          "default": 0.55,
+          "description": "white-hot core, as a fraction of `width`",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "detail": {
+          "animatable": false,
+          "default": 0,
+          "description": "octaves of midpoint displacement added on top of the polyline; each one doubles the vertex count and halves the displacement (0 = the plain polyline)",
+          "enum": [],
+          "max": 5,
+          "min": 0,
+          "type": "int",
+          "units": ""
+        },
         "duration": {
           "animatable": false,
           "default": -1.0,
@@ -127,6 +187,56 @@
           "description": "emissive multiplier (HDR)",
           "enum": [],
           "max": null,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "flicker": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "whole-bolt brightness flicker (a pure function of time)",
+          "enum": [],
+          "max": 1,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "flicker_frequency": {
+          "animatable": false,
+          "default": 30.0,
+          "description": "flicker cells per second",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "1/s"
+        },
+        "glow_width": {
+          "animatable": false,
+          "default": 2.6,
+          "description": "outer glow, as a fraction of `width`",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": ""
+        },
+        "impact_flare": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "radius of a bright flare at the target end (0 = none); the origin gets a smaller one",
+          "enum": [],
+          "max": null,
+          "min": 0,
+          "type": "float",
+          "units": "m"
+        },
+        "intensity_noise": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "per-vertex brightness variation along the bolt",
+          "enum": [],
+          "max": 1,
           "min": 0,
           "type": "float",
           "units": ""
@@ -248,6 +358,31 @@
           "min": 0,
           "type": "float",
           "units": "m"
+        },
+        "width_profile": {
+          "animatable": false,
+          "default": "uniform",
+          "description": "width along the bolt: uniform, thinning toward the target, thin at both ends, or a shoulder near the origin with a thin tail; anything but uniform also tapers branches to nothing at their tips",
+          "enum": [
+            "uniform",
+            "taper_end",
+            "taper_both",
+            "bulge"
+          ],
+          "max": null,
+          "min": null,
+          "type": "enum",
+          "units": ""
+        },
+        "width_variance": {
+          "animatable": false,
+          "default": 0.0,
+          "description": "per-vertex seeded width jitter",
+          "enum": [],
+          "max": 1,
+          "min": 0,
+          "type": "float",
+          "units": ""
         }
       },
       "spatial": false,

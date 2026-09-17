@@ -7,10 +7,11 @@
  */
 
 import * as THREE from 'three';
-import { RIBBON_FRAGMENT, RIBBON_VERTEX } from './shaders.js';
+import { BEAM_FLARE_FRAGMENT, BEAM_FRAGMENT, BEAM_VERTEX, RIBBON_FRAGMENT, RIBBON_VERTEX } from './shaders.js';
 import { LAYER_TRANSPARENT, applyBlend, colorOf } from './particles.js';
 
 const TRAIL_STRIDE = 12;      // pos3, width, age_norm, u, color4, opacity, emissive
+const BEAM_STRIDE = 5;        // pos3, width (m), intensity
 
 /* ------------------------------------------------------------------ *
  * strip builder
@@ -103,13 +104,24 @@ const TMP_SIDE = new THREE.Vector3();
 const TMP_VIEW = new THREE.Vector3();
 const TMP_TANGENT = new THREE.Vector3();
 const TMP_AXIS = new THREE.Vector3();
+const TMP_PREV_SIDE = new THREE.Vector3();
 
-/* side = tangent x (camera - point), i.e. the strip turns to face the camera. */
-function sideVector(tangent, x, y, z, cameraPosition, twistRadians) {
+/* side = tangent x (camera - point), i.e. the strip turns to face the camera.
+ *
+ * `previous` is the side vector of the vertex before, and matters on a fractal
+ * bolt where segments are far shorter than the glow is wide: a segment pointing
+ * at the camera makes the cross product vanish (so its direction is noise), and a
+ * sharp reversal flips the side vector, folding the quad into a bow-tie that
+ * draws as a long hard triangle.  Keeping the previous vector in the first case
+ * and flipping to agree with it in the second removes both. */
+function sideVector(tangent, x, y, z, cameraPosition, twistRadians, previous) {
   TMP_VIEW.set(cameraPosition.x - x, cameraPosition.y - y, cameraPosition.z - z);
   TMP_SIDE.crossVectors(tangent, TMP_VIEW);
-  if (TMP_SIDE.lengthSq() < 1e-12) TMP_SIDE.set(1, 0, 0);
+  const degenerate = TMP_SIDE.lengthSq() < 0.0009 * tangent.lengthSq() * TMP_VIEW.lengthSq();
+  if (degenerate && previous && previous.lengthSq() > 0) TMP_SIDE.copy(previous);
+  else if (TMP_SIDE.lengthSq() < 1e-12) TMP_SIDE.set(1, 0, 0);
   TMP_SIDE.normalize();
+  if (previous && previous.lengthSq() > 0 && TMP_SIDE.dot(previous) < 0) TMP_SIDE.multiplyScalar(-1);
   if (twistRadians) {
     TMP_AXIS.copy(tangent).normalize();
     TMP_SIDE.applyAxisAngle(TMP_AXIS, twistRadians);
@@ -141,33 +153,78 @@ function appendTrail(builder, data, count, cameraPosition, twistDegrees) {
   }
 }
 
-/* One beam polyline: xyz triplets plus node-level width / colour / pulse. */
+/* Vertex indices of one strip through a beam path.  `scale` is the ribbon's
+ * half-width per unit of vertex width; when `decimate` is set, a vertex is kept
+ * only once the path has travelled the ribbon's full width since the last one.
+ * That is what keeps the wide outer glow from becoming a fan of spikes on a
+ * fractal bolt, whose segments are far shorter than the glow is wide. */
+function beamStripIndices(data, count, scale, decimate) {
+  const out = [0];
+  if (decimate) {
+    let travelled = 0;
+    for (let i = 1; i < count - 1; i++) {
+      const o = i * BEAM_STRIDE, p = (i - 1) * BEAM_STRIDE;
+      const dx = data[o] - data[p], dy = data[o + 1] - data[p + 1], dz = data[o + 2] - data[p + 2];
+      travelled += Math.sqrt(dx * dx + dy * dy + dz * dz);
+      if (travelled >= 2 * scale * data[o + 3]) { out.push(i); travelled = 0; }
+    }
+  } else {
+    for (let i = 1; i < count - 1; i++) out.push(i);
+  }
+  out.push(count - 1);
+  return out;
+}
+
+/* One strip of one beam path: 5 floats per vertex (xyz, width in metres,
+ * intensity).  The per-vertex "emissive" attribute carries intensity * path fade;
+ * the fragment shader places the glow layers across the ribbon, exactly as the CPU
+ * renderer does. */
 function appendBeam(builder, data, count, cameraPosition, options) {
   if (count < 2) return;
-  builder.ensure(builder.vertexCount + count * 2, builder.indexCount + (count - 1) * 6);
-  const color = options.color, width = options.width, emissive = options.emissive;
-  const pulse = options.pulsePhase;
+  const index = beamStripIndices(data, count, options.scale, options.decimate);
+  if (index.length < 2) return;
+  builder.ensure(builder.vertexCount + index.length * 2, builder.indexCount + (index.length - 1) * 6);
+  const color = options.color;
+  const alpha = (color[3] === undefined ? 1 : color[3]) * options.alpha;
+  const fade = options.fade;
   let previous = -1;
-  for (let i = 0; i < count; i++) {
-    const o = i * 3;
+  TMP_PREV_SIDE.set(0, 0, 0);
+  for (let k = 0; k < index.length; k++) {
+    const o = index[k] * BEAM_STRIDE;
     const x = data[o], y = data[o + 1], z = data[o + 2];
-    const before = Math.max(0, i - 1) * 3;
-    const after = Math.min(count - 1, i + 1) * 3;
+    const before = index[Math.max(0, k - 1)] * BEAM_STRIDE;
+    const after = index[Math.min(index.length - 1, k + 1)] * BEAM_STRIDE;
     TMP_TANGENT.set(data[after] - data[before], data[after + 1] - data[before + 1], data[after + 2] - data[before + 2]);
     if (TMP_TANGENT.lengthSq() < 1e-12) TMP_TANGENT.set(0, 1, 0);
-    const along = count > 1 ? i / (count - 1) : 0;
-    let boost = 1.0;
-    if (pulse >= 0) {
-      const d = along - pulse;
-      boost += 2.5 * Math.exp(-(d * d) / 0.006);
-    }
-    const side = sideVector(TMP_TANGENT, x, y, z, cameraPosition, 0);
-    const base = builder.pushPair(x, y, z, side.x, side.y, side.z, width * 0.5, along,
-                                  color[0] * boost, color[1] * boost, color[2] * boost,
-                                  (color[3] === undefined ? 1 : color[3]) * options.alpha, emissive * boost);
+    const along = count > 1 ? index[k] / (count - 1) : 0;
+    const side = sideVector(TMP_TANGENT, x, y, z, cameraPosition, 0, TMP_PREV_SIDE);
+    TMP_PREV_SIDE.copy(side);
+    const base = builder.pushPair(x, y, z, side.x, side.y, side.z, data[o + 3] * options.scale, along,
+                                  color[0], color[1], color[2], alpha, data[o + 4] * fade);
     if (previous >= 0) builder.link(previous, base);
     previous = base;
   }
+}
+
+/* An impact flare: one camera-facing quad, shaded radially by the flare shader. */
+function appendFlare(builder, flare, camera, options) {
+  const position = flare.position || [0, 0, 0];
+  const radius = typeof flare.radius === 'number' ? flare.radius : 0;
+  if (!(radius > 0)) return;
+  builder.ensure(builder.vertexCount + 4, builder.indexCount + 6);
+  const color = options.color;
+  const alpha = (color[3] === undefined ? 1 : color[3]) * options.alpha;
+  const gain = typeof flare.intensity === 'number' ? flare.intensity : 1;
+  TMP_A.set(1, 0, 0).applyQuaternion(camera.quaternion).multiplyScalar(radius);
+  TMP_B.set(0, 1, 0).applyQuaternion(camera.quaternion).multiplyScalar(radius);
+  // (-,-) (+,-) then (-,+) (+,+): two pushPair rows the strip linker joins.
+  const bottom = builder.pushPair(position[0] - TMP_B.x, position[1] - TMP_B.y, position[2] - TMP_B.z,
+                                  TMP_A.x, TMP_A.y, TMP_A.z, 1, 0,
+                                  color[0], color[1], color[2], alpha, gain);
+  const top = builder.pushPair(position[0] + TMP_B.x, position[1] + TMP_B.y, position[2] + TMP_B.z,
+                               TMP_A.x, TMP_A.y, TMP_A.z, 1, 1,
+                               color[0], color[1], color[2], alpha, gain);
+  builder.link(bottom, top);
 }
 
 /* ------------------------------------------------------------------ *
@@ -194,6 +251,39 @@ export function makeRibbonMaterial() {
   return material;
 }
 
+/* The beam / flare material: the cross-section lives in the fragment shader so
+ * the bolt is one strip with one draw call instead of a stack of ribbons. */
+export function makeBeamMaterial(flare) {
+  return new THREE.ShaderMaterial({
+    vertexShader: BEAM_VERTEX,
+    fragmentShader: flare ? BEAM_FLARE_FRAGMENT : BEAM_FRAGMENT,
+    uniforms: {
+      uColor: { value: new THREE.Color(1, 1, 1) },
+      uEmissive: { value: 4 },
+      uCoreFrac: { value: 0.21 },
+      uInnerFrac: { value: 0.63 },
+      uOuterFrac: { value: 1 },
+      uPulse: { value: -1 },
+      uPremultiply: { value: 0 }
+    },
+    side: THREE.DoubleSide,
+    transparent: true,
+    depthWrite: false
+  });
+}
+
+function configureBeamMaterial(material, style, blend) {
+  material.uniforms.uColor.value.copy(style.color);
+  material.uniforms.uEmissive.value = style.emissive;
+  material.uniforms.uCoreFrac.value = style.coreFrac;
+  material.uniforms.uInnerFrac.value = style.innerFrac;
+  material.uniforms.uOuterFrac.value = style.outerFrac;
+  material.uniforms.uPulse.value = style.pulse;
+  material.uniforms.uPremultiply.value = style.premultiply;
+  applyBlend(material, blend);
+  material.renderOrder = blend === 'additive' ? 20 : 10;
+}
+
 function configureMaterial(material, desc, blend, context, textureId, circle) {
   material.uniforms.uBaseColor.value.copy(colorOf(desc.base_color, [1, 1, 1]));
   material.uniforms.uEmissiveColor.value.copy(colorOf(desc.emissive_color, [1, 1, 1]));
@@ -212,9 +302,9 @@ function configureMaterial(material, desc, blend, context, textureId, circle) {
  * ------------------------------------------------------------------ */
 
 class RibbonNode {
-  constructor(scene) {
+  constructor(scene, material) {
     this.builder = new StripBuilder();
-    this.material = makeRibbonMaterial();
+    this.material = material || makeRibbonMaterial();
     this.mesh = new THREE.Mesh(this.builder.geometry, this.material);
     this.mesh.frustumCulled = false;
     this.mesh.layers.set(LAYER_TRANSPARENT);
@@ -238,6 +328,12 @@ export class RibbonRenderer {
   node(key) {
     let node = this.nodes.get(key);
     if (!node) { node = new RibbonNode(this.scene); this.nodes.set(key, node); }
+    return node;
+  }
+
+  beamNode(key, flare) {
+    let node = this.nodes.get(key);
+    if (!node) { node = new RibbonNode(this.scene, makeBeamMaterial(flare)); this.nodes.set(key, node); }
     return node;
   }
 
@@ -265,25 +361,66 @@ export class RibbonRenderer {
       const desc = context.materials[beam.material] || {};
       const blend = beam.blend || desc.blend || 'additive';
       const color = beam.color || [1, 1, 1, 1];
-      const emissive = typeof beam.emissive === 'number' ? beam.emissive : 4;
-      const width = typeof beam.width === 'number' ? beam.width : 0.05;
+      let emissive = typeof beam.emissive === 'number' ? beam.emissive : 4;
+      const opacity = typeof desc.opacity === 'number' ? desc.opacity : 1;
+      if (typeof desc.emissive_intensity === 'number') emissive *= 1 + desc.emissive_intensity;
+      const coreWidth = typeof beam.core_width === 'number' ? beam.core_width : 0.55;
+      const glowWidth = typeof beam.glow_width === 'number' ? beam.glow_width : 2.6;
+      // Radii as fractions of `width`. A ribbon wider than its segments are long
+      // rasterises as a fan of spikes, so a wide outer glow gets its own strip
+      // through a path decimated to its own width; the two sum to exactly the
+      // one-pass cross-section (docs/RUNTIME.md section 11).
+      const coreR = 0.5 * coreWidth;
+      const innerR = 1.5 * coreWidth;
+      const outerR = 0.5 * glowWidth;
+      const split = outerR > innerR * 1.05 && innerR > 1e-5;
+      const passes = split
+        ? [{ scale: innerR, core: coreR / innerR, inner: 1, outer: 0, decimate: false },
+           { scale: outerR, core: 0, inner: 0, outer: 1, decimate: true }]
+        : [(function () {
+            const scale = Math.max(innerR, outerR, 1e-5);
+            return { scale: scale, core: Math.min(coreR / scale, 1), inner: Math.min(innerR / scale, 1),
+                     outer: Math.min(outerR / scale, 1), decimate: false };
+          })()];
       const pulse = typeof beam.pulse_phase === 'number' ? beam.pulse_phase : -1;
-      // two passes: a wide soft halo and a thin bright core
-      [['beam:' + beam.id + ':halo', width * 2.6, 0.32, emissive * 0.55],
-       ['beam:' + beam.id + ':core', width * 0.55, 1.0, emissive * 1.8]].forEach(([key, w, alpha, emit]) => {
-        seen.add(key);
-        const node = this.node(key);
-        const builder = node.builder;
-        builder.begin();
-        (beam.polylines || []).forEach(function (polyline) {
-          appendBeam(builder, polyline, polyline.length / 3 | 0, cameraPosition,
-                     { width: w, color: color, alpha: alpha, emissive: emit, pulsePhase: pulse });
+      const baseColor = colorOf(desc.base_color, [1, 1, 1]);
+      const premultiply = blend === 'premultiplied' ? 1 : 0;
+      // Ghosts first (they sit behind the live bolt), then the bolt, then the flares.
+      passes.forEach((pass, index) => {
+        [['ghosts', beam.ghosts || []], ['paths', beam.paths || []]].forEach(([which, paths]) => {
+          const key = 'beam:' + beam.id + ':' + which + ':' + index;
+          seen.add(key);
+          const node = this.beamNode(key, false);
+          const builder = node.builder;
+          builder.begin();
+          paths.forEach(function (path) {
+            appendBeam(builder, path.vertices, path.count, cameraPosition,
+                       { color: color, alpha: opacity, scale: pass.scale, decimate: pass.decimate,
+                         fade: path.fade });
+          });
+          builder.end();
+          configureBeamMaterial(node.material, {
+            color: baseColor, emissive: emissive, coreFrac: pass.core, innerFrac: pass.inner,
+            outerFrac: pass.outer, pulse: pulse, premultiply: premultiply
+          }, blend);
+          node.mesh.visible = builder.indexCount > 0;
+          node.mesh.renderOrder = node.material.renderOrder;
         });
-        builder.end();
-        configureMaterial(node.material, desc, blend, context, desc.base_texture, false);
-        node.mesh.visible = builder.indexCount > 0;
-        node.mesh.renderOrder = node.material.renderOrder;
       });
+      const style = { color: baseColor, emissive: emissive, coreFrac: 0.22, innerFrac: 0.66,
+                      outerFrac: 1, pulse: -1, premultiply: premultiply };
+
+      const flareKey = 'beam:' + beam.id + ':flares';
+      seen.add(flareKey);
+      const flareNode = this.beamNode(flareKey, true);
+      flareNode.builder.begin();
+      (beam.flares || []).forEach((flare) => {
+        appendFlare(flareNode.builder, flare, context.camera, { color: color, alpha: opacity });
+      });
+      flareNode.builder.end();
+      configureBeamMaterial(flareNode.material, style, blend);
+      flareNode.mesh.visible = flareNode.builder.indexCount > 0;
+      flareNode.mesh.renderOrder = flareNode.material.renderOrder;
     });
 
     this.nodes.forEach((node, key) => {

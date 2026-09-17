@@ -134,10 +134,17 @@ from the frame's column-major 16-float matrix.
 **Trails and beams** (`ribbons.js`) - camera-facing triangle strips rebuilt on
 the CPU every frame (the strip has to face the camera, and the camera moves).
 Trails read the 12-float vertex layout directly (pos3, width, age_norm, u,
-colour4, opacity, emissive) and honour `twist_deg`; beams draw twice, a wide
-soft halo and a thin bright core, with `pulse_phase` brightening a gaussian
-travelling along the polyline. All the ribbons of one node share one geometry
-and one draw call.
+colour4, opacity, emissive) and honour `twist_deg`. Beams read the 5-float beam
+layout (pos3, width, intensity) and are shaded *across* the ribbon by
+`BEAM_FRAGMENT`, which evaluates the same three-layer cross-section as the CPU
+reference renderer (docs/RUNTIME.md section 11): a white-hot core, a coloured
+inner glow and a wide faint outer glow, with `pulse_phase` brightening a
+gaussian travelling along the path. A ribbon wider than its segments are long
+rasterises as a fan of spikes, so on a fractal bolt the wide outer glow gets its
+own strip through a path decimated to its own width; the two strips sum to the
+one-pass formula. Afterglow ghosts are the same strips at a lower `fade`, and
+`impact_flare`s are camera-facing quads with the same falloff, radially. All the
+ribbons of one node share one geometry and one draw call.
 
 **Volumes** (`volumes.js`) - one box mesh per procedural `volume` in the frame,
 scaled to the shape's local half-extents and raymarched in the fragment shader.

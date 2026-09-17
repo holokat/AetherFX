@@ -69,8 +69,8 @@ class TestLibrary:
 
     def test_every_abi_function_is_declared(self):
         library = native.load_library()
-        # 74 through ABI 1, plus the two additive volume entry points.
-        assert len(native._SIGNATURES) == 76
+        # 74 through ABI 1, plus the two additive volume and four beam entry points.
+        assert len(native._SIGNATURES) == 80
         for name in native._SIGNATURES:
             assert getattr(library, name).argtypes is not None, name
 
@@ -284,6 +284,21 @@ class TestRuntime:
                     assert polyline.ndim == 2 and polyline.shape[1] == 3
                     assert np.isfinite(polyline).all()
                 assert bolt["polylines"][0].shape[0] >= 2
+                # the strike detail: one path per polyline, 5 floats per vertex
+                assert len(bolt["paths"]) == len(bolt["polylines"])
+                assert bolt["core_width"] > 0.0 and bolt["glow_width"] > 0.0
+                for path in bolt["paths"]:
+                    vertices = path["vertices"]
+                    assert vertices.ndim == 2 and vertices.shape[1] == 5  # xyz, width, intensity
+                    assert np.isfinite(vertices).all()
+                    assert (vertices[:, 3] >= 0.0).all()  # width, metres
+                    assert (vertices[:, 4] > 0.0).all()   # intensity
+                    assert path["depth"] >= 0 and 0.0 < path["fade"] <= 1.0
+                assert np.allclose(bolt["paths"][0]["vertices"][:, 0:3], bolt["polylines"][0])
+                for ghost in bolt["ghosts"]:
+                    assert ghost["fade"] <= 1.0
+                for flare in bolt["flares"]:
+                    assert flare["radius"] > 0.0 and len(flare["position"]) == 3
                 runtime.close()
 
     def test_fireball_trail_ribbons_use_the_wire_layout(self, fireball: native.Compiled):
@@ -447,12 +462,19 @@ class TestNativeFrameSource:
             frame = source.frame_at(0.1)
             assert frame.lights and frame.lights[0]["type"] in ("point", "spot", "area")
             assert frame.beams
-            assert all(p.shape[1] == 3 for beam in frame.beams for p in beam["polylines"])
+            assert all(p["vertices"].shape[1] == 5 for beam in frame.beams for p in beam["paths"])
 
-            header, _ = decode_header(encode_frame(frame, fps=60.0))
-            polylines = header["beams"][0]["polylines"]
-            assert polylines and polylines[0]["count"] >= 2
-            assert "material" in header["beams"][0]
+            header, blob = decode_header(encode_frame(frame, fps=60.0))
+            wire = header["beams"][0]
+            paths = wire["paths"]
+            assert paths and paths[0]["count"] >= 2
+            assert paths[0]["depth"] == 0 and paths[0]["fade"] == pytest.approx(1.0)
+            assert "material" in wire and "ghosts" in wire and "flares" in wire
+            assert wire["core_width"] > 0.0 and wire["glow_width"] > 0.0
+            # the offsets really do address 5-float vertices in the blob
+            first = np.frombuffer(blob, dtype=np.float32, count=paths[0]["count"] * 5,
+                                  offset=paths[0]["offset"]).reshape(-1, 5)
+            assert np.allclose(first, frame.beams[0]["paths"][0]["vertices"])
 
     def test_a_broken_effect_reports_its_diagnostics(self):
         broken = effect_document("fireball")

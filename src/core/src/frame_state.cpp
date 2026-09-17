@@ -90,7 +90,14 @@ uint64_t FrameState::hash() const {
         hash_vec(h, p.orientation); hash_vec(h, p.scale3); hash_vec(h, p.variant);
     }
     for (const auto& l : lights) { hash_str(h, l.id); hash_bytes(h, &l.position, sizeof l.position); hash_bytes(h, &l.color, sizeof l.color); hash_bytes(h, &l.intensity, sizeof l.intensity); hash_bytes(h, &l.radius, sizeof l.radius); }
-    for (const auto& b : beams) { hash_str(h, b.id); for (const auto& pl : b.polylines) hash_vec(h, pl); hash_bytes(h, &b.width, sizeof b.width); hash_bytes(h, &b.emissive, sizeof b.emissive); }
+    for (const auto& b : beams) {
+        hash_str(h, b.id);
+        for (const auto& p : b.paths) { hash_vec(h, p.points); hash_vec(h, p.width); hash_vec(h, p.intensity); hash_bytes(h, &p.depth, sizeof p.depth); hash_bytes(h, &p.fade, sizeof p.fade); }
+        for (const auto& g : b.ghosts) { hash_vec(h, g.points); hash_vec(h, g.width); hash_vec(h, g.intensity); hash_bytes(h, &g.depth, sizeof g.depth); hash_bytes(h, &g.fade, sizeof g.fade); }
+        for (const auto& f : b.flares) hash_bytes(h, &f, sizeof f);
+        hash_bytes(h, &b.width, sizeof b.width); hash_bytes(h, &b.emissive, sizeof b.emissive);
+        hash_bytes(h, &b.core_width, sizeof b.core_width); hash_bytes(h, &b.glow_width, sizeof b.glow_width);
+    }
     for (const auto& t : trails) { hash_str(h, t.id); for (const auto& r : t.ribbons) hash_vec(h, r); }
     for (const auto& d : decals) { hash_str(h, d.id); hash_bytes(h, &d.position, sizeof d.position); hash_bytes(h, &d.size, sizeof d.size); hash_bytes(h, &d.opacity, sizeof d.opacity); }
     for (const auto& m : meshes) { hash_str(h, m.id); hash_bytes(h, m.transform.m.data(), sizeof(float) * 16); hash_bytes(h, &m.emissive, sizeof m.emissive); }

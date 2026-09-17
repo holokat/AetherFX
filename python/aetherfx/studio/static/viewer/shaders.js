@@ -235,6 +235,117 @@ void main() {
 `;
 
 /* ------------------------------------------------------------------ *
+ * beams: a lightning bolt, shaded across the ribbon
+ * ------------------------------------------------------------------ */
+
+/* The cross-section is three additive layers: a white-hot core the bloom takes
+ * over, a coloured inner glow at three times its radius, and the wide faint outer
+ * glow that fills the rest of the ribbon.  The CPU reference renderer evaluates
+ * the identical function per pixel (beam_cross_section in software_renderer.cpp),
+ * so the two renderers agree.  The strip is extruded to the *outer* radius and
+ * `uCoreFrac` / `uInnerFrac` say where the other two layers sit inside it.
+ *
+ * The per-vertex `emissive` attribute carries intensity * path fade, and `color.a`
+ * the beam's alpha; `position` is the extruded ribbon corner. */
+export const BEAM_VERTEX = `
+precision highp float;
+attribute vec4 color;
+attribute float emissive;       // per-vertex intensity * path fade
+varying vec4 vColor;
+varying vec2 vUv;
+varying float vGain;
+void main() {
+  vColor = color;
+  vUv = uv;                     // x = along the bolt, y = across it
+  vGain = emissive;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+`;
+
+export const BEAM_FRAGMENT = `
+precision highp float;
+uniform vec3 uColor;
+uniform float uEmissive;
+uniform float uCoreFrac;        // core radius / ribbon radius; 0 = layer off
+uniform float uInnerFrac;       // inner glow radius / ribbon radius
+uniform float uOuterFrac;       // outer glow radius / ribbon radius
+uniform float uPulse;           // [0,1) travelling pulse, < 0 = none
+uniform float uPremultiply;
+varying vec4 vColor;
+varying vec2 vUv;
+varying float vGain;
+
+float beamKernel(float t, float r) {
+  if (r <= 0.0) return 0.0;
+  float x = min(t / max(r, 1e-3), 1.0);
+  float f = 1.0 - x * x;
+  return f * f;
+}
+
+void main() {
+  float t = abs(vUv.y * 2.0 - 1.0);
+  float core = beamKernel(t, uCoreFrac) * 2.2;
+  float inner = beamKernel(t, uInnerFrac) * 0.8;
+  float outer = beamKernel(t, uOuterFrac) * 0.28;
+  float luminance = core + inner + outer;
+  if (luminance <= 0.0) discard;
+
+  vec3 tint = uColor * vColor.rgb;
+  vec3 hot = mix(tint, vec3(1.0), 0.85);
+  vec3 rgb = hot * core + tint * (inner + outer);
+
+  float gain = vGain;
+  if (uPulse >= 0.0) {
+    float d = abs(vUv.x - uPulse);
+    d = min(d, 1.0 - d);
+    gain *= 1.0 + 3.0 * exp(-(d * d) / 0.0036);
+  }
+  float alpha = clamp(luminance * gain, 0.0, 1.0) * vColor.a;
+  if (alpha <= 0.0) discard;
+  vec3 out_ = rgb * (uEmissive * gain);
+  gl_FragColor = vec4(out_ * mix(1.0, alpha, uPremultiply), alpha);
+}
+`;
+
+/* An impact flare: the same three-layer falloff, radial instead of across a
+ * ribbon, on a camera-facing quad. */
+export const BEAM_FLARE_FRAGMENT = `
+precision highp float;
+uniform vec3 uColor;
+uniform float uEmissive;
+uniform float uCoreFrac;
+uniform float uInnerFrac;
+uniform float uOuterFrac;
+uniform float uPulse;
+uniform float uPremultiply;
+varying vec4 vColor;
+varying vec2 vUv;
+varying float vGain;
+
+float beamKernel(float t, float r) {
+  if (r <= 0.0) return 0.0;
+  float x = min(t / max(r, 1e-3), 1.0);
+  float f = 1.0 - x * x;
+  return f * f;
+}
+
+void main() {
+  float t = length(vUv * 2.0 - 1.0);
+  if (t >= 1.0) discard;
+  float core = beamKernel(t, uCoreFrac) * 2.2;
+  float inner = beamKernel(t, uInnerFrac) * 0.8;
+  float outer = beamKernel(t, uOuterFrac) * 0.28;
+  float luminance = core + inner + outer;
+  vec3 tint = uColor * vColor.rgb;
+  vec3 rgb = mix(tint, vec3(1.0), 0.85) * core + tint * (inner + outer);
+  float alpha = clamp(luminance * vGain, 0.0, 1.0) * vColor.a;
+  if (alpha <= 0.0) discard;
+  vec3 out_ = rgb * (uEmissive * vGain);
+  gl_FragColor = vec4(out_ * mix(1.0, alpha, uPremultiply), alpha);
+}
+`;
+
+/* ------------------------------------------------------------------ *
  * bloom input clamp
  * ------------------------------------------------------------------ */
 

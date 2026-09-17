@@ -284,7 +284,7 @@ frame of the interval.
 | decal | `UDecalComponent` + a dynamic material instance |
 | mesh instance | `UStaticMeshComponent` |
 | trail | `UProceduralMeshComponent` section per trail, camera-facing strip per ribbon |
-| beam | `UProceduralMeshComponent` section per beam; polyline 0 is the bolt, the rest are branches at 0.6x width |
+| beam | `UProceduralMeshComponent` section per beam; polyline 0 is the bolt, the rest are branches. The per-vertex width and the strike detail live behind `aetherfx_beam_style` / `aetherfx_beam_path`; the V1 bridge reads the plain polylines and draws branches at 0.6x width |
 | camera | ignored -- Unreal uses its own |
 
 Lights, decals and mesh instances are keyed by their AetherFX node id and reused

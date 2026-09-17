@@ -437,7 +437,11 @@ def _to_frame(snapshot: Any) -> Frame:
             "blend": beam["blend"],
             "material": beam["material_id"],
             "pulse_phase": beam["pulse_phase"],
-            "polylines": beam["polylines"],
+            "core_width": beam["core_width"],
+            "glow_width": beam["glow_width"],
+            "paths": beam["paths"],
+            "ghosts": beam["ghosts"],
+            "flares": beam["flares"],
         }
         for beam in snapshot.beams
     ]

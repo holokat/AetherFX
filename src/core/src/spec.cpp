@@ -353,13 +353,34 @@ NodeSpec spec_beam() {
     n.params.push_back(pb_float("noise_amplitude", 0.0f).min_of(0.0).doc("displacement of interior points").unit("m"));
     n.params.push_back(pb_float("noise_frequency", 4.0f).min_of(0.0).doc("displacement frequency").unit("1/m"));
     n.params.push_back(pb_float("jitter_rate", 30.0f).min_of(0.0).doc("re-randomizations per second (0 = static)").unit("1/s"));
+    n.params.push_back(pb_int("detail", 0).range_of(0.0, 5.0)
+                           .doc("octaves of midpoint displacement added on top of the polyline; each one doubles "
+                                "the vertex count and halves the displacement (0 = the plain polyline)"));
+    n.params.push_back(pb_enum("width_profile", "uniform", {"uniform", "taper_end", "taper_both", "bulge"})
+                           .doc("width along the bolt: uniform, thinning toward the target, thin at both ends, "
+                                "or a shoulder near the origin with a thin tail; anything but uniform also "
+                                "tapers branches to nothing at their tips"));
+    n.params.push_back(pb_float("width_variance", 0.0f).range_of(0.0, 1.0).doc("per-vertex seeded width jitter"));
     n.params.push_back(pb_int("branching", 0).range_of(0.0, 16.0).doc("branch count"));
     n.params.push_back(pb_float("branch_probability", 0.5f).range_of(0.0, 1.0).doc("chance a branch is spawned"));
     n.params.push_back(pb_float("branch_length", 0.3f).range_of(0.0, 1.0).doc("fraction of the main beam length"));
+    n.params.push_back(pb_float("branch_width", 0.6f).range_of(0.0, 1.0).doc("branch width as a fraction of the parent's"));
+    n.params.push_back(pb_int("branch_depth", 1).range_of(1.0, 3.0).doc("generations of branches (2 = branches fork again)"));
+    n.params.push_back(pb_float("branch_intensity", 1.0f).range_of(0.0, 1.0).doc("branch brightness as a fraction of the parent's"));
+    n.params.push_back(pb_float("intensity_noise", 0.0f).range_of(0.0, 1.0).doc("per-vertex brightness variation along the bolt"));
+    n.params.push_back(pb_float("flicker", 0.0f).range_of(0.0, 1.0).doc("whole-bolt brightness flicker (a pure function of time)"));
+    n.params.push_back(pb_float("flicker_frequency", 30.0f).min_of(0.0).doc("flicker cells per second").unit("1/s"));
+    n.params.push_back(pb_float("afterglow", 0.0f).min_of(0.0)
+                           .doc("seconds the previous path lingers as a fading ghost after a re-roll").unit("s"));
+    n.params.push_back(pb_float("impact_flare", 0.0f).min_of(0.0)
+                           .doc("radius of a bright flare at the target end (0 = none); the origin gets a smaller one")
+                           .unit("m"));
     n.params.push_back(pb_float("pulse_speed", 0.0f).doc("pulse travel speed (beam lengths/s)").unit("1/s"));
     n.params.push_back(pb_float("pulse_frequency", 0.0f).doc("pulses per beam length"));
     n.params.push_back(pb_color("color", Color{1, 1, 1, 1}).animated().doc("beam color (linear)"));
     n.params.push_back(pb_float("emissive", 4.0f).min_of(0.0).animated().doc("emissive multiplier (HDR)"));
+    n.params.push_back(pb_float("core_width", 0.55f).min_of(0.0).doc("white-hot core, as a fraction of `width`"));
+    n.params.push_back(pb_float("glow_width", 2.6f).min_of(0.0).doc("outer glow, as a fraction of `width`"));
     n.params.push_back(pb_enum("blend", "additive", blend_values()).doc("blend mode"));
     n.inputs = {port("origin_node", {NodeType::Mesh, NodeType::Emitter, NodeType::Light, NodeType::Curve}, false, false,
                      "node whose world position overrides origin"),

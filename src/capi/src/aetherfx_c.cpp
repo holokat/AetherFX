@@ -923,7 +923,7 @@ int aetherfx_beam_info(const aetherfx_runtime* runtime, int index, struct aether
         const aether::FrameState& state = state_of(runtime);
         const aether::BeamState& beam = state.beams[require_index(index, state.beams.size(), "beam")];
         out->id = c_str(beam.id);
-        out->polyline_count = beam.polylines.size();
+        out->polyline_count = beam.paths.size();
         out->width = beam.width;
         copy_color(out->color, beam.color);
         out->emissive = beam.emissive;
@@ -941,9 +941,70 @@ int aetherfx_beam_polyline(const aetherfx_runtime* runtime, int beam, int polyli
         require_mutable(count, "count");
         const aether::FrameState& state = state_of(runtime);
         const aether::BeamState& b = state.beams[require_index(beam, state.beams.size(), "beam")];
-        const std::vector<Vec3>& points = b.polylines[require_index(polyline, b.polylines.size(), "polyline")];
+        const std::vector<Vec3>& points = b.paths[require_index(polyline, b.paths.size(), "polyline")].points;
         *xyz = points.empty() ? nullptr : &points.front().x;
         *count = points.size();
+        return AETHERFX_OK;
+    });
+}
+
+namespace {
+void fill_beam_path(const aether::BeamPath& path, struct aetherfx_beam_path* out) {
+    out->vertex_count = path.points.size();
+    out->depth = path.depth;
+    out->fade = path.fade;
+    out->position = path.points.empty() ? nullptr : &path.points.front().x;
+    out->width = path.width.empty() ? nullptr : path.width.data();
+    out->intensity = path.intensity.empty() ? nullptr : path.intensity.data();
+}
+}  // namespace
+
+int aetherfx_beam_style(const aetherfx_runtime* runtime, int beam, struct aetherfx_beam_style* out) {
+    return guard_status([&]() -> int {
+        require_mutable(out, "out");
+        const aether::FrameState& state = state_of(runtime);
+        const aether::BeamState& b = state.beams[require_index(beam, state.beams.size(), "beam")];
+        out->core_width = b.core_width;
+        out->glow_width = b.glow_width;
+        out->path_count = b.paths.size();
+        out->ghost_count = b.ghosts.size();
+        out->flare_count = b.flares.size();
+        return AETHERFX_OK;
+    });
+}
+
+int aetherfx_beam_path(const aetherfx_runtime* runtime, int beam, int path,
+                       struct aetherfx_beam_path* out) {
+    return guard_status([&]() -> int {
+        require_mutable(out, "out");
+        const aether::FrameState& state = state_of(runtime);
+        const aether::BeamState& b = state.beams[require_index(beam, state.beams.size(), "beam")];
+        fill_beam_path(b.paths[require_index(path, b.paths.size(), "path")], out);
+        return AETHERFX_OK;
+    });
+}
+
+int aetherfx_beam_ghost(const aetherfx_runtime* runtime, int beam, int ghost,
+                        struct aetherfx_beam_path* out) {
+    return guard_status([&]() -> int {
+        require_mutable(out, "out");
+        const aether::FrameState& state = state_of(runtime);
+        const aether::BeamState& b = state.beams[require_index(beam, state.beams.size(), "beam")];
+        fill_beam_path(b.ghosts[require_index(ghost, b.ghosts.size(), "ghost")], out);
+        return AETHERFX_OK;
+    });
+}
+
+int aetherfx_beam_flare(const aetherfx_runtime* runtime, int beam, int index,
+                        struct aetherfx_beam_flare* out) {
+    return guard_status([&]() -> int {
+        require_mutable(out, "out");
+        const aether::FrameState& state = state_of(runtime);
+        const aether::BeamState& b = state.beams[require_index(beam, state.beams.size(), "beam")];
+        const aether::BeamFlare& flare = b.flares[require_index(index, b.flares.size(), "flare")];
+        copy_vec3(out->position, flare.position);
+        out->radius = flare.radius;
+        out->intensity = flare.intensity;
         return AETHERFX_OK;
     });
 }

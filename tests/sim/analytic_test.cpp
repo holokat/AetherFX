@@ -1,8 +1,10 @@
 // Analytic nodes (docs/RUNTIME.md section 7), the three reference documents
 // simulated to their full duration, statistics (section 9) and a timing smoke
 // test.
+#include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <optional>
 #include <filesystem>
 #include <iostream>
 #include <string>
@@ -13,7 +15,9 @@
 
 #include "aether/compiler/compiled_effect.hpp"
 #include "aether/core/serialization.hpp"
+#include "aether/core/rng.hpp"
 #include "aether/core/spec.hpp"
+#include "aether/procedural/noise.hpp"
 #include "aether/sim/runtime.hpp"
 
 using namespace aether;
@@ -138,26 +142,55 @@ TEST_CASE("a light outside its window is not emitted", "[sim][analytic]") {
 // ---------------------------------------------------------------------------
 
 TEST_CASE("the lightning bolt is a jittered polyline with branches", "[sim][analytic]") {
-    std::unique_ptr<sim::IRuntime> rt = runtime_for(load_example("lightning_strike.json"));
+    // Structure, not art direction: every number below is read back out of the
+    // effect so retuning the look never breaks the contract this test guards.
+    const Effect effect = load_example("lightning_strike.json");
+    const Node* node = effect.find_node("main_bolt");
+    REQUIRE(node != nullptr);
+    const int segments = param_int(*node, "segments");
+    const int detail = param_int(*node, "detail");
+    const int branching = param_int(*node, "branching");
+    const int branch_depth = param_int(*node, "branch_depth");
+    const Vec3 origin = param_vec3(*node, "origin");
+    const Vec3 target = param_vec3(*node, "target");
+    const float width = param_float(*node, "width", 1.0 / 60.0);  // the width is keyframed
+    const size_t expected = static_cast<size_t>(segments) * (1u << detail) + 1u;
+
+    std::unique_ptr<sim::IRuntime> rt = runtime_for(effect);
     rt->step();
     const BeamState* bolt = beam_of(rt->state(), "main_bolt");
     REQUIRE(bolt != nullptr);
-    REQUIRE(!bolt->polylines.empty());
-    CHECK(bolt->polylines.front().size() == 25u);  // segments + 1
-    CHECK(bolt->polylines.size() <= 6u);           // main + at most `branching`
-    CHECK(bolt->width == Approx(0.06f));
+    REQUIRE(!bolt->paths.empty());
+    const BeamPath& main = bolt->paths.front();
+    CHECK(main.points.size() == expected);
+    CHECK(main.width.size() == main.points.size());
+    CHECK(main.intensity.size() == main.points.size());
+    CHECK(main.depth == 0);
+    CHECK(bolt->width == Approx(width));
     CHECK(bolt->pulse_phase < 0.0f);  // pulse_speed = 0
     // the endpoints are exact, the interior is displaced
-    CHECK(distance(bolt->polylines.front().front(), Vec3{0.3f, 6.0f, -0.2f}) < 1e-5f);
-    CHECK(distance(bolt->polylines.front().back(), Vec3{0, 0, 0}) < 1e-5f);
+    CHECK(distance(main.points.front(), origin) < 1e-5f);
+    CHECK(distance(main.points.back(), target) < 1e-5f);
     bool displaced = false;
-    for (size_t i = 1; i + 1 < bolt->polylines.front().size(); ++i) {
-        const Vec3 straight = lerp(Vec3{0.3f, 6.0f, -0.2f}, Vec3{0, 0, 0},
-                                   static_cast<float>(i) / 24.0f);
-        if (distance(bolt->polylines.front()[i], straight) > 1e-4f) displaced = true;
+    for (size_t i = 1; i + 1 < main.points.size(); ++i) {
+        const Vec3 straight =
+            lerp(origin, target, static_cast<float>(i) / static_cast<float>(main.points.size() - 1));
+        if (distance(main.points[i], straight) > 1e-4f) displaced = true;
     }
     CHECK(displaced);
-    for (size_t i = 1; i < bolt->polylines.size(); ++i) CHECK(bolt->polylines[i].size() == 5u);  // 4 segments
+    // Branches: at most `branching` per parent per generation, each one a shorter
+    // path of its own, tagged with the generation it belongs to.
+    size_t per_depth[4] = {1, 0, 0, 0};
+    for (size_t i = 1; i < bolt->paths.size(); ++i) {
+        const BeamPath& branch = bolt->paths[i];
+        REQUIRE(branch.depth >= 1);
+        REQUIRE(branch.depth <= branch_depth);
+        CHECK(branch.points.size() == static_cast<size_t>(4 * (1 << detail) + 1));
+        CHECK(branch.width.size() == branch.points.size());
+        ++per_depth[branch.depth];
+    }
+    for (int d = 1; d <= branch_depth; ++d)
+        CHECK(per_depth[d] <= per_depth[d - 1] * static_cast<size_t>(branching));
 }
 
 TEST_CASE("beam jitter is a pure function of the jitter key", "[sim][analytic]") {
@@ -166,13 +199,13 @@ TEST_CASE("beam jitter is a pure function of the jitter key", "[sim][analytic]")
     std::unique_ptr<sim::IRuntime> rt = runtime_for(effect);
 
     rt->step();  // t = 1/60 -> key 0
-    const std::vector<Vec3> first = beam_of(rt->state(), "main_bolt")->polylines.front();
+    const std::vector<Vec3> first = beam_of(rt->state(), "main_bolt")->paths.front().points;
     rt->step();  // t = 2/60 -> key 0
-    const std::vector<Vec3> same_key = beam_of(rt->state(), "main_bolt")->polylines.front();
+    const std::vector<Vec3> same_key = beam_of(rt->state(), "main_bolt")->paths.front().points;
     CHECK(same_key == first);
 
     rt->simulate_to(0.12);  // key 1
-    const std::vector<Vec3> next_key = beam_of(rt->state(), "main_bolt")->polylines.front();
+    const std::vector<Vec3> next_key = beam_of(rt->state(), "main_bolt")->paths.front().points;
     CHECK(next_key.size() == first.size());
     CHECK(next_key != first);
 }
@@ -201,8 +234,8 @@ TEST_CASE("beam pulses expose a phase", "[sim][analytic]") {
     CHECK(b->emissive <= 4.0f * 1.0f + 1e-4f);
     CHECK(b->emissive >= 4.0f * 0.5f - 1e-4f);
     // no noise and no jitter: the polyline is exactly the straight line
-    for (size_t i = 0; i < b->polylines.front().size(); ++i)
-        CHECK(b->polylines.front()[i].y == Approx(4.0f * static_cast<float>(i) / 8.0f));
+    for (size_t i = 0; i < b->paths.front().points.size(); ++i)
+        CHECK(b->paths.front().points[i].y == Approx(4.0f * static_cast<float>(i) / 8.0f));
 }
 
 TEST_CASE("beam endpoints follow origin_node and target_node", "[sim][analytic]") {
@@ -227,9 +260,261 @@ TEST_CASE("beam endpoints follow origin_node and target_node", "[sim][analytic]"
     rt->step();
     const BeamState* b = beam_of(rt->state(), "link");
     REQUIRE(b != nullptr);
-    CHECK(distance(b->polylines.front().front(), Vec3{-2, 1, 0}) < 1e-5f);
-    CHECK(distance(b->polylines.front().back(), Vec3{3, 0.5f, 1}) < 1e-5f);
+    CHECK(distance(b->paths.front().points.front(), Vec3{-2, 1, 0}) < 1e-5f);
+    CHECK(distance(b->paths.front().points.back(), Vec3{3, 0.5f, 1}) < 1e-5f);
     CHECK(mesh_of(rt->state(), "from") == nullptr);  // visible = false
+}
+
+// ---------------------------------------------------------------------------
+// beams: the strike features (detail, width profile, branch generations,
+// per-vertex intensity, flicker, afterglow, impact flare)
+// ---------------------------------------------------------------------------
+
+namespace {
+
+// A bolt with everything at its default except the geometry, so the strike
+// parameters can be switched on one at a time against a known baseline.
+Effect bolt_effect() {
+    Effect e;
+    e.seed = 1234;
+    e.duration = 2.0;
+    Node beam = node_of(NodeType::Beam, "bolt");
+    beam.parameters["origin"] = Parameter{Vec3{0.3f, 6.0f, -0.2f}};
+    beam.parameters["target"] = Parameter{Vec3{0, 0, 0}};
+    beam.parameters["segments"] = Parameter{24};
+    beam.parameters["width"] = Parameter{0.06f};
+    beam.parameters["noise_amplitude"] = Parameter{0.35f};
+    beam.parameters["noise_frequency"] = Parameter{3.0f};
+    beam.parameters["jitter_rate"] = Parameter{40.0f};
+    e.add_node(beam);
+    return e;
+}
+
+const BeamState& stepped_bolt(std::unique_ptr<sim::IRuntime>& rt, const Effect& e, double time = -1.0) {
+    rt = runtime_for(e);
+    if (time < 0.0) rt->step();
+    else rt->simulate_to(time);
+    const BeamState* b = beam_of(rt->state(), "bolt");
+    REQUIRE(b != nullptr);
+    return *b;
+}
+
+}  // namespace
+
+TEST_CASE("a beam with default parameters produces the V1 vertices and width", "[sim][analytic]") {
+    // The guarantee behind every new beam parameter: switching none of them on
+    // leaves the geometry exactly where it was. The reference below is the V1
+    // displacement formula written out by hand.
+    Effect e = bolt_effect();
+    e.find_node("bolt")->parameters["branching"] = Parameter{5};
+    e.find_node("bolt")->parameters["branch_probability"] = Parameter{0.7f};
+    std::unique_ptr<sim::IRuntime> rt;
+    const BeamState& bolt = stepped_bolt(rt, e);
+
+    const uint64_t stream = derive_seed(e.seed, "bolt", std::optional<uint32_t>{});
+    const uint32_t seed = static_cast<uint32_t>(stream ^ (stream >> 32));
+    const procedural::FbmParams fbm{3, 2.0f, 0.5f, procedural::NoiseBasis::Simplex};
+    const Vec3 origin{0.3f, 6.0f, -0.2f}, target{0, 0, 0};
+    const Vec3 span = target - origin;
+    const float span_length = length(span);
+    const Vec3 forward = span / span_length;
+    const Vec3 u = orthogonal(forward);
+    const Vec3 v = cross(forward, u);
+    const float key = 0.0f;  // t = 1/60, jitter_rate 40 -> floor(0.666) = 0
+
+    const BeamPath& main = bolt.paths.front();
+    REQUIRE(main.points.size() == 25u);
+    for (int i = 0; i <= 24; ++i) {
+        const float f = static_cast<float>(i) / 24.0f;
+        Vec3 expected = origin + span * f;
+        if (i > 0 && i < 24) {
+            const float along = f * span_length * 3.0f;
+            expected += u * (0.35f * procedural::fbm3(Vec3{along, 0.0f, key}, seed, fbm)) +
+                        v * (0.35f * procedural::fbm3(Vec3{along, 17.0f, key}, seed, fbm));
+        }
+        INFO("vertex " << i);
+        CHECK(distance(main.points[static_cast<size_t>(i)], expected) == 0.0f);  // bit for bit
+        CHECK(main.width[static_cast<size_t>(i)] == 0.06f);  // width_profile uniform, no variance
+        CHECK(main.intensity[static_cast<size_t>(i)] == 1.0f);
+    }
+    // Branches keep the 0.6x the reference renderer used to apply itself, and
+    // stay uniform: `width_profile: uniform` means uniform everywhere.
+    REQUIRE(bolt.paths.size() > 1u);
+    for (size_t p = 1; p < bolt.paths.size(); ++p) {
+        CHECK(bolt.paths[p].depth == 1);
+        CHECK(bolt.paths[p].fade == 1.0f);
+        for (float w : bolt.paths[p].width) CHECK(w == Approx(0.06f * 0.6f));
+    }
+    CHECK(bolt.ghosts.empty());   // afterglow 0
+    CHECK(bolt.flares.empty());   // impact_flare 0
+    CHECK(bolt.core_width == Approx(0.55f));
+    CHECK(bolt.glow_width == Approx(2.6f));
+}
+
+TEST_CASE("beam detail subdivides the path deterministically", "[sim][analytic]") {
+    Effect e = bolt_effect();
+    std::unique_ptr<sim::IRuntime> rt;
+    const std::vector<Vec3> plain = stepped_bolt(rt, e).paths.front().points;
+
+    for (int detail = 1; detail <= 4; ++detail) {
+        e.find_node("bolt")->parameters["detail"] = Parameter{detail};
+        std::unique_ptr<sim::IRuntime> a, b;
+        const BeamPath& first = stepped_bolt(a, e).paths.front();
+        const BeamPath& again = stepped_bolt(b, e).paths.front();
+        INFO("detail " << detail);
+        CHECK(first.points.size() == static_cast<size_t>(24 * (1 << detail) + 1));
+        CHECK(first.points == again.points);  // two fresh runtimes agree bit for bit
+        // the endpoints and the coarse vertices survive; only midpoints move
+        CHECK(distance(first.points.front(), plain.front()) == 0.0f);
+        CHECK(distance(first.points.back(), plain.back()) == 0.0f);
+        const size_t stride = static_cast<size_t>(1 << detail);
+        for (size_t i = 0; i < plain.size(); ++i)
+            CHECK(distance(first.points[i * stride], plain[i]) == 0.0f);
+        bool jagged = false;
+        for (size_t i = 1; i + 1 < first.points.size(); i += 2) {
+            const Vec3 chord = (first.points[i - 1] + first.points[i + 1]) * 0.5f;
+            if (distance(first.points[i], chord) > 1e-6f) jagged = true;
+        }
+        CHECK(jagged);
+    }
+}
+
+TEST_CASE("beam width profiles shape the bolt and taper its branches", "[sim][analytic]") {
+    Effect e = bolt_effect();
+    Node* node = e.find_node("bolt");
+    node->parameters["branching"] = Parameter{4};
+    node->parameters["branch_probability"] = Parameter{1.0f};
+
+    const auto widths = [&](const char* profile) {
+        node->parameters["width_profile"] = Parameter{std::string(profile)};
+        std::unique_ptr<sim::IRuntime> rt;
+        const BeamState& bolt = stepped_bolt(rt, e);
+        std::vector<std::vector<float>> out;
+        for (const BeamPath& p : bolt.paths) out.push_back(p.width);
+        return out;
+    };
+
+    const std::vector<float> taper_end = widths("taper_end").front();
+    CHECK(taper_end.front() == Approx(0.06f));
+    CHECK(taper_end.back() < taper_end.front() * 0.35f);
+    for (size_t i = 1; i < taper_end.size(); ++i) CHECK(taper_end[i] <= taper_end[i - 1] + 1e-6f);
+
+    const std::vector<float> taper_both = widths("taper_both").front();
+    const size_t middle = taper_both.size() / 2;
+    CHECK(taper_both[middle] > taper_both.front() * 2.0f);
+    CHECK(taper_both[middle] > taper_both.back() * 2.0f);
+
+    const std::vector<float> bulge = widths("bulge").front();
+    const size_t widest = static_cast<size_t>(
+        std::max_element(bulge.begin(), bulge.end()) - bulge.begin());
+    CHECK(widest < bulge.size() / 3);                // the shoulder sits near the origin
+    CHECK(bulge.back() < bulge[widest] * 0.35f);     // and the tail is thin
+
+    // With any profile but `uniform`, branches die out at their tips.
+    const std::vector<std::vector<float>> tapered = widths("taper_end");
+    REQUIRE(tapered.size() > 1u);
+    for (size_t p = 1; p < tapered.size(); ++p) {
+        CHECK(tapered[p].front() > 0.0f);
+        CHECK(tapered[p].back() == Approx(0.0f).margin(1e-7));
+    }
+}
+
+TEST_CASE("beam branches recurse to branch_depth with a thinner, dimmer generation", "[sim][analytic]") {
+    Effect e = bolt_effect();
+    Node* node = e.find_node("bolt");
+    node->parameters["branching"] = Parameter{4};
+    node->parameters["branch_probability"] = Parameter{1.0f};
+    node->parameters["branch_depth"] = Parameter{2};
+    node->parameters["branch_width"] = Parameter{0.5f};
+    node->parameters["branch_intensity"] = Parameter{0.6f};
+
+    std::unique_ptr<sim::IRuntime> rt;
+    const BeamState& bolt = stepped_bolt(rt, e);
+    int counts[3] = {0, 0, 0};
+    for (const BeamPath& p : bolt.paths) {
+        REQUIRE(p.depth >= 0);
+        REQUIRE(p.depth <= 2);
+        ++counts[p.depth];
+        const float expected_width = 0.06f * std::pow(0.5f, static_cast<float>(p.depth));
+        CHECK(p.width.front() == Approx(expected_width));
+        CHECK(p.fade == Approx(std::pow(0.6f, static_cast<float>(p.depth))));
+    }
+    CHECK(counts[0] == 1);
+    CHECK(counts[1] == 4);          // probability 1 -> every candidate spawns
+    CHECK(counts[2] == 4 * 2);      // half as many candidates per depth-1 parent
+}
+
+TEST_CASE("beam flicker and intensity noise stay pure functions of time", "[sim][analytic]") {
+    Effect e = bolt_effect();
+    Node* node = e.find_node("bolt");
+    node->parameters["flicker"] = Parameter{0.6f};
+    node->parameters["flicker_frequency"] = Parameter{25.0f};
+    node->parameters["intensity_noise"] = Parameter{0.5f};
+    node->parameters["emissive"] = Parameter{10.0f};
+
+    std::unique_ptr<sim::IRuntime> a, b;
+    const BeamState& first = stepped_bolt(a, e, 0.37);
+    const BeamState& again = stepped_bolt(b, e, 0.37);
+    CHECK(first.emissive == again.emissive);
+    CHECK(first.paths.front().intensity == again.paths.front().intensity);
+    CHECK(first.emissive >= 10.0f * 0.4f - 1e-4f);
+    CHECK(first.emissive <= 10.0f * 1.6f + 1e-4f);
+
+    bool varies = false;
+    const std::vector<float>& intensity = first.paths.front().intensity;
+    for (size_t i = 1; i < intensity.size(); ++i) {
+        CHECK(intensity[i] >= 0.5f - 1e-5f);
+        CHECK(intensity[i] <= 1.5f + 1e-5f);
+        if (std::fabs(intensity[i] - intensity[i - 1]) > 1e-4f) varies = true;
+    }
+    CHECK(varies);
+
+    // the whole-bolt flicker really does move between frames
+    std::unique_ptr<sim::IRuntime> c;
+    CHECK(stepped_bolt(c, e, 0.53).emissive != first.emissive);
+}
+
+TEST_CASE("beam afterglow keeps the previous path as a fading ghost", "[sim][analytic]") {
+    Effect e = bolt_effect();
+    Node* node = e.find_node("bolt");
+    node->parameters["jitter_rate"] = Parameter{10.0f};  // one re-roll per 0.1 s
+    node->parameters["afterglow"] = Parameter{0.05f};
+
+    std::unique_ptr<sim::IRuntime> rt = runtime_for(e);
+    rt->step();  // t = 1/60, re-roll 0: nothing to fade yet
+    CHECK(beam_of(rt->state(), "bolt")->ghosts.empty());
+
+    rt->simulate_to(0.11);  // re-roll 1, 0.01 s old -> a nearly full-strength ghost
+    const BeamState* fresh = beam_of(rt->state(), "bolt");
+    REQUIRE(!fresh->ghosts.empty());
+    CHECK(fresh->ghosts.size() == fresh->paths.size());
+    CHECK(fresh->ghosts.front().fade > 0.5f);
+    CHECK(fresh->ghosts.front().fade < 1.0f);
+    CHECK(fresh->ghosts.front().points.size() == fresh->paths.front().points.size());
+    CHECK(fresh->ghosts.front().points != fresh->paths.front().points);  // the *previous* bolt
+    const float early = fresh->ghosts.front().fade;
+
+    rt->simulate_to(0.14);  // same re-roll, older ghost
+    CHECK(beam_of(rt->state(), "bolt")->ghosts.front().fade < early);
+
+    rt->simulate_to(0.18);  // past `afterglow`, before the next re-roll
+    CHECK(beam_of(rt->state(), "bolt")->ghosts.empty());
+}
+
+TEST_CASE("beam impact_flare marks both ends of the bolt", "[sim][analytic]") {
+    Effect e = bolt_effect();
+    std::unique_ptr<sim::IRuntime> none;
+    CHECK(stepped_bolt(none, e).flares.empty());
+
+    e.find_node("bolt")->parameters["impact_flare"] = Parameter{0.8f};
+    std::unique_ptr<sim::IRuntime> rt;
+    const BeamState& bolt = stepped_bolt(rt, e);
+    REQUIRE(bolt.flares.size() == 2u);
+    CHECK(distance(bolt.flares[0].position, bolt.paths.front().points.back()) == 0.0f);
+    CHECK(bolt.flares[0].radius == Approx(0.8f));
+    CHECK(bolt.flares[0].intensity == Approx(1.0f));
+    CHECK(distance(bolt.flares[1].position, bolt.paths.front().points.front()) == 0.0f);
+    CHECK(bolt.flares[1].radius < bolt.flares[0].radius);  // the sky end is smaller
 }
 
 // ---------------------------------------------------------------------------

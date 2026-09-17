@@ -316,17 +316,57 @@ segments: int = 16 [1..256]
 noise_amplitude: float = 0 [0..]        displacement of interior points (m)
 noise_frequency: float = 4 [0..]
 jitter_rate: float = 30 [0..]           re-randomizations per second (0 = static)
+detail: int = 0 [0..5]                  octaves of midpoint displacement on top
+width_profile: enum = uniform [uniform, taper_end, taper_both, bulge]
+width_variance: float = 0 [0..1]        per-vertex seeded width jitter
 branching: int = 0 [0..16]              branch count
 branch_probability: float = 0.5 [0..1]
 branch_length: float = 0.3 [0..1]       fraction of main beam length
+branch_width: float = 0.6 [0..1]        branch width / parent width
+branch_depth: int = 1 [1..3]            generations (2 = branches fork again)
+branch_intensity: float = 1 [0..1]      branch brightness / parent brightness
+intensity_noise: float = 0 [0..1]       per-vertex brightness along the bolt
+flicker: float = 0 [0..1]               whole-bolt brightness flicker
+flicker_frequency: float = 30 [0..]     flicker cells per second
+afterglow: float = 0 [0..]              seconds a re-rolled path lingers as a ghost
+impact_flare: float = 0 [0..]           flare radius at the target end (m); 0 = none
 pulse_speed: float = 0                  pulse travel speed (beam lengths/s)
 pulse_frequency: float = 0
 color: color = 1,1,1,1 (A)
 emissive: float = 4 [0..] (A)
+core_width: float = 0.55 [0..]          white-hot core / width
+glow_width: float = 2.6 [0..]           outer glow / width
 blend: enum = additive [additive, alpha, premultiplied]
 ```
 inputs: `origin_node: mesh|emitter|light|curve`, `target_node: mesh|emitter|light|curve`, `material: material`.
 outputs: `beam`.
+
+Every parameter above `pulse_speed` that is not in V1 defaults to "off": a beam
+with default values produces bit-for-bit the same vertices and widths it always
+did. Turn them on to get a lightning *strike* instead of a neon tube:
+
+* `detail` is what breaks the straight-segment look. Each octave inserts a
+  displaced midpoint between every pair of vertices and halves the displacement,
+  so the vertex count is `segments * 2^detail + 1`. 3-4 for a main bolt, 2 for
+  small arcs. It re-rolls with `jitter_rate` like the rest of the path.
+* `width_profile` shapes the channel. `bulge` is a hot shoulder just below the
+  sky with a thin tail — the shape a real strike has. Any profile but `uniform`
+  also tapers branches to nothing at their tips.
+* `branch_depth: 2` makes branches fork again (half as many candidates per
+  parent, `branch_length` shortened to 55%), which is what turns two straight
+  forks into a tree.
+* `flicker` and `afterglow` are the temporal half. `flicker` is a hash of time
+  (not of step count), so it is the same on every machine; `afterglow` keeps the
+  path from the previous re-roll around for that many seconds at a falling
+  `fade`, so a re-roll reads as a strobe rather than a jump. 0.06-0.1 s.
+* `impact_flare` puts a bright additive blob at the target end and a smaller one
+  at the origin, which is what sells the ground contact.
+* `core_width` and `glow_width` are the cross-section, as fractions of `width`.
+  The renderers draw a ribbon `max(glow_width, 3 * core_width) * width` wide and
+  shade three additive layers inside it: a white-hot core, a coloured inner glow
+  at three times the core radius, and the faint outer glow. Small `core_width`
+  (0.1-0.2) with a large `glow_width` (3-4) is a crisp white line inside a broad
+  coloured haze; the defaults reproduce the V1 ratios.
 
 ### light  (Tier 0)
 transform, window, plus:

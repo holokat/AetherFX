@@ -910,6 +910,31 @@ void CpuRuntime::emit_light(const CompiledNode& cn, const Node& n, double t1) {
     state_.lights.push_back(std::move(l));
 }
 
+// beam.width_profile (docs/VOCABULARY.md). `uniform` is the V1 behaviour and the
+// default; everything else also tapers branches to nothing at their tips.
+enum class BeamWidthProfile { Uniform, TaperEnd, TaperBoth, Bulge };
+
+BeamWidthProfile parse_width_profile(const std::string& s) {
+    if (s == "taper_end") return BeamWidthProfile::TaperEnd;
+    if (s == "taper_both") return BeamWidthProfile::TaperBoth;
+    if (s == "bulge") return BeamWidthProfile::Bulge;
+    return BeamWidthProfile::Uniform;
+}
+
+// Width multiplier at `s` in [0, 1] along the bolt (0 = origin, 1 = target).
+float beam_width_profile(BeamWidthProfile profile, float s) {
+    switch (profile) {
+        case BeamWidthProfile::TaperEnd: return 1.0f - 0.8f * s * std::sqrt(s);
+        case BeamWidthProfile::TaperBoth: return 0.25f + 0.75f * std::sin(kPi * s);
+        case BeamWidthProfile::Bulge: {
+            const float d = (s - 0.18f) / 0.22f;
+            return 0.22f + 0.78f * std::exp(-d * d);
+        }
+        case BeamWidthProfile::Uniform: break;
+    }
+    return 1.0f;
+}
+
 void CpuRuntime::emit_beam(const CompiledNode& cn, const Node& n, double t1) {
     Vec3 origin = param_vec3(n, "origin", t1);
     Vec3 target = param_vec3(n, "target", t1);
@@ -922,12 +947,24 @@ void CpuRuntime::emit_beam(const CompiledNode& cn, const Node& n, double t1) {
     const float amplitude = param_float(n, "noise_amplitude");
     const float frequency = param_float(n, "noise_frequency");
     const float jitter_rate = param_float(n, "jitter_rate");
-    const double jitter_key = jitter_rate > 0.0f ? std::floor(t1 * static_cast<double>(jitter_rate)) : 0.0;
+    const int detail = clamp(param_int(n, "detail"), 0, 5);
+    const BeamWidthProfile profile = parse_width_profile(param_string(n, "width_profile"));
+    const float width_variance = clamp(param_float(n, "width_variance"), 0.0f, 1.0f);
+    const float intensity_noise = clamp(param_float(n, "intensity_noise"), 0.0f, 1.0f);
+    const float branch_width = clamp(param_float(n, "branch_width"), 0.0f, 1.0f);
+    const int branch_depth = clamp(param_int(n, "branch_depth"), 1, 3);
+    const float branch_intensity = clamp(param_float(n, "branch_intensity"), 0.0f, 1.0f);
     const uint32_t seed = seed32_of(cn.seed);
     const procedural::FbmParams fbm{3, 2.0f, 0.5f, procedural::NoiseBasis::Simplex};
-    const float key = static_cast<float>(jitter_key);
 
-    const auto polyline = [&](Vec3 a, Vec3 b, int segs, float amp) {
+    // The bolt is a pure function of its re-roll index, so it is the same on every
+    // machine and at any thread count, and the previous index can be rebuilt from
+    // nothing to draw the afterglow ghost (docs/RUNTIME.md section 2).
+    const double reroll = jitter_rate > 0.0f ? std::floor(t1 * static_cast<double>(jitter_rate)) : 0.0;
+
+    // One polyline, `detail` octaves of midpoint displacement on top. The base
+    // polyline is untouched, so `detail: 0` reproduces the V1 vertices exactly.
+    const auto polyline = [&](Vec3 a, Vec3 b, int segs, float amp, double key, uint64_t path_seed) {
         std::vector<Vec3> points;
         points.reserve(static_cast<size_t>(segs) + 1);
         const Vec3 span = b - a;
@@ -935,18 +972,71 @@ void CpuRuntime::emit_beam(const CompiledNode& cn, const Node& n, double t1) {
         const Vec3 forward = span_length > kEpsilon ? span / span_length : Vec3{0, 1, 0};
         const Vec3 u = orthogonal(forward);
         const Vec3 v = cross(forward, u);
+        const float key_f = static_cast<float>(key);
         for (int i = 0; i <= segs; ++i) {
             const float f = static_cast<float>(i) / static_cast<float>(segs);
             Vec3 p = a + span * f;
             if (i > 0 && i < segs && amp > 0.0f) {
                 const float along = f * span_length * frequency;
-                const float n1 = procedural::fbm3(Vec3{along, 0.0f, key}, seed, fbm);
-                const float n2 = procedural::fbm3(Vec3{along, 17.0f, key}, seed, fbm);
+                const float n1 = procedural::fbm3(Vec3{along, 0.0f, key_f}, seed, fbm);
+                const float n2 = procedural::fbm3(Vec3{along, 17.0f, key_f}, seed, fbm);
                 p += u * (amp * n1) + v * (amp * n2);
             }
             points.push_back(p);
         }
+        // Midpoint displacement: insert a point between every pair and push it off
+        // the chord. Each octave halves the amplitude, so the path gains fine
+        // jaggedness without wandering away from the straight line.
+        for (int octave = 0; octave < detail; ++octave) {
+            const float octave_amp = amp * std::pow(0.5f, static_cast<float>(octave) + 1.0f);
+            const uint64_t octave_seed = derive_seed(path_seed, static_cast<uint64_t>(octave) + 0x51EDu);
+            std::vector<Vec3> refined;
+            refined.reserve(points.size() * 2 - 1);
+            for (size_t i = 0; i + 1 < points.size(); ++i) {
+                refined.push_back(points[i]);
+                const Vec3 chord = points[i + 1] - points[i];
+                const float chord_length = length(chord);
+                Vec3 mid = points[i] + chord * 0.5f;
+                if (octave_amp > 0.0f && chord_length > kEpsilon) {
+                    const Vec3 tangent = chord / chord_length;
+                    const Vec3 mu = orthogonal(tangent);
+                    const Vec3 mv = cross(tangent, mu);
+                    Pcg32 rng(derive_seed(octave_seed, static_cast<uint64_t>(i)));
+                    mid += mu * (octave_amp * rng.signed_unit()) + mv * (octave_amp * rng.signed_unit());
+                }
+                refined.push_back(mid);
+            }
+            refined.push_back(points.back());
+            points.swap(refined);
+        }
         return points;
+    };
+
+    // Per-vertex width (metres) and intensity for one path. `scale` folds in the
+    // branch ratio; `tip_taper` is what makes a branch die out at its end.
+    const auto shade_path = [&](BeamPath& path, float base_width, float scale, bool tip_taper,
+                                uint64_t path_seed) {
+        const size_t count = path.points.size();
+        path.width.resize(count);
+        path.intensity.resize(count);
+        const uint64_t width_seed = derive_seed(path_seed, 0x7717u);
+        const uint64_t intensity_seed = derive_seed(path_seed, 0x9931u);
+        for (size_t i = 0; i < count; ++i) {
+            const float s = count > 1 ? static_cast<float>(i) / static_cast<float>(count - 1) : 0.0f;
+            float w = base_width * scale * beam_width_profile(profile, s);
+            if (tip_taper) w *= 1.0f - s * s;
+            if (width_variance > 0.0f) {
+                Pcg32 rng(derive_seed(width_seed, static_cast<uint64_t>(i)));
+                w *= std::max(0.05f, 1.0f + width_variance * rng.signed_unit());
+            }
+            path.width[i] = std::max(0.0f, w);
+            float intensity = 1.0f;
+            if (intensity_noise > 0.0f) {
+                Pcg32 rng(derive_seed(intensity_seed, static_cast<uint64_t>(i)));
+                intensity = clamp(1.0f + intensity_noise * rng.signed_unit(), 0.1f, 2.0f);
+            }
+            path.intensity[i] = intensity;
+        }
     };
 
     BeamState bs;
@@ -954,6 +1044,8 @@ void CpuRuntime::emit_beam(const CompiledNode& cn, const Node& n, double t1) {
     bs.width = param_float(n, "width", t1);
     bs.color = param_color(n, "color", t1);
     bs.emissive = param_float(n, "emissive", t1);
+    bs.core_width = std::max(0.0f, param_float(n, "core_width"));
+    bs.glow_width = std::max(0.0f, param_float(n, "glow_width"));
     parse_blend_mode(param_string(n, "blend"), bs.blend);
     bs.material_id = cn.material_id;
     const float pulse_speed = param_float(n, "pulse_speed");
@@ -961,28 +1053,94 @@ void CpuRuntime::emit_beam(const CompiledNode& cn, const Node& n, double t1) {
     const float pulse_frequency = param_float(n, "pulse_frequency");
     if (pulse_frequency > 0.0f)
         bs.emissive *= 0.75f + 0.25f * std::sin(kTwoPi * pulse_frequency * static_cast<float>(t1));
+    const float flicker = clamp(param_float(n, "flicker"), 0.0f, 1.0f);
+    if (flicker > 0.0f)
+        bs.emissive *= std::max(0.0f, 1.0f + flicker * time_flicker(seed ^ 0x5EEDu, t1,
+                                                                    param_float(n, "flicker_frequency")));
 
-    const std::vector<Vec3> main = polyline(origin, target, segments, amplitude);
-    bs.polylines.push_back(main);
-    const int branching = param_int(n, "branching");
-    if (branching > 0 && segments > 1) {
+    // Every path of one re-roll, main bolt first, then each generation of branches.
+    // Everything is seeded from the re-roll index, so a path is a pure function of
+    // it and the previous one can be rebuilt from nothing for the afterglow.
+    const auto build = [&](double key, std::vector<BeamPath>& out) {
+        const uint64_t key_seed =
+            derive_seed(cn.seed, static_cast<uint64_t>(static_cast<int64_t>(key)) + 0x9E37ULL);
+        const uint64_t main_seed = derive_seed(key_seed, 0x4D41u);
+        BeamPath main_path;
+        main_path.points = polyline(origin, target, segments, amplitude, key, main_seed);
+        main_path.depth = 0;
+        shade_path(main_path, bs.width, 1.0f, false, main_seed);
+        out.push_back(std::move(main_path));
+
+        const int branching = param_int(n, "branching");
+        if (branching <= 0 || segments <= 1) return;
         const float branch_probability = param_float(n, "branch_probability");
         const float branch_length = param_float(n, "branch_length");
         const Vec3 span = target - origin;
         const float span_length = length(span);
-        const Vec3 forward = span_length > kEpsilon ? span / span_length : Vec3{0, 1, 0};
-        Pcg32 rng(derive_seed(cn.seed, static_cast<uint64_t>(static_cast<int64_t>(jitter_key)) + 1ULL));
-        for (int i = 0; i < branching; ++i) {
-            const int index = rng.range_int(1, segments - 1);
-            const bool spawn = rng.chance(branch_probability);
-            const Vec3 axis = rng.unit_vector();
-            const float angle = deg_to_rad(rng.range(25.0f, 60.0f));
-            if (!spawn) continue;
-            const Vec3 start = main[static_cast<size_t>(index)];
-            const Vec3 direction = rotate_around(forward, axis, angle);
-            bs.polylines.push_back(polyline(start, start + direction * (branch_length * span_length), 4, amplitude * 0.6f));
+        // The draw order below is the V1 one (index, spawn, axis, angle per candidate),
+        // so a beam with default parameters produces exactly the V1 branches.
+        Pcg32 rng(derive_seed(cn.seed, static_cast<uint64_t>(static_cast<int64_t>(key)) + 1ULL));
+        size_t generation_begin = 0;
+        size_t generation_end = out.size();
+        for (int depth = 1; depth <= branch_depth; ++depth) {
+            const float depth_scale = std::pow(branch_width, static_cast<float>(depth));
+            const float depth_intensity = std::pow(branch_intensity, static_cast<float>(depth));
+            const float depth_length = branch_length * std::pow(0.55f, static_cast<float>(depth - 1));
+            const size_t next_begin = out.size();
+            for (size_t parent = generation_begin; parent < generation_end; ++parent) {
+                const std::vector<Vec3> points = out[parent].points;  // `out` grows below
+                if (points.size() < 3) continue;
+                const Vec3 parent_span = points.back() - points.front();
+                const float parent_length = length(parent_span);
+                const Vec3 forward = parent_length > kEpsilon ? parent_span / parent_length : Vec3{0, 1, 0};
+                const int candidates = depth == 1 ? branching : std::max(1, branching / 2);
+                const int last = static_cast<int>(points.size()) - 2;
+                for (int i = 0; i < candidates; ++i) {
+                    const int index = rng.range_int(1, depth == 1 ? segments - 1 : last);
+                    const bool spawn = rng.chance(branch_probability);
+                    const Vec3 axis = rng.unit_vector();
+                    const float angle = deg_to_rad(rng.range(25.0f, 60.0f));
+                    if (!spawn) continue;
+                    const Vec3 start = points[static_cast<size_t>(std::min(index, last + 1))];
+                    const Vec3 direction = rotate_around(forward, axis, angle);
+                    const uint64_t path_seed =
+                        derive_seed(derive_seed(key_seed, static_cast<uint64_t>(depth) * 977ULL + 0x4252u),
+                                    static_cast<uint64_t>(out.size()));
+                    BeamPath branch;
+                    branch.points = polyline(start, start + direction * (depth_length * span_length), 4,
+                                             amplitude * 0.6f, key, path_seed);
+                    branch.depth = depth;
+                    branch.fade = depth_intensity;
+                    shade_path(branch, bs.width, depth_scale, profile != BeamWidthProfile::Uniform, path_seed);
+                    out.push_back(std::move(branch));
+                }
+            }
+            generation_begin = next_begin;
+            generation_end = out.size();
+            if (generation_begin == generation_end) break;
+        }
+    };
+
+    build(reroll, bs.paths);
+
+    // Afterglow: rebuild the previous re-roll and fade it out over `afterglow`
+    // seconds so a re-roll reads as a strobe rather than a jump.
+    const float afterglow = param_float(n, "afterglow");
+    if (afterglow > 0.0f && jitter_rate > 0.0f && reroll >= 1.0) {
+        const double age = t1 - reroll / static_cast<double>(jitter_rate);
+        const float fade = 1.0f - static_cast<float>(age) / afterglow;
+        if (fade > 0.0f) {
+            build(reroll - 1.0, bs.ghosts);
+            for (BeamPath& g : bs.ghosts) g.fade *= fade;
         }
     }
+
+    const float impact_flare = param_float(n, "impact_flare");
+    if (impact_flare > 0.0f && !bs.paths.empty() && !bs.paths.front().points.empty()) {
+        bs.flares.push_back(BeamFlare{bs.paths.front().points.back(), impact_flare, 1.0f});
+        bs.flares.push_back(BeamFlare{bs.paths.front().points.front(), impact_flare * 0.45f, 0.5f});
+    }
+
     state_.beams.push_back(std::move(bs));
 }
 
