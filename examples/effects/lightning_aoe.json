@@ -21241,7 +21241,6 @@
     }
   ],
   "metadata": {
-    "reference": "Lightning Area of Effect concept sheet: 1 cast 0-0.3 (runes form, energy gathers), 2 build 0.3-0.6 (lightning descends), 3 impact 0.6-1.0 (main bolt hits, debris lifts), 4 sustain 1.0-2.0 (arcs spread, continuous damage), 5 fade 2.0-3.0 (energy disperses, debris falls)",
     "analysis": "The ground web of branching arcs is the hero read: two animated vein decals carry the density, 26 blinking beam nodes put live 3D arcs on top of them. Rocks hang on a keyframed buoyancy force that releases at 2.0 s. A procedural disc volume was tried for the ground haze and dropped: it cost about 10 fps in the GPU viewer for a read the lit smoke sprites already give.",
     "render_settings": {
       "ground_albedo": 0.11,
@@ -21268,6 +21267,12 @@
         0.0
       ],
       "fov": 40
-    }
+    },
+    "tags": [
+      "lightning",
+      "aoe",
+      "area",
+      "storm"
+    ]
   }
 }

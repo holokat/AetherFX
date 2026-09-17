@@ -1,0 +1,2318 @@
+{
+  "controls": [
+    {
+      "bindings": [
+        {
+          "node": "m_core",
+          "op": "multiply",
+          "parameter": "emissive"
+        },
+        {
+          "node": "ps_aura",
+          "op": "multiply",
+          "parameter": "emissive"
+        },
+        {
+          "node": "t_energy",
+          "op": "multiply",
+          "parameter": "emissive"
+        },
+        {
+          "node": "l_core",
+          "op": "multiply",
+          "parameter": "intensity"
+        }
+      ],
+      "default": 1.0,
+      "group": "Projectile",
+      "id": "missile_glow",
+      "label": "Missile glow",
+      "max": 3.0,
+      "min": 0.0,
+      "step": 0.01,
+      "unit": "x",
+      "value": 1.0
+    },
+    {
+      "bindings": [
+        {
+          "node": "e_spiral",
+          "op": "multiply",
+          "parameter": "rate"
+        },
+        {
+          "node": "e_spray",
+          "op": "multiply",
+          "parameter": "rate"
+        },
+        {
+          "node": "e_aura",
+          "op": "multiply",
+          "parameter": "rate"
+        }
+      ],
+      "default": 1.0,
+      "group": "Sparks",
+      "id": "spark_amount",
+      "label": "Spark amount",
+      "max": 3.0,
+      "min": 0.0,
+      "step": 0.01,
+      "unit": "x",
+      "value": 1.0
+    },
+    {
+      "bindings": [
+        {
+          "node": "t_energy",
+          "op": "multiply",
+          "parameter": "width"
+        },
+        {
+          "node": "ps_smoke",
+          "op": "multiply",
+          "parameter": "size"
+        }
+      ],
+      "default": 1.0,
+      "group": "Wake",
+      "id": "trail_width",
+      "label": "Trail width",
+      "max": 3.0,
+      "min": 0.0,
+      "step": 0.01,
+      "unit": "x",
+      "value": 1.0
+    },
+    {
+      "bindings": [
+        {
+          "node": "e_flash",
+          "op": "multiply",
+          "parameter": "burst_count"
+        },
+        {
+          "node": "e_burst",
+          "op": "multiply",
+          "parameter": "burst_count"
+        },
+        {
+          "node": "e_burst_long",
+          "op": "multiply",
+          "parameter": "burst_count"
+        },
+        {
+          "node": "e_frag",
+          "op": "multiply",
+          "parameter": "burst_count"
+        },
+        {
+          "node": "e_shock",
+          "op": "multiply",
+          "parameter": "burst_count"
+        },
+        {
+          "node": "l_impact",
+          "op": "multiply",
+          "parameter": "intensity"
+        }
+      ],
+      "default": 1.0,
+      "group": "Impact",
+      "id": "impact_power",
+      "label": "Impact power",
+      "max": 3.0,
+      "min": 0.0,
+      "step": 0.01,
+      "unit": "x",
+      "value": 1.0
+    },
+    {
+      "bindings": [
+        {
+          "node": "m_core",
+          "op": "hue_shift",
+          "parameter": "color"
+        },
+        {
+          "node": "ps_aura",
+          "op": "hue_shift",
+          "parameter": "color"
+        },
+        {
+          "node": "ps_aura",
+          "op": "hue_shift",
+          "parameter": "color_over_life"
+        },
+        {
+          "node": "ps_sparks",
+          "op": "hue_shift",
+          "parameter": "color"
+        },
+        {
+          "node": "ps_sparks",
+          "op": "hue_shift",
+          "parameter": "color_over_life"
+        },
+        {
+          "node": "t_energy",
+          "op": "hue_shift",
+          "parameter": "color"
+        },
+        {
+          "node": "l_core",
+          "op": "hue_shift",
+          "parameter": "color"
+        },
+        {
+          "node": "ps_flash",
+          "op": "hue_shift",
+          "parameter": "color"
+        },
+        {
+          "node": "ps_burst",
+          "op": "hue_shift",
+          "parameter": "color"
+        },
+        {
+          "node": "ps_burst",
+          "op": "hue_shift",
+          "parameter": "color_over_life"
+        },
+        {
+          "node": "ps_shock",
+          "op": "hue_shift",
+          "parameter": "color"
+        },
+        {
+          "node": "ps_glyph",
+          "op": "hue_shift",
+          "parameter": "color"
+        },
+        {
+          "node": "ps_mote",
+          "op": "hue_shift",
+          "parameter": "color"
+        },
+        {
+          "node": "ps_halo",
+          "op": "hue_shift",
+          "parameter": "color"
+        },
+        {
+          "node": "l_impact",
+          "op": "hue_shift",
+          "parameter": "color"
+        }
+      ],
+      "default": 0.0,
+      "group": "Global",
+      "id": "arcane_hue",
+      "label": "Arcane hue",
+      "max": 180.0,
+      "min": -180.0,
+      "step": 1.0,
+      "unit": "deg",
+      "value": 0.0
+    }
+  ],
+  "description": "A sapphire arcane missile that streaks downrange on a spiralling spark trail and detonates in a violet rune-flash of shards, streaks and shock ring.",
+  "duration": 3.2,
+  "layers": [
+    {
+      "id": "projectile",
+      "name": "Projectile",
+      "role": "primary"
+    },
+    {
+      "id": "sparks",
+      "name": "Arcane Sparks",
+      "role": "secondary"
+    },
+    {
+      "id": "ground_glow",
+      "name": "Ground Glow",
+      "role": "interaction"
+    },
+    {
+      "id": "wake",
+      "name": "Smoke Wake",
+      "role": "aftermath"
+    },
+    {
+      "id": "impact",
+      "name": "Impact",
+      "role": "interaction"
+    }
+  ],
+  "metadata": {
+    "author": {
+      "github": "holokat",
+      "name": "AetherFX Team"
+    },
+    "description": "A sapphire arcane missile that streaks downrange on a spiralling spark trail and detonates in a violet rune-flash of shards, streaks and shock ring.",
+    "license": "MIT",
+    "tags": [
+      "arcane",
+      "projectile",
+      "missile",
+      "impact",
+      "magic"
+    ]
+  },
+  "name": "Arcane Missile",
+  "nodes": [
+    {
+      "id": "tex_puff",
+      "parameters": {
+        "graph": {
+          "nodes": [
+            {
+              "id": "r",
+              "op": "gradient_radial",
+              "params": {
+                "falloff": "smooth",
+                "radius": 0.5
+              }
+            },
+            {
+              "id": "n",
+              "op": "fbm",
+              "params": {
+                "frequency": 4,
+                "octaves": 4,
+                "seed": 3
+              }
+            },
+            {
+              "id": "m",
+              "inputs": {
+                "a": "r",
+                "b": "n"
+              },
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              }
+            },
+            {
+              "id": "l",
+              "inputs": {
+                "a": "m"
+              },
+              "op": "levels",
+              "params": {
+                "in_high": 0.6,
+                "in_low": 0.05
+              }
+            }
+          ],
+          "output": "l"
+        },
+        "height": 128,
+        "width": 128
+      },
+      "type": "texture"
+    },
+    {
+      "id": "tex_spark",
+      "parameters": {
+        "graph": {
+          "nodes": [
+            {
+              "id": "r",
+              "op": "gradient_radial",
+              "params": {
+                "falloff": "quadratic",
+                "radius": 0.5
+              }
+            }
+          ],
+          "output": "r"
+        },
+        "height": 32,
+        "width": 32
+      },
+      "type": "texture"
+    },
+    {
+      "id": "mat_arcane",
+      "parameters": {
+        "blend": "additive",
+        "depth_fade": 0.15,
+        "emissive_color": [
+          0.4,
+          0.68,
+          1.0
+        ],
+        "emissive_intensity": 1.5,
+        "shading": "unlit",
+        "soft_particle": true
+      },
+      "type": "material"
+    },
+    {
+      "id": "tex_ribbon",
+      "parameters": {
+        "graph": {
+          "nodes": [
+            {
+              "id": "up",
+              "op": "gradient_linear",
+              "params": {
+                "angle": 90,
+                "end": 1.0,
+                "start": 0.0
+              }
+            },
+            {
+              "id": "dn",
+              "op": "gradient_linear",
+              "params": {
+                "angle": 270,
+                "end": 1.0,
+                "start": 0.0
+              }
+            },
+            {
+              "id": "tri",
+              "inputs": {
+                "a": "up",
+                "b": "dn"
+              },
+              "op": "math",
+              "params": {
+                "mode": "min"
+              }
+            },
+            {
+              "id": "skirt",
+              "inputs": {
+                "a": "tri"
+              },
+              "op": "levels",
+              "params": {
+                "gamma": 1.6,
+                "in_high": 0.5,
+                "in_low": 0.0,
+                "out_high": 0.55
+              }
+            },
+            {
+              "id": "core",
+              "inputs": {
+                "a": "tri"
+              },
+              "op": "levels",
+              "params": {
+                "gamma": 1.2,
+                "in_high": 0.5,
+                "in_low": 0.2,
+                "out_high": 1.0
+              }
+            },
+            {
+              "id": "mx",
+              "inputs": {
+                "a": "skirt",
+                "b": "core"
+              },
+              "op": "math",
+              "params": {
+                "mode": "max"
+              }
+            },
+            {
+              "id": "out",
+              "inputs": {
+                "a": "mx"
+              },
+              "op": "blur",
+              "params": {
+                "radius": 3.0
+              }
+            }
+          ],
+          "output": "out"
+        },
+        "height": 128,
+        "width": 32
+      },
+      "type": "texture"
+    },
+    {
+      "id": "mat_trail",
+      "inputs": {
+        "base_texture": "tex_ribbon"
+      },
+      "parameters": {
+        "blend": "additive",
+        "depth_fade": 0.1,
+        "emissive_color": [
+          0.4,
+          0.7,
+          1.0
+        ],
+        "emissive_intensity": 2.0,
+        "shading": "unlit",
+        "soft_particle": true
+      },
+      "type": "material"
+    },
+    {
+      "id": "mat_smoke",
+      "parameters": {
+        "base_color": [
+          0.62,
+          0.66,
+          0.78
+        ],
+        "blend": "alpha",
+        "depth_fade": 0.25,
+        "opacity": 0.4,
+        "shading": "lit",
+        "soft_particle": true
+      },
+      "type": "material"
+    },
+    {
+      "id": "f_vortex",
+      "parameters": {
+        "direction": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "falloff": "smooth",
+        "force_type": "vortex",
+        "position": {
+          "track": [
+            {
+              "time": 0.0,
+              "value": [
+                -3.0,
+                1.5,
+                0.0
+              ]
+            },
+            {
+              "time": 1.25,
+              "value": [
+                0.0,
+                1.62,
+                0.0
+              ]
+            },
+            {
+              "time": 2.5,
+              "value": [
+                3.0,
+                1.5,
+                0.0
+              ]
+            }
+          ],
+          "value": [
+            0.0,
+            1.5,
+            0.0
+          ]
+        },
+        "radius": 1.0,
+        "strength": 7.0
+      },
+      "type": "force"
+    },
+    {
+      "id": "f_curl",
+      "parameters": {
+        "force_type": "curl_noise",
+        "frequency": 2.0,
+        "octaves": 2,
+        "speed": 1.0,
+        "strength": 1.8
+      },
+      "type": "force"
+    },
+    {
+      "id": "f_drag",
+      "parameters": {
+        "force_type": "drag",
+        "strength": 1.2
+      },
+      "type": "force"
+    },
+    {
+      "id": "f_buoy",
+      "parameters": {
+        "force_type": "buoyancy",
+        "strength": 0.8
+      },
+      "type": "force"
+    },
+    {
+      "id": "f_turb",
+      "parameters": {
+        "force_type": "turbulence",
+        "frequency": 0.9,
+        "octaves": 2,
+        "strength": 0.7
+      },
+      "type": "force"
+    },
+    {
+      "id": "ground",
+      "parameters": {
+        "bounce": 0.15,
+        "collider_type": "plane",
+        "friction": 0.4,
+        "normal": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "type": "collider"
+    },
+    {
+      "id": "ps_aura",
+      "inputs": {
+        "forces": [
+          "f_curl",
+          "f_drag"
+        ],
+        "material": "mat_arcane",
+        "sprite": "tex_puff"
+      },
+      "parameters": {
+        "blend": "additive",
+        "color": [
+          0.3,
+          0.55,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              0.55,
+              0.8,
+              1.0
+            ]
+          ],
+          [
+            0.35,
+            [
+              0.25,
+              0.5,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.1,
+              0.12,
+              0.55
+            ]
+          ]
+        ],
+        "drag": 2.5,
+        "emissive": 1.6,
+        "lifetime": 0.45,
+        "lifetime_variance": 0.15,
+        "max_particles": 3000,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.15,
+            0.85
+          ],
+          [
+            0.6,
+            0.55
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "render_mode": "billboard",
+        "rotation_variance": 180.0,
+        "size": 0.2,
+        "size_over_life": [
+          [
+            0.0,
+            0.5
+          ],
+          [
+            0.25,
+            1.0
+          ],
+          [
+            1.0,
+            0.25
+          ]
+        ],
+        "size_variance": 0.08
+      },
+      "type": "particle_system"
+    },
+    {
+      "id": "ps_sparks",
+      "inputs": {
+        "colliders": "ground",
+        "forces": [
+          "f_vortex",
+          "f_curl",
+          "f_drag",
+          "f_blast"
+        ],
+        "material": "mat_arcane",
+        "sprite": "tex_spark"
+      },
+      "parameters": {
+        "blend": "additive",
+        "color": [
+          0.55,
+          0.8,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              0.7,
+              0.9,
+              1.0
+            ]
+          ],
+          [
+            0.4,
+            [
+              0.3,
+              0.6,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.15,
+              0.2,
+              0.9
+            ]
+          ]
+        ],
+        "drag": 0.5,
+        "emissive": 4.0,
+        "lifetime": 0.7,
+        "lifetime_variance": 0.25,
+        "max_particles": 6000,
+        "opacity_over_life": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            0.75,
+            1.0
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "render_mode": "stretched_billboard",
+        "size": 0.05,
+        "size_over_life": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            0.7,
+            0.85
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "size_variance": 0.015,
+        "velocity_stretch": 0.25
+      },
+      "type": "particle_system"
+    },
+    {
+      "id": "ps_smoke",
+      "inputs": {
+        "forces": [
+          "f_buoy",
+          "f_turb"
+        ],
+        "material": "mat_smoke",
+        "sprite": "tex_puff"
+      },
+      "parameters": {
+        "angular_velocity_variance": 25.0,
+        "blend": "alpha",
+        "color": [
+          0.68,
+          0.72,
+          0.85
+        ],
+        "drag": 1.0,
+        "emissive": 0.0,
+        "lifetime": 1.5,
+        "lifetime_variance": 0.5,
+        "max_particles": 1500,
+        "opacity": 0.38,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.25,
+            1.0
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "render_mode": "billboard",
+        "rotation_variance": 180.0,
+        "size": 0.28,
+        "size_over_life": [
+          [
+            0.0,
+            0.35
+          ],
+          [
+            1.0,
+            1.7
+          ]
+        ],
+        "size_variance": 0.06,
+        "sort": true
+      },
+      "type": "particle_system"
+    },
+    {
+      "id": "m_core",
+      "inputs": {
+        "material": "mat_arcane"
+      },
+      "layer": "projectile",
+      "parameters": {
+        "color": [
+          0.4,
+          0.66,
+          1.0
+        ],
+        "duration": 2.5,
+        "emissive": 2.2,
+        "position": {
+          "track": [
+            {
+              "time": 0.0,
+              "value": [
+                -3.0,
+                1.5,
+                0.0
+              ]
+            },
+            {
+              "time": 1.25,
+              "value": [
+                0.0,
+                1.62,
+                0.0
+              ]
+            },
+            {
+              "time": 2.5,
+              "value": [
+                3.0,
+                1.5,
+                0.0
+              ]
+            }
+          ],
+          "value": [
+            -3.0,
+            1.5,
+            0.0
+          ]
+        },
+        "primitive": "sphere",
+        "radius": 0.1,
+        "segments": 24,
+        "start_time": 0.0
+      },
+      "type": "mesh"
+    },
+    {
+      "id": "e_aura",
+      "inputs": {
+        "particle": "ps_aura"
+      },
+      "layer": "projectile",
+      "parameters": {
+        "duration": 2.5,
+        "inherit_velocity": 0.35,
+        "radius": 0.07,
+        "rate": 150.0,
+        "shape": "sphere",
+        "velocity": 0.4,
+        "velocity_variance": 0.25
+      },
+      "parent": "m_core",
+      "type": "emitter"
+    },
+    {
+      "id": "e_spiral",
+      "inputs": {
+        "particle": "ps_sparks"
+      },
+      "layer": "sparks",
+      "parameters": {
+        "duration": 2.5,
+        "inherit_velocity": 1.0,
+        "inner_radius": 0.2,
+        "radial_velocity": 0.25,
+        "radius": 0.24,
+        "rate": 420.0,
+        "rotation": [
+          0.0,
+          0.0,
+          90.0
+        ],
+        "shape": "ring",
+        "surface_only": true,
+        "velocity": 0.15
+      },
+      "parent": "m_core",
+      "type": "emitter"
+    },
+    {
+      "id": "e_spray",
+      "inputs": {
+        "particle": "ps_sparks"
+      },
+      "layer": "sparks",
+      "parameters": {
+        "direction": [
+          -1.0,
+          0.25,
+          0.0
+        ],
+        "duration": 2.5,
+        "inherit_velocity": 0.4,
+        "radius": 0.1,
+        "rate": 70.0,
+        "shape": "sphere",
+        "spread": 45.0,
+        "velocity": 1.3,
+        "velocity_variance": 0.9
+      },
+      "parent": "m_core",
+      "type": "emitter"
+    },
+    {
+      "id": "e_smoke",
+      "inputs": {
+        "particle": "ps_smoke"
+      },
+      "layer": "wake",
+      "parameters": {
+        "duration": 2.42,
+        "inherit_velocity": 0.25,
+        "radius": 0.13,
+        "rate": 80.0,
+        "shape": "sphere",
+        "velocity": 0.35,
+        "velocity_variance": 0.2
+      },
+      "parent": "m_core",
+      "type": "emitter"
+    },
+    {
+      "id": "t_energy",
+      "inputs": {
+        "material": "mat_trail",
+        "source": "m_core"
+      },
+      "layer": "projectile",
+      "parameters": {
+        "blend": "additive",
+        "color": [
+          0.4,
+          0.7,
+          1.0
+        ],
+        "duration": 2.54,
+        "emissive": 2.6,
+        "lifetime": 0.45,
+        "max_segments": 96,
+        "min_vertex_distance": 0.02,
+        "noise_amplitude": 0.06,
+        "noise_frequency": 3.0,
+        "opacity_over_life": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            0.6,
+            0.6
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "taper": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "width": {
+          "track": [
+            {
+              "time": 0.0,
+              "value": 0.18
+            },
+            {
+              "time": 2.4,
+              "value": 0.18
+            },
+            {
+              "time": 2.5,
+              "value": 0.03
+            }
+          ],
+          "value": 0.18
+        }
+      },
+      "type": "trail"
+    },
+    {
+      "id": "l_core",
+      "layer": "ground_glow",
+      "parameters": {
+        "color": [
+          0.35,
+          0.6,
+          1.0
+        ],
+        "duration": 2.52,
+        "flicker_amplitude": 0.12,
+        "flicker_frequency": 14.0,
+        "intensity": {
+          "track": [
+            {
+              "time": 0.0,
+              "value": 4.5
+            },
+            {
+              "time": 2.42,
+              "value": 4.5
+            },
+            {
+              "time": 2.5,
+              "value": 0.0
+            }
+          ],
+          "value": 4.5
+        },
+        "light_type": "point",
+        "radius": 4.0
+      },
+      "parent": "m_core",
+      "type": "light"
+    },
+    {
+      "id": "tex_flash",
+      "parameters": {
+        "graph": {
+          "nodes": [
+            {
+              "id": "g",
+              "op": "gradient_radial",
+              "params": {
+                "falloff": "quadratic",
+                "inner_radius": 0.015,
+                "radius": 0.34
+              }
+            },
+            {
+              "id": "s6",
+              "op": "star",
+              "params": {
+                "core_radius": 0.05,
+                "outer_radius": 0.49,
+                "points": 6,
+                "softness": 0.012,
+                "width": 0.035
+              }
+            },
+            {
+              "id": "s4",
+              "op": "star",
+              "params": {
+                "core_radius": 0.04,
+                "outer_radius": 0.5,
+                "points": 6,
+                "rotation": 28.0,
+                "softness": 0.01,
+                "width": 0.018
+              }
+            },
+            {
+              "id": "a",
+              "inputs": {
+                "a": "g",
+                "b": "s6"
+              },
+              "op": "math",
+              "params": {
+                "mode": "max"
+              }
+            },
+            {
+              "id": "b",
+              "inputs": {
+                "a": "a",
+                "b": "s4"
+              },
+              "op": "math",
+              "params": {
+                "mode": "max"
+              }
+            }
+          ],
+          "output": "b"
+        },
+        "height": 256,
+        "width": 256
+      },
+      "type": "texture"
+    },
+    {
+      "id": "tex_glyph",
+      "parameters": {
+        "graph": {
+          "nodes": [
+            {
+              "id": "r_out",
+              "op": "ring",
+              "params": {
+                "radius": 0.46,
+                "softness": 0.01,
+                "thickness": 0.016
+              }
+            },
+            {
+              "id": "r_mid",
+              "op": "ring",
+              "params": {
+                "radius": 0.4,
+                "softness": 0.018,
+                "thickness": 0.034
+              }
+            },
+            {
+              "id": "r_in",
+              "op": "ring",
+              "params": {
+                "radius": 0.21,
+                "softness": 0.008,
+                "thickness": 0.013
+              }
+            },
+            {
+              "id": "sp",
+              "op": "spokes",
+              "params": {
+                "count": 12,
+                "inner_radius": 0.23,
+                "outer_radius": 0.4,
+                "softness": 0.006,
+                "width": 0.012
+              }
+            },
+            {
+              "id": "sp2",
+              "op": "spokes",
+              "params": {
+                "count": 6,
+                "inner_radius": 0.06,
+                "outer_radius": 0.2,
+                "rotation": 15.0,
+                "softness": 0.008,
+                "width": 0.018
+              }
+            },
+            {
+              "id": "st",
+              "op": "star",
+              "params": {
+                "core_radius": 0.035,
+                "outer_radius": 0.19,
+                "points": 6,
+                "softness": 0.01,
+                "width": 0.028
+              }
+            },
+            {
+              "id": "m1",
+              "inputs": {
+                "a": "r_out",
+                "b": "r_mid"
+              },
+              "op": "math",
+              "params": {
+                "mode": "max"
+              }
+            },
+            {
+              "id": "m2",
+              "inputs": {
+                "a": "m1",
+                "b": "r_in"
+              },
+              "op": "math",
+              "params": {
+                "mode": "max"
+              }
+            },
+            {
+              "id": "m3",
+              "inputs": {
+                "a": "m2",
+                "b": "sp"
+              },
+              "op": "math",
+              "params": {
+                "mode": "max"
+              }
+            },
+            {
+              "id": "m4",
+              "inputs": {
+                "a": "m3",
+                "b": "sp2"
+              },
+              "op": "math",
+              "params": {
+                "mode": "max"
+              }
+            },
+            {
+              "id": "m5",
+              "inputs": {
+                "a": "m4",
+                "b": "st"
+              },
+              "op": "math",
+              "params": {
+                "mode": "max"
+              }
+            }
+          ],
+          "output": "m5"
+        },
+        "height": 256,
+        "width": 256
+      },
+      "type": "texture"
+    },
+    {
+      "id": "mat_flash",
+      "parameters": {
+        "blend": "additive",
+        "depth_fade": 0.08,
+        "emissive_color": [
+          0.85,
+          0.72,
+          1.0
+        ],
+        "emissive_intensity": 1.7,
+        "shading": "unlit",
+        "soft_particle": true
+      },
+      "type": "material"
+    },
+    {
+      "id": "mat_crystal",
+      "parameters": {
+        "base_color": [
+          0.45,
+          0.38,
+          0.88,
+          1.0
+        ],
+        "blend": "alpha",
+        "depth_fade": 0.05,
+        "emissive_color": [
+          0.5,
+          0.34,
+          1.0,
+          1.0
+        ],
+        "emissive_intensity": 0.7,
+        "fresnel_power": 3.0,
+        "shading": "lit",
+        "soft_particle": false
+      },
+      "type": "material"
+    },
+    {
+      "id": "mesh_frag",
+      "parameters": {
+        "height": 1.0,
+        "irregularity": 0.62,
+        "primitive": "shard",
+        "radius": 0.5,
+        "segments": 5,
+        "variants": 8,
+        "visible": false
+      },
+      "type": "mesh"
+    },
+    {
+      "id": "f_gravity",
+      "parameters": {
+        "force_type": "gravity",
+        "strength": 9.81
+      },
+      "type": "force"
+    },
+    {
+      "id": "f_blast",
+      "parameters": {
+        "duration": 0.18,
+        "falloff": "smooth",
+        "force_type": "radial",
+        "position": [
+          3.0,
+          1.5,
+          0.0
+        ],
+        "radius": 2.0,
+        "start_time": 2.5,
+        "strength": 13.0
+      },
+      "type": "force"
+    },
+    {
+      "id": "ps_flash",
+      "inputs": {
+        "material": "mat_flash",
+        "sprite": "tex_flash"
+      },
+      "layer": "impact",
+      "parameters": {
+        "angular_velocity": 45.0,
+        "blend": "additive",
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.3,
+              1.1,
+              1.6
+            ]
+          ],
+          [
+            0.35,
+            [
+              0.8,
+              0.42,
+              1.4
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.28,
+              0.1,
+              0.75
+            ]
+          ]
+        ],
+        "drag": 3.0,
+        "emissive": 0.85,
+        "lifetime": 0.15,
+        "lifetime_variance": 0.02,
+        "max_particles": 8,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.08,
+            0.9
+          ],
+          [
+            0.45,
+            0.45
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "render_mode": "billboard",
+        "rotation_variance": 180.0,
+        "size": 0.95,
+        "size_over_life": [
+          [
+            0.0,
+            0.2
+          ],
+          [
+            0.13,
+            1.0
+          ],
+          [
+            1.0,
+            0.6
+          ]
+        ],
+        "size_variance": 0.16
+      },
+      "type": "particle_system"
+    },
+    {
+      "id": "e_flash",
+      "inputs": {
+        "particle": "ps_flash"
+      },
+      "layer": "impact",
+      "parameters": {
+        "burst_count": 1,
+        "burst_times": [
+          0.0
+        ],
+        "duration": 0.12,
+        "position": [
+          3.0,
+          1.5,
+          0.0
+        ],
+        "rate": 0.0,
+        "shape": "point",
+        "start_time": 2.5,
+        "velocity": 0.0
+      },
+      "type": "emitter"
+    },
+    {
+      "id": "ps_glyph",
+      "inputs": {
+        "material": "mat_flash",
+        "sprite": "tex_glyph"
+      },
+      "layer": "impact",
+      "parameters": {
+        "angular_velocity": -40.0,
+        "blend": "additive",
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.25,
+              1.1,
+              1.55
+            ]
+          ],
+          [
+            0.35,
+            [
+              0.72,
+              0.45,
+              1.35
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.22,
+              0.12,
+              0.75
+            ]
+          ]
+        ],
+        "emissive": 1.3,
+        "lifetime": 0.34,
+        "lifetime_variance": 0.05,
+        "max_particles": 4,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.07,
+            0.95
+          ],
+          [
+            0.4,
+            0.4
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "render_mode": "billboard",
+        "rotation_variance": 180.0,
+        "size": 1.35,
+        "size_over_life": [
+          [
+            0.0,
+            0.3
+          ],
+          [
+            0.22,
+            1.0
+          ],
+          [
+            1.0,
+            1.55
+          ]
+        ],
+        "size_variance": 0.12
+      },
+      "type": "particle_system"
+    },
+    {
+      "id": "e_glyph",
+      "inputs": {
+        "particle": "ps_glyph"
+      },
+      "layer": "impact",
+      "parameters": {
+        "burst_count": 1,
+        "burst_times": [
+          0.0,
+          0.06
+        ],
+        "duration": 0.12,
+        "position": [
+          3.0,
+          1.5,
+          0.0
+        ],
+        "rate": 0.0,
+        "shape": "point",
+        "start_time": 2.5,
+        "velocity": 0.0
+      },
+      "type": "emitter"
+    },
+    {
+      "id": "ps_shock",
+      "inputs": {
+        "material": "mat_flash",
+        "sprite": "tex_spark"
+      },
+      "layer": "impact",
+      "parameters": {
+        "blend": "additive",
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.3,
+              1.1,
+              1.6
+            ]
+          ],
+          [
+            0.3,
+            [
+              0.55,
+              0.33,
+              1.35
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.1,
+              0.1,
+              0.55
+            ]
+          ]
+        ],
+        "drag": 3.5,
+        "emissive": 1.2,
+        "lifetime": 0.24,
+        "lifetime_variance": 0.035,
+        "max_particles": 600,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.1,
+            0.55
+          ],
+          [
+            0.5,
+            0.22
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "render_mode": "stretched_billboard",
+        "size": 0.115,
+        "size_over_life": [
+          [
+            0.0,
+            0.4
+          ],
+          [
+            0.4,
+            1.15
+          ],
+          [
+            1.0,
+            1.55
+          ]
+        ],
+        "size_variance": 0.03,
+        "velocity_stretch": 0.1
+      },
+      "type": "particle_system"
+    },
+    {
+      "id": "e_shock",
+      "inputs": {
+        "particle": "ps_shock"
+      },
+      "layer": "impact",
+      "parameters": {
+        "burst_count": 240,
+        "burst_times": [
+          0.0
+        ],
+        "direction": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "duration": 0.16,
+        "inner_radius": 0.25,
+        "position": [
+          3.0,
+          1.5,
+          0.0
+        ],
+        "radial_velocity": 1.0,
+        "radius": 0.26,
+        "rate": 0.0,
+        "rotation": [
+          90.0,
+          0.0,
+          0.0
+        ],
+        "shape": "ring",
+        "start_time": 2.5,
+        "velocity": 10.0,
+        "velocity_variance": 0.8
+      },
+      "type": "emitter"
+    },
+    {
+      "id": "ps_burst",
+      "inputs": {
+        "colliders": "ground",
+        "forces": [
+          "f_gravity",
+          "f_curl"
+        ],
+        "material": "mat_flash",
+        "sprite": "tex_spark"
+      },
+      "layer": "impact",
+      "parameters": {
+        "blend": "additive",
+        "bounce": 0.25,
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.35,
+              1.0,
+              1.7
+            ]
+          ],
+          [
+            0.13,
+            [
+              0.9,
+              0.45,
+              1.55
+            ]
+          ],
+          [
+            0.55,
+            [
+              0.32,
+              0.36,
+              1.3
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.08,
+              0.08,
+              0.5
+            ]
+          ]
+        ],
+        "drag": 4.0,
+        "emissive": 3.0,
+        "emissive_over_life": [
+          [
+            0.0,
+            1.15
+          ],
+          [
+            0.3,
+            0.75
+          ],
+          [
+            1.0,
+            0.15
+          ]
+        ],
+        "friction": 0.45,
+        "lifetime": 0.38,
+        "lifetime_variance": 0.1,
+        "max_particles": 1400,
+        "opacity_over_life": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            0.45,
+            0.85
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "render_mode": "stretched_billboard",
+        "size": 0.06,
+        "size_over_life": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            0.7,
+            0.85
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "size_variance": 0.03,
+        "velocity_stretch": 0.42
+      },
+      "type": "particle_system"
+    },
+    {
+      "id": "e_burst",
+      "inputs": {
+        "particle": "ps_burst"
+      },
+      "layer": "impact",
+      "parameters": {
+        "burst_count": 120,
+        "burst_times": [
+          0.0,
+          0.04,
+          0.1
+        ],
+        "direction": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "duration": 0.2,
+        "position": [
+          3.0,
+          1.5,
+          0.0
+        ],
+        "radial_velocity": 1.5,
+        "radius": 0.18,
+        "rate": 0.0,
+        "shape": "sphere",
+        "start_time": 2.5,
+        "surface_only": true,
+        "velocity": 8.0,
+        "velocity_variance": 3.0
+      },
+      "type": "emitter"
+    },
+    {
+      "id": "e_burst_back",
+      "inputs": {
+        "particle": "ps_burst"
+      },
+      "layer": "impact",
+      "parameters": {
+        "burst_count": 90,
+        "burst_times": [
+          0.0
+        ],
+        "direction": [
+          -1.0,
+          0.3,
+          0.0
+        ],
+        "duration": 0.15,
+        "position": [
+          3.0,
+          1.5,
+          0.0
+        ],
+        "radius": 0.14,
+        "rate": 0.0,
+        "shape": "sphere",
+        "spread": 55.0,
+        "start_time": 2.5,
+        "velocity": 6.4,
+        "velocity_variance": 2.2
+      },
+      "type": "emitter"
+    },
+    {
+      "id": "e_burst_long",
+      "inputs": {
+        "particle": "ps_burst"
+      },
+      "layer": "impact",
+      "parameters": {
+        "burst_count": 30,
+        "burst_times": [
+          0.0,
+          0.05
+        ],
+        "direction": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "duration": 0.14,
+        "position": [
+          3.0,
+          1.5,
+          0.0
+        ],
+        "radial_velocity": 2.0,
+        "radius": 0.1,
+        "rate": 0.0,
+        "shape": "sphere",
+        "start_time": 2.5,
+        "surface_only": true,
+        "velocity": 12.0,
+        "velocity_variance": 3.5
+      },
+      "type": "emitter"
+    },
+    {
+      "id": "ps_frag",
+      "inputs": {
+        "colliders": "ground",
+        "forces": [
+          "f_gravity"
+        ],
+        "material": "mat_crystal",
+        "mesh": "mesh_frag"
+      },
+      "layer": "impact",
+      "parameters": {
+        "angular_velocity": 320.0,
+        "angular_velocity_variance": 280.0,
+        "blend": "alpha",
+        "bounce": 0.3,
+        "color": [
+          0.52,
+          0.44,
+          0.95,
+          1.0
+        ],
+        "drag": 0.3,
+        "emissive": 0.25,
+        "friction": 0.5,
+        "lifetime": 0.62,
+        "lifetime_variance": 0.1,
+        "mass": 1.6,
+        "max_particles": 140,
+        "mesh_scale": [
+          1.0,
+          1.5,
+          0.3
+        ],
+        "mesh_scale_variance": [
+          0.3,
+          0.55,
+          0.1
+        ],
+        "orientation": "tumble",
+        "render_mode": "mesh",
+        "size": 0.085,
+        "size_over_life": [
+          [
+            0.0,
+            0.4
+          ],
+          [
+            0.08,
+            1.0
+          ],
+          [
+            0.6,
+            1.0
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "size_variance": 0.032
+      },
+      "type": "particle_system"
+    },
+    {
+      "id": "e_frag",
+      "inputs": {
+        "particle": "ps_frag"
+      },
+      "layer": "impact",
+      "parameters": {
+        "burst_count": 28,
+        "burst_times": [
+          0.0
+        ],
+        "direction": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "duration": 0.12,
+        "position": [
+          3.0,
+          1.5,
+          0.0
+        ],
+        "radius": 0.2,
+        "rate": 0.0,
+        "shape": "sphere",
+        "start_time": 2.5,
+        "velocity": 3.2,
+        "velocity_variance": 1.4
+      },
+      "type": "emitter"
+    },
+    {
+      "id": "ps_mote",
+      "inputs": {
+        "forces": [
+          "f_curl",
+          "f_buoy"
+        ],
+        "material": "mat_flash",
+        "sprite": "tex_spark"
+      },
+      "layer": "impact",
+      "parameters": {
+        "blend": "additive",
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.2,
+              1.05,
+              1.5
+            ]
+          ],
+          [
+            0.45,
+            [
+              0.55,
+              0.45,
+              1.3
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.12,
+              0.1,
+              0.55
+            ]
+          ]
+        ],
+        "drag": 2.6,
+        "emissive": 2.2,
+        "lifetime": 0.34,
+        "lifetime_variance": 0.06,
+        "max_particles": 320,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.15,
+            1.0
+          ],
+          [
+            0.65,
+            0.75
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "render_mode": "billboard",
+        "size": 0.045,
+        "size_over_life": [
+          [
+            0.0,
+            0.25
+          ],
+          [
+            0.3,
+            1.0
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "size_variance": 0.02
+      },
+      "type": "particle_system"
+    },
+    {
+      "id": "e_mote",
+      "inputs": {
+        "particle": "ps_mote"
+      },
+      "layer": "impact",
+      "parameters": {
+        "burst_count": 45,
+        "burst_times": [
+          0.0
+        ],
+        "direction": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "duration": 0.26,
+        "position": [
+          3.0,
+          1.5,
+          0.0
+        ],
+        "radius": 0.28,
+        "rate": {
+          "track": [
+            {
+              "time": 2.5,
+              "value": 520.0
+            },
+            {
+              "time": 2.62,
+              "value": 170.0
+            },
+            {
+              "time": 2.76,
+              "value": 0.0
+            }
+          ],
+          "value": 520.0
+        },
+        "shape": "sphere",
+        "start_time": 2.5,
+        "velocity": 1.2,
+        "velocity_variance": 0.7
+      },
+      "type": "emitter"
+    },
+    {
+      "id": "ps_halo",
+      "inputs": {
+        "material": "mat_flash",
+        "sprite": "tex_puff"
+      },
+      "layer": "impact",
+      "parameters": {
+        "angular_velocity_variance": 25.0,
+        "blend": "additive",
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              0.85,
+              1.4
+            ]
+          ],
+          [
+            0.4,
+            [
+              0.5,
+              0.3,
+              1.2
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.12,
+              0.08,
+              0.5
+            ]
+          ]
+        ],
+        "drag": 3.5,
+        "emissive": 0.6,
+        "lifetime": 0.44,
+        "lifetime_variance": 0.1,
+        "max_particles": 60,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.12,
+            0.26
+          ],
+          [
+            0.5,
+            0.14
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "render_mode": "billboard",
+        "rotation_variance": 180.0,
+        "size": 1.4,
+        "size_over_life": [
+          [
+            0.0,
+            0.4
+          ],
+          [
+            0.5,
+            1.2
+          ],
+          [
+            1.0,
+            1.6
+          ]
+        ],
+        "size_variance": 0.4
+      },
+      "type": "particle_system"
+    },
+    {
+      "id": "e_halo",
+      "inputs": {
+        "particle": "ps_halo"
+      },
+      "layer": "impact",
+      "parameters": {
+        "burst_count": 12,
+        "burst_times": [
+          0.0
+        ],
+        "direction": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "duration": 0.12,
+        "position": [
+          3.0,
+          1.5,
+          0.0
+        ],
+        "radius": 0.25,
+        "rate": 0.0,
+        "shape": "sphere",
+        "start_time": 2.5,
+        "velocity": 1.4,
+        "velocity_variance": 0.8
+      },
+      "type": "emitter"
+    },
+    {
+      "id": "l_impact",
+      "layer": "impact",
+      "parameters": {
+        "color": [
+          0.78,
+          0.62,
+          1.0,
+          1.0
+        ],
+        "duration": 0.5,
+        "flicker_amplitude": 0.18,
+        "flicker_frequency": 22.0,
+        "intensity": {
+          "track": [
+            {
+              "time": 2.48,
+              "value": 0.0
+            },
+            {
+              "time": 2.53,
+              "value": 8.5
+            },
+            {
+              "time": 2.6,
+              "value": 3.5
+            },
+            {
+              "time": 2.72,
+              "value": 1.0
+            },
+            {
+              "time": 2.92,
+              "value": 0.0
+            }
+          ],
+          "value": 0.0
+        },
+        "light_type": "point",
+        "position": [
+          3.0,
+          1.5,
+          0.0
+        ],
+        "radius": 8.0,
+        "start_time": 2.48
+      },
+      "type": "light"
+    },
+    {
+      "id": "cam",
+      "parameters": {
+        "fov": 45.0,
+        "position": [
+          0.6,
+          2.0,
+          9.1
+        ],
+        "target": [
+          0.6,
+          1.45,
+          0.0
+        ]
+      },
+      "type": "camera"
+    }
+  ],
+  "schema_version": "0.1.0",
+  "seed": 7,
+  "timeline": {
+    "phases": [
+      {
+        "end": 0.25,
+        "name": "activation",
+        "start": 0.0
+      },
+      {
+        "end": 2.5,
+        "name": "sustain",
+        "start": 0.25
+      },
+      {
+        "end": 2.8,
+        "name": "impact",
+        "start": 2.5
+      },
+      {
+        "end": 3.2,
+        "name": "decay",
+        "start": 2.8
+      }
+    ]
+  }
+}

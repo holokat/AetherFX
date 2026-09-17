@@ -25,7 +25,10 @@
     <em>Studio</em>
   </div>
 
-  <div id="effect-name" class="effect-name" title="active effect">no effect</div>
+  <nav id="topnav" class="topnav" aria-label="Views">
+    <button id="nav-studio" type="button" class="nav-tab is-active" data-view="studio" aria-current="page">Studio</button>
+    <button id="nav-community" type="button" class="nav-tab" data-view="community">Community</button>
+  </nav>
 
   <div class="grow"></div>
 
@@ -59,6 +62,13 @@
         <div id="export-targets" class="export-targets"><p class="dim small">loading targets…</p></div>
       </div>
     </details>
+
+    <span class="hdr-sep" aria-hidden="true"></span>
+    <a id="btn-star" class="btn-like star-link" href="https://github.com/holokat/AetherFX"
+       target="_blank" rel="noopener noreferrer" title="Star AetherFX on GitHub">
+      <svg class="ic gh-mark" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" stroke="none" d="M8 .6a7.4 7.4 0 0 0-2.34 14.42c.37.07.5-.16.5-.36l-.01-1.26c-2.06.45-2.5-.99-2.5-.99-.34-.86-.83-1.09-.83-1.09-.67-.46.05-.45.05-.45.75.05 1.14.77 1.14.77.66 1.13 1.74.8 2.17.62.07-.48.26-.8.47-.99-1.64-.19-3.37-.82-3.37-3.66 0-.81.29-1.47.76-1.99-.08-.19-.33-.94.07-1.96 0 0 .62-.2 2.03.76a7.1 7.1 0 0 1 3.7 0c1.4-.96 2.02-.76 2.02-.76.4 1.02.15 1.77.08 1.96.47.52.76 1.18.76 1.99 0 2.85-1.74 3.47-3.39 3.65.27.23.5.69.5 1.39l-.01 2.06c0 .2.14.44.51.36A7.4 7.4 0 0 0 8 .6z"/></svg>
+      <span class="star-text">Star</span>
+    </a>
   </div>
 </header>
 
@@ -125,10 +135,32 @@
             <button id="btn-create" type="button" class="primary sm">Create</button>
           </div>
         </details>
+        <div class="search-box">
+          <svg class="ic search-ic" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.4"/><path d="M10.3 10.3 13.6 13.6"/></svg>
+          <input id="lib-search" type="text" placeholder="Search effects" spellcheck="false"
+                 autocomplete="off" aria-label="Search effects" title="Filter the library (press / to focus, Esc to clear)">
+          <button id="lib-search-clear" type="button" class="search-clear" title="Clear (Esc)" aria-label="Clear search" hidden>
+            <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.6 4.6l6.8 6.8M11.4 4.6l-6.8 6.8"/></svg>
+          </button>
+        </div>
         <p class="hint-note">Click a row to load a copy. Edits stay in memory until you press Save as.</p>
-        <div id="list-library" class="file-list"></div>
+        <div id="library-sections">
+          <details class="lib-section" id="sec-core" open>
+            <summary><svg class="ic chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6.2 4.2 10 8l-3.8 3.8"/></svg><span class="lib-name">Core</span><span class="lib-count" id="count-core">0</span></summary>
+            <ul id="list-core" class="file-list"></ul>
+          </details>
+          <details class="lib-section" id="sec-mine" open>
+            <summary><svg class="ic chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6.2 4.2 10 8l-3.8 3.8"/></svg><span class="lib-name">Mine</span><span class="lib-count" id="count-mine">0</span></summary>
+            <ul id="list-mine" class="file-list"></ul>
+          </details>
+        </div>
+        <p id="lib-empty" class="search-empty" hidden></p>
       </div>
     </section>
+
+    <footer class="column-foot">
+      Started by <a href="https://x.com/cogentgene1" target="_blank" rel="noopener noreferrer">Gene</a>
+    </footer>
 
   </section>
 
@@ -249,6 +281,12 @@
   <!-- ===================== RIGHT ===================== -->
   <section class="column" id="col-right">
 
+    <div id="effect-bar" class="effect-bar" title="the effect this session is editing">
+      <span class="effect-dot" aria-hidden="true"></span>
+      <span id="effect-name" class="effect-name">no effect</span>
+      <a id="effect-credit" class="credit-chip" target="_blank" rel="noopener noreferrer" hidden></a>
+    </div>
+
     <section class="panel" id="panel-graph">
       <h2 class="panel-title"><span class="t">Graph</span>
         <span class="panel-tools">
@@ -288,6 +326,42 @@
 
   </section>
 
+</main>
+
+<!-- ===================== COMMUNITY VIEW ===================== -->
+<main id="community-view" hidden>
+  <div class="community-wrap">
+
+    <header class="community-head">
+      <h1>Community effects</h1>
+      <p class="community-sub">
+        Contributed through pull requests, MIT licensed, procedural all the way down.
+        Open one to get your own working copy - the contributed file is never changed.
+      </p>
+      <div class="search-box wide">
+        <svg class="ic search-ic" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.4"/><path d="M10.3 10.3 13.6 13.6"/></svg>
+        <input id="com-search" type="text" placeholder="Search effects" spellcheck="false"
+               autocomplete="off" aria-label="Search community effects" title="Filter (press / to focus, Esc to clear)">
+        <button id="com-search-clear" type="button" class="search-clear" title="Clear (Esc)" aria-label="Clear search" hidden>
+          <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.6 4.6l6.8 6.8M11.4 4.6l-6.8 6.8"/></svg>
+        </button>
+      </div>
+      <p id="com-count" class="community-count dim small"></p>
+    </header>
+
+    <div id="community-list" class="community-grid"></div>
+    <p id="community-empty" class="search-empty" hidden></p>
+
+    <footer class="community-foot">
+      <span class="dim small">Started by <a href="https://x.com/cogentgene1" target="_blank" rel="noopener noreferrer">Gene</a></span>
+      <a id="btn-star-community" class="btn-like star-link" href="https://github.com/holokat/AetherFX"
+         target="_blank" rel="noopener noreferrer" title="Star AetherFX on GitHub">
+        <svg class="ic gh-mark" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" stroke="none" d="M8 .6a7.4 7.4 0 0 0-2.34 14.42c.37.07.5-.16.5-.36l-.01-1.26c-2.06.45-2.5-.99-2.5-.99-.34-.86-.83-1.09-.83-1.09-.67-.46.05-.45.05-.45.75.05 1.14.77 1.14.77.66 1.13 1.74.8 2.17.62.07-.48.26-.8.47-.99-1.64-.19-3.37-.82-3.37-3.66 0-.81.29-1.47.76-1.99-.08-.19-.33-.94.07-1.96 0 0 .62-.2 2.03.76a7.1 7.1 0 0 1 3.7 0c1.4-.96 2.02-.76 2.02-.76.4 1.02.15 1.77.08 1.96.47.52.76 1.18.76 1.99 0 2.85-1.74 3.47-3.39 3.65.27.23.5.69.5 1.39l-.01 2.06c0 .2.14.44.51.36A7.4 7.4 0 0 0 8 .6z"/></svg>
+        <span class="star-text">Star on GitHub</span>
+      </a>
+    </footer>
+
+  </div>
 </main>
 
 <div id="toasts" aria-live="assertive"></div>

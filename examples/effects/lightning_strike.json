@@ -1215,6 +1215,11 @@
         0.0
       ],
       "fov": 42
-    }
+    },
+    "tags": [
+      "lightning",
+      "strike",
+      "impact"
+    ]
   }
 }

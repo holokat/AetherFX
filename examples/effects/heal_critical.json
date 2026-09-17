@@ -5516,7 +5516,6 @@
     }
   ],
   "metadata": {
-    "reference": "out/references/heal_sheet.jpg",
     "generator": "tools/generators/heal_variants.py",
     "variant": "heal_critical",
     "analysis": "Critical: tallest pillar, all eight shafts, biggest light core, a feather burst and a brief warm wash at the peak that stays gold instead of blowing to white.",
@@ -5533,6 +5532,12 @@
       "bloom_radius": 0.056,
       "exposure": 0.66,
       "grid": false
-    }
+    },
+    "tags": [
+      "heal",
+      "support",
+      "target",
+      "critical"
+    ]
   }
 }

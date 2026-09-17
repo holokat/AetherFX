@@ -8099,7 +8099,6 @@
     }
   ],
   "metadata": {
-    "reference": "Arcane Area of Effect concept sheet (mystical / energetic / celestial)",
     "analysis": "cast: rune circle ignites and energy streaks gather inward | build: orbit rings spiral out of the centre, orb emerges and the beam opens | ascend: crystal shards burst from the ground and levitate, power peaks | sustain: gyroscopic rings spin with sparkle nodes, beam pulses, mist rolls | fade: energy disperses outward, rings widen, shards fall",
     "timing": "cast 0-0.4, build 0.4-0.8, ascend 0.8-1.2, sustain 1.2-2.4, fade 2.4-3.0",
     "render_settings": {
@@ -8127,6 +8126,12 @@
         ],
         "fov": 42.0
       }
-    }
+    },
+    "tags": [
+      "arcane",
+      "aoe",
+      "area",
+      "magic"
+    ]
   }
 }

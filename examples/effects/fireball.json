@@ -31,7 +31,12 @@
         0.0,
         1.0
       ]
-    }
+    },
+    "tags": [
+      "fire",
+      "projectile",
+      "explosion"
+    ]
   },
   "name": "Fireball",
   "nodes": [

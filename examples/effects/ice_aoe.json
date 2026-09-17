@@ -1737,7 +1737,6 @@
     }
   ],
   "metadata": {
-    "reference": "Ice Area of Effect concept sheet: cast 0-0.3 (runes appear, cold air gathers), formation 0.3-0.6 (ice shards rise), eruption 0.6-1.2 (massive spikes), sustain 1.2-2.5, linger 2.5-3.5 (frost spreads), dissipate 3.5-4.0 (shards crumble, mist fades)",
     "render_settings": {
       "ground_albedo": 0.1,
       "background": [
@@ -1750,6 +1749,12 @@
       "bloom_radius": 0.05,
       "exposure": 1.0,
       "grid": false
-    }
+    },
+    "tags": [
+      "ice",
+      "aoe",
+      "area",
+      "frost"
+    ]
   }
 }

@@ -5078,7 +5078,6 @@
     }
   ],
   "metadata": {
-    "reference": "out/references/heal_sheet.jpg",
     "generator": "tools/generators/heal_variants.py",
     "variant": "heal_pure",
     "analysis": "Pure: silver/blue-white palette, crisp sparkles, two cleansing ring waves travelling up the body, no feathers - motes instead.",
@@ -5095,6 +5094,12 @@
       "bloom_radius": 0.05,
       "exposure": 0.72,
       "grid": false
-    }
+    },
+    "tags": [
+      "heal",
+      "support",
+      "target",
+      "pure"
+    ]
   }
 }

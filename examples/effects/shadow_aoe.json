@@ -1801,7 +1801,6 @@
     }
   ],
   "metadata": {
-    "reference": "Shadow Area of Effect concept sheet (drain / weaken / control / fear / DoT)",
     "analysis": "telegraph: rune circle + ring embers | form: darkness pool decal + energy rings, column starts | erupt: crystal spikes burst from the ring, debris lifts | sustain: wisps and sparks pulled into the vortex column | fade: all recede",
     "timing": "cast 0-0.4, form 0.4-0.8, erupt 0.8-1.4, sustain 1.4-2.6, fade 2.6-3.2",
     "render_settings": {
@@ -1816,6 +1815,12 @@
       "bloom_radius": 0.06,
       "exposure": 1.1,
       "grid": false
-    }
+    },
+    "tags": [
+      "shadow",
+      "aoe",
+      "area",
+      "dark"
+    ]
   }
 }

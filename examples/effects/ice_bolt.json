@@ -71,7 +71,6 @@
     }
   ],
   "metadata": {
-    "reference": "Ice Bolt concept sheet: fast piercing crystalline projectile with a cold trail. 1 cast 0-0.3 (frost orb of swirling blue energy), 2 form 0.3-0.6 (shards converge into an arrow), 3 launch 0.6-0.8 (streaks), 4 flight 0.8-1.9 (long mist trail, tumbling fragments, snowflakes), 5 impact 1.9-2.6 (radial star of ice shards, frost ring, mist).",
     "analysis": "The head is a rigid cluster of 29 seeded crystal meshes parented to an invisible anchor whose local +X is the direction of travel; every blade has its own seed, facet count, irregularity, flatten scale, tint and emissive, and keyframed local position/rotation/scale so the cluster assembles during `form` and explodes during `impact`. Sprites carry the streaks, mist, snowflakes and sparkles; two procedural volumes carry the frost orb and the frozen mist column.",
     "render_settings": {
       "background": [
@@ -98,7 +97,13 @@
         0.0
       ],
       "fov": 45.0
-    }
+    },
+    "tags": [
+      "ice",
+      "projectile",
+      "bolt",
+      "frost"
+    ]
   },
   "nodes": [
     {

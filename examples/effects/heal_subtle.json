@@ -4645,7 +4645,6 @@
     }
   ],
   "metadata": {
-    "reference": "out/references/heal_sheet.jpg",
     "generator": "tools/generators/heal_variants.py",
     "variant": "heal_subtle",
     "analysis": "Subtle: ring + thin pillar + a handful of sparkles, no feathers, no spiral, fast in and out.",
@@ -4662,6 +4661,12 @@
       "bloom_radius": 0.048,
       "exposure": 0.74,
       "grid": false
-    }
+    },
+    "tags": [
+      "heal",
+      "support",
+      "target",
+      "subtle"
+    ]
   }
 }

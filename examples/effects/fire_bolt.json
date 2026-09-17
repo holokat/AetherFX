@@ -5357,7 +5357,6 @@
     }
   ],
   "metadata": {
-    "reference": "Fire Bolt concept sheet (projectile): cast 0-0.3 (ember orb gathers sparks), launch 0.3-0.54 (short streak), mid flight 0.54-1.6 (full ribbons), approach 1.6-2.3, impact 2.3-3.0 (radial sparks, flame petals, flash).",
     "analysis": "Molten cracked rock core 0.6 m wrapped in a white-hot flame sheath; flame ribbons and torn flipbook tongues stream 2-3 core lengths back and slightly up; embers scatter behind as streaks; a dark brown-grey smoke trail lingers with glowing embers inside.",
     "render_settings": {
       "ground_albedo": 0.014,
@@ -5384,6 +5383,11 @@
         ],
         "fov": 46.0
       }
-    }
+    },
+    "tags": [
+      "fire",
+      "projectile",
+      "bolt"
+    ]
   }
 }
