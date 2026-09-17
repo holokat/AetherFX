@@ -3712,11 +3712,17 @@
     "E018": "keyframe time invalid",
     "E019": "curve/gradient keys not sorted or out of [0,1]",
     "E020": "schema version unsupported",
+    "E021": "invalid or duplicate control id",
+    "E022": "control binds to an unknown node or parameter",
+    "E023": "control op does not fit the parameter type",
+    "E024": "control range invalid (min>=max, value/default outside it, step<=0)",
     "W001": "unknown phase reference",
     "W002": "unused node (no consumer and not renderable)",
     "W003": "max_particles budget high",
     "W004": "node disabled but referenced",
-    "W005": "deprecated parameter"
+    "W005": "deprecated parameter",
+    "W006": "keyframe set on a parameter not marked animatable",
+    "W007": "control has no bindings"
   },
   "value_types": [
     "bool",

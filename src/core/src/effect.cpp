@@ -128,6 +128,27 @@ bool Effect::remove_node(std::string_view id) {
     return true;
 }
 
+const Control* Effect::find_control(std::string_view id) const {
+    for (const auto& c : controls)
+        if (c.id == id) return &c;
+    return nullptr;
+}
+Control* Effect::find_control(std::string_view id) {
+    for (auto& c : controls)
+        if (c.id == id) return &c;
+    return nullptr;
+}
+
+std::string Effect::unique_control_id(std::string_view base) const {
+    std::string candidate(base);
+    if (candidate.empty()) candidate = "control";
+    if (find_control(candidate) == nullptr) return candidate;
+    for (int i = 2;; ++i) {
+        std::string next = candidate + "_" + std::to_string(i);
+        if (find_control(next) == nullptr) return next;
+    }
+}
+
 NodeId Effect::unique_id(std::string_view base) const {
     std::string candidate(base);
     if (candidate.empty()) candidate = "node";

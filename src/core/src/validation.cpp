@@ -320,6 +320,72 @@ void check_node(const Effect& effect, const Node& node, Diagnostics& d) {
     }
 }
 
+// --- controls: E021..E024, W007 ---------------------------------------------
+
+// Which value types an op can fold into (docs/CONTROLS.md).
+bool op_accepts(ControlOp op, ValueType type) {
+    if (op == ControlOp::HueShift) return type == ValueType::Color || type == ValueType::Gradient;
+    switch (type) {
+        case ValueType::Int:
+        case ValueType::Float:
+        case ValueType::Vec2:
+        case ValueType::Vec3:
+        case ValueType::Vec4:
+        case ValueType::Color:
+            return true;
+        default:
+            return false;
+    }
+}
+
+void check_controls(const Effect& effect, Diagnostics& d) {
+    std::set<std::string> seen;
+    for (const Control& control : effect.controls) {
+        const std::string where = "control \"" + control.id + "\"";
+        if (!valid_node_id(control.id))
+            d.error("E021", "control id \"" + control.id + "\" does not match ^[a-z][a-z0-9_]*$");
+        else if (!seen.insert(control.id).second)
+            d.error("E021", "duplicate control id \"" + control.id + "\"");
+
+        if (!(control.min < control.max))
+            d.error("E024", where + " has min " + std::to_string(control.min) + " which is not below max " +
+                                std::to_string(control.max));
+        else {
+            if (control.value < control.min || control.value > control.max)
+                d.error("E024", where + " value " + std::to_string(control.value) + " is outside [" +
+                                    std::to_string(control.min) + ", " + std::to_string(control.max) + "]");
+            if (control.default_value < control.min || control.default_value > control.max)
+                d.error("E024", where + " default " + std::to_string(control.default_value) + " is outside [" +
+                                    std::to_string(control.min) + ", " + std::to_string(control.max) + "]");
+        }
+        if (!(control.step > 0.0)) d.error("E024", where + " step must be greater than 0");
+
+        if (control.bindings.empty())
+            d.warning("W007", where + " has no bindings, so moving it does nothing");
+
+        for (const ControlBinding& binding : control.bindings) {
+            const Node* node = effect.find_node(binding.node);
+            if (node == nullptr) {
+                d.error("E022", where + " binds to unknown node \"" + binding.node + "\"", binding.node,
+                        binding.parameter);
+                continue;
+            }
+            const ParamSpec* spec = SpecRegistry::instance().get(node->type).find_param(binding.parameter);
+            if (spec == nullptr) {
+                d.error("E022", where + " binds to \"" + binding.parameter + "\", which node type \"" +
+                                    std::string(to_string(node->type)) + "\" does not have",
+                        binding.node, binding.parameter);
+                continue;
+            }
+            if (!op_accepts(binding.op, spec->type))
+                d.error("E023", where + " applies \"" + std::string(to_string(binding.op)) + "\" to \"" +
+                                    binding.parameter + "\", which is " + std::string(to_string(spec->type)) +
+                                    "; multiply/add/set need a numeric parameter and hue_shift a colour or gradient",
+                        binding.node, binding.parameter);
+        }
+    }
+}
+
 // Dependencies of a node: everything it references, deduplicated and sorted.
 std::set<NodeId> dependencies_of(const Effect& effect, const Node& node, bool enabled_only) {
     std::set<NodeId> deps;
@@ -403,6 +469,9 @@ Diagnostics validate(const Effect& effect) {
             d.error("E016", "phase \"" + p.name + "\" [" + std::to_string(p.start) + ", " + std::to_string(p.end) +
                                 "] lies outside the effect duration [0, " + std::to_string(effect.duration) + "]");
     }
+
+    // --- controls: E021..E024, W007 ------------------------------------------
+    check_controls(effect, d);
 
     // --- node ids: E001 ------------------------------------------------------
     std::set<NodeId> seen;

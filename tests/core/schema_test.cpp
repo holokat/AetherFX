@@ -98,8 +98,8 @@ TEST_CASE("vocabulary json describes every node type", "[core][schema]") {
     CHECK(vocabulary.at("layer_roles").size() == 7);
     CHECK(vocabulary.at("blend_modes").size() == 3);
     CHECK(vocabulary.at("render_modes").size() == 5);
-    CHECK(vocabulary.at("validation_codes").size() == 25);
-    for (const char* code : {"E001", "E010", "E020", "W001", "W005"}) {
+    CHECK(vocabulary.at("validation_codes").size() == 31);
+    for (const char* code : {"E001", "E010", "E020", "E021", "E024", "W001", "W005", "W007"}) {
         CAPTURE(code);
         CHECK(vocabulary.at("validation_codes").contains(code));
     }

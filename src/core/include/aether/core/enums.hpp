@@ -14,6 +14,8 @@ enum class RenderMode { Billboard, StretchedBillboard, Mesh, Ribbon, None };
 enum class Shading { Unlit, Lit };
 enum class LightType { Point, Spot, Area };
 enum class Interp { Linear, Step, Smooth };
+// How a control binding folds its value into a parameter (docs/CONTROLS.md).
+enum class ControlOp { Multiply, Add, Set, HueShift };
 
 // snake_case names as used in JSON (e.g. "particle_system", "stretched_billboard").
 std::string_view to_string(NodeType t);
@@ -23,6 +25,7 @@ std::string_view to_string(RenderMode m);
 std::string_view to_string(Shading s);
 std::string_view to_string(LightType t);
 std::string_view to_string(Interp i);
+std::string_view to_string(ControlOp o);
 
 // Parsing. Return false on unknown names (do not throw; callers produce diagnostics).
 bool parse_node_type(std::string_view s, NodeType& out);
@@ -32,6 +35,7 @@ bool parse_render_mode(std::string_view s, RenderMode& out);
 bool parse_shading(std::string_view s, Shading& out);
 bool parse_light_type(std::string_view s, LightType& out);
 bool parse_interp(std::string_view s, Interp& out);
+bool parse_control_op(std::string_view s, ControlOp& out);
 
 inline constexpr int kNodeTypeCount = 18;
 

@@ -16,6 +16,75 @@
         }
       ]
     },
+    "control": {
+      "additionalProperties": false,
+      "description": "a named numeric knob bound to node parameters, applied at compile time",
+      "properties": {
+        "bindings": {
+          "items": {
+            "$ref": "#/$defs/control_binding"
+          },
+          "type": "array"
+        },
+        "default": {
+          "type": "number"
+        },
+        "group": {
+          "type": "string"
+        },
+        "id": {
+          "$ref": "#/$defs/node_id"
+        },
+        "label": {
+          "type": "string"
+        },
+        "max": {
+          "type": "number"
+        },
+        "min": {
+          "type": "number"
+        },
+        "step": {
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "unit": {
+          "type": "string"
+        },
+        "value": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "control_binding": {
+      "additionalProperties": false,
+      "properties": {
+        "node": {
+          "$ref": "#/$defs/node_id"
+        },
+        "op": {
+          "enum": [
+            "multiply",
+            "add",
+            "set",
+            "hue_shift"
+          ],
+          "type": "string"
+        },
+        "parameter": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "node",
+        "parameter"
+      ],
+      "type": "object"
+    },
     "curve": {
       "anyOf": [
         {
@@ -3891,6 +3960,16 @@
   "additionalProperties": false,
   "description": "An AetherFX effect document (schema 0.1.0). Generated from aether::SpecRegistry.",
   "properties": {
+    "controls": {
+      "items": {
+        "$ref": "#/$defs/control"
+      },
+      "type": "array"
+    },
+    "description": {
+      "description": "one line describing the effect, for humans and libraries",
+      "type": "string"
+    },
     "duration": {
       "minimum": 0.01,
       "type": "number"

@@ -57,6 +57,30 @@ Conventions:
 | `remove_keyframe` | `node_id`, `name`, `time` | `{track}` |
 | `clear_track` | `node_id`, `name` | `{ok}` |
 
+## controls
+
+Controls are the effect's named numeric knobs: non-destructive scales and
+offsets on node parameters that the compiler folds into a copy of the document.
+The authored values never change, so a control is safe to move live, undo, or
+set per instance from a game. Full contract: docs/CONTROLS.md.
+
+| tool | args | returns |
+|---|---|---|
+| `list_controls` | | `{controls:[{id,label,group,min,max,default,value,step,unit,bindings}], groups, count}` |
+| `set_control` | `id`, `value` | `{ok, control, diagnostics}` (E024 outside `[min, max]`) |
+| `reset_controls` | `id?` | `{ok, reset, controls}` back to `default` |
+| `add_control` | `label`, `id?`, `group?`, `min=0`, `max=3`, `default=1`, `value?`, `step=0.01`, `unit?`, `bindings?` | `{ok, control, diagnostics}` |
+| `update_control` | `id`, any of the `add_control` fields | `{ok, control, diagnostics}` |
+| `remove_control` | `id` | `{ok, removed, controls}` |
+| `generate_default_controls` | `replace=false` | `{ok, added, replaced, controls, groups}` |
+
+A binding is `{node, parameter, op}` with `op` one of `multiply` (scalars, every
+component of a vector, the rgb of a colour), `add`, `set`, or `hue_shift`
+(degrees; colours and gradients). `group` is the UI section: `"Global"` (or
+empty) for effect-wide, otherwise the layer name. Bad bindings are diagnostics,
+not exceptions: E022 unknown node/parameter, E023 op that does not fit the
+parameter type, E024 range problem, W007 a control with no bindings.
+
 ## timeline
 
 | tool | args | returns |
@@ -129,9 +153,10 @@ fps, duration and the effect hash.
 `preview` (true), `obj` (true), plus `width`, `height`, `camera` and `settings`
 for the preview images. `path` is a directory and may end in `.aetherfx`. It
 holds `manifest.json`, `effect.json` (the source document), `runtime.json` (the
-resolved, compiler-free description: phases, layers, every enabled node with
-its window, seed, effective parameters, sampled tracks and resolved
-references, plus the texture/mesh/material tables), `textures/<id>.png`,
+resolved, compiler-free description: phases, layers, controls with their
+current values, every enabled node with its window, seed, effective parameters
+- controls already folded in - sampled tracks and resolved references, plus the
+texture/mesh/material tables), `textures/<id>.png`,
 `meshes/<id>.obj` and `preview/`. Field-by-field reference:
 docs/PACKAGE_FORMAT.md.
 
@@ -149,6 +174,7 @@ argument names: `describe_vocabulary`, `create_effect`, `load_effect`,
 `save_effect`, `list_effects`, `inspect_graph`, `inspect_node`,
 `create_layer`, `create_node`, `delete_node`, `duplicate_layer`,
 `set_parameter`, `set_parameters`, `get_parameter`, `set_keyframe`,
+`list_controls`, `set_control`, `reset_controls`, `generate_default_controls`,
 `connect_nodes`, `disconnect_nodes`, `set_timeline_phase`, `simulate`,
 `render_frame`, `render_preview`, `inspect_statistics`, `compare_reference`,
 `evaluate_effect`, `export_effect`, `undo`, `redo`, plus `get_effect_json`.

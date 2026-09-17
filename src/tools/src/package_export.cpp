@@ -19,6 +19,7 @@
 #include <variant>
 #include <vector>
 
+#include "aether/core/controls.hpp"
 #include "aether/core/error.hpp"
 #include "aether/core/serialization.hpp"
 #include "aether/core/spec.hpp"
@@ -417,6 +418,10 @@ nlohmann::json export_package(Session& session, Document& doc, const nlohmann::j
         forced = std::make_unique<compiler::CompiledEffect>(compiler::compile(effect, compile_options));
         plan = forced.get();
     }
+    // The plan's own copy of the document has the controls folded in, so the
+    // parameters written below are the ones the runtime would actually use
+    // (docs/CONTROLS.md); `effect` stays the source the author edits.
+    const Effect& resolved = plan->effect;
 
     std::vector<std::filesystem::path> written;
     const auto record = [&written](std::filesystem::path path) { written.push_back(std::move(path)); };
@@ -434,9 +439,12 @@ nlohmann::json export_package(Session& session, Document& doc, const nlohmann::j
                           {"role", std::string(to_string(layer.role))},
                           {"enabled", layer.enabled}});
 
+    nlohmann::json controls = nlohmann::json::array();
+    for (const Control& control : effect.controls) controls.push_back(control_to_json(control));
+
     nlohmann::json nodes = nlohmann::json::array();
     for (const compiler::CompiledNode& cn : plan->nodes) {
-        const Node* node = effect.find_node(cn.id);
+        const Node* node = resolved.find_node(cn.id);
         if (node == nullptr) continue;
         const SampleWindow window = sample_window(cn.start_time, cn.end_time, effect.duration);
         nlohmann::json entry{{"id", cn.id},
@@ -447,7 +455,7 @@ nlohmann::json export_package(Session& session, Document& doc, const nlohmann::j
                              {"backend", cn.backend},
                              {"window", {{"start", round_time(cn.start_time)}, {"end", round_time(cn.end_time)}}},
                              {"seed", cn.seed},
-                             {"parameters", parameters_json(effect, *node, window, fps, samples)}};
+                             {"parameters", parameters_json(resolved, *node, window, fps, samples)}};
         nlohmann::json resolved = resolved_json(*plan, cn, *node);
         if (!resolved.is_null()) entry["resolved"] = std::move(resolved);
         nodes.push_back(std::move(entry));
@@ -557,6 +565,7 @@ nlohmann::json export_package(Session& session, Document& doc, const nlohmann::j
                            {"sampling", {{"fps", fps}, {"curve_samples", samples}}},
                            {"timeline", timeline_json(effect.timeline)},
                            {"layers", std::move(layers)},
+                           {"controls", std::move(controls)},
                            {"nodes", std::move(nodes)},
                            {"textures", std::move(textures)},
                            {"meshes", std::move(meshes)},
