@@ -529,6 +529,53 @@ TEST_CASE("lightning_strike exposes beams, lights, decals and mesh particles", "
     CHECK(aetherfx_beam_polyline(runtime, 0, static_cast<int>(beam.polyline_count), &xyz, &points) ==
           AETHERFX_ERROR_OUT_OF_RANGE);
 
+    // The strike detail added after ABI 1: cross-section, per-vertex width and
+    // intensity, branch generation, afterglow ghosts and end flares.
+    struct aetherfx_beam_style style;
+    REQUIRE(aetherfx_beam_style(runtime, 0, &style) == AETHERFX_OK);
+    CHECK(style.core_width > 0.0f);
+    CHECK(style.glow_width > 0.0f);
+    CHECK(style.path_count == beam.polyline_count);
+    for (size_t p = 0; p < style.path_count; ++p) {
+        struct aetherfx_beam_path path;
+        REQUIRE(aetherfx_beam_path(runtime, 0, static_cast<int>(p), &path) == AETHERFX_OK);
+        REQUIRE(path.vertex_count >= 2);
+        REQUIRE(path.position != nullptr);
+        REQUIRE(path.width != nullptr);
+        REQUIRE(path.intensity != nullptr);
+        CHECK(path.depth >= 0);
+        CHECK(path.fade > 0.0f);
+        CHECK(path.fade <= 1.0f);
+        for (size_t k = 0; k < path.vertex_count; ++k) {
+            CHECK(std::isfinite(path.width[k]));
+            CHECK(path.width[k] >= 0.0f);
+            CHECK(path.intensity[k] > 0.0f);
+        }
+        // the polyline accessor and the path accessor describe the same points
+        const float* legacy = nullptr;
+        size_t legacy_count = 0;
+        REQUIRE(aetherfx_beam_polyline(runtime, 0, static_cast<int>(p), &legacy, &legacy_count) == AETHERFX_OK);
+        REQUIRE(legacy_count == path.vertex_count);
+        CHECK(legacy == path.position);
+    }
+    struct aetherfx_beam_path past_end;
+    CHECK(aetherfx_beam_path(runtime, 0, static_cast<int>(style.path_count), &past_end) ==
+          AETHERFX_ERROR_OUT_OF_RANGE);
+    for (size_t g = 0; g < style.ghost_count; ++g) {
+        struct aetherfx_beam_path ghost;
+        REQUIRE(aetherfx_beam_ghost(runtime, 0, static_cast<int>(g), &ghost) == AETHERFX_OK);
+        CHECK(ghost.fade > 0.0f);
+        CHECK(ghost.fade <= 1.0f);
+        CHECK(ghost.vertex_count >= 2);
+    }
+    for (size_t f = 0; f < style.flare_count; ++f) {
+        struct aetherfx_beam_flare flare;
+        REQUIRE(aetherfx_beam_flare(runtime, 0, static_cast<int>(f), &flare) == AETHERFX_OK);
+        CHECK(flare.radius > 0.0f);
+        CHECK(flare.intensity > 0.0f);
+        for (int k = 0; k < 3; ++k) CHECK(std::isfinite(flare.position[k]));
+    }
+
     REQUIRE(aetherfx_runtime_light_count(runtime) >= 1);
     REQUIRE(aetherfx_runtime_decal_count(runtime) >= 1);
     struct aetherfx_decal_info decal;

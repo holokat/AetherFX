@@ -32,7 +32,10 @@ Header (frame message)::
                   "strands", "carve", "softness", "spiral_arms", "arm_sharpness", "twist", "spin",
                   "climb", "scatter", "march_steps", "seed", "time"}],   # plain JSON, nothing in the blob
      "beams": [{"id", "width", "color", "emissive", "blend", "material", "pulse_phase",
-                "polylines": [{"offset", "count"}]}],           # xyz f32 triplets in the blob
+                "core_width", "glow_width",                     # cross-section, fractions of "width"
+                "paths":  [{"offset", "count", "depth", "fade"}],   # 5 f32 per vertex: xyz, width, intensity
+                "ghosts": [{"offset", "count", "depth", "fade"}],   # afterglow copies, same layout
+                "flares": [{"position", "radius", "intensity"}]}],  # plain JSON, nothing in the blob
      "trails": [{"id", "blend", "material", "twist_deg",
                  "ribbons": [{"offset", "count"}]}],            # 12 f32 per vertex: pos3, width, age_norm, u, color4, opacity, emissive
      "camera": {"position", "target", "up", "fov"} | null,
@@ -108,7 +111,7 @@ class Frame:
     decals: list[dict[str, Any]] = field(default_factory=list)
     mesh_instances: list[dict[str, Any]] = field(default_factory=list)
     volumes: list[dict[str, Any]] = field(default_factory=list)        # procedural raymarched volumes (docs/VOLUMES.md)
-    beams: list[dict[str, Any]] = field(default_factory=list)          # {..., "polylines": [np.ndarray (N,3)]}
+    beams: list[dict[str, Any]] = field(default_factory=list)          # {..., "paths"/"ghosts": [{"vertices": (N,5), "depth", "fade"}]}
     trails: list[dict[str, Any]] = field(default_factory=list)         # {..., "ribbons": [np.ndarray (N,12)]}
     camera: dict[str, Any] | None = None
     post_effects: list[dict[str, Any]] = field(default_factory=list)
@@ -147,8 +150,15 @@ def encode_frame(frame: Frame, fps: float = 60.0) -> bytes:
         })
     beams_json = []
     for b in frame.beams:
-        polys = [{"offset": put(np.asarray(p, dtype=np.float32)), "count": int(len(p))} for p in b.get("polylines", [])]
-        beams_json.append({**{k: v for k, v in b.items() if k != "polylines"}, "polylines": polys})
+        def paths_of(key: str) -> list[dict[str, Any]]:
+            out = []
+            for path in b.get(key, []):
+                vertices = np.asarray(path["vertices"], dtype=np.float32)
+                out.append({"offset": put(vertices), "count": int(len(vertices)),
+                            "depth": int(path.get("depth", 0)), "fade": float(path.get("fade", 1.0))})
+            return out
+        rest = {k: v for k, v in b.items() if k not in ("paths", "ghosts")}
+        beams_json.append({**rest, "paths": paths_of("paths"), "ghosts": paths_of("ghosts")})
     trails_json = []
     for t in frame.trails:
         ribbons = [{"offset": put(np.asarray(r, dtype=np.float32)), "count": int(len(r))} for r in t.get("ribbons", [])]

@@ -294,13 +294,25 @@
         "parameters": {
           "additionalProperties": false,
           "properties": {
+            "afterglow": {
+              "$ref": "#/$defs/param_float_min0"
+            },
             "blend": {
               "$ref": "#/$defs/param_enum_additive_alpha_premultiplied"
+            },
+            "branch_depth": {
+              "$ref": "#/$defs/param_int_min1_max3"
+            },
+            "branch_intensity": {
+              "$ref": "#/$defs/param_float_min0_max1"
             },
             "branch_length": {
               "$ref": "#/$defs/param_float_min0_max1"
             },
             "branch_probability": {
+              "$ref": "#/$defs/param_float_min0_max1"
+            },
+            "branch_width": {
               "$ref": "#/$defs/param_float_min0_max1"
             },
             "branching": {
@@ -309,11 +321,32 @@
             "color": {
               "$ref": "#/$defs/param_color"
             },
+            "core_width": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "detail": {
+              "$ref": "#/$defs/param_int_min0_max5"
+            },
             "duration": {
               "$ref": "#/$defs/param_float"
             },
             "emissive": {
               "$ref": "#/$defs/param_float_min0"
+            },
+            "flicker": {
+              "$ref": "#/$defs/param_float_min0_max1"
+            },
+            "flicker_frequency": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "glow_width": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "impact_flare": {
+              "$ref": "#/$defs/param_float_min0"
+            },
+            "intensity_noise": {
+              "$ref": "#/$defs/param_float_min0_max1"
             },
             "jitter_rate": {
               "$ref": "#/$defs/param_float_min0"
@@ -347,6 +380,12 @@
             },
             "width": {
               "$ref": "#/$defs/param_float_min0"
+            },
+            "width_profile": {
+              "$ref": "#/$defs/param_enum_uniform_taper_end_taper_both_bulge"
+            },
+            "width_variance": {
+              "$ref": "#/$defs/param_float_min0_max1"
             }
           },
           "type": "object"
@@ -2978,6 +3017,40 @@
         }
       ]
     },
+    "param_enum_uniform_taper_end_taper_both_bulge": {
+      "anyOf": [
+        {
+          "enum": [
+            "uniform",
+            "taper_end",
+            "taper_both",
+            "bulge"
+          ],
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "enum": [
+                "uniform",
+                "taper_end",
+                "taper_both",
+                "bulge"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
     "param_enum_unlit_lit": {
       "anyOf": [
         {
@@ -3408,6 +3481,32 @@
         }
       ]
     },
+    "param_int_min0_max5": {
+      "anyOf": [
+        {
+          "maximum": 5,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "maximum": 5,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
     "param_int_min0_max8": {
       "anyOf": [
         {
@@ -3527,6 +3626,32 @@
             },
             "value": {
               "maximum": 2000000,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "param_int_min1_max3": {
+      "anyOf": [
+        {
+          "maximum": 3,
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "track": {
+              "$ref": "#/$defs/keyframe_track"
+            },
+            "value": {
+              "maximum": 3,
               "minimum": 1,
               "type": "integer"
             }

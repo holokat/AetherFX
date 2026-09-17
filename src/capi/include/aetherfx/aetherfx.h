@@ -655,7 +655,9 @@ AETHERFX_API int aetherfx_volume_info(const aetherfx_runtime* runtime, int index
  * Frame state: beams
  * -------------------------------------------------------------------------
  * A beam is one or more polylines: polyline 0 is the main bolt, the rest are
- * branches (draw them thinner -- the reference renderer uses 0.6x).
+ * branches. `width` is the node's nominal width; aetherfx_beam_path() below
+ * gives the real per-vertex width (already carrying the branch ratio, the width
+ * profile and the per-vertex variance) plus the rest of the strike detail.
  */
 struct aetherfx_beam_info {
     const char* id;
@@ -682,6 +684,67 @@ AETHERFX_API int aetherfx_beam_info(const aetherfx_runtime* runtime, int index,
  */
 AETHERFX_API int aetherfx_beam_polyline(const aetherfx_runtime* runtime, int beam, int polyline,
                                         const float** xyz, size_t* count);
+
+/* -------------------------------------------------------------------------
+ * Frame state: beam detail (added after ABI 1)
+ * -------------------------------------------------------------------------
+ * Everything a strike-quality bolt needs on top of the bare polylines: a width
+ * and a brightness per vertex, which generation of branch a path is, the fading
+ * copies of the previous path (`afterglow`) and the flares at the ends.
+ *
+ * Purely additive -- new structs and new functions, no existing layout touched --
+ * so AETHERFX_ABI_VERSION is unchanged and a host built against the older header
+ * simply never calls these and keeps drawing constant-width polylines.
+ *
+ * Draw a beam as a camera-facing ribbon of half-width
+ *   0.5 * vertex width * max(glow_width, 3 * core_width)
+ * and shade across it with, at |across| = t in [0, 1] over that half-width:
+ *   k(t, r)  = (1 - min(t/r, 1)^2)^2
+ *   core     = k(t, core_width / s)        * 2.20    with s = max(glow_width, 3 * core_width)
+ *   inner    = k(t, 3 * core_width / s)    * 0.80
+ *   outer    = k(t, 1)                     * 0.28
+ *   rgb      = mix(color, white, 0.85) * core + color * (inner + outer)
+ *   alpha    = saturate((core + inner + outer) * vertex intensity * path fade)
+ * That is exactly what the reference renderer and the studio viewer do.
+ */
+struct aetherfx_beam_style {
+    float core_width;   /* white-hot core, as a fraction of `width` */
+    float glow_width;   /* outer glow, as a fraction of `width` */
+    size_t path_count;  /* live paths; the same as aetherfx_beam_info.polyline_count */
+    size_t ghost_count; /* fading afterglow copies of the previous paths */
+    size_t flare_count;
+};
+
+struct aetherfx_beam_path {
+    size_t vertex_count;
+    int depth;               /* 0 = the main bolt, 1 = a branch, 2 = a sub-branch */
+    float fade;              /* whole-path multiplier; below 1 for branches and ghosts */
+    const float* position;   /* 3 * vertex_count floats, world space */
+    const float* width;      /* vertex_count floats, metres, full width */
+    const float* intensity;  /* vertex_count floats, multiplier on `emissive` */
+};
+
+struct aetherfx_beam_flare {
+    float position[3];
+    float radius;     /* metres */
+    float intensity;  /* multiplier on the beam's `emissive` */
+};
+
+/* Fills `out` with beam `beam`'s cross-section and buffer counts. */
+AETHERFX_API int aetherfx_beam_style(const aetherfx_runtime* runtime, int beam,
+                                     struct aetherfx_beam_style* out);
+
+/* One live path of one beam. The pointers stay valid until the next step. */
+AETHERFX_API int aetherfx_beam_path(const aetherfx_runtime* runtime, int beam, int path,
+                                    struct aetherfx_beam_path* out);
+
+/* One fading afterglow path of one beam; identical layout, lower `fade`. */
+AETHERFX_API int aetherfx_beam_ghost(const aetherfx_runtime* runtime, int beam, int ghost,
+                                     struct aetherfx_beam_path* out);
+
+/* One flare of one beam: index 0 is the target end, 1 the origin. */
+AETHERFX_API int aetherfx_beam_flare(const aetherfx_runtime* runtime, int beam, int index,
+                                     struct aetherfx_beam_flare* out);
 
 /* -------------------------------------------------------------------------
  * Frame state: trails

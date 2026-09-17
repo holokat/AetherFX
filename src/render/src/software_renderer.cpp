@@ -38,6 +38,7 @@
 #include "aether/render/renderer.hpp"
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
@@ -79,7 +80,16 @@ constexpr float kBillboardTranslucency = 0.35f;  // back-lit bleed through the p
 constexpr float kFresnelMinEmissive = 0.35f;
 constexpr float kFresnelScale = 2.0f;
 constexpr int kNoiseSize = 64;  // built-in dissolve/erosion noise, generated once
-constexpr float kBranchWidthScale = 0.6f;  // beam branch polylines are thinner than the main beam
+// Beam cross-section. Three additive layers across the ribbon: a white-hot core the
+// bloom takes over, a coloured inner glow at three times its radius, and the wide
+// faint outer glow that fills the rest of the ribbon. The three.js viewer evaluates
+// the identical function in its fragment shader, so the two renderers match.
+constexpr float kBeamCoreGain = 2.2f;
+constexpr float kBeamInnerGain = 0.8f;
+constexpr float kBeamOuterGain = 0.28f;
+constexpr float kBeamCoreWhite = 0.85f;  // how far the core is pushed towards white
+constexpr float kBeamMinPixels = 1.2f;   // a bolt never gets thinner than this on screen
+constexpr float kBeamFlareCore = 0.22f;  // flare core radius, as a fraction of its radius
 constexpr float kGridSpacing = 1.0f;       // metres
 constexpr int kMaxBlurRadius = 96;
 // Volumes: the reference renderer is the *reference*, not the fast path, so it caps the authored
@@ -485,7 +495,7 @@ struct ResolvedSimple {  // beams / trails
 // ---------------------------------------------------------------------------------------------
 // Transparent draw list
 // ---------------------------------------------------------------------------------------------
-enum class DrawKind : uint8_t { ParticleQuad, ParticleMesh, BeamSegment, TrailSegment };
+enum class DrawKind : uint8_t { ParticleQuad, ParticleMesh, BeamSegment, BeamFlareSprite, TrailSegment };
 
 struct DrawItem {
     float depth = 0.0f;   // view depth of the primitive centre
@@ -495,12 +505,48 @@ struct DrawItem {
     uint32_t item = 0;    // particle index, or index into beam_segs / trail_segs
 };
 
+// One quad of a beam ribbon. `half_a` / `half_b` are world offsets from the
+// centreline to the ribbon edge, built from the *smoothed* tangent at each vertex,
+// so neighbouring segments share their corners exactly: no gap and no double-blended
+// overlap where the bolt bends.
 struct BeamSeg {
     uint32_t beam = 0;
     Vec3 a, b;
-    float half_width = 0.0f;
+    Vec3 half_a, half_b;
+    float intensity_a = 1.0f, intensity_b = 1.0f;  // per-vertex intensity * path fade
+    // The three glow radii as fractions of this ribbon's half-width. A fraction of
+    // 0 means this quad does not draw that layer, which is how the wide outer glow
+    // gets its own coarser strip (see submit_path).
+    float core_frac = 0.0f;
+    float inner_frac = 0.0f;
+    float outer_frac = 0.0f;
     float t0 = 0.0f, t1 = 0.0f;  // normalised position along the polyline
 };
+
+struct BeamFlareItem {
+    uint32_t beam = 0;
+    uint32_t flare = 0;
+};
+
+// Smooth compact kernel: 1 on the centreline, 0 at `radius`, flat where it lands.
+inline float beam_kernel(float t, float radius) {
+    const float x = radius > 1e-6f ? std::min(t / radius, 1.0f) : (t > 0.0f ? 1.0f : 0.0f);
+    const float f = 1.0f - x * x;
+    return f * f;
+}
+
+// The shared cross-section: `t` is |across| in [0, 1] over the ribbon half-width.
+// Returns the additive radiance for a beam of `color`, and writes the coverage the
+// blend should use into `luminance`.
+inline Vec3 beam_cross_section(float t, float core_frac, float inner_frac, float outer_frac, Vec3 color,
+                               float& luminance) {
+    const float core = core_frac > 0.0f ? beam_kernel(t, core_frac) * kBeamCoreGain : 0.0f;
+    const float inner = inner_frac > 0.0f ? beam_kernel(t, inner_frac) * kBeamInnerGain : 0.0f;
+    const float outer = outer_frac > 0.0f ? beam_kernel(t, outer_frac) * kBeamOuterGain : 0.0f;
+    luminance = core + inner + outer;
+    const Vec3 hot = lerp(color, Vec3{1.0f, 1.0f, 1.0f}, kBeamCoreWhite);
+    return hot * core + color * (inner + outer);
+}
 
 struct TrailSeg {
     uint32_t trail = 0;
@@ -1063,6 +1109,7 @@ private:
         for (const ParticleBuffer& pb : state.particles) buffers.push_back(resolve_particles(pb, resources));
 
         std::vector<BeamSeg> beam_segs;
+        std::vector<BeamFlareItem> beam_flares;
         std::vector<TrailSeg> trail_segs;
         std::vector<DrawItem> items;
         uint32_t order = 0;
@@ -1114,21 +1161,100 @@ private:
         }
 
         // --- beams -----------------------------------------------------------------------
+        const Vec3 eye = proj.view_inv.transform_point(Vec3{0, 0, 0});
+        std::vector<Vec3> side;        // reused per path
+        std::vector<size_t> kept;      // decimated vertex indices, reused per path
         for (size_t bi = 0; bi < state.beams.size(); ++bi) {
             const BeamState& beam = state.beams[bi];
-            for (size_t li = 0; li < beam.polylines.size(); ++li) {
-                const std::vector<Vec3>& pts = beam.polylines[li];
-                if (pts.size() < 2) continue;
-                const float width = beam.width * (li == 0 ? 1.0f : kBranchWidthScale);
+            // Radii as fractions of `width`. A fractal bolt's segments are far shorter
+            // than its glow is wide, and a ribbon wider than its segments are long
+            // rasterises as a fan of spikes rather than a tube - so the wide outer glow
+            // is drawn as its own strip through a path decimated to its own width, where
+            // the fine jaggedness is invisible anyway. The two strips sum to exactly the
+            // one-pass cross-section (docs/RUNTIME.md section 11).
+            const float core_r = 0.5f * beam.core_width;
+            const float inner_r = 0.5f * beam.core_width * 3.0f;
+            const float outer_r = 0.5f * beam.glow_width;
+            const bool split = outer_r > inner_r * 1.05f && inner_r > 1e-5f;
+            // ribbon scale, core/inner/outer fractions of it, decimate
+            struct Pass { float scale, core, inner, outer; bool decimate; };
+            std::array<Pass, 2> passes{};
+            int pass_count = 0;
+            if (split) {
+                passes[pass_count++] = Pass{inner_r, core_r / inner_r, 1.0f, 0.0f, false};
+                passes[pass_count++] = Pass{outer_r, 0.0f, 0.0f, 1.0f, true};
+            } else {
+                const float scale = std::max(std::max(inner_r, outer_r), 1e-5f);
+                passes[pass_count++] = Pass{scale, std::min(core_r / scale, 1.0f),
+                                            std::min(inner_r / scale, 1.0f),
+                                            std::min(outer_r / scale, 1.0f), false};
+            }
+            const auto submit_path = [&](const BeamPath& path, const Pass& pass) {
+                const std::vector<Vec3>& pts = path.points;
+                if (pts.size() < 2 || path.fade <= 0.0f || pass.scale <= 0.0f) return;
+                // Decimation: keep a vertex only once the path has travelled at least
+                // this ribbon's full width since the last one.
+                kept.clear();
+                if (!pass.decimate) {
+                    kept.reserve(pts.size());
+                    for (size_t vi = 0; vi < pts.size(); ++vi) kept.push_back(vi);
+                } else {
+                    kept.push_back(0);
+                    float travelled = 0.0f;
+                    for (size_t vi = 1; vi + 1 < pts.size(); ++vi) {
+                        travelled += length(pts[vi] - pts[vi - 1]);
+                        if (travelled >= 2.0f * pass.scale * path.width[vi]) {
+                            kept.push_back(vi);
+                            travelled = 0.0f;
+                        }
+                    }
+                    kept.push_back(pts.size() - 1);
+                }
+                if (kept.size() < 2) return;
+                // Camera-facing side vector per vertex, from the central-difference
+                // tangent: adjacent quads then share their corners exactly.
+                //
+                // Two degeneracies matter on a fractal bolt, where segments are far
+                // shorter than the glow is wide. A segment pointing at the camera
+                // makes tangent x view vanish, and the normalised result is noise; and
+                // a sharp reversal flips the side vector, folding the quad into a
+                // bow-tie that rasterises as a long hard triangle. So a near-parallel
+                // sample keeps the previous side vector, and every sample is flipped
+                // to agree with the one before it.
+                side.resize(kept.size());
+                Vec3 previous_side{0.0f, 0.0f, 0.0f};
+                for (size_t ki = 0; ki < kept.size(); ++ki) {
+                    const Vec3 before = pts[kept[ki == 0 ? 0 : ki - 1]];
+                    const Vec3 after = pts[kept[std::min(ki + 1, kept.size() - 1)]];
+                    Vec3 tangent = after - before;
+                    if (length_squared(tangent) < 1e-12f) tangent = Vec3{0, 1, 0};
+                    tangent = normalize(tangent);
+                    const Vec3 view = eye - pts[kept[ki]];
+                    Vec3 s = cross(tangent, view);
+                    // |t x v| = |v| sin(angle): below ~1.7 degrees the direction is noise.
+                    if (length_squared(s) < 0.0009f * length_squared(view))
+                        s = length_squared(previous_side) > 0.0f ? previous_side : orthogonal(tangent);
+                    s = normalize(s);
+                    if (dot(s, previous_side) < 0.0f) s = s * -1.0f;
+                    previous_side = s;
+                    side[ki] = s;
+                }
                 const float inv_span = 1.0f / static_cast<float>(pts.size() - 1);
-                for (size_t si = 0; si + 1 < pts.size(); ++si) {
+                for (size_t ki = 0; ki + 1 < kept.size(); ++ki) {
+                    const size_t va = kept[ki], vb = kept[ki + 1];
                     BeamSeg seg;
                     seg.beam = static_cast<uint32_t>(bi);
-                    seg.a = pts[si];
-                    seg.b = pts[si + 1];
-                    seg.half_width = width * 0.5f;
-                    seg.t0 = static_cast<float>(si) * inv_span;
-                    seg.t1 = static_cast<float>(si + 1) * inv_span;
+                    seg.a = pts[va];
+                    seg.b = pts[vb];
+                    seg.half_a = side[ki] * (path.width[va] * pass.scale);
+                    seg.half_b = side[ki + 1] * (path.width[vb] * pass.scale);
+                    seg.intensity_a = path.intensity[va] * path.fade;
+                    seg.intensity_b = path.intensity[vb] * path.fade;
+                    seg.core_frac = pass.core;
+                    seg.inner_frac = pass.inner;
+                    seg.outer_frac = pass.outer;
+                    seg.t0 = static_cast<float>(va) * inv_span;
+                    seg.t1 = static_cast<float>(vb) * inv_span;
                     const float depth = -proj.to_view((seg.a + seg.b) * 0.5f).z;
                     if (!(depth > proj.near_plane) || depth >= proj.far_plane) continue;
                     DrawItem it;
@@ -1139,6 +1265,22 @@ private:
                     beam_segs.push_back(seg);
                     items.push_back(it);
                 }
+            };
+            for (int p = 0; p < pass_count; ++p) {
+                for (const BeamPath& ghost : beam.ghosts) submit_path(ghost, passes[p]);  // behind the bolt
+                for (const BeamPath& path : beam.paths) submit_path(path, passes[p]);
+            }
+            for (size_t fi = 0; fi < beam.flares.size(); ++fi) {
+                if (!(beam.flares[fi].radius > 0.0f)) continue;
+                const float depth = -proj.to_view(beam.flares[fi].position).z;
+                if (!(depth > proj.near_plane) || depth >= proj.far_plane) continue;
+                DrawItem it;
+                it.depth = depth;
+                it.order = order++;
+                it.kind = DrawKind::BeamFlareSprite;
+                it.item = static_cast<uint32_t>(beam_flares.size());
+                beam_flares.push_back(BeamFlareItem{static_cast<uint32_t>(bi), static_cast<uint32_t>(fi)});
+                items.push_back(it);
             }
         }
 
@@ -1217,6 +1359,11 @@ private:
                 case DrawKind::BeamSegment:
                     draw_beam_segment(fb, proj, settings, state.beams[beam_segs[it.item].beam],
                                       beam_mats[beam_segs[it.item].beam], beam_segs[it.item]);
+                    break;
+                case DrawKind::BeamFlareSprite:
+                    draw_beam_flare(fb, proj, state.beams[beam_flares[it.item].beam],
+                                    beam_mats[beam_flares[it.item].beam],
+                                    state.beams[beam_flares[it.item].beam].flares[beam_flares[it.item].flare]);
                     break;
                 case DrawKind::TrailSegment:
                     draw_trail_segment(fb, proj, settings, trail_mats[trail_segs[it.item].trail],
@@ -1533,49 +1680,92 @@ private:
         draw_mesh(fb, proj, state, settings, *mesh, xf, ms);
     }
 
-    // Camera-facing quad per polyline segment with a bright core and soft edges:
-    //   profile(t) = (1-|t|)^2 + 2 * clamp(1 - 4|t|)^2   with t = 2v - 1 across the width.
+    // Pushes two projected ribbon edges apart so a very thin bolt still covers a
+    // pixel instead of flickering in and out of the sample grid.
+    static void widen(Vec2& p0, Vec2& p1, float minimum) {
+        const Vec2 d = p1 - p0;
+        const float len = length(d);
+        const Vec2 axis = len > 1e-5f ? d / len : Vec2{0.0f, 1.0f};
+        if (len >= minimum) return;
+        const Vec2 mid = (p0 + p1) * 0.5f;
+        p0 = mid - axis * (minimum * 0.5f);
+        p1 = mid + axis * (minimum * 0.5f);
+    }
+
+    // One quad of a beam ribbon, shaded by the cross-section in beam_cross_section():
+    // a white-hot core inside a coloured inner glow inside a wide faint outer glow.
+    // The quad is a trapezoid (the two ends may differ in width) drawn as two
+    // triangles under the top-left rule, so a pixel is never blended twice.
     void draw_beam_segment(Framebuffer& fb, const Projector& proj, const RenderSettings& settings,
                            const BeamState& beam, const ResolvedSimple& rs, const BeamSeg& seg) {
-        Vec2 pa, pb_px;
-        float da = 0.0f, db = 0.0f;
-        if (!proj.project(seg.a, pa, da) || !proj.project(seg.b, pb_px, db)) return;
-        Vec2 along = pb_px - pa;
-        if (length(along) < 1e-4f) return;
-        const Vec2 dir = normalize(along);
-        const Vec2 perp{-dir.y, dir.x};
-        const float half_px =
-            seg.half_width * (proj.pixel_scale(da) + proj.pixel_scale(db)) * 0.5f;
-        if (half_px <= 0.0f) return;
+        Vec2 a0, a1, b0, b1;
+        float da = 0.0f, db = 0.0f, ignored = 0.0f;
+        if (!proj.project(seg.a - seg.half_a, a0, da)) return;
+        if (!proj.project(seg.a + seg.half_a, a1, ignored)) return;
+        if (!proj.project(seg.b - seg.half_b, b0, db)) return;
+        if (!proj.project(seg.b + seg.half_b, b1, ignored)) return;
+        widen(a0, a1, kBeamMinPixels);
+        widen(b0, b1, kBeamMinPixels);
 
-        const Vec2 center = (pa + pb_px) * 0.5f;
-        const Vec2 ax = along * 0.5f;
-        const Vec2 ay = perp * std::max(half_px, 0.6f);  // never thinner than a pixel
-        const float depth_mid = (da + db) * 0.5f;
         const float pulse = beam.pulse_phase;
         const bool soft = settings.soft_particles && rs.soft && rs.soft_distance > 0.0f;
         const float inv_soft = soft ? 1.0f / rs.soft_distance : 0.0f;
 
-        raster_parallelogram(fb.w, fb.h, center, ax, ay, [&](int x, int y, float u, float v) {
+        auto shade = [&](int x, int y, float s, float v) {
             const size_t idx = fb.index(x, y);
-            const float depth = lerp(da, db, u);
+            const float depth = lerp(da, db, s);
             if (depth > fb.depth[idx]) return;
             const float t = std::fabs(v * 2.0f - 1.0f);
-            const float soft_edge = (1.0f - t) * (1.0f - t);
-            const float core_t = saturate(1.0f - t * 4.0f);
-            float profile = soft_edge + core_t * core_t * 2.0f;
+            float luminance = 0.0f;
+            const Vec3 rgb =
+                beam_cross_section(t, seg.core_frac, seg.inner_frac, seg.outer_frac, rs.base_color, luminance);
+            if (luminance <= 0.0f) return;
+            float gain = lerp(seg.intensity_a, seg.intensity_b, s);
             if (pulse >= 0.0f) {
-                float d = std::fabs(lerp(seg.t0, seg.t1, u) - pulse);
+                float d = std::fabs(lerp(seg.t0, seg.t1, s) - pulse);
                 d = std::min(d, 1.0f - d);  // the pulse wraps along the beam
-                profile *= 1.0f + 3.0f * std::exp(-(d * d) / (0.06f * 0.06f));
+                gain *= 1.0f + 3.0f * std::exp(-(d * d) / (0.06f * 0.06f));
             }
-            if (profile <= 0.0f) return;
-            float a = saturate(profile) * rs.opacity;
-            if (soft) a *= saturate((fb.depth[idx] - depth_mid) * inv_soft);
-            if (a <= 0.0f) return;
-            blend_pixel(fb, idx, rs.base_color * (rs.emissive_scale * profile), a, rs.blend);
+            float alpha = saturate(luminance * gain) * rs.opacity;
+            if (soft) alpha *= saturate((fb.depth[idx] - depth) * inv_soft);
+            if (alpha <= 0.0f) return;
+            blend_pixel(fb, idx, rgb * (rs.emissive_scale * gain), alpha, rs.blend);
             ++fragments_;
+        };
+
+        // (a1, b1, b0) then (a1, b0, a0); v = 0 on the +side edge, 1 on the -side edge.
+        raster_triangle(fb.w, fb.h, a1, b1, b0, [&](int x, int y, float, float w1, float w2) {
+            shade(x, y, w1 + w2, w2);
         });
+        raster_triangle(fb.w, fb.h, a1, b0, a0, [&](int x, int y, float, float w1, float w2) {
+            shade(x, y, w1, w1 + w2);
+        });
+    }
+
+    // A beam's impact flare: an additive screen-facing blob with the same three-layer
+    // falloff as the bolt itself, so the strike point reads as one hot source.
+    void draw_beam_flare(Framebuffer& fb, const Projector& proj, const BeamState& beam,
+                         const ResolvedSimple& rs, const BeamFlare& flare) {
+        Vec2 center;
+        float depth = 0.0f;
+        if (!proj.project(flare.position, center, depth)) return;
+        const float radius = std::max(flare.radius * proj.pixel_scale(depth), 1.0f);
+        raster_parallelogram(fb.w, fb.h, center, Vec2{radius, 0.0f}, Vec2{0.0f, radius},
+                             [&](int x, int y, float u, float v) {
+                                 const size_t idx = fb.index(x, y);
+                                 if (depth > fb.depth[idx]) return;
+                                 const float t = length(Vec2{u * 2.0f - 1.0f, v * 2.0f - 1.0f});
+                                 if (t >= 1.0f) return;
+                                 float luminance = 0.0f;
+                                 const Vec3 rgb = beam_cross_section(t, kBeamFlareCore, kBeamFlareCore * 3.0f,
+                                                                     1.0f, rs.base_color, luminance);
+                                 if (luminance <= 0.0f) return;
+                                 const float alpha = saturate(luminance * flare.intensity) * rs.opacity;
+                                 if (alpha <= 0.0f) return;
+                                 blend_pixel(fb, idx, rgb * (rs.emissive_scale * flare.intensity), alpha,
+                                             rs.blend);
+                                 ++fragments_;
+                             });
     }
 
     // Ribbon segment: a camera-facing trapezoid (the two vertices may have different widths),

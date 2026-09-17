@@ -403,10 +403,16 @@ TEST_CASE("a second effect exports its own analytic nodes", "[tools][package]") 
     REQUIRE(event != nullptr);
     CHECK((*event)["resolved"]["targets"].size() == 3);
 
+    // The debris mesh is exported with every seeded variant it declares; how many
+    // there are is art direction, so only the file <-> variant contract is pinned.
     const nlohmann::json* chunk = find_by_id(package.runtime["meshes"], "chunk");
     REQUIRE(chunk != nullptr);
-    CHECK((*chunk)["variants"].get<int>() == 1);
+    const size_t variants = (*chunk)["variants"].get<size_t>();
+    CHECK(variants >= 1);
     CHECK(std::filesystem::is_regular_file(package.dir / (*chunk)["file"].get<std::string>()));
+    CHECK((*chunk)["files"].size() == variants);
+    for (const auto& file : (*chunk)["files"])
+        CHECK(std::filesystem::is_regular_file(package.dir / file.get<std::string>()));
 }
 
 TEST_CASE("package options turn the optional outputs on and off", "[tools][package]") {

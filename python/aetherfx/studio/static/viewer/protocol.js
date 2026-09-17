@@ -41,11 +41,22 @@ export function decodeFrame(buffer) {
     return Object.assign({}, system, { count: count, views: views });
   });
 
+  /* A beam path is 5 floats per vertex: xyz, width (m), intensity. */
+  const beamPaths = function (list) {
+    return (list || []).map(function (p) {
+      return {
+        vertices: arrayView(buffer, base, { offset: p.offset, dtype: 'f32', components: 5 }, p.count | 0),
+        count: p.count | 0,
+        depth: p.depth | 0,
+        fade: typeof p.fade === 'number' ? p.fade : 1
+      };
+    });
+  };
+
   const beams = (header.beams || []).map(function (beam) {
     return Object.assign({}, beam, {
-      polylines: (beam.polylines || []).map(function (p) {
-        return arrayView(buffer, base, { offset: p.offset, dtype: 'f32', components: 3 }, p.count | 0);
-      })
+      paths: beamPaths(beam.paths),
+      ghosts: beamPaths(beam.ghosts)
     });
   });
 

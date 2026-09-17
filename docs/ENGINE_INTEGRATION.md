@@ -247,7 +247,7 @@ for (int s = 0; s < systems; ++s) {
 | particle system, `RIBBON` | the system's trail node draws it; skip the particles | - |
 | particle system, `NONE` | nothing (simulation-only system, e.g. an event source) | - |
 | light | the engine's own point/spot light | position, direction, color, intensity, radius, cone_angle_deg |
-| beam | a camera-facing strip per polyline; polyline 0 is the bolt, the rest are branches (draw at ~0.6x width) | width, color, emissive, pulse_phase |
+| beam | a camera-facing strip per path, shaded across the ribbon (`aetherfx_beam_style` / `aetherfx_beam_path`, and the cross-section in docs/RUNTIME.md section 11); path 0 is the bolt, the rest are branches, plus fading afterglow `ghosts` and additive `flares` at the ends | per-vertex position, width, intensity; per-path depth and fade; width, color, emissive, core_width, glow_width, pulse_phase |
 | trail | a camera-facing strip per ribbon, oldest vertex first | per-vertex position, width, u, color, opacity, emissive, normalized_age |
 | decal | a projected decal, or a quad on the ground | position, normal, size, rotation_deg, circle, texture_id |
 | mesh instance | a static mesh | mesh_id, transform (column-major), color, emissive, visible |
@@ -506,7 +506,8 @@ paths it tried.
 `position (N,3)`, `velocity (N,3)`, `color (N,4)`, `orientation (N,4)`,
 `scale3 (N,3)`, `variant`/`seed` `uint32`, and `size`, `rotation`, `opacity`,
 `emissive`, `age`, `lifetime`, `custom0` as `(N,)`. Beam polylines are `(N,3)`
-arrays; trail ribbons are `(N,12)` - `pos3, width, normalized_age, u, color4,
+arrays and beam `paths` / `ghosts` are `(N,5)` - `pos3, width, intensity`;
+trail ribbons are `(N,12)` - `pos3, width, normalized_age, u, color4,
 opacity, emissive`, the wire layout, which drops the vertex's absolute `age`.
 Handles free themselves (`__del__`), take `with` blocks and have an idempotent
 `close()`; one runtime must still be driven by one thread at a time.

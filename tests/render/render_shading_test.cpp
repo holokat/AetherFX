@@ -528,9 +528,9 @@ TEST_CASE("beams and trails are drawn", "[render]") {
 
     FrameState with_beam;
     BeamState beam;
-    beam.polylines.push_back({Vec3{0.0f, 3.0f, 0.0f}, Vec3{0.0f, 0.0f, 0.0f}});
-    beam.polylines.push_back({Vec3{0.0f, 1.5f, 0.0f}, Vec3{0.8f, 0.9f, 0.0f}});
     beam.width = 0.1f;
+    beam.paths.push_back(make_beam_path({Vec3{0.0f, 3.0f, 0.0f}, Vec3{0.0f, 0.0f, 0.0f}}, beam.width, 0));
+    beam.paths.push_back(make_beam_path({Vec3{0.0f, 1.5f, 0.0f}, Vec3{0.8f, 0.9f, 0.0f}}, beam.width * 0.6f, 1));
     beam.color = Color{0.5f, 0.7f, 1.0f, 1.0f};
     beam.emissive = 3.0f;
     beam.pulse_phase = 0.5f;
@@ -565,6 +565,71 @@ TEST_CASE("beams and trails are drawn", "[render]") {
         return n;
     };
     CHECK(column_coverage(100) > column_coverage(30));
+}
+
+TEST_CASE("a beam is a white-hot core inside a coloured glow", "[render]") {
+    ResourceSet res;
+    RenderSettings settings = plain_settings(256);
+    CameraDesc cam = front_camera();
+    cam.position = Vec3{0.0f, 1.5f, 6.0f};
+    cam.target = Vec3{0.0f, 1.5f, 0.0f};
+    auto renderer = create_software_renderer();
+
+    FrameState fs;
+    BeamState beam;
+    beam.width = 0.25f;
+    beam.color = Color{0.35f, 0.55f, 1.0f, 1.0f};
+    beam.emissive = 8.0f;
+    beam.core_width = 0.18f;
+    beam.glow_width = 3.0f;
+    beam.pulse_phase = -1.0f;
+    beam.paths.push_back(make_beam_path({Vec3{0.0f, 3.0f, 0.0f}, Vec3{0.0f, 0.0f, 0.0f}}, beam.width, 0));
+    fs.beams.push_back(beam);
+    const Image img = renderer->render(fs, res, cam, settings);
+
+    // The bolt runs down the middle of the frame. Walk out from the centreline:
+    // the core is far brighter than the glow, and the glow reaches much further.
+    const int y = 128;
+    int core_x = 128;
+    for (int x = 0; x < img.width; ++x)
+        if (img.get(x, y).luminance() > img.get(core_x, y).luminance()) core_x = x;
+    const float core = img.get(core_x, y).luminance();
+    const float glow = img.get(core_x + 6, y).luminance();
+    const float far = img.get(core_x + 14, y).luminance();
+    CHECK(core > 4.0f);          // HDR: high enough for the bloom to take over
+    CHECK(glow > 0.0f);
+    CHECK(core > glow * 8.0f);   // a thin hot line, not a fat tube
+    CHECK(glow > far);
+    CHECK(far > 0.0f);           // the outer glow is wide
+    // The core washes out to white; the glow keeps the beam's blue.
+    const Color hot = img.get(core_x, y);
+    const Color soft = img.get(core_x + 6, y);
+    CHECK(hot.r / hot.b > soft.r / soft.b);
+    CHECK(soft.b > soft.r * 2.0f);
+
+    // An impact flare adds a bright blob at the strike point that nothing else lit.
+    FrameState flared = fs;
+    flared.beams.front().flares.push_back(BeamFlare{Vec3{0.0f, 0.0f, 0.0f}, 0.6f, 1.0f});
+    const Image with_flare = renderer->render(flared, res, cam, settings);
+    CHECK(mean_luminance(with_flare) > mean_luminance(img));
+    auto brightest_near_impact = [](const Image& image) {
+        float best = 0.0f;
+        for (int py = 180; py < 240; ++py)
+            for (int px = 100; px < 156; ++px) best = std::max(best, image.get(px, py).luminance());
+        return best;
+    };
+    CHECK(brightest_near_impact(with_flare) > brightest_near_impact(img) * 1.2f);
+
+    // A ghost is the same path at a lower `fade`, so it is dimmer everywhere.
+    FrameState ghosted;
+    BeamState ghost_only = beam;
+    ghost_only.paths.clear();
+    ghost_only.paths.push_back(make_beam_path({Vec3{0.0f, 3.0f, 0.0f}, Vec3{0.0f, 0.0f, 0.0f}}, beam.width, 0));
+    ghost_only.paths.front().fade = 0.25f;
+    ghosted.beams.push_back(ghost_only);
+    const Image dim = renderer->render(ghosted, res, cam, settings);
+    CHECK(mean_luminance(dim) < mean_luminance(img));
+    CHECK(mean_luminance(dim) > 0.0f);
 }
 
 TEST_CASE("20k billboards render within the performance budget", "[render][perf]") {

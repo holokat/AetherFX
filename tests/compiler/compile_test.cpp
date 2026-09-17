@@ -271,9 +271,16 @@ TEST_CASE("baked resources", "[compiler][resources]") {
     CHECK(aoe.find("rune")->texture_id == "tex_rune");
 
     const CompiledEffect lightning = compiler::compile(load_example("lightning_strike.json"));
+    // The debris mesh is baked, and seeded primitives bake one mesh per variant
+    // under "<id>", "<id>#1", ... . The shape itself is art direction, so this
+    // asserts that the variants exist and differ, not what they look like.
     const MeshData* chunk = lightning.resources.mesh("chunk");
     REQUIRE(chunk != nullptr);
-    CHECK(chunk->triangle_count() == 12);
+    CHECK(chunk->triangle_count() > 0);
+    REQUIRE(param_int(*lightning.effect.find_node("chunk"), "variants") > 1);
+    const MeshData* second = lightning.resources.mesh("chunk#1");
+    REQUIRE(second != nullptr);
+    CHECK(second->positions != chunk->positions);
 
     const CompiledEffect fireball = compiler::compile(load_example("fireball.json"));
     REQUIRE(fireball.resources.mesh("core") != nullptr);

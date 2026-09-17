@@ -209,12 +209,12 @@ FrameState make_scene() {
         const float jitter = (i == 0 || i == 10) ? 0.0f : 0.09f;
         main.push_back(Vec3{rng.range(-jitter, jitter), lerp(3.0f, 0.0f, t), rng.range(-jitter, jitter)});
     }
-    beam.polylines.push_back(main);
+    beam.paths.push_back(make_beam_path(main, beam.width, 0));
     std::vector<Vec3> branch;
     branch.push_back(main[4]);
     branch.push_back(main[4] + Vec3{0.35f, -0.28f, 0.12f});
     branch.push_back(main[4] + Vec3{0.62f, -0.62f, 0.05f});
-    beam.polylines.push_back(branch);
+    beam.paths.push_back(make_beam_path(branch, beam.width * 0.6f, 1));
     fs.beams.push_back(beam);
 
     // --- a trail ribbon --------------------------------------------------------------------

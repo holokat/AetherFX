@@ -1,6 +1,6 @@
 """The real engine in-process: a ctypes binding for ``libaetherfx``.
 
-``src/capi/include/aetherfx/aetherfx.h`` is the contract - 74 C99 functions, a
+``src/capi/include/aetherfx/aetherfx.h`` is the contract - 80 C99 functions, a
 handful of tag-only plain-data structs and library-owned memory.  This module
 mirrors it field for field and then puts a small RAII layer on top so Python
 code never sees a raw pointer:
@@ -310,6 +310,41 @@ class BeamInfo(ctypes.Structure):
     ]
 
 
+class BeamStyle(ctypes.Structure):
+    """``struct aetherfx_beam_style`` - the strike detail added after ABI 1."""
+
+    _fields_ = [
+        ("core_width", c_float),
+        ("glow_width", c_float),
+        ("path_count", c_size_t),
+        ("ghost_count", c_size_t),
+        ("flare_count", c_size_t),
+    ]
+
+
+class BeamPath(ctypes.Structure):
+    """``struct aetherfx_beam_path`` - one bolt or branch, width and intensity per vertex."""
+
+    _fields_ = [
+        ("vertex_count", c_size_t),
+        ("depth", c_int),
+        ("fade", c_float),
+        ("position", POINTER(c_float)),
+        ("width", POINTER(c_float)),
+        ("intensity", POINTER(c_float)),
+    ]
+
+
+class BeamFlare(ctypes.Structure):
+    """``struct aetherfx_beam_flare`` - the bright blob at one end of a beam."""
+
+    _fields_ = [
+        ("position", c_float * 3),
+        ("radius", c_float),
+        ("intensity", c_float),
+    ]
+
+
 class TrailVertex(ctypes.Structure):
     """``struct aetherfx_trail_vertex`` - 13 floats, tightly packed."""
 
@@ -363,6 +398,9 @@ _EXPECTED_SIZES: tuple[tuple[type[ctypes.Structure], int], ...] = (
     (MeshInstanceInfo, 112),
     (VolumeInfo, 232),
     (BeamInfo, 64),
+    (BeamStyle, 32),
+    (BeamPath, 40),
+    (BeamFlare, 20),
     (TrailVertex, 52),
     (TrailInfo, 32),
     (CameraInfo, 52),
@@ -497,7 +535,7 @@ def version_string() -> str:
 _FLOAT_P = POINTER(c_float)
 _U32_P = POINTER(c_uint32)
 
-#: name -> (restype, argtypes) for all 74 exported functions.
+#: name -> (restype, argtypes) for all 80 exported functions.
 _SIGNATURES: dict[str, tuple[Any, tuple[Any, ...]]] = {
     # -- version and errors ------------------------------------------------
     "aetherfx_version": (None, (POINTER(c_int), POINTER(c_int), POINTER(c_int))),
@@ -580,6 +618,10 @@ _SIGNATURES: dict[str, tuple[Any, tuple[Any, ...]]] = {
     "aetherfx_runtime_beam_count": (c_int, (c_void_p,)),
     "aetherfx_beam_info": (c_int, (c_void_p, c_int, POINTER(BeamInfo))),
     "aetherfx_beam_polyline": (c_int, (c_void_p, c_int, c_int, POINTER(_FLOAT_P), POINTER(c_size_t))),
+    "aetherfx_beam_style": (c_int, (c_void_p, c_int, POINTER(BeamStyle))),
+    "aetherfx_beam_path": (c_int, (c_void_p, c_int, c_int, POINTER(BeamPath))),
+    "aetherfx_beam_ghost": (c_int, (c_void_p, c_int, c_int, POINTER(BeamPath))),
+    "aetherfx_beam_flare": (c_int, (c_void_p, c_int, c_int, POINTER(BeamFlare))),
     "aetherfx_runtime_trail_count": (c_int, (c_void_p,)),
     "aetherfx_trail_info": (c_int, (c_void_p, c_int, POINTER(TrailInfo))),
     "aetherfx_trail_ribbon": (c_int, (c_void_p, c_int, c_int, POINTER(POINTER(TrailVertex)), POINTER(c_size_t))),
@@ -1183,7 +1225,9 @@ class RuntimeFrame:
     decals: list[dict[str, Any]] = field(default_factory=list)
     mesh_instances: list[dict[str, Any]] = field(default_factory=list)
     volumes: list[dict[str, Any]] = field(default_factory=list)
-    beams: list[dict[str, Any]] = field(default_factory=list)   # {..., "polylines": [(N, 3) f32]}
+    beams: list[dict[str, Any]] = field(default_factory=list)   # {..., "polylines": [(N, 3) f32],
+                                                                #  "paths"/"ghosts": [{"vertices": (N, 5) f32, "depth", "fade"}],
+                                                                #  "flares": [{"position", "radius", "intensity"}]}
     trails: list[dict[str, Any]] = field(default_factory=list)  # {..., "ribbons": [(N, 12) f32]}
     camera: dict[str, Any] | None = None
 
@@ -1452,6 +1496,8 @@ class Runtime(_Handle):
                     "aetherfx_beam_polyline",
                 )
                 polylines.append(_copy(xyz, int(points.value), 3, np.float32))
+            style = BeamStyle()
+            _check(library, library.aetherfx_beam_style(handle, index, byref(style)), "aetherfx_beam_style")
             yield {
                 "id": _text(info.id),
                 "width": float(info.width),
@@ -1460,8 +1506,42 @@ class Runtime(_Handle):
                 "blend": _enum(BLEND_MODES, int(info.blend)),
                 "material_id": _text(info.material_id),
                 "pulse_phase": float(info.pulse_phase),
+                "core_width": float(style.core_width),
+                "glow_width": float(style.glow_width),
                 "polylines": polylines,
+                "paths": [
+                    self._beam_path(library, handle, index, path, "aetherfx_beam_path")
+                    for path in range(int(style.path_count))
+                ],
+                "ghosts": [
+                    self._beam_path(library, handle, index, ghost, "aetherfx_beam_ghost")
+                    for ghost in range(int(style.ghost_count))
+                ],
+                "flares": [
+                    self._beam_flare(library, handle, index, flare)
+                    for flare in range(int(style.flare_count))
+                ],
             }
+
+    @staticmethod
+    def _beam_path(library: ctypes.CDLL, handle: c_void_p, beam: int, path: int, entry: str) -> dict[str, Any]:
+        """One bolt / branch / ghost as ``(N, 5)`` float32: xyz, width, intensity."""
+        info = BeamPath()
+        _check(library, getattr(library, entry)(handle, beam, path, byref(info)), entry)
+        count = int(info.vertex_count)
+        vertices = np.empty((count, 5), dtype=np.float32)
+        if count:
+            vertices[:, 0:3] = _copy(info.position, count, 3, np.float32)
+            vertices[:, 3] = _copy(info.width, count, 1, np.float32).reshape(count)
+            vertices[:, 4] = _copy(info.intensity, count, 1, np.float32).reshape(count)
+        return {"vertices": vertices, "depth": int(info.depth), "fade": float(info.fade)}
+
+    @staticmethod
+    def _beam_flare(library: ctypes.CDLL, handle: c_void_p, beam: int, index: int) -> dict[str, Any]:
+        info = BeamFlare()
+        _check(library, library.aetherfx_beam_flare(handle, beam, index, byref(info)), "aetherfx_beam_flare")
+        return {"position": [float(v) for v in info.position], "radius": float(info.radius),
+                "intensity": float(info.intensity)}
 
     def _trails(self, library: ctypes.CDLL, handle: c_void_p) -> Iterator[dict[str, Any]]:
         count = _check(library, library.aetherfx_runtime_trail_count(handle), "aetherfx_runtime_trail_count")

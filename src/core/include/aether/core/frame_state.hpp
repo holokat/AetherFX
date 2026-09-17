@@ -71,16 +71,61 @@ struct LightState {
     bool cast_shadows = false;
 };
 
+// One polyline of a beam: the bolt itself, or a branch off it. `points` stays a
+// plain contiguous Vec3 array so a host can upload it straight to the GPU;
+// `width` (metres, full width, already carrying the width profile, the per-vertex
+// variance and the branch ratio) and `intensity` (a multiplier on the beam's
+// `emissive`) are per vertex and always the same length as `points`.
+struct BeamPath {
+    std::vector<Vec3> points;
+    std::vector<float> width;
+    std::vector<float> intensity;
+    int depth = 0;      // 0 = main bolt, 1 = branch, 2 = sub-branch
+    float fade = 1.0f;  // whole-path multiplier: 1 for live paths, decaying for afterglow ghosts
+};
+
+// A path of constant width and full intensity: what a beam looked like before
+// per-vertex width existed. Handy for hosts and tests that build one by hand.
+inline BeamPath make_beam_path(std::vector<Vec3> points, float width, int depth = 0) {
+    BeamPath path;
+    path.width.assign(points.size(), width);
+    path.intensity.assign(points.size(), 1.0f);
+    path.points = std::move(points);
+    path.depth = depth;
+    return path;
+}
+
+// A bright additive blob at one end of a beam (docs/RUNTIME.md, beam.impact_flare).
+struct BeamFlare {
+    Vec3 position;
+    float radius = 0.0f;     // world metres
+    float intensity = 1.0f;  // multiplier on the beam's `emissive`
+};
+
 struct BeamState {
     std::string id;
-    std::vector<std::vector<Vec3>> polylines;  // [0] main beam, others are branches
+    std::vector<BeamPath> paths;   // [0] main beam, others are branches
+    std::vector<BeamPath> ghosts;  // previous paths still fading out (afterglow); empty by default
+    std::vector<BeamFlare> flares;  // [0] the target end, [1] the origin; empty when impact_flare = 0
     float width = 0.05f;
     Color color{1, 1, 1, 1};
     float emissive = 4.0f;
+    // Cross-section, as fractions of `width`: a white-hot core, a coloured inner
+    // glow at 3x the core, and a wide faint outer glow. Both renderers evaluate
+    // the same profile so the CPU reference and the viewer match.
+    float core_width = 0.55f;
+    float glow_width = 2.6f;
     BlendMode blend = BlendMode::Additive;
     std::string material_id;
     float pulse_phase = 0.0f;   // [0,1) along the beam, negative = no pulse
 };
+
+// Radius, in metres, of the ribbon a beam is drawn into: the widest of the three
+// glow layers. Renderers extrude the strip by this and shade inside it, so the
+// CPU reference and every GPU backend agree on the silhouette.
+inline float beam_glow_scale(const BeamState& b) {
+    return std::max(std::max(b.glow_width, b.core_width * 3.0f), 1e-4f);
+}
 
 struct TrailVertex {
     Vec3 position;

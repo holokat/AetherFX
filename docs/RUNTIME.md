@@ -191,9 +191,49 @@ emissive = emissive_base * emissive_over_life(u)
   at interior points chosen by the beam RNG; each spawns with probability
   `branch_probability`, length `branch_length * |main|`, direction = main
   direction rotated by 25..60 degrees around a random axis, 4 segments,
-  same displacement scheme, width 0.6x. `pulse_phase = pulse_speed > 0 ?
-  fract(t1 * pulse_speed) : -1`; `pulse_frequency` > 0 modulates emissive by
-  `0.75 + 0.25 * sin(2 pi f t1)`.
+  same displacement scheme, width `branch_width` x. `pulse_phase =
+  pulse_speed > 0 ? fract(t1 * pulse_speed) : -1`; `pulse_frequency` > 0
+  modulates emissive by `0.75 + 0.25 * sin(2 pi f t1)`.
+
+  Everything below is off at its default, so a beam with default parameters
+  emits exactly the polyline and width described above.
+
+  * **detail**: after the polyline is laid out, `detail` octaves of midpoint
+    displacement refine it. Octave `o` inserts the midpoint of every segment
+    and pushes it off the chord by `noise_amplitude * 0.5^(o+1)` along two
+    directions perpendicular to that chord, drawn from
+    `Pcg32(derive_seed(derive_seed(path_seed, o + 0x51ED), i))`. The vertex
+    count becomes `segments * 2^detail + 1` (branches: `4 * 2^detail + 1`).
+  * **path seeding**: every path of a re-roll is seeded from
+    `key_seed = derive_seed(node_stream, jitter_key + 0x9E37)`, so a path is a
+    pure function of its re-roll index and can be rebuilt from nothing.
+  * **width_profile / width_variance**: per vertex, at `s` in [0,1] along the
+    path, `width = beam.width * scale * profile(s) * (1 + width_variance * u)`
+    with `u` in [-1,1) from `Pcg32(derive_seed(path_seed, 0x7717), i)`, clamped
+    so the factor never drops below 0.05. `profile` is
+    `uniform -> 1`, `taper_end -> 1 - 0.8 * s^1.5`,
+    `taper_both -> 0.25 + 0.75 * sin(pi s)`,
+    `bulge -> 0.22 + 0.78 * exp(-((s - 0.18)/0.22)^2)`. `scale` is
+    `branch_width^depth`. With any profile but `uniform`, a branch is also
+    multiplied by `1 - s^2` so it tapers to nothing at its tip.
+  * **branch_depth**: generation `d` re-uses the same branch RNG stream and
+    walks the paths of generation `d-1`, with `max(1, branching/2)` candidates
+    per parent, length `branch_length * 0.55^(d-1)`, width `branch_width^d` and
+    `fade = branch_intensity^d`.
+  * **intensity_noise**: per vertex, `intensity = clamp(1 + intensity_noise * u,
+    0.1, 2)` with `u` from `Pcg32(derive_seed(path_seed, 0x9931), i)`.
+  * **flicker**: `emissive *= max(0, 1 + flicker * n(t1))` where `n` is the same
+    hash-of-time used by light flicker, at `flicker_frequency` cells per second
+    and seeded with the node stream — a function of time, never of step count.
+  * **afterglow** (seconds): when `jitter_rate > 0` and the re-roll index is at
+    least 1, the previous re-roll is rebuilt into `ghosts` with every path's
+    `fade` multiplied by `1 - (t1 - jitter_key / jitter_rate) / afterglow`, and
+    dropped once that reaches 0.
+  * **impact_flare** (metres): two `BeamFlare`s, the first at the last point of
+    the main path with that radius and intensity 1, the second at its first
+    point with radius `* 0.45` and intensity 0.5.
+  * **core_width / glow_width** are copied to the FrameState unchanged; they are
+    the renderers' cross-section (see section 11).
 * **mesh** (visible=true): MeshInstanceState with the world transform.
 * **decal**: opacity multiplied by `smoothstep(0, fade_in, t1 - start)` and
   `smoothstep(0, fade_out, end - t1)` when the window is bounded.
@@ -253,3 +293,28 @@ from `FrameState::hash()`.
 from fresh runtimes; the sequence of `FrameState::hash()` must be identical.
 Changing `effect.seed` must change the hash. Simulating to `t` in one
 `simulate_to` call must equal stepping manually.
+
+## 11. Beam cross-section (shared by every renderer)
+
+A beam is not a tube. Both renderers extrude one camera-facing ribbon per path,
+of half-width `0.5 * vertex width * s` where `s = max(glow_width, 3 *
+core_width)`, and shade three additive layers across it. With `t = |across|` in
+[0,1] over that half-width and `k(t, r) = (1 - min(t/r, 1)^2)^2`:
+
+```
+core  = k(t, core_width / s)     * 2.20
+inner = k(t, 3 * core_width / s) * 0.80
+outer = k(t, 1)                  * 0.28
+rgb   = mix(color, white, 0.85) * core + color * (inner + outer)
+gain  = vertex intensity * path fade * pulse boost
+alpha = saturate((core + inner + outer) * gain)
+```
+
+and the pixel is `blend(rgb * emissive * gain, alpha)`. The peak is 3.28x
+`emissive`, which is what the V1 profile peaked at, so existing beams keep their
+exposure. Each vertex's side vector comes from the *smoothed* (central
+difference) tangent, so adjacent quads share their corners exactly: no gap and no
+double-blended overlap where a bolt bends. `impact_flare`s use the same kernel
+radially with a core fraction of 0.22. Ghost paths are the same thing at a lower
+`fade`. `src/render` (the reference), `python/aetherfx/studio/static/viewer` (the
+three.js viewer) and any engine bridge must all agree with this.
