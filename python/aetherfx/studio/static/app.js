@@ -1176,8 +1176,27 @@ function controlGroups() {
     .filter(function (group) { return group.controls.length > 0; });
 }
 
+/* Which slider or number field has the keyboard, so nudging with the arrow
+ * keys survives the repaint that follows every commit. */
+function captureControlFocus() {
+  var active = document.activeElement;
+  if (!active || !active.dataset || !active.dataset.control) return null;
+  var body = $('controls-body');
+  if (!body || !body.contains(active)) return null;
+  return { control: active.dataset.control, field: active.dataset.field || '' };
+}
+
+function restoreControlFocus(saved) {
+  if (!saved || !/^[A-Za-z0-9_]+$/.test(saved.control)) return;
+  var selector = '[data-control="' + saved.control + '"]' +
+    (saved.field ? '[data-field="' + saved.field + '"]' : '');
+  var target = $('controls-body').querySelector(selector);
+  if (target && typeof target.focus === 'function') target.focus();
+}
+
 function renderControls() {
   if (S.controlPending) return;                  /* never repaint under the user's thumb */
+  var focused = captureControlFocus();
   var body = clear($('controls-body'));
   var resetAll = $('btn-controls-reset');
   if (!S.data) {
@@ -1197,6 +1216,7 @@ function renderControls() {
   }
   resetAll.hidden = false;
   groups.forEach(function (group) { body.appendChild(controlGroupNode(group)); });
+  restoreControlFocus(focused);
 }
 
 function controlGroupNode(group) {
@@ -1232,12 +1252,13 @@ function controlRow(control) {
   var slider = el('input', {
     type: 'range', min: String(control.min), max: String(control.max), step: String(step),
     value: String(control.value), class: 'ctl-slider',
-    data: { control: control.id },
+    data: { control: control.id, field: 'slider' },
     title: control.min + ' .. ' + control.max + '  (arrows step, shift x10)'
   });
   var number = el('input', {
     type: 'number', min: String(control.min), max: String(control.max), step: String(step),
-    value: control.value.toFixed(digits), class: 'ctl-number mono'
+    value: control.value.toFixed(digits), class: 'ctl-number mono',
+    data: { control: control.id, field: 'number' }
   });
   var dot = el('i', { class: 'dot-changed' + (isDefault ? ' off' : ''), title: 'moved off its default' });
 
