@@ -77,7 +77,7 @@ SPEED = (X_END - X_CAST) / (0.5 * (T_FULL - T_MOVE) + (T_STOP - T_FULL))   # ~8.
 WALL_WIDTH = 2.8       # metres across z
 
 # three staggered flare-ups over the last stretch: (x, z)
-FLARES = [(3.9, 0.35), (4.75, -0.45), (5.5, 0.2)]
+FLARES = [(3.4, 0.55), (4.5, -0.6), (5.5, 0.25)]
 
 
 def r(v: float, n: int = 4) -> float:
@@ -181,7 +181,7 @@ def texture(nid: str, width: int, height: int, graph_nodes: list[dict[str, Any]]
 # camera: raised three-quarter view from the front side. The wave runs left to
 # right and slightly towards the eye; the studio pulls the eye back 1.45x.
 # --------------------------------------------------------------------------
-node("cam", "camera", {"position": [6.2, 5.0, 9.8], "target": [1.2, 0.5, 0.0], "fov": 45})
+node("cam", "camera", {"position": [7.9, 4.3, 7.6], "target": [1.4, 0.8, 0.0], "fov": 45})
 
 # --------------------------------------------------------------------------
 # textures
@@ -190,12 +190,12 @@ node("cam", "camera", {"position": [6.2, 5.0, 9.8], "target": [1.2, 0.5, 0.0], "
 # renderers draw row 0 at the TOP of a sprite, so the sheet is mirrored in V
 # with a `distort` (the Fire AOE workaround). The same remap crops the bright
 # fuel slab under the tongues (SLAB) so the flames fill the quad.
-SLAB, TOP = 0.2, 0.99
+SLAB, TOP = 0.29, 0.995
 _S0 = 0.5 + TOP / 2.0
 _S1 = _S0 - (1.0 + TOP - SLAB) / 2.0
 texture("tex_flame", 128, 160, [
-    g("sim", "fire_sim", {"seed": 12, "fuel": 1.22, "fuel_width": 0.8, "buoyancy": 3.9, "turbulence": 2.3,
-                          "turbulence_scale": 3.6, "cooling": 1.9, "detail": 4, "speed": 0.06, "substeps": 4,
+    g("sim", "fire_sim", {"seed": 12, "fuel": 1.25, "fuel_width": 0.78, "buoyancy": 3.3, "turbulence": 2.0,
+                          "turbulence_scale": 3.0, "cooling": 1.45, "detail": 4, "speed": 0.06, "substeps": 4,
                           "loop": True, "flicker": 0.6, "sharpness": 1.18}),
     g("half", "constant", {"color": [0.5, 0.5, 0.5, 1.0]}),
     g("vmap", "gradient_linear", {"angle": 90, "start": r(_S0), "end": r(_S1)}),
@@ -208,12 +208,12 @@ texture("tex_flame", 128, 160, [
     g("side", "levels", {"in_high": 0.085, "gamma": 0.8}, {"a": "par"}),
     g("m1", "math", {"mode": "multiply"}, {"a": "flip", "b": "side"}),
     g("gv", "gradient_linear", {"angle": 90, "start": 1.0, "end": 0.0}),
-    g("root", "levels", {"in_high": 0.16, "gamma": 0.8}, {"a": "gv"}),
+    g("root", "levels", {"in_high": 0.34, "gamma": 1.0}, {"a": "gv"}),
     g("m2", "math", {"mode": "multiply"}, {"a": "m1", "b": "root"}),
     g("gvi", "invert", None, {"a": "gv"}),
     g("tip", "levels", {"in_high": 0.07}, {"a": "gvi"}),
     g("m3", "math", {"mode": "multiply"}, {"a": "m2", "b": "tip"}),
-    g("lv", "levels", {"in_low": 0.12, "in_high": 0.94}, {"a": "m3"}),
+    g("lv", "levels", {"in_low": 0.2, "in_high": 0.88}, {"a": "m3"}),
 ], "lv", frames=24)
 
 # soft living puff: smoke, the hot bed under the wall, the cast glow
@@ -223,6 +223,28 @@ texture("tex_puff", 96, 96, [
     g("m", "math", {"mode": "multiply"}, {"a": "rad", "b": "n"}),
     g("l", "levels", {"in_low": 0.04, "in_high": 0.55}, {"a": "m"}),
 ], "l", frames=8)
+
+# standing glow for the cast: bright and wide at the ground, fading upward, soft sides
+texture("tex_shaft", 64, 96, [
+    g("gu", "gradient_linear", {"angle": 0, "start": 0.0, "end": 1.0}),
+    g("gui", "invert", None, {"a": "gu"}),
+    g("par", "math", {"mode": "multiply"}, {"a": "gu", "b": "gui"}),
+    g("wide", "levels", {"in_low": 0.0, "in_high": 0.25}, {"a": "par"}),
+    # a cone: as wide as the circle at the ground, narrowing as it rises
+    g("gv", "gradient_linear", {"angle": 90, "start": 0.72, "end": 0.0}),
+    g("cone", "math", {"mode": "subtract"}, {"a": "wide", "b": "gv"}),
+    g("conel", "levels", {"in_low": 0.0, "in_high": 0.55, "gamma": 0.8}, {"a": "cone"}),
+    g("gh", "gradient_linear", {"angle": 90, "start": 0.0, "end": 1.0}),
+    g("up", "levels", {"in_low": 0.04, "in_high": 1.0, "gamma": 0.9}, {"a": "gh"}),
+    g("ghi", "invert", None, {"a": "gh"}),
+    g("foot", "levels", {"in_high": 0.1}, {"a": "ghi"}),
+    g("n", "fbm", {"frequency": 2.2, "octaves": 3, "seed": 9}),
+    g("nl", "levels", {"in_low": 0.2, "in_high": 0.8, "out_low": 0.55, "out_high": 1.0}, {"a": "n"}),
+    g("m1", "math", {"mode": "multiply"}, {"a": "conel", "b": "up"}),
+    g("m2", "math", {"mode": "multiply"}, {"a": "m1", "b": "foot"}),
+    g("m3", "math", {"mode": "multiply"}, {"a": "m2", "b": "nl"}),
+    g("b", "blur", {"radius": 3.5}, {"a": "m3"}),
+], "b")
 
 texture("tex_spark", 32, 32, [
     g("rad", "gradient_radial", {"radius": 0.5, "falloff": "quadratic"}),
@@ -356,15 +378,15 @@ FIRE_RAMP = [
     [0.2, [0.72, 0.06, 0.0, 1.0]],
     [0.42, [1.0, 0.27, 0.025, 1.0]],
     [0.64, [1.0, 0.56, 0.12, 1.0]],
-    [0.84, [1.0, 0.84, 0.44, 1.0]],
-    [1.0, [1.0, 0.97, 0.84, 1.0]],
+    [0.84, [1.0, 0.76, 0.32, 1.0]],
+    [1.0, [1.0, 0.88, 0.56, 1.0]],
 ]
 node("mat_fire", "material", {
     "blend": "additive", "emissive_intensity": 0.8, "soft_particle": True, "depth_fade": 0.15,
     "dissolve": 0.55, "erosion": 0.3, "temperature_gradient": FIRE_RAMP})
 node("mat_glow", "material", {"blend": "additive", "shading": "unlit", "soft_particle": True, "depth_fade": 0.12})
 node("mat_smoke", "material", {
-    "blend": "alpha", "shading": "lit", "base_color": [0.13, 0.105, 0.098, 1.0],
+    "blend": "alpha", "shading": "lit", "base_color": [0.2, 0.165, 0.15, 1.0],
     "soft_particle": True, "depth_fade": 0.3, "dissolve": 0.45, "erosion": 0.3})
 
 # --------------------------------------------------------------------------
@@ -391,19 +413,24 @@ node("hub", "mesh", {"primitive": "sphere", "radius": 0.02, "segments": 6, "visi
                      "position": track([(t, [r(hub_x(t)), 0.0, 0.0]) for t in HUB_TIMES])}, layer="wall")
 
 # ============================================================ particles ====
+# Every flame system is the Fire AOE flame body: big overlapping `fire_sim`
+# sprites that play the flipbook from their own birth, coloured over life by the
+# material's temperature gradient, grow-then-shrink, eroded as they age. The
+# stretch is only what Fire AOE uses (a rising flame is ~1.5x taller than wide);
+# long streaks belong to sparks.
 FLAME_COLOR_LIFE = [[0.0, [1.0, 1.0, 1.0, 1.0]], [0.3, [1.0, 0.95, 0.88, 1.0]],
                     [0.62, [1.0, 0.86, 0.72, 1.0]], [1.0, [0.92, 0.68, 0.52, 1.0]]]
 
 
 def flame_system(nid: str, layer: str, forces: list[str], **over: Any) -> str:
     params: dict[str, Any] = {
-        "max_particles": 400, "lifetime": 0.5, "lifetime_variance": 0.18,
-        "size": 1.2, "size_variance": 0.4,
-        "size_over_life": [[0.0, 0.6], [0.2, 1.0], [0.6, 1.0], [1.0, 0.6]],
-        "color": [1.0, 0.55, 0.15, 1.0], "color_over_life": FLAME_COLOR_LIFE,
-        "opacity": 0.32, "opacity_over_life": [[0.0, 0.0], [0.08, 1.0], [0.58, 0.8], [1.0, 0.0]],
+        "max_particles": 400, "lifetime": 0.55, "lifetime_variance": 0.24,
+        "size": 1.35, "size_variance": 0.5,
+        "size_over_life": [[0.0, 0.5], [0.3, 1.05], [1.0, 0.85]],
+        "color": [1.0, 0.49, 0.11, 1.0], "color_over_life": FLAME_COLOR_LIFE,
+        "opacity": 0.21, "opacity_over_life": [[0.0, 0.0], [0.14, 1.0], [0.62, 0.78], [1.0, 0.0]],
         "emissive": 0.2, "drag": 2.2, "blend": "additive", "soft_particle_distance": 0.35,
-        "render_mode": "stretched_billboard", "velocity_stretch": 0.2, "sprite_fps": 22.0,
+        "render_mode": "stretched_billboard", "velocity_stretch": 0.12, "sprite_fps": 22.0,
     }
     params.update(over)
     return node(nid, "particle_system", params,
@@ -424,86 +451,103 @@ def wall_emitter(nid: str, system: str, layer: str, dx: float, y: float, length:
     return node(nid, "emitter", params, {"particle": system}, layer=layer, parent="hub")
 
 
-# ---- crest: tall, bright, leaning into the direction of travel ------------
+# ---- crest: the tallest, brightest flames, born at the leading edge --------
 flame_system("ps_crest", "wall", ["f_curl_fire", "f_buoy_fire"],
-             max_particles=420, lifetime=0.46, lifetime_variance=0.14, size=1.55, size_variance=0.45,
-             size_over_life=[[0.0, 0.62], [0.18, 1.0], [0.6, 1.0], [1.0, 0.55]],
-             color=[1.0, 0.6, 0.18, 1.0], opacity=0.34,
-             opacity_over_life=[[0.0, 0.0], [0.07, 1.0], [0.55, 0.8], [1.0, 0.0]],
-             emissive=0.22, drag=2.6, velocity_stretch=0.16, sprite_fps=24.0)
-wall_emitter("e_crest", "ps_crest", "wall", 0.15, 1.0, WALL_WIDTH - 0.1, 170.0, 1.0, 0.18,
-             velocity=4.4, velocity_variance=1.7, spread=15, inherit_velocity=0.42)
+             max_particles=320, lifetime=0.48, lifetime_variance=0.16, size=2.4, size_variance=0.6,
+             size_over_life=[[0.0, 0.9], [0.18, 1.05], [0.55, 0.92], [1.0, 0.62]],
+             color=[1.0, 0.52, 0.12, 1.0], opacity=0.24,
+             opacity_over_life=[[0.0, 0.0], [0.06, 1.0], [0.55, 0.8], [1.0, 0.0]],
+             emissive=0.22, drag=2.4, velocity_stretch=0.12, sprite_fps=24.0)
+wall_emitter("e_crest", "ps_crest", "wall", 0.15, 1.4, WALL_WIDTH - 0.1, 92.0, 1.0, 0.34,
+             velocity=3.4, velocity_variance=1.2, spread=12)
 # a taller core in the middle of the wall so its height varies along the width
-wall_emitter("e_crest_core", "ps_crest", "wall", 0.05, 1.45, WALL_WIDTH * 0.45, 60.0, 1.0, 0.15,
-             velocity=5.2, velocity_variance=1.8, spread=13, inherit_velocity=0.42)
+wall_emitter("e_crest_core", "ps_crest", "wall", 0.1, 1.75, WALL_WIDTH * 0.45, 38.0, 1.0, 0.3,
+             velocity=4.2, velocity_variance=1.4, spread=11)
 
-# ---- body: the mass of the wall ------------------------------------------
+# ---- lip: short flames thrown forward off the top of the crest - the curl --
+flame_system("ps_lip", "wall", ["f_curl_fire", "f_buoy_fire"],
+             max_particles=140, lifetime=0.32, lifetime_variance=0.1, size=1.45, size_variance=0.45,
+             size_over_life=[[0.0, 0.55], [0.3, 1.0], [1.0, 0.6]],
+             color=[1.0, 0.54, 0.14, 1.0], opacity=0.22,
+             opacity_over_life=[[0.0, 0.0], [0.12, 1.0], [0.55, 0.8], [1.0, 0.0]],
+             drag=2.8, velocity_stretch=0.08, sprite_fps=26.0)
+wall_emitter("e_lip", "ps_lip", "wall", 0.4, 1.95, WALL_WIDTH - 0.6, 34.0, 1.0, 0.48,
+             velocity=2.8, velocity_variance=0.9, spread=12)
+
+# ---- body: the mass of the wall, dropped where the front has just been -----
 flame_system("ps_body", "wall", ["f_curl_fire", "f_buoy_fire"],
-             max_particles=560, lifetime=0.6, lifetime_variance=0.22, size=1.25, size_variance=0.42,
-             opacity=0.3, velocity_stretch=0.24, sprite_fps=21.0)
-wall_emitter("e_body", "ps_body", "wall", -0.55, 0.62, WALL_WIDTH, 230.0, 1.0, 0.18,
-             velocity=3.0, velocity_variance=1.3, spread=14, inherit_velocity=0.2)
+             max_particles=420, lifetime=0.62, lifetime_variance=0.25, size=1.6, size_variance=0.55,
+             size_over_life=[[0.0, 0.55], [0.22, 1.05], [0.6, 0.85], [1.0, 0.5]],
+             opacity=0.24, velocity_stretch=0.14, sprite_fps=21.0)
+wall_emitter("e_body", "ps_body", "wall", -0.7, 0.9, WALL_WIDTH, 128.0, 1.0, 0.16,
+             velocity=3.0, velocity_variance=1.3, spread=14)
 
 # ---- tongues: long fast licks that tear off the top ----------------------
 flame_system("ps_tongue", "wall", ["f_curl_fire", "f_buoy_fire"],
-             max_particles=220, lifetime=0.85, lifetime_variance=0.38, size=1.35, size_variance=0.5,
+             max_particles=160, lifetime=0.7, lifetime_variance=0.3, size=1.35, size_variance=0.5,
              size_over_life=[[0.0, 0.4], [0.28, 1.1], [1.0, 0.7]],
              color=[1.0, 0.5, 0.12, 1.0],
              color_over_life=[[0.0, [1.0, 0.86, 0.62, 1.0]], [0.3, [1.0, 0.78, 0.5, 1.0]],
                               [0.66, [1.0, 0.62, 0.34, 1.0]], [1.0, [0.9, 0.45, 0.22, 1.0]]],
-             opacity=0.34, opacity_over_life=[[0.0, 0.0], [0.12, 1.0], [0.55, 0.72], [1.0, 0.0]],
-             emissive=0.18, drag=1.3, velocity_stretch=0.3, sprite_fps=18.0)
-wall_emitter("e_tongue", "ps_tongue", "wall", -0.3, 1.0, WALL_WIDTH - 0.4, 62.0, 1.0, 0.1,
-             velocity=5.6, velocity_variance=2.4, spread=16, inherit_velocity=0.3)
+             opacity=0.25, opacity_over_life=[[0.0, 0.0], [0.12, 1.0], [0.55, 0.72], [1.0, 0.0]],
+             emissive=0.18, drag=1.3, velocity_stretch=0.14, sprite_fps=18.0)
+wall_emitter("e_tongue", "ps_tongue", "wall", -0.3, 1.2, WALL_WIDTH - 0.4, 52.0, 1.0, 0.12,
+             velocity=4.4, velocity_variance=2.0, spread=17)
 
-# ---- lickers: thrown forward along the ground ahead of the front ----------
+# ---- lickers: small flames thrown forward along the ground ahead -----------
 flame_system("ps_lick", "wall", ["f_curl_fine"],
-             max_particles=120, lifetime=0.26, lifetime_variance=0.08, size=0.62, size_variance=0.22,
+             max_particles=120, lifetime=0.28, lifetime_variance=0.08, size=0.7, size_variance=0.25,
              size_over_life=[[0.0, 0.5], [0.3, 1.0], [1.0, 0.45]],
-             color=[1.0, 0.62, 0.2, 1.0], opacity=0.4,
+             color=[1.0, 0.58, 0.17, 1.0], opacity=0.28,
              opacity_over_life=[[0.0, 0.0], [0.1, 1.0], [0.6, 0.8], [1.0, 0.0]],
-             drag=3.5, velocity_stretch=0.12, sprite_fps=26.0)
-wall_emitter("e_lick", "ps_lick", "wall", 0.75, 0.24, WALL_WIDTH - 0.5, 70.0, 0.22, 1.0,
-             velocity=2.6, velocity_variance=1.2, spread=14, inherit_velocity=0.85)
+             drag=2.5, velocity_stretch=0.1, sprite_fps=26.0)
+wall_emitter("e_lick", "ps_lick", "wall", 0.8, 0.36, WALL_WIDTH - 0.4, 80.0, 1.0, 0.45,
+             velocity=1.5, velocity_variance=0.7, spread=20)
 
-# ---- hot bed: soft glow that welds the sprite roots into one base ---------
-node("ps_base", "particle_system", {
-    "max_particles": 260, "lifetime": 0.45, "lifetime_variance": 0.15, "size": 0.95, "size_variance": 0.35,
-    "rotation_variance": 180.0, "angular_velocity": 25.0, "angular_velocity_variance": 40.0,
-    "size_over_life": [[0.0, 0.5], [0.35, 1.05], [1.0, 0.7]],
-    "color": [1.0, 0.75, 0.35, 1.0],
-    "color_over_life": [[0.0, [1.0, 0.95, 0.78, 1.0]], [0.35, [1.0, 0.88, 0.6, 1.0]],
-                        [0.75, [1.0, 0.78, 0.42, 1.0]], [1.0, [1.0, 0.66, 0.3, 1.0]]],
-    "opacity": 0.13, "opacity_over_life": [[0.0, 0.0], [0.18, 1.0], [0.55, 0.55], [1.0, 0.0]],
-    "emissive": 0.5, "drag": 2.4, "blend": "additive", "soft_particle_distance": 0.35,
-    "render_mode": "billboard", "sprite_fps": 0.0,
-}, {"sprite": "tex_puff", "material": "mat_fire", "forces": ["f_curl_fine", "f_buoy_fire"]}, layer="wall")
-wall_emitter("e_base", "ps_base", "wall", -0.4, 0.32, WALL_WIDTH - 0.2, 120.0, 1.0, 0.1,
-             velocity=1.2, velocity_variance=0.8, spread=40, inherit_velocity=0.15)
-
-# ---- burning strip: lower, longer-lived flames dropped behind the front ---
-STRIP_ENVELOPE = [(0.0, 0.0), (0.62, 0.0), (0.8, 0.5), (0.95, 1.0), (1.74, 1.0), (1.86, 0.0)]
+# ---- burning strip: lower, longer-lived flames left behind the wall --------
+STRIP_ENVELOPE = [(0.0, 0.0), (0.62, 0.0), (0.8, 0.5), (0.95, 1.0), (1.62, 1.0), (1.74, 0.0)]
 flame_system("ps_strip", "strip", ["f_curl_fine", "f_buoy_fire"],
-             max_particles=480, lifetime=0.7, lifetime_variance=0.2, size=1.0, size_variance=0.35,
-             size_over_life=[[0.0, 0.5], [0.2, 1.0], [0.5, 0.9], [1.0, 0.35]],
-             color=[1.0, 0.48, 0.11, 1.0], opacity=0.3,
+             max_particles=420, lifetime=0.82, lifetime_variance=0.25, size=1.3, size_variance=0.45,
+             size_over_life=[[0.0, 0.5], [0.25, 1.0], [0.55, 0.85], [1.0, 0.3]],
+             color=[1.0, 0.5, 0.12, 1.0], opacity=0.3,
              opacity_over_life=[[0.0, 0.0], [0.12, 1.0], [0.6, 0.75], [1.0, 0.0]],
-             drag=2.0, velocity_stretch=0.3, sprite_fps=20.0)
-wall_emitter("e_strip", "ps_strip", "strip", -1.0, 0.42, WALL_WIDTH - 0.3, 250.0, 1.0, 0.0,
-             env=STRIP_ENVELOPE, velocity=2.3, velocity_variance=1.1, spread=24, start_time=0.62)
+             drag=2.0, velocity_stretch=0.14, sprite_fps=20.0)
+wall_emitter("e_strip", "ps_strip", "strip", -1.7, 0.68, WALL_WIDTH - 0.3, 200.0, 1.0, 0.0,
+             env=STRIP_ENVELOPE, velocity=2.6, velocity_variance=1.1, spread=20, start_time=0.62)
+# the last third of the path has to be out by the end of the effect: a shorter-lived strip
+STRIP_LATE_ENVELOPE = [(0.0, 0.0), (1.6, 0.0), (1.72, 1.0), (1.93, 1.0), (T_STOP, 0.0)]
+flame_system("ps_strip_late", "strip", ["f_curl_fine", "f_buoy_fire"],
+             max_particles=160, lifetime=0.46, lifetime_variance=0.12, size=1.3, size_variance=0.45,
+             size_over_life=[[0.0, 0.5], [0.25, 1.0], [0.55, 0.85], [1.0, 0.3]],
+             color=[1.0, 0.5, 0.12, 1.0], opacity=0.25,
+             opacity_over_life=[[0.0, 0.0], [0.12, 1.0], [0.6, 0.75], [1.0, 0.0]],
+             drag=2.0, velocity_stretch=0.14, sprite_fps=20.0)
+wall_emitter("e_strip_late", "ps_strip_late", "strip", -1.7, 0.68, WALL_WIDTH - 0.3, 200.0, 1.0, 0.0,
+             env=STRIP_LATE_ENVELOPE, velocity=2.6, velocity_variance=1.1, spread=20, start_time=1.6)
+
+# the soft upward glow of the cast: a few big standing quads of tex_shaft, wide and
+# feathered on every side - light, not a rod
+node("ps_shaft", "particle_system", {
+    "max_particles": 24, "lifetime": 0.5, "lifetime_variance": 0.1, "size": 3.0, "size_variance": 0.5,
+    "size_over_life": [[0.0, 0.8], [1.0, 1.15]],
+    "color": [1.0, 0.5, 0.14, 1.0],
+    "opacity": 0.2, "opacity_over_life": [[0.0, 0.0], [0.16, 1.0], [0.6, 0.8], [1.0, 0.0]],
+    "emissive": 0.5, "drag": 1.0, "blend": "additive", "soft_particle_distance": 0.4,
+    "render_mode": "billboard", "sprite_fps": 0.0,
+}, {"sprite": "tex_shaft", "material": "mat_glow"}, layer="cast")
 
 # ============================================================ sparks etc ===
 node("ps_spark", "particle_system", {
-    "max_particles": 900, "lifetime": 0.75, "lifetime_variance": 0.35, "size": 0.036, "size_variance": 0.018,
+    "max_particles": 1000, "lifetime": 0.8, "lifetime_variance": 0.35, "size": 0.05, "size_variance": 0.022,
     "color": [1.0, 0.7, 0.25, 1.0],
     "color_over_life": [[0.0, [1.0, 0.92, 0.62, 1.0]], [0.4, [1.0, 0.5, 0.1, 1.0]], [1.0, [0.6, 0.08, 0.0, 1.0]]],
     "opacity_over_life": [[0.0, 1.0], [0.75, 1.0], [1.0, 0.0]],
-    "emissive": 6.0, "drag": 0.5, "render_mode": "stretched_billboard", "velocity_stretch": 0.1,
+    "emissive": 4.0, "drag": 0.5, "render_mode": "stretched_billboard", "velocity_stretch": 0.1,
     "blend": "additive",
 }, {"sprite": "tex_spark", "material": "mat_glow", "forces": ["f_gravity", "f_spark_turb"],
     "colliders": ["ground"]}, layer="sparks")
-wall_emitter("e_spark", "ps_spark", "sparks", 0.1, 0.5, WALL_WIDTH - 0.4, 260.0, 1.0, 0.55,
-             velocity=4.5, velocity_variance=2.8, spread=38, inherit_velocity=0.55)
+wall_emitter("e_spark", "ps_spark", "sparks", 0.1, 0.7, WALL_WIDTH - 0.4, 300.0, 1.0, 0.5,
+             velocity=5.0, velocity_variance=3.0, spread=36, inherit_velocity=0.6)
 
 node("ps_ember", "particle_system", {
     "max_particles": 520, "lifetime": 1.3, "lifetime_variance": 0.55, "size": 0.03, "size_variance": 0.013,
@@ -524,11 +568,11 @@ node("e_ember_fade", "emitter", {
 node("ps_smoke", "particle_system", {
     "max_particles": 160, "lifetime": 1.25, "lifetime_variance": 0.4, "size": 0.95, "size_variance": 0.3,
     "size_over_life": [[0.0, 0.45], [1.0, 1.8]],
-    "color": [0.11, 0.088, 0.082, 1.0], "opacity": 0.3,
+    "color": [0.16, 0.13, 0.12, 1.0], "opacity": 0.36,
     "opacity_over_life": [[0.0, 0.0], [0.25, 1.0], [1.0, 0.0]],
     "drag": 1.0, "blend": "alpha", "sort": True, "angular_velocity": 20.0, "angular_velocity_variance": 20.0,
 }, {"sprite": "tex_puff", "material": "mat_smoke", "forces": ["f_smoke_buoy", "f_smoke_turb"]}, layer="sparks")
-wall_emitter("e_smoke", "ps_smoke", "sparks", -2.6, 1.3, WALL_WIDTH - 0.8, 36.0, 1.0, 0.0,
+wall_emitter("e_smoke", "ps_smoke", "sparks", -2.4, 1.4, WALL_WIDTH - 0.8, 44.0, 1.0, 0.0,
              env=[(0.0, 0.0), (0.8, 0.0), (1.0, 1.0), (1.9, 1.0), (2.0, 0.0)],
              velocity=1.2, velocity_variance=0.5, spread=30, start_time=0.8)
 
@@ -537,23 +581,23 @@ node("rune", "decal", {
     "shape": "circle", "position": [X_CAST, 0.02, 0.0], "size": [2.7, 2.7],
     "rotation": track([(0.0, [0.0, 0.0, 0.0]), (1.0, [0.0, 38.0, 0.0])]),
     "color": [1.0, 0.5, 0.14, 1.0], "blend": "additive",
-    "emissive": track([(0.0, 0.6), (0.1, 2.2), (0.3, 1.8), (0.36, 3.6), (0.6, 1.6), (0.95, 0.0)]),
+    "emissive": track([(0.0, 0.5), (0.1, 1.8), (0.3, 1.5), (0.36, 2.4), (0.6, 1.2), (0.95, 0.0)]),
     "opacity": track([(0.0, 0.0), (0.04, 0.4), (0.13, 1.0), (0.6, 0.9), (0.95, 0.0)]),
     "fade_in": 0.0, "fade_out": 0.0, "duration": 1.0,
 }, {"texture": "tex_rune"}, layer="cast")
 node("cast_glow", "decal", {
     "shape": "circle", "position": [X_CAST, 0.012, 0.0], "size": [3.6, 3.6],
     "color": [1.0, 0.42, 0.1, 1.0], "blend": "additive",
-    "emissive": track([(0.0, 0.0), (0.2, 0.5), (0.36, 1.4), (0.7, 0.8), (1.05, 0.0)]),
-    "opacity": track([(0.0, 0.0), (0.15, 0.7), (0.7, 0.7), (1.05, 0.0)]),
+    "emissive": track([(0.0, 0.0), (0.2, 0.35), (0.36, 0.7), (0.7, 0.4), (1.05, 0.0)]),
+    "opacity": track([(0.0, 0.0), (0.15, 0.55), (0.7, 0.55), (1.05, 0.0)]),
     "fade_in": 0.0, "fade_out": 0.0, "duration": 1.1,
 }, {"texture": "tex_glow"}, layer="cast")
 # the soft upward glow: a wide column of puffs, never a rod
 node("e_cast_glow", "emitter", {
-    "shape": "disc", "radius": 0.7, "position": [X_CAST, 0.3, 0.0],
-    "rate": track([(0.0, 40.0), (0.1, 110.0), (0.3, 110.0), (0.42, 0.0)]),
-    "velocity": 2.6, "velocity_variance": 0.9, "direction": [0, 1, 0], "spread": 7, "duration": 0.45,
-}, {"particle": "ps_base"}, layer="cast")
+    "shape": "disc", "radius": 0.3, "position": [X_CAST, 1.4, 0.0],
+    "rate": track([(0.0, 22.0), (0.24, 22.0), (0.3, 0.0)]), "burst_count": 5, "burst_times": [0.0],
+    "velocity": 0.5, "velocity_variance": 0.2, "direction": [0, 1, 0], "spread": 5, "duration": 0.42,
+}, {"particle": "ps_shaft"}, layer="cast")
 # motes drawn in over the circle and lifted
 node("e_cast_motes", "emitter", {
     "shape": "ring", "radius": 1.2, "inner_radius": 0.35, "position": [X_CAST, 0.06, 0.0],
@@ -564,22 +608,22 @@ node("e_cast_motes", "emitter", {
 
 # ================================================================ surge ====
 flame_system("ps_surge", "surge", ["f_curl_fire", "f_buoy_fire", "f_surge_lean"],
-             max_particles=420, lifetime=0.47, lifetime_variance=0.13, size=1.65, size_variance=0.55,
-             size_over_life=[[0.0, 0.35], [0.25, 1.05], [1.0, 0.55]],
-             color=[1.0, 0.58, 0.16, 1.0], opacity=0.34,
-             opacity_over_life=[[0.0, 0.0], [0.1, 1.0], [0.58, 0.82], [1.0, 0.0]],
-             emissive=0.24, drag=2.4, velocity_stretch=0.2, sprite_fps=22.0)
+             max_particles=240, lifetime=0.52, lifetime_variance=0.16, size=2.3, size_variance=0.7,
+             size_over_life=[[0.0, 0.75], [0.25, 1.05], [1.0, 0.6]],
+             color=[1.0, 0.52, 0.12, 1.0], opacity=0.2,
+             opacity_over_life=[[0.0, 0.0], [0.12, 1.0], [0.6, 0.82], [1.0, 0.0]],
+             emissive=0.22, drag=2.4, velocity_stretch=0.1, sprite_fps=22.0)
 node("e_surge", "emitter", {
-    "shape": "disc", "radius": 0.85, "position": [X_CAST, 0.55, 0.0],
-    "rate": track([(0.0, 0.0), (0.3, 260.0), (0.55, 210.0), (0.7, 0.0)]),
-    "burst_count": 36, "burst_times": [0.0],
-    "velocity": 6.4, "velocity_variance": 2.3, "direction": [0, 1, 0], "spread": 13,
+    "shape": "disc", "radius": 0.8, "position": [X_CAST, 1.0, 0.0],
+    "rate": track([(0.0, 0.0), (0.3, 110.0), (0.55, 95.0), (0.7, 0.0)]),
+    "burst_count": 16, "burst_times": [0.0],
+    "velocity": 5.4, "velocity_variance": 3.0, "direction": [0, 1, 0], "spread": 12,
     "start_time": 0.3, "duration": 0.42,
 }, {"particle": "ps_surge"}, layer="surge")
 node("e_surge_spark", "emitter", {
-    "shape": "disc", "radius": 0.8, "position": [X_CAST, 0.3, 0.0],
-    "rate": track([(0.0, 0.0), (0.3, 260.0), (0.6, 160.0), (0.7, 0.0)]),
-    "burst_count": 110, "burst_times": [0.0],
+    "shape": "hemisphere", "radius": 0.9, "position": [X_CAST, 0.3, 0.0],
+    "rate": track([(0.0, 0.0), (0.3, 220.0), (0.6, 140.0), (0.7, 0.0)]),
+    "burst_count": 70, "burst_times": [0.0],
     "velocity": 6.5, "velocity_variance": 3.0, "direction": [0, 1, 0], "spread": 32,
     "start_time": 0.3, "duration": 0.42,
 }, {"particle": "ps_spark"}, layer="surge")
@@ -612,7 +656,7 @@ while x - SCORCH_LEN / 2.0 < X_END - 0.2:
 
 # glowing cracks: shorter segments so the cooling runs along the strip
 CRACK_LEN, CRACK_STEP, CRACK_WIDTH = 1.7, 1.32, 3.1
-CRACK_HOT = [1.0, 0.62, 0.22, 1.0]
+CRACK_HOT = [1.0, 0.55, 0.16, 1.0]
 CRACK_WARM = [1.0, 0.36, 0.07, 1.0]
 CRACK_DULL = [0.95, 0.16, 0.02, 1.0]
 
@@ -630,7 +674,7 @@ def crack_glow(age: float) -> float:
     return CRACK_COOLING[-1][1]
 
 
-CRACK_COOLING = [(0.0, 2.6), (0.3, 1.3), (0.75, 0.6), (1.6, 0.18)]
+CRACK_COOLING = [(0.0, 1.7), (0.3, 1.0), (0.75, 0.5), (1.6, 0.16)]
 
 
 def crack_color(age: float) -> list[float]:
@@ -662,61 +706,55 @@ while x - CRACK_LEN / 2.0 < X_END - 0.3:
 # warm pool on the ground under the front
 node("front_glow", "decal", {
     "shape": "circle", "position": hub_track(-0.5, 0.034), "size": [5.2, 4.2],
-    "color": [1.0, 0.45, 0.1, 1.0], "blend": "additive",
-    "emissive": track([(0.0, 0.0), (0.55, 0.0), (0.9, 0.9), (1.9, 0.9), (2.1, 0.0)]),
-    "opacity": track([(0.0, 0.0), (0.55, 0.0), (0.85, 0.75), (1.9, 0.75), (2.1, 0.0)]),
+    "color": [1.0, 0.36, 0.06, 1.0], "blend": "additive",
+    "emissive": track([(0.0, 0.0), (0.55, 0.0), (0.9, 0.1), (1.9, 0.1), (2.1, 0.0)]),
+    "opacity": track([(0.0, 0.0), (0.55, 0.0), (0.85, 0.45), (1.9, 0.45), (2.1, 0.0)]),
     "fade_in": 0.0, "fade_out": 0.0, "start_time": 0.55, "duration": 1.6,
 }, {"texture": "tex_glow"}, layer="ground")
 
 # =============================================================== impact ====
-flare_times = [max(1.8, t_arrive(fx)) for fx, _ in FLARES]
+flare_times = [1.8, 1.9, 2.0]   # the front reaches them at ~1.73, ~1.86 and ~1.99
 for i, ((fx, fz), ft) in enumerate(zip(FLARES, flare_times)):
     node(f"e_flare_{i}", "emitter", {
-        "shape": "disc", "radius": 0.75, "position": [r(fx), 0.55, r(fz)],
-        "rate": track([(0.0, 0.0), (ft, 330.0), (ft + 0.1, 0.0)]),
-        "burst_count": 46, "burst_times": [0.0],
-        "velocity": 7.6, "velocity_variance": 2.6, "direction": [0, 1, 0], "spread": 19,
+        "shape": "disc", "radius": 0.65, "position": [r(fx), 1.05, r(fz)],
+        "rate": track([(0.0, 0.0), (ft, 170.0), (ft + 0.09, 0.0)]),
+        "burst_count": 14, "burst_times": [0.0],
+        "velocity": 9.5, "velocity_variance": 4.5, "direction": [0, 1, 0], "spread": 9,
         "start_time": r(ft), "duration": 0.12,
     }, {"particle": "ps_surge"}, layer="impact")
-    node(f"e_flare_bed_{i}", "emitter", {
-        "shape": "disc", "radius": 0.9, "position": [r(fx), 0.4, r(fz)],
-        "rate": 0, "burst_count": 16, "burst_times": [0.0],
-        "velocity": 2.2, "velocity_variance": 1.2, "direction": [0, 1, 0], "spread": 50,
-        "start_time": r(ft), "duration": 0.1,
-    }, {"particle": "ps_base"}, layer="impact")
     node(f"e_flare_spark_{i}", "emitter", {
-        "shape": "disc", "radius": 0.6, "position": [r(fx), 0.35, r(fz)],
-        "rate": 0, "burst_count": 120, "burst_times": [0.0],
-        "velocity": 7.0, "velocity_variance": 3.4, "direction": [0.25, 1, 0], "spread": 52,
+        "shape": "hemisphere", "radius": 1.0, "position": [r(fx), 0.3, r(fz)],
+        "rate": 0, "burst_count": 90, "burst_times": [0.0],
+        "velocity": 7.5, "velocity_variance": 4.0, "direction": [0.2, 1, 0], "spread": 55,
         "start_time": r(ft), "duration": 0.1,
     }, {"particle": "ps_spark"}, layer="impact")
     node(f"l_flare_{i}", "light", {
         "light_type": "point", "position": [r(fx - 0.2), 1.5, r(fz + 0.5)],
         "color": [1.0, 0.62, 0.26, 1.0], "radius": 11.0,
-        "intensity": track([(0.0, 0.0), (ft - 0.01, 0.0), (ft + 0.05, 13.0), (ft + 0.16, 4.0), (ft + 0.32, 0.0)]),
+        "intensity": track([(0.0, 0.0), (ft - 0.01, 0.0), (ft + 0.05, 1.3), (ft + 0.16, 0.7), (ft + 0.32, 0.0)]),
         "start_time": r(ft - 0.01), "duration": 0.36,
     }, layer="impact")
 
 # ================================================================ light ====
 node("l_cast", "light", {
     "light_type": "point", "position": [X_CAST, 0.95, 0.3], "color": [1.0, 0.56, 0.2, 1.0], "radius": 8.0,
-    "intensity": track([(0.0, 0.0), (0.12, 1.5), (0.3, 2.2), (0.36, 9.0), (0.6, 4.5), (1.0, 0.0)]),
+    "intensity": track([(0.0, 0.0), (0.12, 1.2), (0.3, 1.8), (0.36, 4.5), (0.6, 2.8), (1.0, 0.0)]),
     "flicker_amplitude": 0.2, "flicker_frequency": 14.0, "duration": 1.05,
 }, layer="light")
 node("l_front", "light", {
     "light_type": "point", "position": [-0.5, 1.35, 0.4], "color": [1.0, 0.55, 0.18, 1.0], "radius": 10.0,
-    "intensity": track([(0.0, 0.0), (0.55, 0.0), (0.9, 5.5), (1.9, 6.0), (2.12, 0.0)]),
+    "intensity": track([(0.0, 0.0), (0.55, 0.0), (0.9, 2.4), (1.9, 2.6), (2.12, 0.0)]),
     "flicker_amplitude": 0.22, "flicker_frequency": 13.0, "start_time": 0.55, "duration": 1.6,
 }, layer="light", parent="hub")
 node("l_trail", "light", {
     "light_type": "point", "position": [-3.4, 0.9, 0.3], "color": [1.0, 0.42, 0.1, 1.0], "radius": 8.0,
-    "intensity": track([(0.0, 0.0), (0.95, 0.0), (1.2, 2.4), (1.9, 2.4), (2.3, 0.0)]),
+    "intensity": track([(0.0, 0.0), (0.95, 0.0), (1.2, 1.8), (1.9, 1.8), (2.3, 0.0)]),
     "flicker_amplitude": 0.25, "flicker_frequency": 10.0, "start_time": 0.95, "duration": 1.4,
 }, layer="light", parent="hub")
 # a low ember light over the burnt strip so the cracks and the smoke still read in the fade
 node("l_after", "light", {
     "light_type": "point", "position": [1.6, 1.3, 0.6], "color": [1.0, 0.4, 0.1, 1.0], "radius": 13.0,
-    "intensity": track([(0.0, 0.0), (1.85, 0.0), (2.1, 1.8), (2.35, 1.0), (DUR, 0.3)]),
+    "intensity": track([(0.0, 0.0), (1.85, 0.0), (2.1, 2.4), (2.35, 1.5), (DUR, 0.5)]),
     "start_time": 1.85,
 }, layer="light")
 node("haze", "post_effect", {"post_type": "heat_haze", "intensity": 0.28, "frequency": 5.0,
@@ -732,7 +770,7 @@ def multiplier(cid: str, label: str, group: str, bindings: list[tuple[str, str]]
             "bindings": [{"node": n, "parameter": p, "op": "multiply"} for n, p in bindings]}
 
 
-FLAME_SYSTEMS = ["ps_crest", "ps_body", "ps_tongue", "ps_lick", "ps_strip", "ps_surge"]
+FLAME_SYSTEMS = ["ps_crest", "ps_lip", "ps_body", "ps_tongue", "ps_lick", "ps_strip", "ps_strip_late", "ps_surge"]
 HEIGHT_EMITTERS = ["e_crest", "e_crest_core", "e_body", "e_tongue", "e_surge"] + [f"e_flare_{i}" for i in range(len(FLARES))]
 LINE_EMITTERS = [n["id"] for n in nodes if n["type"] == "emitter" and n.get("parameters", {}).get("shape") == "line"]
 SPARK_EMITTERS = [n["id"] for n in nodes if n["type"] == "emitter"
@@ -747,16 +785,16 @@ hue_bindings = [{"node": n["id"], "parameter": p, "op": "hue_shift"}
 
 controls = [
     multiplier("flame_height", "Flame height", "Flame wall",
-               [(s, "size") for s in ("ps_crest", "ps_body", "ps_tongue", "ps_surge")] +
+               [(s, "size") for s in ("ps_crest", "ps_lip", "ps_body", "ps_tongue", "ps_surge")] +
                [(e, "velocity") for e in HEIGHT_EMITTERS], hi=2.0),
     multiplier("wave_width", "Wave width", "Flame wall",
                [(e, "length") for e in LINE_EMITTERS] +
                [(d, "size") for d in (*scorch_ids, *crack_ids, "front_glow")], hi=2.0),
     multiplier("fire_intensity", "Fire intensity", "Global",
-               [(s, "color") for s in (*FLAME_SYSTEMS, "ps_base")] + [(l, "intensity") for l in LIGHTS] +
+               [(s, "color") for s in (*FLAME_SYSTEMS, "ps_shaft")] + [(l, "intensity") for l in LIGHTS] +
                [("front_glow", "emissive"), ("cast_glow", "emissive")]),
     multiplier("embers", "Sparks and embers", "Sparks, embers, smoke",
-               [(e, "rate") for e in SPARK_EMITTERS] +
+               [(e, "rate") for e in SPARK_EMITTERS if not e.startswith("e_flare_spark")] +
                [(e, "burst_count") for e in SPARK_EMITTERS if e.startswith(("e_flare_spark", "e_surge_spark"))]),
     multiplier("scorch_trail", "Scorch trail", "Ground scorch",
                [(d, "opacity") for d in ("scorch_cast", *scorch_ids)] +
@@ -800,7 +838,7 @@ effect = {
         "render_settings": {
             "ground_albedo": 0.08,
             "background": [0.0, 0.0, 0.0, 1.0],
-            "bloom_intensity": 0.2,
+            "bloom_intensity": 0.13,
             "bloom_radius": 0.05,
             "exposure": 0.95,
             "grid": False,

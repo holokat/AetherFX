@@ -86,13 +86,13 @@
    "type": "camera",
    "parameters": {
     "position": [
-     6.2,
-     5.0,
-     9.8
+     7.9,
+     4.3,
+     7.6
     ],
     "target": [
-     1.2,
-     0.5,
+     1.4,
+     0.8,
      0.0
     ],
     "fov": 45
@@ -112,12 +112,12 @@
        "op": "fire_sim",
        "params": {
         "seed": 12,
-        "fuel": 1.22,
-        "fuel_width": 0.8,
-        "buoyancy": 3.9,
-        "turbulence": 2.3,
-        "turbulence_scale": 3.6,
-        "cooling": 1.9,
+        "fuel": 1.25,
+        "fuel_width": 0.78,
+        "buoyancy": 3.3,
+        "turbulence": 2.0,
+        "turbulence_scale": 3.0,
+        "cooling": 1.45,
         "detail": 4,
         "speed": 0.06,
         "substeps": 4,
@@ -143,8 +143,8 @@
        "op": "gradient_linear",
        "params": {
         "angle": 90,
-        "start": 0.995,
-        "end": 0.1
+        "start": 0.9975,
+        "end": 0.145
        }
       },
       {
@@ -232,8 +232,8 @@
        "id": "root",
        "op": "levels",
        "params": {
-        "in_high": 0.16,
-        "gamma": 0.8
+        "in_high": 0.34,
+        "gamma": 1.0
        },
        "inputs": {
         "a": "gv"
@@ -282,8 +282,8 @@
        "id": "lv",
        "op": "levels",
        "params": {
-        "in_low": 0.12,
-        "in_high": 0.94
+        "in_low": 0.2,
+        "in_high": 0.88
        },
        "inputs": {
         "a": "m3"
@@ -345,6 +345,192 @@
       }
      ],
      "output": "l"
+    }
+   }
+  },
+  {
+   "id": "tex_shaft",
+   "type": "texture",
+   "parameters": {
+    "width": 64,
+    "height": 96,
+    "graph": {
+     "nodes": [
+      {
+       "id": "gu",
+       "op": "gradient_linear",
+       "params": {
+        "angle": 0,
+        "start": 0.0,
+        "end": 1.0
+       }
+      },
+      {
+       "id": "gui",
+       "op": "invert",
+       "inputs": {
+        "a": "gu"
+       }
+      },
+      {
+       "id": "par",
+       "op": "math",
+       "params": {
+        "mode": "multiply"
+       },
+       "inputs": {
+        "a": "gu",
+        "b": "gui"
+       }
+      },
+      {
+       "id": "wide",
+       "op": "levels",
+       "params": {
+        "in_low": 0.0,
+        "in_high": 0.25
+       },
+       "inputs": {
+        "a": "par"
+       }
+      },
+      {
+       "id": "gv",
+       "op": "gradient_linear",
+       "params": {
+        "angle": 90,
+        "start": 0.72,
+        "end": 0.0
+       }
+      },
+      {
+       "id": "cone",
+       "op": "math",
+       "params": {
+        "mode": "subtract"
+       },
+       "inputs": {
+        "a": "wide",
+        "b": "gv"
+       }
+      },
+      {
+       "id": "conel",
+       "op": "levels",
+       "params": {
+        "in_low": 0.0,
+        "in_high": 0.55,
+        "gamma": 0.8
+       },
+       "inputs": {
+        "a": "cone"
+       }
+      },
+      {
+       "id": "gh",
+       "op": "gradient_linear",
+       "params": {
+        "angle": 90,
+        "start": 0.0,
+        "end": 1.0
+       }
+      },
+      {
+       "id": "up",
+       "op": "levels",
+       "params": {
+        "in_low": 0.04,
+        "in_high": 1.0,
+        "gamma": 0.9
+       },
+       "inputs": {
+        "a": "gh"
+       }
+      },
+      {
+       "id": "ghi",
+       "op": "invert",
+       "inputs": {
+        "a": "gh"
+       }
+      },
+      {
+       "id": "foot",
+       "op": "levels",
+       "params": {
+        "in_high": 0.1
+       },
+       "inputs": {
+        "a": "ghi"
+       }
+      },
+      {
+       "id": "n",
+       "op": "fbm",
+       "params": {
+        "frequency": 2.2,
+        "octaves": 3,
+        "seed": 9
+       }
+      },
+      {
+       "id": "nl",
+       "op": "levels",
+       "params": {
+        "in_low": 0.2,
+        "in_high": 0.8,
+        "out_low": 0.55,
+        "out_high": 1.0
+       },
+       "inputs": {
+        "a": "n"
+       }
+      },
+      {
+       "id": "m1",
+       "op": "math",
+       "params": {
+        "mode": "multiply"
+       },
+       "inputs": {
+        "a": "conel",
+        "b": "up"
+       }
+      },
+      {
+       "id": "m2",
+       "op": "math",
+       "params": {
+        "mode": "multiply"
+       },
+       "inputs": {
+        "a": "m1",
+        "b": "foot"
+       }
+      },
+      {
+       "id": "m3",
+       "op": "math",
+       "params": {
+        "mode": "multiply"
+       },
+       "inputs": {
+        "a": "m2",
+        "b": "nl"
+       }
+      },
+      {
+       "id": "b",
+       "op": "blur",
+       "params": {
+        "radius": 3.5
+       },
+       "inputs": {
+        "a": "m3"
+       }
+      }
+     ],
+     "output": "b"
     }
    }
   },
@@ -1742,8 +1928,8 @@
       0.84,
       [
        1.0,
-       0.84,
-       0.44,
+       0.76,
+       0.32,
        1.0
       ]
      ],
@@ -1751,8 +1937,8 @@
       1.0,
       [
        1.0,
-       0.97,
-       0.84,
+       0.88,
+       0.56,
        1.0
       ]
      ]
@@ -1776,9 +1962,9 @@
     "blend": "alpha",
     "shading": "lit",
     "base_color": [
-     0.13,
-     0.105,
-     0.098,
+     0.2,
+     0.165,
+     0.15,
      1.0
     ],
     "soft_particle": true,
@@ -2027,33 +2213,33 @@
    "type": "particle_system",
    "layer": "wall",
    "parameters": {
-    "max_particles": 420,
-    "lifetime": 0.46,
-    "lifetime_variance": 0.14,
-    "size": 1.55,
-    "size_variance": 0.45,
+    "max_particles": 320,
+    "lifetime": 0.48,
+    "lifetime_variance": 0.16,
+    "size": 2.4,
+    "size_variance": 0.6,
     "size_over_life": [
      [
       0.0,
-      0.62
+      0.9
      ],
      [
       0.18,
-      1.0
+      1.05
      ],
      [
-      0.6,
-      1.0
+      0.55,
+      0.92
      ],
      [
       1.0,
-      0.55
+      0.62
      ]
     ],
     "color": [
      1.0,
-     0.6,
-     0.18,
+     0.52,
+     0.12,
      1.0
     ],
     "color_over_life": [
@@ -2094,14 +2280,14 @@
       ]
      ]
     ],
-    "opacity": 0.34,
+    "opacity": 0.24,
     "opacity_over_life": [
      [
       0.0,
       0.0
      ],
      [
-      0.07,
+      0.06,
       1.0
      ],
      [
@@ -2114,11 +2300,11 @@
      ]
     ],
     "emissive": 0.22,
-    "drag": 2.6,
+    "drag": 2.4,
     "blend": "additive",
     "soft_particle_distance": 0.35,
     "render_mode": "stretched_billboard",
-    "velocity_stretch": 0.16,
+    "velocity_stretch": 0.12,
     "sprite_fps": 24.0
    },
    "inputs": {
@@ -2140,7 +2326,7 @@
     "length": 2.7,
     "position": [
      0.15,
-     1.0,
+     1.4,
      0.0
     ],
     "rotation": [
@@ -2194,19 +2380,19 @@
       },
       {
        "time": 0.62,
-       "value": 71.4
+       "value": 38.64
       },
       {
        "time": 0.75,
-       "value": 95.2
+       "value": 51.52
       },
       {
        "time": 0.9,
-       "value": 170.0
+       "value": 92.0
       },
       {
        "time": 1.93,
-       "value": 170.0
+       "value": 92.0
       },
       {
        "time": 2.0,
@@ -2217,13 +2403,12 @@
     "direction": [
      0.0,
      1.0,
-     0.18
+     0.34
     ],
     "start_time": 0.5,
-    "velocity": 4.4,
-    "velocity_variance": 1.7,
-    "spread": 15,
-    "inherit_velocity": 0.42
+    "velocity": 3.4,
+    "velocity_variance": 1.2,
+    "spread": 12
    },
    "inputs": {
     "particle": "ps_crest"
@@ -2238,8 +2423,8 @@
     "shape": "line",
     "length": 1.26,
     "position": [
-     0.05,
-     1.45,
+     0.1,
+     1.75,
      0.0
     ],
     "rotation": [
@@ -2293,19 +2478,19 @@
       },
       {
        "time": 0.62,
-       "value": 25.2
+       "value": 15.96
       },
       {
        "time": 0.75,
-       "value": 33.6
+       "value": 21.28
       },
       {
        "time": 0.9,
-       "value": 60.0
+       "value": 38.0
       },
       {
        "time": 1.93,
-       "value": 60.0
+       "value": 38.0
       },
       {
        "time": 2.0,
@@ -2316,39 +2501,34 @@
     "direction": [
      0.0,
      1.0,
-     0.15
+     0.3
     ],
     "start_time": 0.5,
-    "velocity": 5.2,
-    "velocity_variance": 1.8,
-    "spread": 13,
-    "inherit_velocity": 0.42
+    "velocity": 4.2,
+    "velocity_variance": 1.4,
+    "spread": 11
    },
    "inputs": {
     "particle": "ps_crest"
    }
   },
   {
-   "id": "ps_body",
+   "id": "ps_lip",
    "type": "particle_system",
    "layer": "wall",
    "parameters": {
-    "max_particles": 560,
-    "lifetime": 0.6,
-    "lifetime_variance": 0.22,
-    "size": 1.25,
-    "size_variance": 0.42,
+    "max_particles": 140,
+    "lifetime": 0.32,
+    "lifetime_variance": 0.1,
+    "size": 1.45,
+    "size_variance": 0.45,
     "size_over_life": [
      [
       0.0,
-      0.6
+      0.55
      ],
      [
-      0.2,
-      1.0
-     ],
-     [
-      0.6,
+      0.3,
       1.0
      ],
      [
@@ -2358,8 +2538,8 @@
     ],
     "color": [
      1.0,
-     0.55,
-     0.15,
+     0.54,
+     0.14,
      1.0
     ],
     "color_over_life": [
@@ -2400,18 +2580,18 @@
       ]
      ]
     ],
-    "opacity": 0.3,
+    "opacity": 0.22,
     "opacity_over_life": [
      [
       0.0,
       0.0
      ],
      [
-      0.08,
+      0.12,
       1.0
      ],
      [
-      0.58,
+      0.55,
       0.8
      ],
      [
@@ -2420,12 +2600,12 @@
      ]
     ],
     "emissive": 0.2,
-    "drag": 2.2,
+    "drag": 2.8,
     "blend": "additive",
     "soft_particle_distance": 0.35,
     "render_mode": "stretched_billboard",
-    "velocity_stretch": 0.24,
-    "sprite_fps": 21.0
+    "velocity_stretch": 0.08,
+    "sprite_fps": 26.0
    },
    "inputs": {
     "sprite": "tex_flame",
@@ -2437,16 +2617,16 @@
    }
   },
   {
-   "id": "e_body",
+   "id": "e_lip",
    "type": "emitter",
    "layer": "wall",
    "parent": "hub",
    "parameters": {
     "shape": "line",
-    "length": 2.8,
+    "length": 2.2,
     "position": [
-     -0.55,
-     0.62,
+     0.4,
+     1.95,
      0.0
     ],
     "rotation": [
@@ -2500,19 +2680,19 @@
       },
       {
        "time": 0.62,
-       "value": 96.6
+       "value": 14.28
       },
       {
        "time": 0.75,
-       "value": 128.8
+       "value": 19.04
       },
       {
        "time": 0.9,
-       "value": 230.0
+       "value": 34.0
       },
       {
        "time": 1.93,
-       "value": 230.0
+       "value": 34.0
       },
       {
        "time": 2.0,
@@ -2523,13 +2703,218 @@
     "direction": [
      0.0,
      1.0,
-     0.18
+     0.48
+    ],
+    "start_time": 0.5,
+    "velocity": 2.8,
+    "velocity_variance": 0.9,
+    "spread": 12
+   },
+   "inputs": {
+    "particle": "ps_lip"
+   }
+  },
+  {
+   "id": "ps_body",
+   "type": "particle_system",
+   "layer": "wall",
+   "parameters": {
+    "max_particles": 420,
+    "lifetime": 0.62,
+    "lifetime_variance": 0.25,
+    "size": 1.6,
+    "size_variance": 0.55,
+    "size_over_life": [
+     [
+      0.0,
+      0.55
+     ],
+     [
+      0.22,
+      1.05
+     ],
+     [
+      0.6,
+      0.85
+     ],
+     [
+      1.0,
+      0.5
+     ]
+    ],
+    "color": [
+     1.0,
+     0.49,
+     0.11,
+     1.0
+    ],
+    "color_over_life": [
+     [
+      0.0,
+      [
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      0.3,
+      [
+       1.0,
+       0.95,
+       0.88,
+       1.0
+      ]
+     ],
+     [
+      0.62,
+      [
+       1.0,
+       0.86,
+       0.72,
+       1.0
+      ]
+     ],
+     [
+      1.0,
+      [
+       0.92,
+       0.68,
+       0.52,
+       1.0
+      ]
+     ]
+    ],
+    "opacity": 0.24,
+    "opacity_over_life": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.14,
+      1.0
+     ],
+     [
+      0.62,
+      0.78
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 0.2,
+    "drag": 2.2,
+    "blend": "additive",
+    "soft_particle_distance": 0.35,
+    "render_mode": "stretched_billboard",
+    "velocity_stretch": 0.14,
+    "sprite_fps": 21.0
+   },
+   "inputs": {
+    "sprite": "tex_flame",
+    "material": "mat_fire",
+    "forces": [
+     "f_curl_fire",
+     "f_buoy_fire"
+    ]
+   }
+  },
+  {
+   "id": "e_body",
+   "type": "emitter",
+   "layer": "wall",
+   "parent": "hub",
+   "parameters": {
+    "shape": "line",
+    "length": 2.8,
+    "position": [
+     -0.7,
+     0.9,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     90.0,
+     0.0
+    ],
+    "scale": {
+     "value": [
+      0.34,
+      1.0,
+      1.0
+     ],
+     "track": [
+      {
+       "time": 0.0,
+       "value": [
+        0.34,
+        1.0,
+        1.0
+       ]
+      },
+      {
+       "time": 0.55,
+       "value": [
+        0.34,
+        1.0,
+        1.0
+       ]
+      },
+      {
+       "time": 0.9,
+       "value": [
+        1.0,
+        1.0,
+        1.0
+       ]
+      }
+     ]
+    },
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.0,
+       "value": 0.0
+      },
+      {
+       "time": 0.5,
+       "value": 0.0
+      },
+      {
+       "time": 0.62,
+       "value": 53.76
+      },
+      {
+       "time": 0.75,
+       "value": 71.68
+      },
+      {
+       "time": 0.9,
+       "value": 128.0
+      },
+      {
+       "time": 1.93,
+       "value": 128.0
+      },
+      {
+       "time": 2.0,
+       "value": 0.0
+      }
+     ]
+    },
+    "direction": [
+     0.0,
+     1.0,
+     0.16
     ],
     "start_time": 0.5,
     "velocity": 3.0,
     "velocity_variance": 1.3,
-    "spread": 14,
-    "inherit_velocity": 0.2
+    "spread": 14
    },
    "inputs": {
     "particle": "ps_body"
@@ -2540,9 +2925,9 @@
    "type": "particle_system",
    "layer": "wall",
    "parameters": {
-    "max_particles": 220,
-    "lifetime": 0.85,
-    "lifetime_variance": 0.38,
+    "max_particles": 160,
+    "lifetime": 0.7,
+    "lifetime_variance": 0.3,
     "size": 1.35,
     "size_variance": 0.5,
     "size_over_life": [
@@ -2603,7 +2988,7 @@
       ]
      ]
     ],
-    "opacity": 0.34,
+    "opacity": 0.25,
     "opacity_over_life": [
      [
       0.0,
@@ -2627,7 +3012,7 @@
     "blend": "additive",
     "soft_particle_distance": 0.35,
     "render_mode": "stretched_billboard",
-    "velocity_stretch": 0.3,
+    "velocity_stretch": 0.14,
     "sprite_fps": 18.0
    },
    "inputs": {
@@ -2649,7 +3034,7 @@
     "length": 2.4,
     "position": [
      -0.3,
-     1.0,
+     1.2,
      0.0
     ],
     "rotation": [
@@ -2703,19 +3088,19 @@
       },
       {
        "time": 0.62,
-       "value": 26.04
+       "value": 21.84
       },
       {
        "time": 0.75,
-       "value": 34.72
+       "value": 29.12
       },
       {
        "time": 0.9,
-       "value": 62.0
+       "value": 52.0
       },
       {
        "time": 1.93,
-       "value": 62.0
+       "value": 52.0
       },
       {
        "time": 2.0,
@@ -2726,13 +3111,12 @@
     "direction": [
      0.0,
      1.0,
-     0.1
+     0.12
     ],
     "start_time": 0.5,
-    "velocity": 5.6,
-    "velocity_variance": 2.4,
-    "spread": 16,
-    "inherit_velocity": 0.3
+    "velocity": 4.4,
+    "velocity_variance": 2.0,
+    "spread": 17
    },
    "inputs": {
     "particle": "ps_tongue"
@@ -2744,10 +3128,10 @@
    "layer": "wall",
    "parameters": {
     "max_particles": 120,
-    "lifetime": 0.26,
+    "lifetime": 0.28,
     "lifetime_variance": 0.08,
-    "size": 0.62,
-    "size_variance": 0.22,
+    "size": 0.7,
+    "size_variance": 0.25,
     "size_over_life": [
      [
       0.0,
@@ -2764,8 +3148,8 @@
     ],
     "color": [
      1.0,
-     0.62,
-     0.2,
+     0.58,
+     0.17,
      1.0
     ],
     "color_over_life": [
@@ -2806,7 +3190,7 @@
       ]
      ]
     ],
-    "opacity": 0.4,
+    "opacity": 0.28,
     "opacity_over_life": [
      [
       0.0,
@@ -2826,11 +3210,11 @@
      ]
     ],
     "emissive": 0.2,
-    "drag": 3.5,
+    "drag": 2.5,
     "blend": "additive",
     "soft_particle_distance": 0.35,
     "render_mode": "stretched_billboard",
-    "velocity_stretch": 0.12,
+    "velocity_stretch": 0.1,
     "sprite_fps": 26.0
    },
    "inputs": {
@@ -2848,10 +3232,10 @@
    "parent": "hub",
    "parameters": {
     "shape": "line",
-    "length": 2.3,
+    "length": 2.4,
     "position": [
-     0.75,
-     0.24,
+     0.8,
+     0.36,
      0.0
     ],
     "rotation": [
@@ -2905,19 +3289,19 @@
       },
       {
        "time": 0.62,
-       "value": 29.4
+       "value": 33.6
       },
       {
        "time": 0.75,
-       "value": 39.2
+       "value": 44.8
       },
       {
        "time": 0.9,
-       "value": 70.0
+       "value": 80.0
       },
       {
        "time": 1.93,
-       "value": 70.0
+       "value": 80.0
       },
       {
        "time": 2.0,
@@ -2927,222 +3311,16 @@
     },
     "direction": [
      0.0,
-     0.22,
-     1.0
+     1.0,
+     0.45
     ],
     "start_time": 0.5,
-    "velocity": 2.6,
-    "velocity_variance": 1.2,
-    "spread": 14,
-    "inherit_velocity": 0.85
+    "velocity": 1.5,
+    "velocity_variance": 0.7,
+    "spread": 20
    },
    "inputs": {
     "particle": "ps_lick"
-   }
-  },
-  {
-   "id": "ps_base",
-   "type": "particle_system",
-   "layer": "wall",
-   "parameters": {
-    "max_particles": 260,
-    "lifetime": 0.45,
-    "lifetime_variance": 0.15,
-    "size": 0.95,
-    "size_variance": 0.35,
-    "rotation_variance": 180.0,
-    "angular_velocity": 25.0,
-    "angular_velocity_variance": 40.0,
-    "size_over_life": [
-     [
-      0.0,
-      0.5
-     ],
-     [
-      0.35,
-      1.05
-     ],
-     [
-      1.0,
-      0.7
-     ]
-    ],
-    "color": [
-     1.0,
-     0.75,
-     0.35,
-     1.0
-    ],
-    "color_over_life": [
-     [
-      0.0,
-      [
-       1.0,
-       0.95,
-       0.78,
-       1.0
-      ]
-     ],
-     [
-      0.35,
-      [
-       1.0,
-       0.88,
-       0.6,
-       1.0
-      ]
-     ],
-     [
-      0.75,
-      [
-       1.0,
-       0.78,
-       0.42,
-       1.0
-      ]
-     ],
-     [
-      1.0,
-      [
-       1.0,
-       0.66,
-       0.3,
-       1.0
-      ]
-     ]
-    ],
-    "opacity": 0.13,
-    "opacity_over_life": [
-     [
-      0.0,
-      0.0
-     ],
-     [
-      0.18,
-      1.0
-     ],
-     [
-      0.55,
-      0.55
-     ],
-     [
-      1.0,
-      0.0
-     ]
-    ],
-    "emissive": 0.5,
-    "drag": 2.4,
-    "blend": "additive",
-    "soft_particle_distance": 0.35,
-    "render_mode": "billboard",
-    "sprite_fps": 0.0
-   },
-   "inputs": {
-    "sprite": "tex_puff",
-    "material": "mat_fire",
-    "forces": [
-     "f_curl_fine",
-     "f_buoy_fire"
-    ]
-   }
-  },
-  {
-   "id": "e_base",
-   "type": "emitter",
-   "layer": "wall",
-   "parent": "hub",
-   "parameters": {
-    "shape": "line",
-    "length": 2.6,
-    "position": [
-     -0.4,
-     0.32,
-     0.0
-    ],
-    "rotation": [
-     0.0,
-     90.0,
-     0.0
-    ],
-    "scale": {
-     "value": [
-      0.34,
-      1.0,
-      1.0
-     ],
-     "track": [
-      {
-       "time": 0.0,
-       "value": [
-        0.34,
-        1.0,
-        1.0
-       ]
-      },
-      {
-       "time": 0.55,
-       "value": [
-        0.34,
-        1.0,
-        1.0
-       ]
-      },
-      {
-       "time": 0.9,
-       "value": [
-        1.0,
-        1.0,
-        1.0
-       ]
-      }
-     ]
-    },
-    "rate": {
-     "value": 0.0,
-     "track": [
-      {
-       "time": 0.0,
-       "value": 0.0
-      },
-      {
-       "time": 0.5,
-       "value": 0.0
-      },
-      {
-       "time": 0.62,
-       "value": 50.4
-      },
-      {
-       "time": 0.75,
-       "value": 67.2
-      },
-      {
-       "time": 0.9,
-       "value": 120.0
-      },
-      {
-       "time": 1.93,
-       "value": 120.0
-      },
-      {
-       "time": 2.0,
-       "value": 0.0
-      }
-     ]
-    },
-    "direction": [
-     0.0,
-     1.0,
-     0.1
-    ],
-    "start_time": 0.5,
-    "velocity": 1.2,
-    "velocity_variance": 0.8,
-    "spread": 40,
-    "inherit_velocity": 0.15
-   },
-   "inputs": {
-    "particle": "ps_base"
    }
   },
   {
@@ -3150,33 +3328,33 @@
    "type": "particle_system",
    "layer": "strip",
    "parameters": {
-    "max_particles": 480,
-    "lifetime": 0.7,
-    "lifetime_variance": 0.2,
-    "size": 1.0,
-    "size_variance": 0.35,
+    "max_particles": 420,
+    "lifetime": 0.82,
+    "lifetime_variance": 0.25,
+    "size": 1.3,
+    "size_variance": 0.45,
     "size_over_life": [
      [
       0.0,
       0.5
      ],
      [
-      0.2,
+      0.25,
       1.0
      ],
      [
-      0.5,
-      0.9
+      0.55,
+      0.85
      ],
      [
       1.0,
-      0.35
+      0.3
      ]
     ],
     "color": [
      1.0,
-     0.48,
-     0.11,
+     0.5,
+     0.12,
      1.0
     ],
     "color_over_life": [
@@ -3241,7 +3419,7 @@
     "blend": "additive",
     "soft_particle_distance": 0.35,
     "render_mode": "stretched_billboard",
-    "velocity_stretch": 0.3,
+    "velocity_stretch": 0.14,
     "sprite_fps": 20.0
    },
    "inputs": {
@@ -3262,8 +3440,8 @@
     "shape": "line",
     "length": 2.5,
     "position": [
-     -1.0,
-     0.42,
+     -1.7,
+     0.68,
      0.0
     ],
     "rotation": [
@@ -3317,18 +3495,18 @@
       },
       {
        "time": 0.8,
-       "value": 125.0
+       "value": 100.0
       },
       {
        "time": 0.95,
-       "value": 250.0
+       "value": 200.0
+      },
+      {
+       "time": 1.62,
+       "value": 200.0
       },
       {
        "time": 1.74,
-       "value": 250.0
-      },
-      {
-       "time": 1.86,
        "value": 0.0
       }
      ]
@@ -3339,12 +3517,267 @@
      0.0
     ],
     "start_time": 0.62,
-    "velocity": 2.3,
+    "velocity": 2.6,
     "velocity_variance": 1.1,
-    "spread": 24
+    "spread": 20
    },
    "inputs": {
     "particle": "ps_strip"
+   }
+  },
+  {
+   "id": "ps_strip_late",
+   "type": "particle_system",
+   "layer": "strip",
+   "parameters": {
+    "max_particles": 160,
+    "lifetime": 0.46,
+    "lifetime_variance": 0.12,
+    "size": 1.3,
+    "size_variance": 0.45,
+    "size_over_life": [
+     [
+      0.0,
+      0.5
+     ],
+     [
+      0.25,
+      1.0
+     ],
+     [
+      0.55,
+      0.85
+     ],
+     [
+      1.0,
+      0.3
+     ]
+    ],
+    "color": [
+     1.0,
+     0.5,
+     0.12,
+     1.0
+    ],
+    "color_over_life": [
+     [
+      0.0,
+      [
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      0.3,
+      [
+       1.0,
+       0.95,
+       0.88,
+       1.0
+      ]
+     ],
+     [
+      0.62,
+      [
+       1.0,
+       0.86,
+       0.72,
+       1.0
+      ]
+     ],
+     [
+      1.0,
+      [
+       0.92,
+       0.68,
+       0.52,
+       1.0
+      ]
+     ]
+    ],
+    "opacity": 0.25,
+    "opacity_over_life": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.12,
+      1.0
+     ],
+     [
+      0.6,
+      0.75
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 0.2,
+    "drag": 2.0,
+    "blend": "additive",
+    "soft_particle_distance": 0.35,
+    "render_mode": "stretched_billboard",
+    "velocity_stretch": 0.14,
+    "sprite_fps": 20.0
+   },
+   "inputs": {
+    "sprite": "tex_flame",
+    "material": "mat_fire",
+    "forces": [
+     "f_curl_fine",
+     "f_buoy_fire"
+    ]
+   }
+  },
+  {
+   "id": "e_strip_late",
+   "type": "emitter",
+   "layer": "strip",
+   "parent": "hub",
+   "parameters": {
+    "shape": "line",
+    "length": 2.5,
+    "position": [
+     -1.7,
+     0.68,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     90.0,
+     0.0
+    ],
+    "scale": {
+     "value": [
+      0.34,
+      1.0,
+      1.0
+     ],
+     "track": [
+      {
+       "time": 0.0,
+       "value": [
+        0.34,
+        1.0,
+        1.0
+       ]
+      },
+      {
+       "time": 0.55,
+       "value": [
+        0.34,
+        1.0,
+        1.0
+       ]
+      },
+      {
+       "time": 0.9,
+       "value": [
+        1.0,
+        1.0,
+        1.0
+       ]
+      }
+     ]
+    },
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.0,
+       "value": 0.0
+      },
+      {
+       "time": 1.6,
+       "value": 0.0
+      },
+      {
+       "time": 1.72,
+       "value": 200.0
+      },
+      {
+       "time": 1.93,
+       "value": 200.0
+      },
+      {
+       "time": 2.0,
+       "value": 0.0
+      }
+     ]
+    },
+    "direction": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "start_time": 1.6,
+    "velocity": 2.6,
+    "velocity_variance": 1.1,
+    "spread": 20
+   },
+   "inputs": {
+    "particle": "ps_strip_late"
+   }
+  },
+  {
+   "id": "ps_shaft",
+   "type": "particle_system",
+   "layer": "cast",
+   "parameters": {
+    "max_particles": 24,
+    "lifetime": 0.5,
+    "lifetime_variance": 0.1,
+    "size": 3.0,
+    "size_variance": 0.5,
+    "size_over_life": [
+     [
+      0.0,
+      0.8
+     ],
+     [
+      1.0,
+      1.15
+     ]
+    ],
+    "color": [
+     1.0,
+     0.5,
+     0.14,
+     1.0
+    ],
+    "opacity": 0.2,
+    "opacity_over_life": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.16,
+      1.0
+     ],
+     [
+      0.6,
+      0.8
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 0.5,
+    "drag": 1.0,
+    "blend": "additive",
+    "soft_particle_distance": 0.4,
+    "render_mode": "billboard",
+    "sprite_fps": 0.0
+   },
+   "inputs": {
+    "sprite": "tex_shaft",
+    "material": "mat_glow"
    }
   },
   {
@@ -3352,11 +3785,11 @@
    "type": "particle_system",
    "layer": "sparks",
    "parameters": {
-    "max_particles": 900,
-    "lifetime": 0.75,
+    "max_particles": 1000,
+    "lifetime": 0.8,
     "lifetime_variance": 0.35,
-    "size": 0.036,
-    "size_variance": 0.018,
+    "size": 0.05,
+    "size_variance": 0.022,
     "color": [
      1.0,
      0.7,
@@ -3406,7 +3839,7 @@
       0.0
      ]
     ],
-    "emissive": 6.0,
+    "emissive": 4.0,
     "drag": 0.5,
     "render_mode": "stretched_billboard",
     "velocity_stretch": 0.1,
@@ -3434,7 +3867,7 @@
     "length": 2.4,
     "position": [
      0.1,
-     0.5,
+     0.7,
      0.0
     ],
     "rotation": [
@@ -3488,19 +3921,19 @@
       },
       {
        "time": 0.62,
-       "value": 109.2
+       "value": 126.0
       },
       {
        "time": 0.75,
-       "value": 145.6
+       "value": 168.0
       },
       {
        "time": 0.9,
-       "value": 260.0
+       "value": 300.0
       },
       {
        "time": 1.93,
-       "value": 260.0
+       "value": 300.0
       },
       {
        "time": 2.0,
@@ -3511,13 +3944,13 @@
     "direction": [
      0.0,
      1.0,
-     0.55
+     0.5
     ],
     "start_time": 0.5,
-    "velocity": 4.5,
-    "velocity_variance": 2.8,
-    "spread": 38,
-    "inherit_velocity": 0.55
+    "velocity": 5.0,
+    "velocity_variance": 3.0,
+    "spread": 36,
+    "inherit_velocity": 0.6
    },
    "inputs": {
     "particle": "ps_spark"
@@ -3774,12 +4207,12 @@
      ]
     ],
     "color": [
-     0.11,
-     0.088,
-     0.082,
+     0.16,
+     0.13,
+     0.12,
      1.0
     ],
-    "opacity": 0.3,
+    "opacity": 0.36,
     "opacity_over_life": [
      [
       0.0,
@@ -3818,8 +4251,8 @@
     "shape": "line",
     "length": 2.0,
     "position": [
-     -2.6,
-     1.3,
+     -2.4,
+     1.4,
      0.0
     ],
     "rotation": [
@@ -3873,11 +4306,11 @@
       },
       {
        "time": 1.0,
-       "value": 36.0
+       "value": 44.0
       },
       {
        "time": 1.9,
-       "value": 36.0
+       "value": 44.0
       },
       {
        "time": 2.0,
@@ -3947,27 +4380,27 @@
     ],
     "blend": "additive",
     "emissive": {
-     "value": 0.6,
+     "value": 0.5,
      "track": [
       {
        "time": 0.0,
-       "value": 0.6
+       "value": 0.5
       },
       {
        "time": 0.1,
-       "value": 2.2
-      },
-      {
-       "time": 0.3,
        "value": 1.8
       },
       {
+       "time": 0.3,
+       "value": 1.5
+      },
+      {
        "time": 0.36,
-       "value": 3.6
+       "value": 2.4
       },
       {
        "time": 0.6,
-       "value": 1.6
+       "value": 1.2
       },
       {
        "time": 0.95,
@@ -4039,15 +4472,15 @@
       },
       {
        "time": 0.2,
-       "value": 0.5
+       "value": 0.35
       },
       {
        "time": 0.36,
-       "value": 1.4
+       "value": 0.7
       },
       {
        "time": 0.7,
-       "value": 0.8
+       "value": 0.4
       },
       {
        "time": 1.05,
@@ -4064,11 +4497,11 @@
       },
       {
        "time": 0.15,
-       "value": 0.7
+       "value": 0.55
       },
       {
        "time": 0.7,
-       "value": 0.7
+       "value": 0.55
       },
       {
        "time": 1.05,
@@ -4090,45 +4523,45 @@
    "layer": "cast",
    "parameters": {
     "shape": "disc",
-    "radius": 0.7,
+    "radius": 0.3,
     "position": [
      -4.5,
-     0.3,
+     1.4,
      0.0
     ],
     "rate": {
-     "value": 40.0,
+     "value": 22.0,
      "track": [
       {
        "time": 0.0,
-       "value": 40.0
+       "value": 22.0
       },
       {
-       "time": 0.1,
-       "value": 110.0
+       "time": 0.24,
+       "value": 22.0
       },
       {
        "time": 0.3,
-       "value": 110.0
-      },
-      {
-       "time": 0.42,
        "value": 0.0
       }
      ]
     },
-    "velocity": 2.6,
-    "velocity_variance": 0.9,
+    "burst_count": 5,
+    "burst_times": [
+     0.0
+    ],
+    "velocity": 0.5,
+    "velocity_variance": 0.2,
     "direction": [
      0,
      1,
      0
     ],
-    "spread": 7,
-    "duration": 0.45
+    "spread": 5,
+    "duration": 0.42
    },
    "inputs": {
-    "particle": "ps_base"
+    "particle": "ps_shaft"
    }
   },
   {
@@ -4181,15 +4614,15 @@
    "type": "particle_system",
    "layer": "surge",
    "parameters": {
-    "max_particles": 420,
-    "lifetime": 0.47,
-    "lifetime_variance": 0.13,
-    "size": 1.65,
-    "size_variance": 0.55,
+    "max_particles": 240,
+    "lifetime": 0.52,
+    "lifetime_variance": 0.16,
+    "size": 2.3,
+    "size_variance": 0.7,
     "size_over_life": [
      [
       0.0,
-      0.35
+      0.75
      ],
      [
       0.25,
@@ -4197,13 +4630,13 @@
      ],
      [
       1.0,
-      0.55
+      0.6
      ]
     ],
     "color": [
      1.0,
-     0.58,
-     0.16,
+     0.52,
+     0.12,
      1.0
     ],
     "color_over_life": [
@@ -4244,18 +4677,18 @@
       ]
      ]
     ],
-    "opacity": 0.34,
+    "opacity": 0.2,
     "opacity_over_life": [
      [
       0.0,
       0.0
      ],
      [
-      0.1,
+      0.12,
       1.0
      ],
      [
-      0.58,
+      0.6,
       0.82
      ],
      [
@@ -4263,12 +4696,12 @@
       0.0
      ]
     ],
-    "emissive": 0.24,
+    "emissive": 0.22,
     "drag": 2.4,
     "blend": "additive",
     "soft_particle_distance": 0.35,
     "render_mode": "stretched_billboard",
-    "velocity_stretch": 0.2,
+    "velocity_stretch": 0.1,
     "sprite_fps": 22.0
    },
    "inputs": {
@@ -4287,10 +4720,10 @@
    "layer": "surge",
    "parameters": {
     "shape": "disc",
-    "radius": 0.85,
+    "radius": 0.8,
     "position": [
      -4.5,
-     0.55,
+     1.0,
      0.0
     ],
     "rate": {
@@ -4302,11 +4735,11 @@
       },
       {
        "time": 0.3,
-       "value": 260.0
+       "value": 110.0
       },
       {
        "time": 0.55,
-       "value": 210.0
+       "value": 95.0
       },
       {
        "time": 0.7,
@@ -4314,18 +4747,18 @@
       }
      ]
     },
-    "burst_count": 36,
+    "burst_count": 16,
     "burst_times": [
      0.0
     ],
-    "velocity": 6.4,
-    "velocity_variance": 2.3,
+    "velocity": 5.4,
+    "velocity_variance": 3.0,
     "direction": [
      0,
      1,
      0
     ],
-    "spread": 13,
+    "spread": 12,
     "start_time": 0.3,
     "duration": 0.42
    },
@@ -4338,8 +4771,8 @@
    "type": "emitter",
    "layer": "surge",
    "parameters": {
-    "shape": "disc",
-    "radius": 0.8,
+    "shape": "hemisphere",
+    "radius": 0.9,
     "position": [
      -4.5,
      0.3,
@@ -4354,11 +4787,11 @@
       },
       {
        "time": 0.3,
-       "value": 260.0
+       "value": 220.0
       },
       {
        "time": 0.6,
-       "value": 160.0
+       "value": 140.0
       },
       {
        "time": 0.7,
@@ -4366,7 +4799,7 @@
       }
      ]
     },
-    "burst_count": 110,
+    "burst_count": 70,
     "burst_times": [
      0.0
     ],
@@ -4763,8 +5196,8 @@
     "color": {
      "value": [
       1.0,
-      0.62,
-      0.22,
+      0.55,
+      0.16,
       1.0
      ],
      "track": [
@@ -4772,8 +5205,8 @@
        "time": 0.0,
        "value": [
         1.0,
-        0.62,
-        0.22,
+        0.55,
+        0.16,
         1.0
        ]
       },
@@ -4781,8 +5214,8 @@
        "time": 1.1842,
        "value": [
         1.0,
-        0.62,
-        0.22,
+        0.55,
+        0.16,
         1.0
        ]
       },
@@ -4790,8 +5223,8 @@
        "time": 1.3342,
        "value": [
         1.0,
-        0.5085,
-        0.1557,
+        0.4685,
+        0.1214,
         1.0
        ]
       },
@@ -4799,8 +5232,8 @@
        "time": 1.4842,
        "value": [
         1.0,
-        0.3971,
-        0.0914,
+        0.3871,
+        0.0828,
         1.0
        ]
       },
@@ -4856,31 +5289,31 @@
       },
       {
        "time": 1.1842,
-       "value": 2.5998
+       "value": 1.6999
       },
       {
        "time": 1.3342,
-       "value": 1.9498
+       "value": 1.3499
       },
       {
        "time": 1.4842,
-       "value": 1.2999
+       "value": 1.0
       },
       {
        "time": 1.9342,
-       "value": 0.6
+       "value": 0.5
       },
       {
        "time": 2.15,
-       "value": 0.4933
+       "value": 0.4137
       },
       {
        "time": 2.35,
-       "value": 0.21
+       "value": 0.1776
       },
       {
        "time": 2.5,
-       "value": 0.1121
+       "value": 0.0958
       }
      ]
     },
@@ -4956,8 +5389,8 @@
     "color": {
      "value": [
       1.0,
-      0.62,
-      0.22,
+      0.55,
+      0.16,
       1.0
      ],
      "track": [
@@ -4965,8 +5398,8 @@
        "time": 0.0,
        "value": [
         1.0,
-        0.62,
-        0.22,
+        0.55,
+        0.16,
         1.0
        ]
       },
@@ -4974,8 +5407,8 @@
        "time": 1.3475,
        "value": [
         1.0,
-        0.62,
-        0.22,
+        0.55,
+        0.16,
         1.0
        ]
       },
@@ -4983,8 +5416,8 @@
        "time": 1.4975,
        "value": [
         1.0,
-        0.5086,
-        0.1557,
+        0.4686,
+        0.1214,
         1.0
        ]
       },
@@ -4992,8 +5425,8 @@
        "time": 1.6475,
        "value": [
         1.0,
-        0.3972,
-        0.0914,
+        0.3872,
+        0.0829,
         1.0
        ]
       },
@@ -5049,31 +5482,31 @@
       },
       {
        "time": 1.3475,
-       "value": 2.6001
+       "value": 1.7001
       },
       {
        "time": 1.4975,
-       "value": 1.9501
+       "value": 1.3501
       },
       {
        "time": 1.6475,
-       "value": 1.3001
+       "value": 1.0001
       },
       {
        "time": 2.0975,
-       "value": 0.6
+       "value": 0.5
       },
       {
        "time": 2.15,
-       "value": 0.5741
+       "value": 0.479
       },
       {
        "time": 2.35,
-       "value": 0.253
+       "value": 0.2124
       },
       {
        "time": 2.5,
-       "value": 0.1404
+       "value": 0.1187
       }
      ]
     },
@@ -5149,8 +5582,8 @@
     "color": {
      "value": [
       1.0,
-      0.62,
-      0.22,
+      0.55,
+      0.16,
       1.0
      ],
      "track": [
@@ -5158,8 +5591,8 @@
        "time": 0.0,
        "value": [
         1.0,
-        0.62,
-        0.22,
+        0.55,
+        0.16,
         1.0
        ]
       },
@@ -5167,8 +5600,8 @@
        "time": 1.5109,
        "value": [
         1.0,
-        0.62,
-        0.22,
+        0.55,
+        0.16,
         1.0
        ]
       },
@@ -5176,8 +5609,8 @@
        "time": 1.6609,
        "value": [
         1.0,
-        0.5086,
-        0.1557,
+        0.4686,
+        0.1214,
         1.0
        ]
       },
@@ -5185,8 +5618,8 @@
        "time": 1.8109,
        "value": [
         1.0,
-        0.3971,
-        0.0914,
+        0.3871,
+        0.0829,
         1.0
        ]
       },
@@ -5242,31 +5675,31 @@
       },
       {
        "time": 1.5109,
-       "value": 2.6
+       "value": 1.7
       },
       {
        "time": 1.6609,
-       "value": 1.95
+       "value": 1.35
       },
       {
        "time": 1.8109,
-       "value": 1.3
+       "value": 1.0
       },
       {
        "time": 2.15,
-       "value": 0.7725
+       "value": 0.6232
       },
       {
        "time": 2.2609,
-       "value": 0.4302
+       "value": 0.3585
       },
       {
        "time": 2.35,
-       "value": 0.296
+       "value": 0.2472
       },
       {
        "time": 2.5,
-       "value": 0.1686
+       "value": 0.1415
       }
      ]
     },
@@ -5342,8 +5775,8 @@
     "color": {
      "value": [
       1.0,
-      0.62,
-      0.22,
+      0.55,
+      0.16,
       1.0
      ],
      "track": [
@@ -5351,8 +5784,8 @@
        "time": 0.0,
        "value": [
         1.0,
-        0.62,
-        0.22,
+        0.55,
+        0.16,
         1.0
        ]
       },
@@ -5360,8 +5793,8 @@
        "time": 1.6743,
        "value": [
         1.0,
-        0.62,
-        0.22,
+        0.55,
+        0.16,
         1.0
        ]
       },
@@ -5369,8 +5802,8 @@
        "time": 1.8243,
        "value": [
         1.0,
-        0.5085,
-        0.1557,
+        0.4685,
+        0.1214,
         1.0
        ]
       },
@@ -5378,8 +5811,8 @@
        "time": 1.9743,
        "value": [
         1.0,
-        0.3971,
-        0.0914,
+        0.3871,
+        0.0828,
         1.0
        ]
       },
@@ -5435,31 +5868,31 @@
       },
       {
        "time": 1.6743,
-       "value": 2.5998
+       "value": 1.6999
       },
       {
        "time": 1.8243,
-       "value": 1.9498
+       "value": 1.3499
       },
       {
        "time": 1.9743,
-       "value": 1.2999
+       "value": 1.0
       },
       {
        "time": 2.15,
-       "value": 1.0266
+       "value": 0.8047
       },
       {
        "time": 2.35,
-       "value": 0.3809
+       "value": 0.3101
       },
       {
        "time": 2.4243,
-       "value": 0.2492
+       "value": 0.2077
       },
       {
        "time": 2.5,
-       "value": 0.1969
+       "value": 0.1644
       }
      ]
     },
@@ -5535,8 +5968,8 @@
     "color": {
      "value": [
       1.0,
-      0.62,
-      0.22,
+      0.55,
+      0.16,
       1.0
      ],
      "track": [
@@ -5544,8 +5977,8 @@
        "time": 0.0,
        "value": [
         1.0,
-        0.62,
-        0.22,
+        0.55,
+        0.16,
         1.0
        ]
       },
@@ -5553,8 +5986,8 @@
        "time": 1.8376,
        "value": [
         1.0,
-        0.62,
-        0.22,
+        0.55,
+        0.16,
         1.0
        ]
       },
@@ -5562,8 +5995,8 @@
        "time": 1.9876,
        "value": [
         1.0,
-        0.5086,
-        0.1557,
+        0.4686,
+        0.1214,
         1.0
        ]
       },
@@ -5571,8 +6004,8 @@
        "time": 2.1376,
        "value": [
         1.0,
-        0.3972,
-        0.0914,
+        0.3872,
+        0.0829,
         1.0
        ]
       },
@@ -5580,8 +6013,8 @@
        "time": 2.15,
        "value": [
         1.0,
-        0.3879,
-        0.0861,
+        0.3804,
+        0.0797,
         1.0
        ]
       },
@@ -5619,27 +6052,27 @@
       },
       {
        "time": 1.8376,
-       "value": 2.6001
+       "value": 1.7001
       },
       {
        "time": 1.9876,
-       "value": 1.9501
+       "value": 1.3501
       },
       {
        "time": 2.1376,
-       "value": 1.3001
+       "value": 1.0001
       },
       {
        "time": 2.15,
-       "value": 1.2807
+       "value": 0.9862
       },
       {
        "time": 2.35,
-       "value": 0.5162
+       "value": 0.4067
       },
       {
        "time": 2.5,
-       "value": 0.2577
+       "value": 0.2091
       }
      ]
     },
@@ -5711,8 +6144,8 @@
     "color": {
      "value": [
       1.0,
-      0.62,
-      0.22,
+      0.55,
+      0.16,
       1.0
      ],
      "track": [
@@ -5720,8 +6153,8 @@
        "time": 0.0,
        "value": [
         1.0,
-        0.62,
-        0.22,
+        0.55,
+        0.16,
         1.0
        ]
       },
@@ -5729,8 +6162,8 @@
        "time": 2.001,
        "value": [
         1.0,
-        0.62,
-        0.22,
+        0.55,
+        0.16,
         1.0
        ]
       },
@@ -5738,8 +6171,8 @@
        "time": 2.15,
        "value": [
         1.0,
-        0.5093,
-        0.1561,
+        0.4691,
+        0.1217,
         1.0
        ]
       },
@@ -5747,8 +6180,8 @@
        "time": 2.151,
        "value": [
         1.0,
-        0.5086,
-        0.1557,
+        0.4686,
+        0.1214,
         1.0
        ]
       },
@@ -5756,8 +6189,8 @@
        "time": 2.301,
        "value": [
         1.0,
-        0.3971,
-        0.0914,
+        0.3871,
+        0.0829,
         1.0
        ]
       },
@@ -5765,8 +6198,8 @@
        "time": 2.35,
        "value": [
         1.0,
-        0.3607,
-        0.0704,
+        0.3605,
+        0.0703,
         1.0
        ]
       },
@@ -5795,27 +6228,27 @@
       },
       {
        "time": 2.001,
-       "value": 2.6
+       "value": 1.7
       },
       {
        "time": 2.15,
-       "value": 1.9543
+       "value": 1.3523
       },
       {
        "time": 2.151,
-       "value": 1.9445
+       "value": 1.3462
       },
       {
        "time": 2.301,
-       "value": 0.8173
+       "value": 0.6287
       },
       {
        "time": 2.35,
-       "value": 0.6515
+       "value": 0.5034
       },
       {
        "time": 2.5,
-       "value": 0.3467
+       "value": 0.2726
       }
      ]
     },
@@ -5887,8 +6320,8 @@
     "color": {
      "value": [
       1.0,
-      0.62,
-      0.22,
+      0.55,
+      0.16,
       1.0
      ],
      "track": [
@@ -5896,8 +6329,8 @@
        "time": 0.0,
        "value": [
         1.0,
-        0.62,
-        0.22,
+        0.55,
+        0.16,
         1.0
        ]
       },
@@ -5905,8 +6338,8 @@
        "time": 2.1,
        "value": [
         1.0,
-        0.62,
-        0.22,
+        0.55,
+        0.16,
         1.0
        ]
       },
@@ -5914,8 +6347,8 @@
        "time": 2.15,
        "value": [
         1.0,
-        0.5829,
-        0.1986,
+        0.5229,
+        0.1471,
         1.0
        ]
       },
@@ -5923,8 +6356,8 @@
        "time": 2.25,
        "value": [
         1.0,
-        0.5086,
-        0.1557,
+        0.4686,
+        0.1214,
         1.0
        ]
       },
@@ -5932,8 +6365,8 @@
        "time": 2.35,
        "value": [
         1.0,
-        0.4343,
-        0.1129,
+        0.4143,
+        0.0957,
         1.0
        ]
       },
@@ -5941,8 +6374,8 @@
        "time": 2.4,
        "value": [
         1.0,
-        0.3971,
-        0.0914,
+        0.3871,
+        0.0829,
         1.0
        ]
       },
@@ -5971,27 +6404,27 @@
       },
       {
        "time": 2.1,
-       "value": 2.6
+       "value": 1.7
       },
       {
        "time": 2.15,
-       "value": 2.3833
+       "value": 1.5833
       },
       {
        "time": 2.25,
-       "value": 1.4477
+       "value": 1.0022
       },
       {
        "time": 2.35,
-       "value": 0.8074
+       "value": 0.5945
       },
       {
        "time": 2.4,
-       "value": 0.584
+       "value": 0.4493
       },
       {
        "time": 2.5,
-       "value": 0.4006
+       "value": 0.3111
       }
      ]
     },
@@ -6063,8 +6496,8 @@
     "color": {
      "value": [
       1.0,
-      0.62,
-      0.22,
+      0.55,
+      0.16,
       1.0
      ],
      "track": [
@@ -6072,8 +6505,8 @@
        "time": 0.0,
        "value": [
         1.0,
-        0.62,
-        0.22,
+        0.55,
+        0.16,
         1.0
        ]
       },
@@ -6081,8 +6514,8 @@
        "time": 2.1,
        "value": [
         1.0,
-        0.62,
-        0.22,
+        0.55,
+        0.16,
         1.0
        ]
       },
@@ -6090,8 +6523,8 @@
        "time": 2.15,
        "value": [
         1.0,
-        0.5829,
-        0.1986,
+        0.5229,
+        0.1471,
         1.0
        ]
       },
@@ -6099,8 +6532,8 @@
        "time": 2.25,
        "value": [
         1.0,
-        0.5086,
-        0.1557,
+        0.4686,
+        0.1214,
         1.0
        ]
       },
@@ -6108,8 +6541,8 @@
        "time": 2.35,
        "value": [
         1.0,
-        0.4343,
-        0.1129,
+        0.4143,
+        0.0957,
         1.0
        ]
       },
@@ -6117,8 +6550,8 @@
        "time": 2.4,
        "value": [
         1.0,
-        0.3971,
-        0.0914,
+        0.3871,
+        0.0829,
         1.0
        ]
       },
@@ -6147,27 +6580,27 @@
       },
       {
        "time": 2.1,
-       "value": 2.6
+       "value": 1.7
       },
       {
        "time": 2.15,
-       "value": 2.3833
+       "value": 1.5833
       },
       {
        "time": 2.25,
-       "value": 1.4477
+       "value": 1.0022
       },
       {
        "time": 2.35,
-       "value": 0.8074
+       "value": 0.5945
       },
       {
        "time": 2.4,
-       "value": 0.584
+       "value": 0.4493
       },
       {
        "time": 2.5,
-       "value": 0.4006
+       "value": 0.3111
       }
      ]
     },
@@ -6317,8 +6750,8 @@
     ],
     "color": [
      1.0,
-     0.45,
-     0.1,
+     0.36,
+     0.06,
      1.0
     ],
     "blend": "additive",
@@ -6335,11 +6768,11 @@
       },
       {
        "time": 0.9,
-       "value": 0.9
+       "value": 0.1
       },
       {
        "time": 1.9,
-       "value": 0.9
+       "value": 0.1
       },
       {
        "time": 2.1,
@@ -6360,11 +6793,11 @@
       },
       {
        "time": 0.85,
-       "value": 0.75
+       "value": 0.45
       },
       {
        "time": 1.9,
-       "value": 0.75
+       "value": 0.45
       },
       {
        "time": 2.1,
@@ -6387,11 +6820,11 @@
    "layer": "impact",
    "parameters": {
     "shape": "disc",
-    "radius": 0.75,
+    "radius": 0.65,
     "position": [
-     3.9,
-     0.55,
-     0.35
+     3.4,
+     1.05,
+     0.55
     ],
     "rate": {
      "value": 0.0,
@@ -6402,26 +6835,26 @@
       },
       {
        "time": 1.8,
-       "value": 330.0
+       "value": 170.0
       },
       {
-       "time": 1.9,
+       "time": 1.89,
        "value": 0.0
       }
      ]
     },
-    "burst_count": 46,
+    "burst_count": 14,
     "burst_times": [
      0.0
     ],
-    "velocity": 7.6,
-    "velocity_variance": 2.6,
+    "velocity": 9.5,
+    "velocity_variance": 4.5,
     "direction": [
      0,
      1,
      0
     ],
-    "spread": 19,
+    "spread": 9,
     "start_time": 1.8,
     "duration": 0.12
    },
@@ -6430,62 +6863,30 @@
    }
   },
   {
-   "id": "e_flare_bed_0",
-   "type": "emitter",
-   "layer": "impact",
-   "parameters": {
-    "shape": "disc",
-    "radius": 0.9,
-    "position": [
-     3.9,
-     0.4,
-     0.35
-    ],
-    "rate": 0,
-    "burst_count": 16,
-    "burst_times": [
-     0.0
-    ],
-    "velocity": 2.2,
-    "velocity_variance": 1.2,
-    "direction": [
-     0,
-     1,
-     0
-    ],
-    "spread": 50,
-    "start_time": 1.8,
-    "duration": 0.1
-   },
-   "inputs": {
-    "particle": "ps_base"
-   }
-  },
-  {
    "id": "e_flare_spark_0",
    "type": "emitter",
    "layer": "impact",
    "parameters": {
-    "shape": "disc",
-    "radius": 0.6,
+    "shape": "hemisphere",
+    "radius": 1.0,
     "position": [
-     3.9,
-     0.35,
-     0.35
+     3.4,
+     0.3,
+     0.55
     ],
     "rate": 0,
-    "burst_count": 120,
+    "burst_count": 90,
     "burst_times": [
      0.0
     ],
-    "velocity": 7.0,
-    "velocity_variance": 3.4,
+    "velocity": 7.5,
+    "velocity_variance": 4.0,
     "direction": [
-     0.25,
+     0.2,
      1,
      0
     ],
-    "spread": 52,
+    "spread": 55,
     "start_time": 1.8,
     "duration": 0.1
    },
@@ -6500,9 +6901,9 @@
    "parameters": {
     "light_type": "point",
     "position": [
-     3.7,
+     3.2,
      1.5,
-     0.85
+     1.05
     ],
     "color": [
      1.0,
@@ -6524,11 +6925,11 @@
       },
       {
        "time": 1.85,
-       "value": 13.0
+       "value": 1.3
       },
       {
        "time": 1.96,
-       "value": 4.0
+       "value": 0.7
       },
       {
        "time": 2.12,
@@ -6546,11 +6947,11 @@
    "layer": "impact",
    "parameters": {
     "shape": "disc",
-    "radius": 0.75,
+    "radius": 0.65,
     "position": [
-     4.75,
-     0.55,
-     -0.45
+     4.5,
+     1.05,
+     -0.6
     ],
     "rate": {
      "value": 0.0,
@@ -6560,28 +6961,28 @@
        "value": 0.0
       },
       {
-       "time": 1.8948,
-       "value": 330.0
+       "time": 1.9,
+       "value": 170.0
       },
       {
-       "time": 1.9948,
+       "time": 1.99,
        "value": 0.0
       }
      ]
     },
-    "burst_count": 46,
+    "burst_count": 14,
     "burst_times": [
      0.0
     ],
-    "velocity": 7.6,
-    "velocity_variance": 2.6,
+    "velocity": 9.5,
+    "velocity_variance": 4.5,
     "direction": [
      0,
      1,
      0
     ],
-    "spread": 19,
-    "start_time": 1.8948,
+    "spread": 9,
+    "start_time": 1.9,
     "duration": 0.12
    },
    "inputs": {
@@ -6589,63 +6990,31 @@
    }
   },
   {
-   "id": "e_flare_bed_1",
-   "type": "emitter",
-   "layer": "impact",
-   "parameters": {
-    "shape": "disc",
-    "radius": 0.9,
-    "position": [
-     4.75,
-     0.4,
-     -0.45
-    ],
-    "rate": 0,
-    "burst_count": 16,
-    "burst_times": [
-     0.0
-    ],
-    "velocity": 2.2,
-    "velocity_variance": 1.2,
-    "direction": [
-     0,
-     1,
-     0
-    ],
-    "spread": 50,
-    "start_time": 1.8948,
-    "duration": 0.1
-   },
-   "inputs": {
-    "particle": "ps_base"
-   }
-  },
-  {
    "id": "e_flare_spark_1",
    "type": "emitter",
    "layer": "impact",
    "parameters": {
-    "shape": "disc",
-    "radius": 0.6,
+    "shape": "hemisphere",
+    "radius": 1.0,
     "position": [
-     4.75,
-     0.35,
-     -0.45
+     4.5,
+     0.3,
+     -0.6
     ],
     "rate": 0,
-    "burst_count": 120,
+    "burst_count": 90,
     "burst_times": [
      0.0
     ],
-    "velocity": 7.0,
-    "velocity_variance": 3.4,
+    "velocity": 7.5,
+    "velocity_variance": 4.0,
     "direction": [
-     0.25,
+     0.2,
      1,
      0
     ],
-    "spread": 52,
-    "start_time": 1.8948,
+    "spread": 55,
+    "start_time": 1.9,
     "duration": 0.1
    },
    "inputs": {
@@ -6659,9 +7028,9 @@
    "parameters": {
     "light_type": "point",
     "position": [
-     4.55,
+     4.3,
      1.5,
-     0.05
+     -0.1
     ],
     "color": [
      1.0,
@@ -6678,24 +7047,24 @@
        "value": 0.0
       },
       {
-       "time": 1.8848,
+       "time": 1.89,
        "value": 0.0
       },
       {
-       "time": 1.9448,
-       "value": 13.0
+       "time": 1.95,
+       "value": 1.3
       },
       {
-       "time": 2.0548,
-       "value": 4.0
+       "time": 2.06,
+       "value": 0.7
       },
       {
-       "time": 2.2148,
+       "time": 2.22,
        "value": 0.0
       }
      ]
     },
-    "start_time": 1.8848,
+    "start_time": 1.89,
     "duration": 0.36
    }
   },
@@ -6705,11 +7074,11 @@
    "layer": "impact",
    "parameters": {
     "shape": "disc",
-    "radius": 0.75,
+    "radius": 0.65,
     "position": [
      5.5,
-     0.55,
-     0.2
+     1.05,
+     0.25
     ],
     "rate": {
      "value": 0.0,
@@ -6719,28 +7088,28 @@
        "value": 0.0
       },
       {
-       "time": 1.9876,
-       "value": 330.0
+       "time": 2.0,
+       "value": 170.0
       },
       {
-       "time": 2.0876,
+       "time": 2.09,
        "value": 0.0
       }
      ]
     },
-    "burst_count": 46,
+    "burst_count": 14,
     "burst_times": [
      0.0
     ],
-    "velocity": 7.6,
-    "velocity_variance": 2.6,
+    "velocity": 9.5,
+    "velocity_variance": 4.5,
     "direction": [
      0,
      1,
      0
     ],
-    "spread": 19,
-    "start_time": 1.9876,
+    "spread": 9,
+    "start_time": 2.0,
     "duration": 0.12
    },
    "inputs": {
@@ -6748,63 +7117,31 @@
    }
   },
   {
-   "id": "e_flare_bed_2",
-   "type": "emitter",
-   "layer": "impact",
-   "parameters": {
-    "shape": "disc",
-    "radius": 0.9,
-    "position": [
-     5.5,
-     0.4,
-     0.2
-    ],
-    "rate": 0,
-    "burst_count": 16,
-    "burst_times": [
-     0.0
-    ],
-    "velocity": 2.2,
-    "velocity_variance": 1.2,
-    "direction": [
-     0,
-     1,
-     0
-    ],
-    "spread": 50,
-    "start_time": 1.9876,
-    "duration": 0.1
-   },
-   "inputs": {
-    "particle": "ps_base"
-   }
-  },
-  {
    "id": "e_flare_spark_2",
    "type": "emitter",
    "layer": "impact",
    "parameters": {
-    "shape": "disc",
-    "radius": 0.6,
+    "shape": "hemisphere",
+    "radius": 1.0,
     "position": [
      5.5,
-     0.35,
-     0.2
+     0.3,
+     0.25
     ],
     "rate": 0,
-    "burst_count": 120,
+    "burst_count": 90,
     "burst_times": [
      0.0
     ],
-    "velocity": 7.0,
-    "velocity_variance": 3.4,
+    "velocity": 7.5,
+    "velocity_variance": 4.0,
     "direction": [
-     0.25,
+     0.2,
      1,
      0
     ],
-    "spread": 52,
-    "start_time": 1.9876,
+    "spread": 55,
+    "start_time": 2.0,
     "duration": 0.1
    },
    "inputs": {
@@ -6820,7 +7157,7 @@
     "position": [
      5.3,
      1.5,
-     0.7
+     0.75
     ],
     "color": [
      1.0,
@@ -6837,24 +7174,24 @@
        "value": 0.0
       },
       {
-       "time": 1.9776,
+       "time": 1.99,
        "value": 0.0
       },
       {
-       "time": 2.0376,
-       "value": 13.0
+       "time": 2.05,
+       "value": 1.3
       },
       {
-       "time": 2.1476,
-       "value": 4.0
+       "time": 2.16,
+       "value": 0.7
       },
       {
-       "time": 2.3076,
+       "time": 2.32,
        "value": 0.0
       }
      ]
     },
-    "start_time": 1.9776,
+    "start_time": 1.99,
     "duration": 0.36
    }
   },
@@ -6885,19 +7222,19 @@
       },
       {
        "time": 0.12,
-       "value": 1.5
+       "value": 1.2
       },
       {
        "time": 0.3,
-       "value": 2.2
+       "value": 1.8
       },
       {
        "time": 0.36,
-       "value": 9.0
+       "value": 4.5
       },
       {
        "time": 0.6,
-       "value": 4.5
+       "value": 2.8
       },
       {
        "time": 1.0,
@@ -6942,11 +7279,11 @@
       },
       {
        "time": 0.9,
-       "value": 5.5
+       "value": 2.4
       },
       {
        "time": 1.9,
-       "value": 6.0
+       "value": 2.6
       },
       {
        "time": 2.12,
@@ -6992,11 +7329,11 @@
       },
       {
        "time": 1.2,
-       "value": 2.4
+       "value": 1.8
       },
       {
        "time": 1.9,
-       "value": 2.4
+       "value": 1.8
       },
       {
        "time": 2.3,
@@ -7041,15 +7378,15 @@
       },
       {
        "time": 2.1,
-       "value": 1.8
+       "value": 2.4
       },
       {
        "time": 2.35,
-       "value": 1.0
+       "value": 1.5
       },
       {
        "time": 2.5,
-       "value": 0.3
+       "value": 0.5
       }
      ]
     },
@@ -7083,6 +7420,11 @@
    "bindings": [
     {
      "node": "ps_crest",
+     "parameter": "size",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_lip",
      "parameter": "size",
      "op": "multiply"
     },
@@ -7165,6 +7507,11 @@
      "op": "multiply"
     },
     {
+     "node": "e_lip",
+     "parameter": "length",
+     "op": "multiply"
+    },
+    {
      "node": "e_body",
      "parameter": "length",
      "op": "multiply"
@@ -7180,12 +7527,12 @@
      "op": "multiply"
     },
     {
-     "node": "e_base",
+     "node": "e_strip",
      "parameter": "length",
      "op": "multiply"
     },
     {
-     "node": "e_strip",
+     "node": "e_strip_late",
      "parameter": "length",
      "op": "multiply"
     },
@@ -7293,6 +7640,11 @@
      "op": "multiply"
     },
     {
+     "node": "ps_lip",
+     "parameter": "color",
+     "op": "multiply"
+    },
+    {
      "node": "ps_body",
      "parameter": "color",
      "op": "multiply"
@@ -7313,12 +7665,17 @@
      "op": "multiply"
     },
     {
+     "node": "ps_strip_late",
+     "parameter": "color",
+     "op": "multiply"
+    },
+    {
      "node": "ps_surge",
      "parameter": "color",
      "op": "multiply"
     },
     {
-     "node": "ps_base",
+     "node": "ps_shaft",
      "parameter": "color",
      "op": "multiply"
     },
@@ -7402,21 +7759,6 @@
     },
     {
      "node": "e_surge_spark",
-     "parameter": "rate",
-     "op": "multiply"
-    },
-    {
-     "node": "e_flare_spark_0",
-     "parameter": "rate",
-     "op": "multiply"
-    },
-    {
-     "node": "e_flare_spark_1",
-     "parameter": "rate",
-     "op": "multiply"
-    },
-    {
-     "node": "e_flare_spark_2",
      "parameter": "rate",
      "op": "multiply"
     },
@@ -7592,6 +7934,16 @@
      "op": "hue_shift"
     },
     {
+     "node": "ps_lip",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_lip",
+     "parameter": "color_over_life",
+     "op": "hue_shift"
+    },
+    {
      "node": "ps_body",
      "parameter": "color",
      "op": "hue_shift"
@@ -7622,16 +7974,6 @@
      "op": "hue_shift"
     },
     {
-     "node": "ps_base",
-     "parameter": "color",
-     "op": "hue_shift"
-    },
-    {
-     "node": "ps_base",
-     "parameter": "color_over_life",
-     "op": "hue_shift"
-    },
-    {
      "node": "ps_strip",
      "parameter": "color",
      "op": "hue_shift"
@@ -7639,6 +7981,21 @@
     {
      "node": "ps_strip",
      "parameter": "color_over_life",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_strip_late",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_strip_late",
+     "parameter": "color_over_life",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_shaft",
+     "parameter": "color",
      "op": "hue_shift"
     },
     {
@@ -7800,19 +8157,19 @@
    "wall_width": 2.8,
    "flare_ups": [
     [
-     3.9,
+     3.4,
      0.0,
-     0.35
+     0.55
     ],
     [
-     4.75,
+     4.5,
      0.0,
-     -0.45
+     -0.6
     ],
     [
      5.5,
      0.0,
-     0.2
+     0.25
     ]
    ]
   },
@@ -7824,7 +8181,7 @@
     0.0,
     1.0
    ],
-   "bloom_intensity": 0.2,
+   "bloom_intensity": 0.13,
    "bloom_radius": 0.05,
    "exposure": 0.95,
    "grid": false
