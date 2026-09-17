@@ -52,9 +52,41 @@ looking at its own renders; the backend is picked automatically: Anthropic
 API key, a logged-in Claude Code (Agent SDK), or a worker attached from an
 interactive Claude Code session (`aetherfx.studio.worker_cli`).
 
+The header has two views: **Studio** (the viewport, the graph and the Library, with a live
+search over names, tags and descriptions - press `/`) and **Community**.
+
 ```bash
 python/.venv/bin/aetherfx-studio --port 8770 --output-dir out/studio
 ```
+
+## Community effects
+
+Contributed effects live in this repository under `community/effects/*.json` and arrive by pull
+request - GitHub is the whole backend: no accounts, no server of ours. CI checks a contribution,
+renders its previews and rebuilds a static index; the studio's Community view lists them with
+credit ("by &lt;name&gt;", linking to the contributor's GitHub profile) and opens each one as a
+working copy, so the contributed file is never changed.
+
+```bash
+python -m aetherfx.community check community/effects/<slug>.json --previews out/previews
+```
+
+That one command is the bar: engine validation with zero errors, byte-identical replays,
+budgets (6000 live sprites, 300 mesh particles, 160 nodes, 12 s, 96 MiB of baked texture),
+procedural-only assets, MIT, credit metadata, at least three named style controls, and the
+house-style lint (no crosses, no tube beams, no hard-edged ribbons, projectiles end in an
+impact).
+
+* **`CONTRIBUTING.md`** - written for the agent doing the work: what qualifies, what does not,
+  and the exact steps to submit.
+* **`docs/REVIEWING.md`** - written for the reviewing agent: commands, rubric, decisions.
+* **`docs/COMMUNITY.md`** - the metadata, the check rules, the index format and the hosting.
+
+Reference art, screenshots and preview media never enter the repository
+(`python/tests/test_repo_hygiene.py` enforces it); previews are CI artifacts.
+
+If AetherFX is useful to you, [star it on GitHub](https://github.com/holokat/AetherFX) -
+it is the only signal the project has.
 
 ## Build
 

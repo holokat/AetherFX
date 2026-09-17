@@ -59,6 +59,16 @@ def _read_doc(name: str, fallback: str) -> Callable[[], str]:
     return load
 
 
+def _read_root(name: str, fallback: str) -> Callable[[], str]:
+    """A guide that lives at the repository root, e.g. ``CONTRIBUTING.md``."""
+    def load() -> str:
+        try:
+            return (_DOCS_DIR.parent / name).read_text(encoding="utf-8")
+        except OSError:
+            return fallback
+    return load
+
+
 def _authoring_guide() -> str:
     try:
         from .studio import authoring_guide  # noqa: PLC0415 - constants only, no web stack import
@@ -91,6 +101,17 @@ def doc_resources() -> list[DocResource]:
                     _read_doc("RUNTIME.md", missing)),
         DocResource("agent-api", "Agent tool API", "Every engine tool with arguments and results.",
                     _read_doc("AGENT_API.md", missing)),
+        DocResource("contributing", "Contributing an effect",
+                    "How to submit an effect to the community collection: what it must pass, what "
+                    "qualifies, and the exact steps. Written for the agent doing the work.",
+                    _read_root("CONTRIBUTING.md", missing)),
+        DocResource("reviewing", "Reviewing contributions",
+                    "How a reviewing agent audits a community pull request: commands, rubric, "
+                    "similarity pass, decision templates.",
+                    _read_doc("REVIEWING.md", missing)),
+        DocResource("community", "The community collection",
+                    "Credit metadata, the contribution check, the index format and how the studio "
+                    "consumes it.", _read_doc("COMMUNITY.md", missing)),
     ]
 
 

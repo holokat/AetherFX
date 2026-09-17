@@ -1,0 +1,289 @@
+# DRAFT - written offline, never executed. Review before enabling.
+#
+# This workflow could not be run where it was authored (no GitHub runner, no repository yet).
+# Expect to fix the usual first-run details: action versions, the Ubuntu package list for the
+# engine's dependencies, the Pages source branch, and the exact paths CMake produces on each
+# runner. Everything else - the commands, the flags, the artifact names - matches what
+# `docs/COMMUNITY.md` and `CONTRIBUTING.md` document.
+#
+# Two jobs:
+#   * pull request touching examples/effects/** or community/effects/**
+#       -> build on Ubuntu + macOS, run ctest and pytest, run the contribution check on the
+#          changed community files with --previews, upload the previews, post one PR comment.
+#   * push to main
+#       -> rebuild community/index.json and every preview, publish them to gh-pages under
+#          community/ for GitHub Pages / a CDN.
+#
+# Secrets: none. Only the automatic GITHUB_TOKEN.
+
+name: effects
+
+on:
+  pull_request:
+    paths:
+      - 'examples/effects/**'
+      - 'community/effects/**'
+      - 'python/aetherfx/community.py'
+      - 'tools/build_community_index.py'
+      - '.github/workflows/effects.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'examples/effects/**'
+      - 'community/effects/**'
+      - 'python/aetherfx/community.py'
+      - 'tools/build_community_index.py'
+
+concurrency:
+  group: effects-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Pull requests: build, test, check the contribution, render previews.
+  # ---------------------------------------------------------------------------
+  check:
+    name: check (${{ matrix.os }})
+    if: github.event_name == 'pull_request'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # the changed-file diff needs the base commit
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build cmake g++-13 libx11-dev
+
+      - name: Install macOS build dependencies
+        if: runner.os == 'macOS'
+        run: brew install ninja cmake
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Configure and build
+        run: |
+          cmake --preset default
+          cmake --build --preset default
+
+      - name: C++ tests
+        run: ctest --test-dir build -j 4 --output-on-failure
+
+      - name: Python environment
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e './python[dev,studio]'
+
+      - name: Python tests
+        env:
+          AETHERFX_BINARY: ${{ github.workspace }}/build/bin/aetherfx
+          AETHERFX_LIBRARY_LINUX: ${{ github.workspace }}/build/src/capi/libaetherfx.so
+          AETHERFX_LIBRARY_MAC: ${{ github.workspace }}/build/src/capi/libaetherfx.dylib
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then export AETHERFX_LIBRARY="$AETHERFX_LIBRARY_LINUX"; fi
+          if [ "$RUNNER_OS" = "macOS" ]; then export AETHERFX_LIBRARY="$AETHERFX_LIBRARY_MAC"; fi
+          PYTHONPATH="$GITHUB_WORKSPACE/python" python -m pytest python/tests -q
+
+      - name: Repository hygiene (no tracked media, licence intact)
+        run: PYTHONPATH="$GITHUB_WORKSPACE/python" python -m pytest python/tests/test_repo_hygiene.py -q
+
+      - name: Library lint
+        env:
+          AETHERFX_BINARY: ${{ github.workspace }}/build/bin/aetherfx
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then export AETHERFX_LIBRARY="$GITHUB_WORKSPACE/build/src/capi/libaetherfx.so"; fi
+          if [ "$RUNNER_OS" = "macOS" ]; then export AETHERFX_LIBRARY="$GITHUB_WORKSPACE/build/src/capi/libaetherfx.dylib"; fi
+          PYTHONPATH="$GITHUB_WORKSPACE/python" python -m aetherfx.community lint-library
+
+      - name: Changed community effects
+        id: changed
+        run: |
+          base="${{ github.event.pull_request.base.sha }}"
+          files="$(git diff --name-only --diff-filter=ACMR "$base"...HEAD -- 'community/effects/*.json' | tr '\n' ' ')"
+          echo "files=$files" >> "$GITHUB_OUTPUT"
+          echo "changed: ${files:-<none>}"
+
+      - name: Contribution check with previews
+        if: steps.changed.outputs.files != ''
+        env:
+          AETHERFX_BINARY: ${{ github.workspace }}/build/bin/aetherfx
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then export AETHERFX_LIBRARY="$GITHUB_WORKSPACE/build/src/capi/libaetherfx.so"; fi
+          if [ "$RUNNER_OS" = "macOS" ]; then export AETHERFX_LIBRARY="$GITHUB_WORKSPACE/build/src/capi/libaetherfx.dylib"; fi
+          mkdir -p out/previews
+          set +e
+          PYTHONPATH="$GITHUB_WORKSPACE/python" python -m aetherfx.community check \
+            ${{ steps.changed.outputs.files }} --previews out/previews | tee out/check-report.txt
+          echo "status=${PIPESTATUS[0]}" >> "$GITHUB_ENV"
+          set -e
+          PYTHONPATH="$GITHUB_WORKSPACE/python" python -m aetherfx.community check \
+            ${{ steps.changed.outputs.files }} --json > out/check-report.json || true
+
+      - name: Upload previews
+        if: steps.changed.outputs.files != '' && runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: previews
+          path: |
+            out/previews/*.png
+            out/previews/*.gif
+            out/check-report.txt
+            out/check-report.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Fail when the check failed
+        if: steps.changed.outputs.files != ''
+        run: test "${status:-0}" = "0"
+
+  # ---------------------------------------------------------------------------
+  # One PR comment, refreshed in place, with the report and the preview links.
+  # Separate job so it can write to the PR without giving the build job write access.
+  # ---------------------------------------------------------------------------
+  comment:
+    name: pr comment
+    needs: check
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: previews
+          path: previews
+        continue-on-error: true
+
+      - name: Post or refresh the report
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- aetherfx-community-check -->';
+            let report = 'The contribution check did not produce a report (see the job log).';
+            try { report = fs.readFileSync('previews/check-report.txt', 'utf8'); } catch (e) {}
+            let files = [];
+            try { files = fs.readdirSync('previews').filter(f => /\.(png|gif)$/.test(f)); } catch (e) {}
+            const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              marker,
+              '### Community effect check',
+              '',
+              '```',
+              report.trim().slice(0, 55000),
+              '```',
+              '',
+              files.length
+                ? `**Previews** (download the \`previews\` artifact from [this run](${run})):\n` +
+                  files.map(f => `- \`${f}\``).join('\n')
+                : `No previews were rendered. [Job log](${run})`,
+              '',
+              '_Rules: `CONTRIBUTING.md`. What a reviewer looks at: `docs/REVIEWING.md`._',
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: context.issue.number, per_page: 100,
+            });
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                comment_id: existing.id, body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: context.issue.number, body,
+              });
+            }
+
+  # ---------------------------------------------------------------------------
+  # main: rebuild the index and the previews, publish them to gh-pages.
+  # ---------------------------------------------------------------------------
+  publish:
+    name: publish index and previews
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write               # only to push the gh-pages branch
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build cmake g++-13 libx11-dev
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Configure and build
+        run: |
+          cmake --preset default
+          cmake --build --preset default
+
+      - name: Python environment
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e './python[dev,studio]'
+
+      - name: Render every community preview
+        env:
+          AETHERFX_BINARY: ${{ github.workspace }}/build/bin/aetherfx
+          AETHERFX_LIBRARY: ${{ github.workspace }}/build/src/capi/libaetherfx.so
+        run: |
+          mkdir -p out/previews
+          shopt -s nullglob
+          for effect in community/effects/*.json; do
+            PYTHONPATH="$GITHUB_WORKSPACE/python" python -m aetherfx.community check \
+              "$effect" --previews out/previews
+          done
+
+      - name: Rebuild the index
+        env:
+          AETHERFX_LIBRARY: ${{ github.workspace }}/build/src/capi/libaetherfx.so
+        run: python tools/build_community_index.py --previews out/previews
+
+      - name: Stage the published site
+        run: |
+          mkdir -p site/community/effects site/community/previews
+          cp community/index.json site/community/index.json
+          cp community/effects/*.json site/community/effects/ 2>/dev/null || true
+          cp out/previews/*.png out/previews/*.gif site/community/previews/ 2>/dev/null || true
+
+      - name: Publish to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./site
+          keep_files: true
+          user_name: github-actions[bot]
+          user_email: github-actions[bot]@users.noreply.github.com
+          commit_message: 'community: rebuild index and previews'
+
+      - name: Commit the index when it changed
+        run: |
+          # The index in the default branch is what the raw.githubusercontent default URL
+          # serves, so keep it in sync. Preview file names only change when an effect does.
+          if ! git diff --quiet -- community/index.json; then
+            git config user.name 'github-actions[bot]'
+            git config user.email 'github-actions[bot]@users.noreply.github.com'
+            git add community/index.json
+            git commit -m 'community: rebuild index [skip ci]'
+            git push
+          fi
