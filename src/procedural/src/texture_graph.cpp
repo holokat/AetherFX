@@ -109,6 +109,38 @@ std::vector<OpSpec> build_op_specs() {
                           {"rotation", "float", 0.0, "rotation in degrees"}},
                          {}});
     ops.push_back(OpSpec{
+        "shape",
+        "Signed-distance silhouette: the primitive for emblems, icon plates, glyph tiles and hex cells. "
+        "The outline is described exactly (straight segments and circular arcs) and the op evaluates the "
+        "true distance to it, so an `outline` keeps one width all the way round, `inset` gives honest "
+        "concentric copies and `bevel` is a linear ramp. Shapes are centred on `center`, upright (the top "
+        "of the shape is the top of the image, v = 0) and `radius` is half their height; `shield` is a "
+        "heater shield - a flat or scalloped (`crest`) top, straight shoulders, then two arcs sweeping "
+        "in to the point. Modes: `fill` = 1 inside, 0 outside; `outline` = a band `outline_width` wide "
+        "centred on the contour (set `inset` to half the width to keep it inside the silhouette); `bevel` "
+        "= 0 at the contour climbing linearly to 1 at depth `bevel` inside, the building block for inner "
+        "glows and embossed rims (`invert` it and multiply by a `fill`), and with a negative `inset` of "
+        "the same size an outer glow. An emblem is a few of these folded with `math`: a bright outline, "
+        "a dimmer inset fill, a thin inner line, and a tall thin `rounded_box` with a large `softness` "
+        "multiplied in as the centre ridge. Never build a cross or a plus from two boxes (house style).",
+        {{"shape", "string", "circle", "circle | polygon | hexagon | diamond | rounded_box | shield"},
+         {"mode", "string", "fill", "fill | outline | bevel"},
+         {"radius", "float", 0.35, "half the height of the shape in UV units (polygon: the circumradius)"},
+         {"aspect", "float", 1.0,
+          "horizontal stretch; 1 keeps the natural proportions (a shield is 0.82 as wide as it is tall)"},
+         {"center", "vec2", json::array({0.5, 0.5}), "centre in UV space"},
+         {"rotation", "float", 0.0, "rotation in degrees, counter-clockwise"},
+         {"sides", "int", 6, "polygon: number of sides, 3..64, first vertex pointing up"},
+         {"corner_radius", "float", 0.0, "rounds the corners without changing the overall size"},
+         {"shoulder", "float", 0.3, "shield: fraction of the height with straight sides above the arcs"},
+         {"crest", "float", 0.0,
+          "shield: depth of the two scallops in the top edge as a fraction of the width (0 = flat, 0.06 = heraldic)"},
+         {"softness", "float", 0.01, "edge falloff half-width in UV units; 0 = hard edge"},
+         {"inset", "float", 0.0, "moves the contour inwards (negative: outwards) before the mode is applied"},
+         {"outline_width", "float", 0.03, "outline: full width of the band"},
+         {"bevel", "float", 0.1, "bevel: depth over which the inner ramp climbs from 0 to 1"}},
+        {}});
+    ops.push_back(OpSpec{
         "flame",
         "Animated flame slice: heat in [0,1] for one licking tongue of fire, meant to be baked with "
         "frames: 16-32 and coloured by a material temperature_gradient or a `colorize` op (feed it "
@@ -574,6 +606,300 @@ Image eval_star(const json& p, const Ctx& ctx) {
             if (core > 0.0f) {
                 const float glow = 1.0f - smoothstep(0.0f, core, r);
                 value = std::max(value, glow * glow);
+            }
+            set_gray(out, x, y, saturate(value));
+        }
+    }
+    return out;
+}
+
+// ---------------------------------------------------------------------------
+// shape: signed-distance silhouettes (emblems, plates, glyph tiles, hex cells)
+// ---------------------------------------------------------------------------
+//
+// Every silhouette is described as the closed outline it is - a short list of
+// straight segments and circular arcs - and the op evaluates the true Euclidean
+// distance to that outline, signed by an inside test. max()/min() of half-planes
+// and discs would only *bound* the distance; working from the exact one is what
+// keeps an `outline` the same width all the way round a pointed shield, lets
+// `inset` produce honest concentric copies, and makes `bevel` a linear ramp the
+// rest of the graph can shape with `levels`.
+//
+// `corner_radius` is the usual offset trick done properly: the outline is built
+// for the shape shrunk inwards by r (every segment moved along its normal, convex
+// arcs losing r of radius and concave ones gaining it, the corners re-intersected
+// in closed form) and r is subtracted from the distance, so the corners round and
+// the overall size stays what `radius` says.
+//
+// The shape frame is x right, y up, origin at `center`. Texture v runs down the
+// image and image row 0 is drawn at the top of a sprite, so "up" is towards v = 0.
+//
+// No per-pixel trigonometry: every arc spans less than half a turn, so clipping a
+// sample to an arc's wedge is two cross products. The only transcendental calls
+// are the sin/cos that place a polygon's vertices and the rotation, once per bake.
+
+struct OutlinePiece {
+    bool arc = false;
+    Vec2 a;                // start point
+    Vec2 b;                // end point
+    Vec2 centre;           // arc only
+    float radius = 0.0f;   // arc only
+};
+
+inline float cross2(Vec2 a, Vec2 b) { return a.x * b.y - a.y * b.x; }
+
+float distance_to_segment(Vec2 p, Vec2 a, Vec2 b) {
+    const Vec2 ab = b - a;
+    const float len2 = dot(ab, ab);
+    const float t = len2 > 1e-12f ? saturate(dot(p - a, ab) / len2) : 0.0f;
+    return length(p - (a + ab * t));
+}
+
+float distance_to_arc(Vec2 p, const OutlinePiece& arc) {
+    const Vec2 q = p - arc.centre;
+    const Vec2 e0 = arc.a - arc.centre;
+    const Vec2 e1 = arc.b - arc.centre;
+    const float turn = cross2(e0, e1) >= 0.0f ? 1.0f : -1.0f;
+    if (turn * cross2(e0, q) >= 0.0f && turn * cross2(q, e1) >= 0.0f) {
+        return std::fabs(length(q) - arc.radius);  // inside the wedge: radial distance
+    }
+    return std::min(length(p - arc.a), length(p - arc.b));
+}
+
+// A heater shield's natural proportions: 0.82 as wide as it is tall.
+constexpr float kShieldWidthRatio = 0.82f;
+
+class ShapeField {
+public:
+    enum class Kind { Ellipse, Box, Polygon, Shield };
+
+    ShapeField(const std::string& shape, float radius, float aspect, int sides, float corner_radius,
+               float shoulder, float crest) {
+        const float r = std::max(radius, 1e-4f);
+        const float stretch = std::max(aspect, 1e-3f);
+        if (shape == "shield") {
+            build_shield(r, stretch, std::max(corner_radius, 0.0f), shoulder, crest);
+        } else if (shape == "rounded_box") {
+            kind_ = Kind::Box;
+            half_ = Vec2{r * stretch, r};
+            rounding_ = clamp(corner_radius, 0.0f, std::min(half_.x, half_.y));
+        } else if (shape == "polygon" || shape == "hexagon" || shape == "diamond") {
+            const int n = shape == "hexagon" ? 6 : (shape == "diamond" ? 4 : clamp(sides, 3, 64));
+            build_polygon(r, stretch, n, std::max(corner_radius, 0.0f));
+        } else {  // circle (an ellipse when aspect != 1)
+            kind_ = Kind::Ellipse;
+            half_ = Vec2{r * stretch, r};
+        }
+    }
+
+    // Signed distance in UV units: negative inside, positive outside.
+    float distance(Vec2 p) const {
+        switch (kind_) {
+            case Kind::Ellipse: return ellipse_distance(p);
+            case Kind::Box: {
+                const Vec2 q{std::fabs(p.x) - (half_.x - rounding_), std::fabs(p.y) - (half_.y - rounding_)};
+                const float outside = length(Vec2{std::max(q.x, 0.0f), std::max(q.y, 0.0f)});
+                return outside + std::min(std::max(q.x, q.y), 0.0f) - rounding_;
+            }
+            case Kind::Polygon: return signed_outline_distance(p, inside_polygon(p));
+            case Kind::Shield: {
+                const Vec2 folded{std::fabs(p.x), p.y};
+                return signed_outline_distance(folded, inside_shield(folded));
+            }
+        }
+        return 0.0f;
+    }
+
+private:
+    float ellipse_distance(Vec2 p) const {
+        if (std::fabs(half_.x - half_.y) < 1e-6f) return length(p) - half_.y;
+        // First-order distance to the ellipse: f / |grad f| with f = |p / ab| - 1. Exact on the
+        // contour, which is where fills, outlines and bevels are evaluated.
+        const float k0 = length(Vec2{p.x / half_.x, p.y / half_.y});
+        const float k1 = length(Vec2{p.x / (half_.x * half_.x), p.y / (half_.y * half_.y)});
+        if (k1 < 1e-9f) return -std::min(half_.x, half_.y);
+        return k0 * (k0 - 1.0f) / k1;
+    }
+
+    float signed_outline_distance(Vec2 p, bool inside) const {
+        float nearest = std::numeric_limits<float>::max();
+        for (const OutlinePiece& piece : pieces_) {
+            nearest = std::min(nearest, piece.arc ? distance_to_arc(p, piece) : distance_to_segment(p, piece.a, piece.b));
+        }
+        return (inside ? -nearest : nearest) - rounding_;
+    }
+
+    // Regular n-gon, first vertex straight up, walked clockwise, then stretched by `aspect`.
+    void build_polygon(float radius, float stretch, int n, float corner_radius) {
+        kind_ = Kind::Polygon;
+        std::vector<Vec2> vertices(static_cast<size_t>(n));
+        for (int k = 0; k < n; ++k) {
+            const float angle = kTwoPi * static_cast<float>(k) / static_cast<float>(n);
+            vertices[static_cast<size_t>(k)] = Vec2{radius * stretch * std::sin(angle), radius * std::cos(angle)};
+        }
+        // Inward normals (clockwise walk with y up: the inside is on the right of the travel direction).
+        std::vector<Vec2> normals(static_cast<size_t>(n));
+        float apothem = std::numeric_limits<float>::max();
+        for (int k = 0; k < n; ++k) {
+            const Vec2 a = vertices[static_cast<size_t>(k)];
+            const Vec2 b = vertices[static_cast<size_t>((k + 1) % n)];
+            const Vec2 e = normalize(b - a);
+            normals[static_cast<size_t>(k)] = Vec2{e.y, -e.x};
+            apothem = std::min(apothem, -dot(normals[static_cast<size_t>(k)], a));
+        }
+        rounding_ = clamp(corner_radius, 0.0f, 0.9f * std::max(apothem, 0.0f));
+        if (rounding_ > 0.0f) {
+            // Shrink by the rounding: each vertex moves to where its two offset edges meet.
+            std::vector<Vec2> inset(static_cast<size_t>(n));
+            for (int k = 0; k < n; ++k) {
+                const Vec2 n0 = normals[static_cast<size_t>((k + n - 1) % n)];
+                const Vec2 n1 = normals[static_cast<size_t>(k)];
+                const float det = cross2(n0, n1);
+                Vec2 shift{0.0f, 0.0f};
+                if (std::fabs(det) > 1e-9f) {
+                    shift = Vec2{rounding_ * (n1.y - n0.y) / det, rounding_ * (n0.x - n1.x) / det};
+                }
+                inset[static_cast<size_t>(k)] = vertices[static_cast<size_t>(k)] + shift;
+            }
+            vertices = std::move(inset);
+        }
+        pieces_.reserve(static_cast<size_t>(n));
+        for (int k = 0; k < n; ++k) {
+            OutlinePiece piece;
+            piece.a = vertices[static_cast<size_t>(k)];
+            piece.b = vertices[static_cast<size_t>((k + 1) % n)];
+            pieces_.push_back(piece);
+        }
+    }
+
+    bool inside_polygon(Vec2 p) const {
+        // Convex and walked clockwise: inside means on the right of every edge.
+        for (const OutlinePiece& piece : pieces_) {
+            if (cross2(piece.b - piece.a, p - piece.a) > 0.0f) return false;
+        }
+        return true;
+    }
+
+    // Heater shield, x >= 0 half only (the sample is folded with |x|):
+    //   top edge      flat, or one concave scallop from the centre peak to the corner (`crest`)
+    //   shoulder      a straight vertical side, `shoulder` of the height long
+    //   lower arc     centre (-c, yc), tangent to the side at (half_w, yc), reaching the point at (0, -radius)
+    // c follows from those two conditions: (half_w + c)^2 = c^2 + depth^2.
+    void build_shield(float radius, float stretch, float corner_radius, float shoulder, float crest) {
+        kind_ = Kind::Shield;
+        const float height = 2.0f * radius;
+        const float half_w = std::min(0.5f * height * kShieldWidthRatio * stretch, height);
+        const float width = 2.0f * half_w;
+        const float top = radius;
+        const float scallop = clamp(crest, 0.0f, 0.2f) * width;
+        rounding_ = clamp(corner_radius, 0.0f, 0.45f * half_w);
+        // The side has to outlast the rounding and the scallop, and the arcs need at least a
+        // semicircle's depth to reach the axis.
+        const float min_side = 0.02f * height + rounding_ + scallop;
+        const float max_side = std::max(height - half_w, min_side);
+        const float side = clamp(shoulder * height, min_side, max_side);
+        const float depth = std::max(height - side, half_w);
+        shield_yc_ = -radius + depth;
+        shield_c_ = (depth * depth - half_w * half_w) / (2.0f * half_w);
+        shield_rho_ = half_w + shield_c_ - rounding_;
+        shield_half_w_ = half_w - rounding_;
+        shield_top_ = top - rounding_;
+
+        const Vec2 junction{shield_half_w_, shield_yc_};
+        const Vec2 tip{0.0f, shield_yc_ - std::sqrt(std::max(0.0f, shield_rho_ * shield_rho_ - shield_c_ * shield_c_))};
+        Vec2 peak{0.0f, shield_top_};
+        Vec2 corner{shield_half_w_, shield_top_};
+
+        OutlinePiece top_piece;
+        scalloped_ = scallop > 1e-5f;
+        if (scalloped_) {
+            // A circle through the peak (0, top) and the corner (half_w, top) whose lowest point dips
+            // `scallop` below the top edge; shrinking the shield grows this concave arc by the rounding.
+            const float quarter = 0.5f * half_w;
+            const float k = (quarter * quarter - scallop * scallop) / (2.0f * scallop);
+            scallop_centre_ = Vec2{quarter, top + k};
+            scallop_radius_ = k + scallop + rounding_;
+            const float r2 = scallop_radius_ * scallop_radius_;
+            const float to_side = quarter - rounding_;
+            peak.y = scallop_centre_.y - std::sqrt(std::max(0.0f, r2 - quarter * quarter));
+            corner.y = scallop_centre_.y - std::sqrt(std::max(0.0f, r2 - to_side * to_side));
+            top_piece.arc = true;
+            top_piece.centre = scallop_centre_;
+            top_piece.radius = scallop_radius_;
+        }
+        top_piece.a = peak;
+        top_piece.b = corner;
+        pieces_.push_back(top_piece);
+
+        OutlinePiece side_piece;
+        side_piece.a = corner;
+        side_piece.b = junction;
+        pieces_.push_back(side_piece);
+
+        OutlinePiece lower;
+        lower.arc = true;
+        lower.a = junction;
+        lower.b = tip;
+        lower.centre = Vec2{-shield_c_, shield_yc_};
+        lower.radius = shield_rho_;
+        pieces_.push_back(lower);
+    }
+
+    bool inside_shield(Vec2 p) const {  // p is already folded to x >= 0
+        if (p.x > shield_half_w_ || p.y > shield_top_) return false;
+        if (p.y < shield_yc_) {
+            const Vec2 q{p.x + shield_c_, p.y - shield_yc_};
+            return dot(q, q) <= shield_rho_ * shield_rho_;
+        }
+        if (scalloped_) {
+            const Vec2 q = p - scallop_centre_;
+            return dot(q, q) >= scallop_radius_ * scallop_radius_;
+        }
+        return true;
+    }
+
+    Kind kind_ = Kind::Ellipse;
+    Vec2 half_{0.35f, 0.35f};
+    float rounding_ = 0.0f;
+    std::vector<OutlinePiece> pieces_;
+    // shield, already shrunk by the rounding
+    float shield_half_w_ = 0.0f, shield_top_ = 0.0f, shield_yc_ = 0.0f, shield_c_ = 0.0f, shield_rho_ = 0.0f;
+    bool scalloped_ = false;
+    Vec2 scallop_centre_;
+    float scallop_radius_ = 0.0f;
+};
+
+Image eval_shape(const json& p, const Ctx& ctx) {
+    const std::string mode = param_string(p, "mode", "fill");
+    const Vec2 center = param_vec2(p, "center", Vec2{0.5f, 0.5f});
+    const float rotation = deg_to_rad(param_float(p, "rotation", 0.0f));
+    const float softness = std::max(param_float(p, "softness", 0.01f), 0.0f);
+    const float inset = param_float(p, "inset", 0.0f);
+    const float half_band = 0.5f * std::max(param_float(p, "outline_width", 0.03f), 0.0f);
+    const float bevel = std::max(param_float(p, "bevel", 0.1f), 0.0f);
+    const ShapeField field(param_string(p, "shape", "circle"), param_float(p, "radius", 0.35f),
+                           param_float(p, "aspect", 1.0f), param_int(p, "sides", 6),
+                           param_float(p, "corner_radius", 0.0f), param_float(p, "shoulder", 0.3f),
+                           param_float(p, "crest", 0.0f));
+    const float cr = std::cos(rotation), sr = std::sin(rotation);
+    const bool outline = mode == "outline";
+    const bool ramp = mode == "bevel";
+
+    Image out(ctx.width, ctx.height);
+    for (int y = 0; y < ctx.height; ++y) {
+        const float dy = center.y - uv_v(ctx, y);  // up is towards v = 0
+        for (int x = 0; x < ctx.width; ++x) {
+            const float dx = uv_u(ctx, x) - center.x;
+            // Rotating the shape counter-clockwise is sampling it rotated clockwise.
+            const Vec2 local{dx * cr + dy * sr, -dx * sr + dy * cr};
+            const float d = field.distance(local) + inset;
+            float value;
+            if (outline) {
+                value = soft_edge(half_band, softness, std::fabs(d));
+            } else if (ramp) {
+                value = d >= 0.0f ? 0.0f : (bevel > 1e-6f ? saturate(-d / bevel) : 1.0f);
+            } else {  // fill
+                value = soft_edge(0.0f, softness, d);
             }
             set_gray(out, x, y, saturate(value));
         }
@@ -1525,6 +1851,7 @@ private:
         if (op == "ring") return eval_ring(p, ctx_);
         if (op == "spokes") return eval_spokes(p, ctx_);
         if (op == "star") return eval_star(p, ctx_);
+        if (op == "shape") return eval_shape(p, ctx_);
         if (op == "cracks") return eval_cracks(p, ctx_, seed);
         if (op == "voronoi") return eval_voronoi(p, ctx_, seed);
         if (op == "flame") return eval_flame(p, ctx_, seed);

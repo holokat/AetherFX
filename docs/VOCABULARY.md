@@ -541,7 +541,13 @@ Every op produces an RGBA float image at the texture resolution. Ops:
 (`frequency`, `octaves`, `lacunarity`, `gain`, `seed`, `animate` speed),
 `gradient_linear` (`angle`, `start`, `end`), `gradient_radial` (`center`,
 `radius`, `inner_radius`, `falloff` linear|smooth|quadratic),
-`ring` (`radius`, `thickness`, `softness`), `cracks` (`density`, `width`,
+`ring` (`radius`, `thickness`, `softness`), `spokes` (`count`, `width`,
+`softness`, `inner_radius`, `outer_radius`, `rotation`), `star` (`points`,
+`width`, `outer_radius`, `core_radius`, `softness`, `rotation`),
+`shape` (`shape` circle|polygon|hexagon|diamond|rounded_box|shield, `mode`
+fill|outline|bevel, `radius`, `aspect`, `center`, `rotation`, `sides`,
+`corner_radius`, `shoulder`, `crest`, `softness`, `inset`, `outline_width`,
+`bevel`; see "Shapes" below), `cracks` (`density`, `width`,
 `seed`), `voronoi` (`cells`, `mode` distance|id|edges), `erosion`
 (`amount`, `noise` input), `distort` (`amount`, input `by`),
 `flow_map` (from `a` vector-ish), `normal_from_height` (`strength`),
@@ -611,6 +617,66 @@ sheet is played once.
                                                 "cooling": 1.8, "fuel_width": 0.6}}],
                           "output": "fire"}}}
 ```
+
+### Shapes (`shape`)
+
+`shape` is the silhouette primitive: emblems, icon plates, glyph tiles, hex cells,
+seals set into a magic circle. It is the one pattern op with a `center`, so it is
+also how a motif is placed off-centre inside a texture.
+
+Every shape is described as the closed outline it is (straight segments and
+circular arcs) and the op evaluates the **exact** signed distance to that outline.
+That is the point of it: an `outline` keeps one width all the way round a pointed
+shield, `inset` gives true concentric copies, and `bevel` is a linear ramp that
+`levels` can shape. There is no per-pixel trigonometry, and no noise, so the bake
+seed does not matter.
+
+| parameter | default | meaning |
+|---|---|---|
+| `shape` | `circle` | `circle` (an ellipse when `aspect` is not 1), `polygon` (`sides`, first vertex up), `hexagon` and `diamond` (polygon with 6 and 4 sides), `rounded_box`, `shield` |
+| `mode` | `fill` | `fill`: 1 inside, 0 outside. `outline`: a band `outline_width` wide centred on the contour. `bevel`: 0 at the contour climbing linearly to 1 at depth `bevel` inside |
+| `radius` | 0.35 | half the height in UV units (polygon: the circumradius) |
+| `aspect` | 1 | horizontal stretch; 1 keeps the natural proportions (a shield is 0.82 as wide as it is tall) |
+| `center`, `rotation` | 0.5,0.5 / 0 | placement; rotation is in degrees, counter-clockwise |
+| `corner_radius` | 0 | rounds the corners; the outline is rebuilt shrunk by the radius and grown back, so the overall size does not change |
+| `shoulder`, `crest` | 0.3 / 0 | `shield` only: the fraction of the height with straight sides, and the depth of the two scallops in the top edge as a fraction of the width (0.06 is heraldic) |
+| `softness` | 0.01 | edge falloff half-width in UV units, centred on the contour; 0 is a hard edge |
+| `inset` | 0 | moves the contour inwards (negative: outwards) before the mode is applied |
+
+Shapes are upright **in the image**: the top of the shape is towards `v = 0`, the
+top row, so an exported PNG shows it the right way up, and so does the GPU viewer,
+which draws the top row at the top of a sprite. (The CPU reference renderer draws
+a sprite's V axis up the screen, so it shows an asymmetric sprite upside down - the
+"Flipbook orientation" entry in docs/BACKLOG.md; `rotation: 180` turns a shape over
+for a consumer that needs it.) The shield is a heater shield: a flat or scalloped
+top, straight shoulders, then two arcs, tangent to the sides, sweeping in to the
+point.
+
+Recipes that fall out of the three modes:
+
+* an outline that stays inside the silhouette: `inset` = half the `outline_width`;
+* an inner glow hugging a rim: `bevel`, then `invert`, then multiply by the `fill`;
+* an outer glow: `bevel` with `inset: -g` and `bevel: g` (1 on the contour, 0 at `g` outside);
+* a rim from two fills: `fill` minus the same `fill` with an `inset` (`math` subtract).
+
+An emblem is a few `shape` nodes folded with `math` - a bright outline, a dimmer
+inset face, a thin inner line and a tall thin `rounded_box` with a large `softness`
+multiplied by the face as the centre ridge
+(`tools/generators/shield_variants.py`, `emblem_graph`):
+
+```json
+{"id": "tex_emblem", "type": "texture",
+ "parameters": {"width": 256, "height": 256, "graph": {"nodes": [
+   {"id": "rim",  "op": "shape", "params": {"shape": "shield", "radius": 0.44, "crest": 0.06,
+                                            "mode": "outline", "outline_width": 0.034, "inset": 0.017}},
+   {"id": "face", "op": "shape", "params": {"shape": "shield", "radius": 0.44, "crest": 0.06, "inset": 0.076}},
+   {"id": "dim",  "op": "levels", "params": {"out_high": 0.45}, "inputs": {"a": "face"}},
+   {"id": "out",  "op": "math", "params": {"mode": "max"}, "inputs": {"a": "rim", "b": "dim"}}],
+   "output": "out"}}}
+```
+
+House style applies here as everywhere: never assemble a cross or a plus sign out
+of two boxes.
 
 ## Effect-level
 
