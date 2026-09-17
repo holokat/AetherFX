@@ -453,3 +453,57 @@ mismatch into a clear message.
   It is for instance tuning, not for animating a value per frame.
 * Textures and meshes are baked at compile time and never change afterwards, so
   they can be uploaded once. There is no streaming or partial re-bake.
+
+## 14. Python binding
+
+`python/aetherfx/native.py` is the same library through `ctypes`: every one of
+the 74 entry points is declared with its `argtypes`/`restype`, the structs
+mirror the header field for field (their sizes are checked once at load time),
+and a small RAII layer turns handles into objects and statuses into
+`NativeError`.
+
+```python
+from aetherfx.native import Effect
+
+with Effect.from_file("examples/effects/fireball.json") as effect:
+    print(effect.name, effect.duration, effect.validate()["ok"])
+    compiled = effect.compile(1.0 / 60.0)      # bakes textures and meshes; share it
+assert compiled.ok, compiled.diagnostics       # errors are data, not an exception
+runtime = compiled.runtime()                   # one per playing instance
+runtime.simulate_to(1.0)                       # fixed steps; reset() to replay
+frame = runtime.frame()                        # numpy copies, safe past the next step
+print(frame.systems[0].position.shape, frame.systems[0].color.shape)
+print(compiled.texture("tex_puff").frames, compiled.mesh_bases())   # baked resources
+```
+
+The library is found through `$AETHERFX_LIBRARY`, then
+`<repo>/build/src/capi/libaetherfx.{dylib,so,dll}`, then `build-capi/`, then the
+platform loader. `aetherfx.native.is_available()` answers without raising;
+`load_library()` raises `NativeUnavailable` (an `ImportError`) with the list of
+paths it tried.
+
+| Python | C |
+|---|---|
+| `Effect.from_json` / `from_file`, `.name`, `.duration`, `.validate()`, `.set_parameter()`, `.to_json()` | `aetherfx_effect_*` |
+| `Effect.compile(fixed_dt)` -> `Compiled`; `.ok`, `.diagnostics`, `.plan`, `.fixed_dt` | `aetherfx_compile`, `aetherfx_compiled_*` |
+| `Compiled.textures` -> `Texture(id, width, height, frames, frame_width, .pixels, .png_bytes())` | `aetherfx_texture_*` |
+| `Compiled.meshes` / `.mesh_variants("<base>")` -> `Mesh(.positions, .normals, .uvs, .indices)` | `aetherfx_mesh_*` |
+| `Compiled.materials` -> list of dicts with the enums spelled out | `aetherfx_material_*` |
+| `Compiled.runtime()` -> `Runtime`; `.reset()`, `.step()`, `.simulate_to(t)`, `.time`, `.frame_index`, `.statistics()` | `aetherfx_runtime_*` |
+| `Runtime.frame()` -> `RuntimeFrame(systems, lights, decals, mesh_instances, beams, trails, camera)` | every frame-state accessor |
+
+**Everything is copied.** The C arrays die on the next `step`/`simulate_to`/
+`reset`, so `Runtime.frame()` returns owned numpy arrays: per system
+`position (N,3)`, `velocity (N,3)`, `color (N,4)`, `orientation (N,4)`,
+`scale3 (N,3)`, `variant`/`seed` `uint32`, and `size`, `rotation`, `opacity`,
+`emissive`, `age`, `lifetime`, `custom0` as `(N,)`. Beam polylines are `(N,3)`
+arrays; trail ribbons are `(N,12)` - `pos3, width, normalized_age, u, color4,
+opacity, emissive`, the wire layout, which drops the vertex's absolute `age`.
+Handles free themselves (`__del__`), take `with` blocks and have an idempotent
+`close()`; one runtime must still be driven by one thread at a time.
+
+`python/aetherfx/studio/native_source.py` builds on it: `NativeFrameSource` is
+the studio viewer's `FrameSource`, compiling the active effect and streaming
+real frames to the browser instead of the synthetic mock. Importing it raises
+`NativeUnavailable` when the library is absent, which is how the studio decides
+whether the viewer gets the real engine.

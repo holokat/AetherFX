@@ -1,0 +1,458 @@
+"""The ctypes binding and the real-engine frame source.
+
+These are the only tests that run the actual simulation: they load
+``libaetherfx``, compile the shipped example effects and assert the things the
+studio viewer and a game engine depend on - flipbook layout, mesh variants,
+array shapes, determinism, and a frame that survives the round trip through
+:func:`~aetherfx.studio.stream.encode_frame`.
+
+The whole module skips when the library has not been built, so a checkout
+without ``build/src/capi/libaetherfx.*`` still runs green.
+"""
+
+from __future__ import annotations
+
+import io
+import json
+import time
+from pathlib import Path
+
+import numpy as np
+import pytest
+from PIL import Image
+
+from aetherfx import native
+from aetherfx.studio.stream import decode_header, encode_frame
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+EXAMPLES_DIR = REPO_ROOT / "examples" / "effects"
+
+HAVE_NATIVE = native.is_available()
+
+pytestmark = pytest.mark.skipif(not HAVE_NATIVE, reason="libaetherfx is not built (see cmake --preset capi)")
+
+if HAVE_NATIVE:  # pragma: no branch - the module is skipped otherwise
+    from aetherfx.studio.native_source import NativeFrameSource, effect_camera
+
+
+def effect_document(name: str) -> dict:
+    return json.loads((EXAMPLES_DIR / f"{name}.json").read_text())
+
+
+@pytest.fixture(scope="module")
+def fireball() -> native.Compiled:
+    with native.Effect.from_file(EXAMPLES_DIR / "fireball.json") as effect:
+        compiled = effect.compile(1.0 / 60.0)
+    yield compiled
+    compiled.close()
+
+
+@pytest.fixture(scope="module")
+def fire_aoe() -> native.Compiled:
+    with native.Effect.from_file(EXAMPLES_DIR / "fire_aoe.json") as effect:
+        compiled = effect.compile(1.0 / 60.0)
+    yield compiled
+    compiled.close()
+
+
+# =====================================================================
+# library and effects
+# =====================================================================
+
+
+class TestLibrary:
+    def test_abi_matches_the_header_this_binding_was_written_against(self):
+        library = native.load_library()
+        assert library.aetherfx_abi_version() == native.ABI_VERSION
+        assert native.version_string().count(".") == 2
+        assert native.version() >= (0, 1, 0)
+
+    def test_every_abi_function_is_declared(self):
+        library = native.load_library()
+        assert len(native._SIGNATURES) == 74
+        for name in native._SIGNATURES:
+            assert getattr(library, name).argtypes is not None, name
+
+    def test_bad_json_is_an_error_not_a_crash(self):
+        with pytest.raises(native.NativeError) as excinfo:
+            native.Effect.from_json("{ nope")
+        assert excinfo.value.message
+        assert excinfo.value.code < 0
+
+
+class TestEffect:
+    def test_fireball_loads_validates_and_compiles(self, fireball: native.Compiled):
+        with native.Effect.from_file(EXAMPLES_DIR / "fireball.json") as effect:
+            assert effect.name == "Fireball"
+            assert effect.duration == pytest.approx(2.5)
+            diagnostics = effect.validate()
+            assert diagnostics["ok"] is True
+            assert diagnostics["errors"] == 0
+            assert isinstance(diagnostics["items"], list)
+        assert fireball.ok is True
+        assert fireball.fixed_dt == pytest.approx(1.0 / 60.0)
+        assert set(fireball.plan) >= {"nodes", "tiers", "resources", "diagnostics"}
+
+    def test_to_json_round_trips_and_set_parameter_takes_effect(self):
+        with native.Effect.from_file(EXAMPLES_DIR / "fireball.json") as effect:
+            document = effect.to_dict()
+            assert document["name"] == "Fireball"
+            effect.set_parameter("cam", "fov", 63.5)
+            assert json.loads(effect.to_json(indent=-1))["name"] == "Fireball"
+            with effect.compile(1.0 / 60.0) as compiled:
+                runtime = compiled.runtime()
+                assert runtime.camera()["fov"] == pytest.approx(63.5)
+                runtime.close()
+
+    def test_closed_handles_refuse_to_be_used(self):
+        effect = native.Effect.from_file(EXAMPLES_DIR / "fireball.json")
+        effect.close()
+        effect.close()  # idempotent
+        assert effect.closed
+        with pytest.raises(native.NativeError):
+            _ = effect.name
+
+
+# =====================================================================
+# baked resources
+# =====================================================================
+
+
+class TestTextures:
+    def test_fireball_bakes_the_textures_its_systems_reference(self, fireball: native.Compiled):
+        by_id = {texture.id: texture for texture in fireball.textures}
+        assert "tex_puff" in by_id
+        for texture in by_id.values():
+            assert texture.channels == 4
+            assert texture.frames >= 1
+            assert texture.width == texture.frame_width * texture.frames
+
+    def test_fire_aoe_tex_puff_is_an_eight_frame_flipbook(self, fire_aoe: native.Compiled):
+        puff = fire_aoe.texture("tex_puff")
+        assert puff is not None
+        assert puff.frames == 8
+        assert puff.frame_width == 128
+        assert puff.width == 128 * 8
+
+        pixels = puff.pixels
+        assert pixels.shape == (puff.height, puff.width, 4)
+        assert pixels.dtype == np.float32
+        assert np.isfinite(pixels).all()
+
+        image = Image.open(io.BytesIO(puff.png_bytes()))
+        assert image.format == "PNG"
+        assert image.mode == "RGBA"
+        assert image.size == (128 * 8, puff.height)
+
+    def test_unknown_texture_is_none(self, fireball: native.Compiled):
+        assert fireball.texture("tex_nope") is None
+
+
+class TestMeshes:
+    def test_fire_aoe_bakes_eight_rock_variants_with_valid_indices(self, fire_aoe: native.Compiled):
+        variants = fire_aoe.mesh_variants("rock_mesh")
+        assert len(variants) == 8
+        assert [mesh.variant_index for mesh in variants] == list(range(8))
+        assert variants[0].id == "rock_mesh"
+        assert variants[3].id == "rock_mesh#3"
+
+        for mesh in variants:
+            positions = mesh.positions
+            indices = mesh.indices
+            assert positions.shape == (mesh.vertex_count, 3)
+            assert indices.shape == (mesh.index_count,)
+            assert indices.dtype == np.uint32
+            assert mesh.index_count % 3 == 0
+            assert int(indices.max()) < mesh.vertex_count
+            assert np.isfinite(positions).all()
+            if mesh.has_normals:
+                assert mesh.normals.shape == (mesh.vertex_count, 3)
+            if mesh.has_uvs:
+                assert mesh.uvs.shape == (mesh.vertex_count, 2)
+
+    def test_the_mesh_system_only_asks_for_variants_that_exist(self, fire_aoe: native.Compiled):
+        runtime = fire_aoe.runtime()
+        runtime.simulate_to(1.0)
+        rocks = next(s for s in runtime.frame().systems if s.render_mode == "mesh")
+        assert rocks.mesh_id == "rock_mesh"
+        assert rocks.mesh_variants == len(fire_aoe.mesh_variants("rock_mesh"))
+        assert int(rocks.variant.max()) < rocks.mesh_variants
+        runtime.close()
+
+
+class TestMaterials:
+    def test_materials_are_json_dicts_with_vocabulary_enums(self, fireball: native.Compiled):
+        materials = fireball.materials
+        assert {m["id"] for m in materials} >= {"mat_core", "mat_flame", "mat_smoke"}
+        json.dumps(materials)
+        for material in materials:
+            assert material["blend"] in native.BLEND_MODES
+            assert material["shading"] in native.SHADING_MODES
+            assert len(material["base_color"]) == 4
+            assert len(material["emissive_color"]) == 4
+
+
+# =====================================================================
+# runtime
+# =====================================================================
+
+
+class TestRuntime:
+    def test_sixty_steps_produce_particles_with_consistent_arrays(self, fireball: native.Compiled):
+        runtime = fireball.runtime()
+        assert runtime.backend == "cpu"
+        for _ in range(60):
+            runtime.step()
+        assert runtime.frame_index == 60
+        assert runtime.time == pytest.approx(1.0)
+
+        frame = runtime.frame()
+        assert frame.particle_count > 0
+        components = {"position": 3, "previous_position": 3, "velocity": 3, "color": 4, "orientation": 4, "scale3": 3}
+        for system in frame.systems:
+            assert system.render_mode in native.RENDER_MODES
+            assert system.blend in native.BLEND_MODES
+            for name, array in system.arrays.items():
+                expected = components.get(name)
+                assert array.shape == ((system.count, expected) if expected else (system.count,)), name
+            assert np.isfinite(system.position).all()
+            assert ((system.custom0 >= 0.0) & (system.custom0 <= 1.0)).all()
+        runtime.close()
+
+    def test_statistics_and_camera(self, fireball: native.Compiled):
+        runtime = fireball.runtime()
+        runtime.simulate_to(1.0)
+        statistics = runtime.statistics()
+        assert statistics["frame"] == 60
+        assert statistics["total_alive"] > 0
+        assert isinstance(statistics["systems"], list)
+        camera = runtime.camera()
+        assert camera["fov"] > 0.0
+        assert len(camera["position"]) == 3
+        runtime.close()
+
+    def test_simulate_to_never_steps_backwards_but_reset_replays(self, fireball: native.Compiled):
+        runtime = fireball.runtime()
+        runtime.simulate_to(1.0)
+        before = runtime.frame().systems[0].position.copy()
+        runtime.simulate_to(0.5)
+        assert runtime.time == pytest.approx(1.0)
+        runtime.reset()
+        assert runtime.frame_index == 0
+        runtime.simulate_to(1.0)
+        assert np.array_equal(runtime.frame().systems[0].position, before)
+        runtime.close()
+
+    def test_two_runtimes_of_the_same_plan_are_bit_identical(self, fireball: native.Compiled):
+        first, second = fireball.runtime(), fireball.runtime()
+        for _ in range(60):
+            first.step()
+            second.step()
+        left, right = first.frame(), second.frame()
+        assert [s.id for s in left.systems] == [s.id for s in right.systems]
+        for a, b in zip(left.systems, right.systems):
+            assert a.count == b.count
+            assert np.array_equal(a.position, b.position)
+            assert np.array_equal(a.velocity, b.velocity)
+            assert np.array_equal(a.seed, b.seed)
+        first.close()
+        second.close()
+
+    def test_frame_arrays_are_copies_that_outlive_the_next_step(self, fireball: native.Compiled):
+        runtime = fireball.runtime()
+        runtime.simulate_to(1.0)
+        kept = runtime.frame().systems[0].position.copy()
+        snapshot = runtime.frame().systems[0].position
+        for _ in range(30):
+            runtime.step()
+        assert np.array_equal(snapshot, kept)
+        assert snapshot.flags.owndata
+        runtime.close()
+
+    def test_lightning_strike_flashes_a_beam_and_a_light(self):
+        with native.Effect.from_file(EXAMPLES_DIR / "lightning_strike.json") as effect:
+            with effect.compile(1.0 / 60.0) as compiled:
+                runtime = compiled.runtime()
+                runtime.simulate_to(0.1)
+                frame = runtime.frame()
+                assert len(frame.lights) >= 1
+                assert len(frame.beams) >= 1
+                bolt = frame.beams[0]
+                assert bolt["polylines"], "a beam always has at least the main bolt"
+                for polyline in bolt["polylines"]:
+                    assert polyline.ndim == 2 and polyline.shape[1] == 3
+                    assert np.isfinite(polyline).all()
+                assert bolt["polylines"][0].shape[0] >= 2
+                runtime.close()
+
+    def test_fireball_trail_ribbons_use_the_wire_layout(self, fireball: native.Compiled):
+        runtime = fireball.runtime()
+        runtime.simulate_to(1.0)
+        trails = runtime.frame().trails
+        assert trails, "fireball has a trail node"
+        ribbons = [r for trail in trails for r in trail["ribbons"]]
+        assert ribbons
+        for ribbon in ribbons:
+            assert ribbon.shape[1] == 12  # pos3, width, age_norm, u, color4, opacity, emissive
+            assert ribbon.dtype == np.float32
+            assert np.isfinite(ribbon).all()
+            assert ((ribbon[:, 4] >= 0.0) & (ribbon[:, 4] <= 1.0)).all()  # normalized age
+        runtime.close()
+
+
+# =====================================================================
+# the studio frame source
+# =====================================================================
+
+
+class TestNativeFrameSource:
+    def test_resources_is_json_serialisable_apart_from_the_png_bytes(self):
+        with NativeFrameSource() as source:
+            source.open(effect_document("fire_aoe"))
+            resources = source.resources()
+
+            assert resources["type"] == "resources"
+            assert resources["effect"] == {
+                "name": "Fire AOE", "duration": pytest.approx(3.0),
+                "fixed_dt": pytest.approx(1.0 / 60.0), "seed": 7,
+            }
+            assert source.duration() == pytest.approx(3.0)
+            assert source.fixed_dt() == pytest.approx(1.0 / 60.0)
+
+            puff = resources["textures"]["tex_puff"]
+            assert (puff["width"], puff["height"], puff["frames"], puff["frame_width"]) == (1024, 128, 8, 128)
+            assert puff["png"].startswith(b"\x89PNG")
+
+            rock = resources["meshes"]["rock_mesh"]
+            assert rock["variant_count"] == 8
+            assert len(rock["variants"]) == 8
+            assert rock["variants"] is rock["variants_data"]
+            assert rock["positions"] == rock["variants"][0]["positions"]
+            assert len(rock["positions"]) % 3 == 0
+            assert max(rock["indices"]) < len(rock["positions"]) // 3
+
+            assert set(resources["materials"]) == {"mat_fire", "mat_rock", "mat_smoke"}
+            assert resources["render_settings"]["exposure"] == pytest.approx(0.95)
+            assert resources["camera"] == {"position": [0.0, 3.6, 9.0], "target": [0.0, 1.4, 0.0],
+                                           "up": [0.0, 1.0, 0.0], "fov": 42.0}
+            assert len(resources["timeline"]["phases"]) == 5
+
+            stripped = {
+                **resources,
+                "textures": {k: {kk: vv for kk, vv in v.items() if kk != "png"}
+                             for k, v in resources["textures"].items()},
+            }
+            json.dumps(stripped)  # everything but the PNG bytes goes over the wire as JSON
+
+    def test_the_server_can_publish_what_resources_returns(self):
+        from aetherfx.studio.stream_server import mesh_payload, public_resources
+
+        with NativeFrameSource() as source:
+            source.open(effect_document("fire_aoe"))
+            resources = source.resources()
+            public = public_resources(resources)
+            assert public["meshes"]["rock_mesh"]["variants"] == 8
+            assert public["meshes"]["rock_mesh"]["url"] == "/api/stream/mesh/rock_mesh.json"
+            assert public["textures"]["tex_puff"]["url"] == "/api/stream/texture/tex_puff.png"
+            assert "png" not in public["textures"]["tex_puff"]
+            json.dumps(public)
+
+            payload = mesh_payload(resources["meshes"]["rock_mesh"])
+            assert len(payload["variants"]) == 8
+            assert all(v["positions"] for v in payload["variants"])
+
+    def test_frame_at_encodes_and_decodes(self):
+        with NativeFrameSource() as source:
+            source.open(effect_document("fire_aoe"))
+            frame = source.frame_at(1.0)
+            assert frame.time == pytest.approx(1.0)
+            assert frame.frame == 60
+            assert sum(s.count for s in frame.systems) > 0
+
+            header, blob = decode_header(encode_frame(frame, fps=60.0))
+            assert header["type"] == "frame" and header["version"] == 1
+            assert header["fps"] == 60.0
+            mesh_system = next(s for s in header["systems"] if s["render_mode"] == "mesh")
+            assert set(mesh_system["arrays"]) == {
+                "position", "velocity", "size", "rotation", "color", "emissive",
+                "age_norm", "orientation", "scale3", "variant",
+            }
+            assert mesh_system["arrays"]["variant"]["dtype"] == "u32"
+            billboard = next(s for s in header["systems"] if s["render_mode"] != "mesh")
+            assert "orientation" not in billboard["arrays"]
+
+            # the colour that goes over the wire is rgb + opacity as alpha
+            spec = mesh_system["arrays"]["color"]
+            assert spec["components"] == 4
+            colors = np.frombuffer(blob, dtype=np.float32, count=mesh_system["count"] * 4,
+                                   offset=spec["offset"]).reshape(-1, 4)
+            source_system = next(s for s in frame.systems if s.id == mesh_system["id"])
+            assert np.array_equal(colors, source_system.arrays["color"].data)
+            assert ((colors[:, 3] >= 0.0) & (colors[:, 3] <= 1.0)).all()
+
+            assert header["lights"] and "cone_angle" in header["lights"][0]
+            assert all("texture" in d and "material" in d for d in header["decals"])
+            # the per-frame camera is the runtime's (float32), not the document's doubles
+            camera = header["camera"]
+            assert camera["position"] == pytest.approx([0.0, 3.6, 9.0], rel=1e-6)
+            assert camera["target"] == pytest.approx([0.0, 1.4, 0.0], rel=1e-6)
+            assert camera["up"] == pytest.approx([0.0, 1.0, 0.0])
+            assert camera["fov"] == pytest.approx(42.0)
+            assert set(camera) == {"position", "target", "up", "fov"}
+            assert header["post_effects"] == []
+
+    def test_scrubbing_backwards_replays_deterministically(self):
+        with NativeFrameSource() as source:
+            source.open(effect_document("fireball"))
+            first = source.frame_at(1.0).systems[0].arrays["position"].data.copy()
+            source.frame_at(1.5)
+            again = source.frame_at(1.0).systems[0].arrays["position"].data
+            assert np.array_equal(first, again)
+
+    def test_lightning_strike_frame_carries_beams_and_lights(self):
+        with NativeFrameSource() as source:
+            source.open(effect_document("lightning_strike"))
+            frame = source.frame_at(0.1)
+            assert frame.lights and frame.lights[0]["type"] in ("point", "spot", "area")
+            assert frame.beams
+            assert all(p.shape[1] == 3 for beam in frame.beams for p in beam["polylines"])
+
+            header, _ = decode_header(encode_frame(frame, fps=60.0))
+            polylines = header["beams"][0]["polylines"]
+            assert polylines and polylines[0]["count"] >= 2
+            assert "material" in header["beams"][0]
+
+    def test_a_broken_effect_reports_its_diagnostics(self):
+        broken = effect_document("fireball")
+        broken["nodes"] = [n for n in broken["nodes"] if n["type"] != "material"]
+        with NativeFrameSource() as source:
+            with pytest.raises(native.NativeError) as excinfo:
+                source.open(broken)
+            assert "compile failed" in str(excinfo.value)
+            with pytest.raises(native.NativeError):
+                source.resources()
+
+    def test_camera_reads_the_first_enabled_camera_node(self):
+        document = {"nodes": [
+            {"id": "off", "type": "camera", "enabled": False, "parameters": {"fov": 10}},
+            {"id": "on", "type": "camera", "parameters": {
+                "position": {"value": [1, 2, 3], "track": [{"time": 0, "value": [1, 2, 3]}]},
+                "fov": {"value": 55.0}}},
+        ]}
+        assert effect_camera(document) == {"position": [1.0, 2.0, 3.0], "target": [0.0, 1.0, 0.0],
+                                           "up": [0.0, 1.0, 0.0], "fov": 55.0}
+        assert effect_camera({"nodes": []}) is None
+
+    def test_frame_at_is_fast_enough_for_sixty_hz(self, capsys):
+        steps = 60
+        with NativeFrameSource() as source:
+            source.open(effect_document("fire_aoe"))
+            for index in range(30):  # warm up: allocate the pools, reach a busy frame
+                source.frame_at(index / 60.0)
+            started = time.perf_counter()
+            for index in range(steps):
+                source.frame_at((30 + index) / 60.0)
+            average_ms = (time.perf_counter() - started) / steps * 1000.0
+        with capsys.disabled():
+            print(f"\nfire_aoe frame_at: {average_ms:.2f} ms average over {steps} one-step frames")
+        assert average_ms < 25.0, f"{average_ms:.2f} ms per frame is too slow for 60 Hz playback"
