@@ -80,6 +80,26 @@ dictionary shapes `stream_server` consumes from `resources()`:
 }
 ```
 
+Two fields the viewer wants are missing from that dictionary today, both because
+the C API's own structs do not carry them:
+
+* **`material.temperature_gradient`** - `struct aetherfx_material` stops at
+  `noise_texture`, so `compiled.materials` (and therefore the resources message)
+  never sees the gradient. `ResourceSet.mergeAuthoredMaterials()` tops the
+  material descriptions up from `GET /api/effect`, which does have the authored
+  parameters, and the renderers read the merged description. The resources
+  message wins wherever it does provide a field, so adding the gradient to
+  `struct aetherfx_material` / `MaterialInfo` / `Compiled.materials` turns the
+  fallback off by itself. The same struct also drops `uv_scroll`, `uv_rotate`,
+  `gradient_texture` and `double_sided`; nothing renders those yet, so they are
+  not merged.
+* **per-particle `age` in seconds** - `aetherfx.native` already reads it
+  (`_PARTICLE_ARRAYS` has `age`, `lifetime` and `seed`), but
+  `NativeFrameSource._to_frame()` only forwards `custom0` as `age_norm`. Adding
+  `"age": ArrayRef(system.arrays["age"])` to that dict is all the flipbook needs;
+  `protocol.js` builds `views` straight from the header, and `particles.js`
+  already looks for `system.views.age`.
+
 Arrays may be python lists or numpy arrays of any shape; `mesh_payload()`
 flattens them. `public_resources()` strips the PNG bytes out of the message the
 browser receives and replaces them with `/api/stream/texture/<id>.png`; a
@@ -92,19 +112,46 @@ entry the source does not provide simply 404s, and the viewer draws untextured.
 quad per system, instance attributes straight out of the frame's arrays:
 
 * view-space quad sized by `size` (a diameter), rotated by `rotation`;
-* `stretched_billboard` aligns the quad to the projected velocity and stretches
-  it to `size * (1 + velocity_stretch * |v|)`. The basis is built with a
-  determinant of +1 on purpose: a mirrored basis winds the corners backwards,
-  which mirrors the sprite and (with single-sided materials) culls the system
-  entirely;
+* `stretched_billboard` (and `align_to_velocity`, which orients without
+  stretching) aligns the quad to the projected velocity and stretches it to
+  `size * (1 + velocity_stretch * |v|)`. The basis is built with a determinant
+  of +1 on purpose: a mirrored basis winds the corners backwards, which mirrors
+  the sprite and (with single-sided materials) culls the system entirely.
+  **`rotation` / `rotation_variance` do not survive the alignment**, and that is
+  the CPU renderer's behaviour, not an omission: `draw_particle_quad` builds the
+  roll basis first and then *overwrites* both axes with the velocity basis. The
+  roll is only what is left when the velocity has no screen direction to align
+  to (`|velocity.xy in view| <= 1e-5`, i.e. a particle flying straight at the
+  camera or standing still), and the viewer now falls back to it in exactly that
+  case instead of to a hard-coded vertical axis. A spinning stretched billboard
+  therefore needs `render_mode: billboard`;
 * sprite sheets: a `sprite_columns x sprite_rows` grid inside the cell, then the
-  texture's own `frames` strip, indexed by `sprite_fps` or by `age_norm`. Strip
-  textures are loaded **without mipmaps** - the engine lays frames side by side,
-  so mip level 2 averages neighbouring frames and a flame becomes orange fog;
+  texture's own `frames` strip. **Both indices are per particle**, matching
+  `sprite_cell()` and `sprite_frame()` in the software renderer: `sprite_fps > 0`
+  plays at a fixed rate from the particle's birth (`floor(age * sprite_fps)`,
+  wrapped), `sprite_fps == 0` maps the frames once over the life
+  (`floor(age_norm * n)`, clamped for the strip, wrapped for the grid). Nothing
+  reads a global clock, so a system's sprites spread across the flipbook and a
+  non-looping strip stops at its last frame instead of popping back to the
+  first. The seconds branch needs a per-particle `age`, which the engine has
+  (`aetherfx_particle_age`) but `NativeFrameSource._to_frame()` does not put on
+  the wire yet; without it `uHasAgeSeconds` is 0 and an fps flipbook falls back
+  to the age-mapped branch - still per particle, just at the life's rate rather
+  than the authored one. Strip textures are loaded **without mipmaps** - the
+  engine lays frames side by side, so mip level 2 averages neighbouring frames
+  and a flame becomes orange fog;
 * blending per system (falling back to the material): `additive` ->
   `AdditiveBlending`, `alpha` -> `NormalBlending`, `premultiplied` ->
   `CustomBlending(ONE, ONE_MINUS_SRC_ALPHA)`, always with `depthWrite` off;
-* colour = particle colour x `base_color`, alpha = `opacity` x sprite alpha;
+* colour = particle colour x `base_color` x `temperature_gradient`, alpha =
+  `opacity` x sprite alpha. The gradient is the ramp `shade_particle()` applies:
+  `aether::Gradient::eval` at `1 - age/lifetime`, so a puff is hottest at birth
+  and falls to the ramp's dark end as it dies - it is a per-particle tint over
+  life, **not** a luminance remap of the sprite. It reaches the shader as up to
+  eight `(t, rgb)` uniform keys and is evaluated piecewise-linearly there; a
+  longer gradient is resampled onto eight taps. Mesh particles get the same tint
+  through `instanceColor` (their emissive stays material-wide). An empty
+  gradient sets the key count to 0, which is a white tint;
 * emissive adds `colour * emissive_color * (emissive + emissive_intensity)` in
   HDR, so the bloom pass has something to find;
 * **soft particles**: an opaque-only depth pre-pass renders into a
@@ -138,6 +185,24 @@ colour4, opacity, emissive) and honour `twist_deg`; beams draw twice, a wide
 soft halo and a thin bright core, with `pulse_phase` brightening a gaussian
 travelling along the polyline. All the ribbons of one node share one geometry
 and one draw call.
+
+A trail's `u` is the runtime's own: `cumulative distance + uv_scroll * time`
+(docs/RUNTIME.md section 7), in metres, accumulated along the source's whole
+path and never rebased when old vertices are dropped off the front. It is used
+verbatim, so the texture **tiles once per metre** and stays anchored to the
+ground the emitter covered while `uv_scroll` slides it along. That needs a
+wrapping sampler, which is why textures are loaded with `wrapS =
+RepeatWrapping` (V still clamps, so a sprite sheet cannot wrap into the row
+above); with clamp-to-edge every vertex past `u = 1` sampled the same last texel
+column, which made both tiling ribbon textures and `uv_scroll` inert. A trail
+that wants a different tiling rate would need `min_vertex_distance` or a tiling
+factor in the trail header, which the stream does not carry.
+
+The CPU renderer is the *less* capable side here: `draw_trail_segment` never
+samples a texture at all, so it ignores `u`, ignores `twist_deg`, and applies no
+`temperature_gradient` to a ribbon even when the trail's material has one. The
+viewer matches it on the last point (ribbons are untinted) and goes beyond it on
+the first two.
 
 **Volumes** (`volumes.js`) - one box mesh per procedural `volume` in the frame,
 scaled to the shape's local half-extents and raymarched in the fragment shader.
@@ -201,8 +266,11 @@ Everything a material can say lives in two places:
 * **Billboards**: add a uniform to the `ShaderMaterial` in
   `BillboardSystem`'s constructor, read it in `BILLBOARD_FRAGMENT`
   (`static/viewer/shaders.js`), and set it from the material description in
-  `BillboardSystem.update()`. The material description is the engine's
-  `MaterialDesc` verbatim - see docs/VOCABULARY.md for the field list.
+  `BillboardSystem.update()`. The material description is *nearly* the engine's
+  `MaterialDesc` - see docs/VOCABULARY.md for the field list, and "Plugging in a
+  frame source" above for the fields the C API drops and where the viewer gets
+  them instead. A field the description does not carry has to arrive somewhere
+  before the renderer can read it; do not hash one out of the frame.
 * **Meshes**: `MeshParticleSystem.buildMaterial()` decides which three.js
   material class to use and configures it; `addFresnel()` shows the
   `onBeforeCompile` pattern for anything the standard material does not cover.

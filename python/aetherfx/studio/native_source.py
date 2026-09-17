@@ -22,6 +22,7 @@ C / :mod:`aetherfx.native`   stream / viewer
 ``cone_angle_deg``           ``cone_angle``
 ``color`` + ``opacity``      ``color`` (rgb from colour, alpha from opacity)
 ``custom0``                  ``age_norm``
+``age``                      ``age`` (seconds since birth)
 ===========================  ==========================================
 
 Volumes are the one place the adapter drops something: a ``mode: simulation``
@@ -329,6 +330,9 @@ def _to_frame(snapshot: Any) -> Frame:
             "emissive": ArrayRef(system.arrays["emissive"]),
             "age_norm": ArrayRef(system.arrays["custom0"]),
         }
+        if "age" in system.arrays:
+            # seconds since birth: lets the viewer play sprite_fps flipbooks at the authored rate
+            arrays["age"] = ArrayRef(system.arrays["age"])
         if system.is_mesh:
             arrays["orientation"] = ArrayRef(system.arrays["orientation"])
             arrays["scale3"] = ArrayRef(system.arrays["scale3"])

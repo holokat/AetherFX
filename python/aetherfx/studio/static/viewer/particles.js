@@ -6,7 +6,7 @@
  */
 
 import * as THREE from 'three';
-import { BILLBOARD_FRAGMENT, BILLBOARD_VERTEX, MAX_LIGHTS } from './shaders.js';
+import { BILLBOARD_FRAGMENT, BILLBOARD_VERTEX, MAX_GRADIENT_KEYS, MAX_LIGHTS } from './shaders.js';
 
 export const LAYER_OPAQUE = 0;
 export const LAYER_TRANSPARENT = 1;
@@ -18,7 +18,13 @@ const ORDER_ADDITIVE = 20;
 const QUAD_CORNERS = new Float32Array([-0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5]);
 const QUAD_INDEX = [0, 1, 2, 0, 2, 3];
 
-/* Instance attribute layout: name -> components in the frame's arrays. */
+/* Instance attribute layout: name -> components in the frame's arrays.
+ *
+ * `age` is the one entry the stream does not always carry: the engine has it
+ * (aetherfx_particle_age, surfaced by aetherfx.native) but
+ * NativeFrameSource._to_frame() only forwards custom0 as `age_norm`.  When it
+ * arrives the sprite_fps flipbook branch becomes exact; until then the shader
+ * sees uHasAgeSeconds == 0 and maps the flipbook over the life instead. */
 const BILLBOARD_ATTRIBUTES = [
   ['iPosition', 'position', 3, [0, 0, 0]],
   ['iVelocity', 'velocity', 3, [0, 0, 0]],
@@ -26,7 +32,8 @@ const BILLBOARD_ATTRIBUTES = [
   ['iRotation', 'rotation', 1, [0]],
   ['iColor', 'color', 4, [1, 1, 1, 1]],
   ['iEmissive', 'emissive', 1, [0]],
-  ['iAge', 'age_norm', 1, [0]]
+  ['iAge', 'age_norm', 1, [0]],
+  ['iAgeSeconds', 'age', 1, [0]]
 ];
 
 export function applyBlend(material, blend) {
@@ -55,6 +62,94 @@ export function colorOf(value, fallback) {
 
 function numberOf(value, fallback) {
   return typeof value === 'number' && isFinite(value) ? value : fallback;
+}
+
+/* ------------------------------------------------------------------ *
+ * material.temperature_gradient
+ * ------------------------------------------------------------------ */
+
+/* A material's gradient in the one shape the renderers want: [{t, rgb}], sorted,
+ * t clamped to [0,1].  The vocabulary spells a gradient either as
+ * `[[t, [r,g,b,a]], ...]` or as `{"keys": [{"t": t, "color": [r,g,b,a]}]}`, and
+ * an animatable parameter wraps whichever one in `{"value": ...}`. */
+export function gradientKeys(value) {
+  if (value && !Array.isArray(value) && value.value !== undefined) value = value.value;
+  let raw = value;
+  if (raw && !Array.isArray(raw) && Array.isArray(raw.keys)) raw = raw.keys;
+  if (!Array.isArray(raw) || !raw.length) return null;
+  const keys = [];
+  raw.forEach((entry) => {
+    let t, color;
+    if (Array.isArray(entry)) { t = entry[0]; color = entry[1]; }
+    else if (entry && typeof entry === 'object') { t = entry.t; color = entry.color; }
+    if (!Array.isArray(color) || color.length < 3 || !isFinite(t)) return;
+    keys.push({ t: Math.min(1, Math.max(0, t)), rgb: [color[0], color[1], color[2]] });
+  });
+  if (!keys.length) return null;
+  keys.sort((a, b) => a.t - b.t);
+  // More keys than the shader has room for: resample the ramp onto evenly
+  // spaced taps.  Nothing in the vocabulary's documented ramps needs it.
+  if (keys.length > MAX_GRADIENT_KEYS) {
+    const resampled = [];
+    for (let i = 0; i < MAX_GRADIENT_KEYS; i++) {
+      const t = i / (MAX_GRADIENT_KEYS - 1);
+      resampled.push({ t: t, rgb: evalGradient(keys, t) });
+    }
+    return resampled;
+  }
+  return keys;
+}
+
+/* aether::Gradient::eval (src/core/src/curve.cpp), rgb only: the CPU renderer
+ * uses `temperature->eval(...).rgb()` and drops the gradient's alpha.  `out` is
+ * a 3-element array to write into, for the per-instance callers. */
+export function evalGradient(keys, t, out) {
+  out = out || [1, 1, 1];
+  const write = (rgb) => { out[0] = rgb[0]; out[1] = rgb[1]; out[2] = rgb[2]; return out; };
+  if (!keys || !keys.length) return write(WHITE);
+  if (keys.length === 1 || t <= keys[0].t) return write(keys[0].rgb);
+  const last = keys[keys.length - 1];
+  if (t >= last.t) return write(last.rgb);
+  let i = 1;
+  while (i < keys.length && keys[i].t < t) i++;
+  const a = keys[i - 1], b = keys[i];
+  const span = b.t - a.t;
+  const u = span > 0 ? (t - a.t) / span : 1;
+  out[0] = a.rgb[0] + (b.rgb[0] - a.rgb[0]) * u;
+  out[1] = a.rgb[1] + (b.rgb[1] - a.rgb[1]) * u;
+  out[2] = a.rgb[2] + (b.rgb[2] - a.rgb[2]) * u;
+  return out;
+}
+
+const WHITE = [1, 1, 1];
+
+/* gradientKeys() allocates and update() runs every frame, so remember the last
+ * raw value.  A material description is only rebuilt when the effect is
+ * re-opened, so identity is the right test. */
+function cachedGradient(owner, value) {
+  if (owner.gradientSource !== value) {
+    owner.gradientSource = value;
+    owner.gradientKeys = gradientKeys(value);
+  }
+  return owner.gradientKeys;
+}
+
+function gradientColorArray() {
+  const out = [];
+  for (let i = 0; i < MAX_GRADIENT_KEYS; i++) out.push(new THREE.Vector3(1, 1, 1));
+  return out;
+}
+
+/* Push a gradient into the uTempCount / uTempT / uTempColor uniforms.  An empty
+ * gradient sets the count to 0, which is the shader's "tint by white" path, so
+ * a material without one renders exactly as it did before. */
+function setGradientUniforms(uniforms, keys) {
+  const count = keys ? Math.min(keys.length, MAX_GRADIENT_KEYS) : 0;
+  uniforms.uTempCount.value = count;
+  for (let i = 0; i < count; i++) {
+    uniforms.uTempT.value[i] = keys[i].t;
+    uniforms.uTempColor.value[i].set(keys[i].rgb[0], keys[i].rgb[1], keys[i].rgb[2]);
+  }
 }
 
 /* Uniform objects every particle material shares by identity: set once per frame. */
@@ -105,12 +200,16 @@ class BillboardSystem {
         uSprite: { value: null },
         uHasSprite: { value: 0 },
         uSheet: { value: new THREE.Vector4(1, 1, 1, 0) },
+        uHasAgeSeconds: { value: 0 },
+        uTempCount: { value: 0 },
+        uTempT: { value: new Float32Array(MAX_GRADIENT_KEYS) },
+        uTempColor: { value: gradientColorArray() },
         uNoise: { value: noiseTexture },
         uDissolve: { value: 0 },
         uErosion: { value: 0 },
         uSoftDistance: { value: 0 },
         uStretch: { value: 0 },
-        uStretched: { value: 0 },
+        uAlignVelocity: { value: 0 },
         uLit: { value: 0 }
       }, shared),
       depthWrite: false,
@@ -158,8 +257,13 @@ class BillboardSystem {
       const target = attribute.array;
       const view = system.views[source];
       if (!view || view.length < count * components) {
-        for (let i = 0; i < count; i++) {
-          for (let c = 0; c < components; c++) target[i * components + c] = fallback[c];
+        // `age` is normally missing, so the fallback runs every frame: fill the
+        // scalar case rather than looping over it.
+        if (components === 1) target.fill(fallback[0], 0, count);
+        else {
+          for (let i = 0; i < count; i++) {
+            for (let c = 0; c < components; c++) target[i * components + c] = fallback[c];
+          }
         }
       } else if (order) {
         for (let i = 0; i < count; i++) {
@@ -196,8 +300,15 @@ class BillboardSystem {
     uniforms.uNoise.value = context.texture(material.noise_texture) || context.noiseTexture;
     uniforms.uLit.value = material.shading === 'lit' ? 1 : 0;
     uniforms.uPremultiply.value = blend === 'premultiplied' ? 1 : 0;
-    uniforms.uStretch.value = numberOf(system.velocity_stretch, 0);
-    uniforms.uStretched.value = (system.render_mode === 'stretched_billboard' || system.align_to_velocity) ? 1 : 0;
+    setGradientUniforms(uniforms, cachedGradient(this, material.temperature_gradient));
+    // The CPU renderer aligns to the velocity for both stretched_billboard and
+    // align_to_velocity, but only stretched_billboard elongates the quad.
+    const stretched = system.render_mode === 'stretched_billboard';
+    uniforms.uStretch.value = stretched ? numberOf(system.velocity_stretch, 0) : 0;
+    uniforms.uAlignVelocity.value = (stretched || system.align_to_velocity) ? 1 : 0;
+    // The sprite_fps flipbook needs a per-particle clock in seconds.
+    const ageSeconds = system.views.age;
+    uniforms.uHasAgeSeconds.value = ageSeconds && ageSeconds.length >= count ? 1 : 0;
 
     const softOn = context.softParticles && material.soft_particle !== false;
     uniforms.uSoftDistance.value = softOn
@@ -236,6 +347,7 @@ const TMP_QUATERNION = new THREE.Quaternion();
 const TMP_SCALE = new THREE.Vector3();
 const TMP_MATRIX = new THREE.Matrix4();
 const TMP_COLOR = new THREE.Color();
+const TMP_TINT = [1, 1, 1];
 
 /* A fresnel rim on top of the standard material, in HDR so it blooms. */
 function addFresnel(material, power, color, intensity) {
@@ -364,6 +476,11 @@ class MeshParticleSystem {
     const scale3 = system.views.scale3;
     const orientation = system.views.orientation;
     const colors = system.views.color;
+    // shade_particle() is shared by billboards and mesh particles on the CPU, so
+    // temperature_gradient tints a mesh particle too.  Only the diffuse colour
+    // is per instance in three.js; the emissive term stays material-wide.
+    const temperature = cachedGradient(this, desc.temperature_gradient);
+    const ages = system.views.age_norm;
 
     this.byVariant.forEach((mesh, variant) => { if (!buckets.has(variant)) mesh.count = 0; });
 
@@ -382,6 +499,10 @@ class MeshParticleSystem {
         mesh.setMatrixAt(n, TMP_MATRIX);
         if (colors) {
           TMP_COLOR.setRGB(colors[i * 4], colors[i * 4 + 1], colors[i * 4 + 2]);
+          if (temperature) {
+            const tint = evalGradient(temperature, 1 - Math.min(1, Math.max(0, ages ? ages[i] : 0)), TMP_TINT);
+            TMP_COLOR.setRGB(TMP_COLOR.r * tint[0], TMP_COLOR.g * tint[1], TMP_COLOR.b * tint[2]);
+          }
           mesh.setColorAt(n, TMP_COLOR);
         }
       }

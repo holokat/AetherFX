@@ -12,6 +12,19 @@ import { LAYER_TRANSPARENT, applyBlend, colorOf } from './particles.js';
 
 const TRAIL_STRIDE = 12;      // pos3, width, age_norm, u, color4, opacity, emissive
 
+/* Texture tiles per metre along a trail.
+ *
+ * The runtime already writes the only U a trail has: `u = cumulative distance +
+ * uv_scroll * time` (docs/RUNTIME.md section 7), in metres, accumulated along
+ * the source's whole path and never rebased when old vertices are dropped.  So
+ * the texture stays anchored to the ground the emitter covered and `uv_scroll`
+ * slides it along at its own rate - as long as the sampler wraps, which is what
+ * resources.js sets wrapS to.  One tile per metre is the natural rate for a
+ * coordinate the engine hands over in metres; a trail that wants another one
+ * would need `min_vertex_distance` (or a tiling factor) in the trail header,
+ * which the stream does not carry today. */
+const TRAIL_U_PER_METRE = 1.0;
+
 /* ------------------------------------------------------------------ *
  * strip builder
  * ------------------------------------------------------------------ */
@@ -126,7 +139,7 @@ function appendTrail(builder, data, count, cameraPosition, twistDegrees) {
     const o = i * TRAIL_STRIDE;
     const x = data[o], y = data[o + 1], z = data[o + 2];
     const width = data[o + 3];
-    const u = data[o + 5];
+    const u = data[o + 5] * TRAIL_U_PER_METRE;
     const alpha = data[o + 9] * data[o + 10];
     const before = Math.max(0, i - 1) * TRAIL_STRIDE;
     const after = Math.min(count - 1, i + 1) * TRAIL_STRIDE;

@@ -418,7 +418,7 @@ class TestNativeFrameSource:
             mesh_system = next(s for s in header["systems"] if s["render_mode"] == "mesh")
             assert set(mesh_system["arrays"]) == {
                 "position", "velocity", "size", "rotation", "color", "emissive",
-                "age_norm", "orientation", "scale3", "variant",
+                "age_norm", "age", "orientation", "scale3", "variant",
             }
             assert mesh_system["arrays"]["variant"]["dtype"] == "u32"
             billboard = next(s for s in header["systems"] if s["render_mode"] != "mesh")
