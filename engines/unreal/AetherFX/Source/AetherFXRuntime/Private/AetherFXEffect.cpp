@@ -126,12 +126,22 @@ bool UAetherFXEffect::Compile()
 
 	Compiled = MoveTemp(NewCompiled);
 
-	UE_LOG(LogAetherFX, Log, TEXT("UAetherFXEffect '%s' compiled: %d textures, %d meshes, %d materials, dt=%.6f"),
+	// The resolved speed: the authored `time_scale` with the document's controls
+	// folded in, which is what a host must drive its clock with. Reading it off
+	// the plan rather than the document is what makes a Speed control work.
+	if (const double Resolved = aetherfx_compiled_time_scale(Compiled->Get()); Resolved > 0.0)
+	{
+		TimeScale = Resolved;
+	}
+
+	UE_LOG(LogAetherFX, Log,
+		TEXT("UAetherFXEffect '%s' compiled: %d textures, %d meshes, %d materials, dt=%.6f, time_scale=%.3f"),
 		*GetName(),
 		aetherfx_compiled_texture_count(Compiled->Get()),
 		aetherfx_compiled_mesh_count(Compiled->Get()),
 		aetherfx_compiled_material_count(Compiled->Get()),
-		aetherfx_compiled_fixed_dt(Compiled->Get()));
+		aetherfx_compiled_fixed_dt(Compiled->Get()),
+		TimeScale);
 
 	return true;
 }

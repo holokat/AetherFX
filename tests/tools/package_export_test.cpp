@@ -496,3 +496,156 @@ TEST_CASE("export_effect rejects an unknown format", "[tools][package]") {
                                   {{"format", "unreal"}, {"path", (output_dir() / "nope").string()}}),
                     Error);
 }
+
+// ---------------------------------------------------------------------------
+// time_scale: the effect's own speed, honoured by everything that samples
+// frames over wall time. docs/RUNTIME.md 11.
+// ---------------------------------------------------------------------------
+
+namespace {
+
+// A small, fast document: one emitter into one particle system, no textures.
+// Rendering a sequence of it is cheap enough to do four times in one test.
+std::filesystem::path tiny_effect(const std::string& name, double duration, double time_scale) {
+    const nlohmann::json doc{
+        {"schema_version", "0.1.0"},
+        {"name", name},
+        {"duration", duration},
+        {"time_scale", time_scale},
+        {"seed", 1},
+        {"nodes",
+         nlohmann::json::array(
+             {{{"id", "ps"}, {"type", "particle_system"}, {"parameters", {{"max_particles", 200}, {"lifetime", 1.0}}}},
+              {{"id", "em"},
+               {"type", "emitter"},
+               {"parameters", {{"rate", 50.0}}},
+               {"inputs", {{"particle", "ps"}}}}})}};
+    const std::filesystem::path path = output_dir() / (name + ".json");
+    std::ofstream out(path);
+    out << doc.dump(2) << "\n";
+    out.close();
+    return path;
+}
+
+struct Sequence {
+    nlohmann::json result;
+    std::filesystem::path dir;
+    size_t frames = 0;
+};
+
+Sequence render_at(double time_scale, const std::string& tag, double fps = 10.0) {
+    Session session(output_dir());
+    const ToolRegistry& registry = ToolRegistry::standard();
+    registry.call(session, "load_effect", {{"path", tiny_effect("speed_" + tag, 2.0, time_scale).string()}});
+    Sequence sequence;
+    sequence.dir = output_dir() / ("speed_seq_" + tag);
+    std::error_code ec;
+    std::filesystem::remove_all(sequence.dir, ec);
+    sequence.result = registry.call(session, "render_preview",
+                                    {{"fps", fps},
+                                     {"width", 64},
+                                     {"height", 64},
+                                     {"contact_sheet", false},
+                                     {"out_dir", sequence.dir.string()}});
+    sequence.frames = sequence.result.at("frames").size();
+    return sequence;
+}
+
+}  // namespace
+
+TEST_CASE("a rendered sequence covers the effect's WALL duration", "[tools][render]") {
+    // 2 s of effect at 10 fps: 21 frames, one every 0.1 effect seconds.
+    const Sequence normal = render_at(1.0, "normal");
+    CHECK(normal.frames == 21);
+
+    // Twice as fast: the same 2 s of effect play over 1 s of wall clock, so
+    // half the frames, each 0.2 effect seconds further on.
+    const Sequence fast = render_at(2.0, "fast");
+    CHECK(fast.frames == 11);
+
+    // Half speed: 4 s of wall clock, twice the frames, 0.05 s apart.
+    const Sequence slow = render_at(0.5, "slow");
+    CHECK(slow.frames == 41);
+
+    // Every sequence still ends on the effect's last frame.
+    for (const Sequence* sequence : {&normal, &fast, &slow})
+        CHECK(sequence->result.at("statistics").at("frame_count").get<size_t>() == sequence->frames);
+}
+
+TEST_CASE("a flipbook's frame count and manifest follow time_scale", "[tools][io]") {
+    const ToolRegistry& registry = ToolRegistry::standard();
+
+    struct Case {
+        double time_scale;
+        const char* tag;
+        size_t frames;
+        double wall;
+    };
+    for (const Case& c : {Case{1.0, "one", 21, 2.0}, Case{2.0, "two", 11, 1.0}, Case{0.5, "half", 41, 4.0}}) {
+        CAPTURE(c.time_scale);
+        Session session(output_dir());
+        registry.call(session, "load_effect",
+                      {{"path", tiny_effect(std::string("flip_") + c.tag, 2.0, c.time_scale).string()}});
+        const std::filesystem::path sheet = output_dir() / (std::string("flip_") + c.tag + ".png");
+        const nlohmann::json result =
+            registry.call(session, "export_effect",
+                          {{"format", "flipbook"},
+                           {"path", sheet.string()},
+                           {"options", {{"fps", 10.0}, {"width", 32}, {"height", 32}}}});
+        const nlohmann::json& manifest = result.at("manifest");
+        CHECK(manifest.at("frames").get<size_t>() == c.frames);
+        // `duration` stays the effect's own seconds; `wall_duration` is what
+        // frames / fps actually plays back as.
+        CHECK(manifest.at("duration").get<double>() == Approx(2.0));
+        CHECK(manifest.at("time_scale").get<double>() == Approx(c.time_scale));
+        CHECK(manifest.at("wall_duration").get<double>() == Approx(c.wall));
+    }
+}
+
+TEST_CASE("a package records the resolved time_scale and wall duration", "[tools][package]") {
+    CHECK(fire().runtime.at("time_scale").get<double>() == Approx(1.0));
+    CHECK(fire().runtime.at("wall_duration").get<double>() ==
+          Approx(fire().runtime.at("duration").get<double>()));
+    CHECK(fire().manifest.at("time_scale").get<double>() == Approx(1.0));
+
+    // A Speed control is folded in before the package is written, so the
+    // package carries the resolved speed, not the authored one.
+    Session session(output_dir());
+    const ToolRegistry& registry = ToolRegistry::standard();
+    registry.call(session, "load_effect", {{"path", example("fire_aoe.json").string()}});
+    registry.call(session, "generate_default_controls", nlohmann::json::object());
+    registry.call(session, "set_control", {{"id", "global_speed"}, {"value", 2.0}});
+    const std::filesystem::path dir = output_dir() / "package_speed.aetherfx";
+    std::error_code ec;
+    std::filesystem::remove_all(dir, ec);
+    registry.call(session, "export_effect",
+                  {{"format", "package"}, {"path", dir.string()}, {"options", {{"preview", false}}}});
+
+    const nlohmann::json runtime = read_json(dir / "runtime.json");
+    CHECK(runtime.at("time_scale").get<double>() == Approx(2.0));
+    CHECK(runtime.at("wall_duration").get<double>() ==
+          Approx(runtime.at("duration").get<double>() / 2.0));
+    // The document beside it keeps the author's values, controls and all.
+    const nlohmann::json effect = read_json(dir / "effect.json");
+    CHECK_FALSE(effect.contains("time_scale"));
+}
+
+TEST_CASE("get_timeline reports the effect's speed", "[tools][timeline]") {
+    Session session(output_dir());
+    const ToolRegistry& registry = ToolRegistry::standard();
+    registry.call(session, "load_effect", {{"path", example("fire_aoe.json").string()}});
+
+    nlohmann::json timeline = registry.call(session, "get_timeline", nlohmann::json::object());
+    const double duration = timeline.at("duration").get<double>();
+    CHECK(timeline.at("time_scale").get<double>() == Approx(1.0));
+    CHECK(timeline.at("wall_duration").get<double>() == Approx(duration));
+
+    registry.call(session, "set_effect_property", {{"time_scale", 2.0}});
+    timeline = registry.call(session, "get_timeline", nlohmann::json::object());
+    CHECK(timeline.at("time_scale").get<double>() == Approx(2.0));
+    CHECK(timeline.at("wall_duration").get<double>() == Approx(duration / 2.0));
+
+    // Out of range is a validation error, reported rather than thrown.
+    const nlohmann::json bad = registry.call(session, "set_effect_property", {{"time_scale", 99.0}});
+    CHECK_FALSE(bad.at("diagnostics").at("ok").get<bool>());
+}

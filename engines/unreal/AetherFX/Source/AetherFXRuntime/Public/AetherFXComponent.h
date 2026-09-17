@@ -60,7 +60,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AetherFX")
 	bool bLoop = false;
 
-	/** Simulation clock multiplier. 1 = real time. */
+	/**
+	 * Per-instance clock multiplier. 1 = play the effect at its own speed.
+	 *
+	 * This is on top of the effect's own `TimeScale`: the two multiply. Use the
+	 * effect's for "this explosion is a slow one" and this one for a per-cast
+	 * slow motion or a hit-stop.
+	 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AetherFX", meta = (ClampMin = "0.0", UIMin = "0.0", UIMax = "4.0"))
 	float PlaybackRate = 1.0f;
 
@@ -134,9 +140,21 @@ public:
 	UFUNCTION(BlueprintPure, Category = "AetherFX")
 	bool IsPlaying() const { return bPlaying; }
 
-	/** Elapsed play time in seconds (the value handed to simulate_to). */
+	/**
+	 * Elapsed play time in EFFECT seconds (the value handed to simulate_to).
+	 *
+	 * Not wall-clock seconds: at a TimeScale of 2 this reaches the effect's
+	 * duration in half the real time.
+	 */
 	UFUNCTION(BlueprintPure, Category = "AetherFX")
 	float GetPlaybackTime() const { return static_cast<float>(PlayTime); }
+
+	/**
+	 * Effect seconds per wall-clock second: the effect's own `TimeScale`, or 1
+	 * when no effect is set. `PlaybackRate` is separate and multiplies it.
+	 */
+	UFUNCTION(BlueprintPure, Category = "AetherFX")
+	float GetTimeScale() const { return static_cast<float>(GetEffectTimeScale()); }
 
 	/** Simulation time the library actually reached (a whole number of fixed steps). */
 	UFUNCTION(BlueprintPure, Category = "AetherFX")
@@ -294,6 +312,10 @@ private:
 	/** Keyed "<material id>|<blend>"; see GetRibbonMaterial(). */
 	UPROPERTY(Transient)
 	TMap<FName, TObjectPtr<UMaterialInstanceDynamic>> RibbonMaterials;
+
+	// Double, and not the Blueprint float above: this multiplies the delta that
+	// drives the library's fixed-step accumulator, and rounding it costs steps.
+	double GetEffectTimeScale() const;
 
 	double PlayTime = 0.0;
 	bool bPlaying = false;

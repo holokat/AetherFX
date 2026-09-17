@@ -618,7 +618,10 @@ sheet is played once.
 schema_version: "0.1.0"
 name: string
 description: string   (one line for humans and the library; optional)
-duration: float [0.01..]
+duration: float [0.01..]           in EFFECT seconds
+time_scale: float = 1 [0.1..8]     playback speed: effect_time = wall_time * time_scale,
+                                  so the effect lasts duration / time_scale seconds.
+                                  Not a simulation parameter (docs/RUNTIME.md 11).
 seed: int
 timeline: {"phases": [{"name": "anticipation|activation|peak|sustain|decay|<custom>", "start": s, "end": s}]}
 layers: [{"id", "name", "role": telegraph|ignition|primary|secondary|interaction|aftermath|custom, "enabled", "metadata"}]
@@ -650,6 +653,10 @@ controls: [{
 keyframe tracks are transformed alike, results are clamped into the parameter's
 own range, and a control at its default value changes nothing at all.
 
+A binding's `node` may also be the reserved `$effect`, whose only parameter is
+`time_scale` (ops `multiply` and `set`): that is how a "Speed" control drives
+how fast the whole effect plays.
+
 ## Validation rules (implemented in `aether::validate`)
 
 E001 duplicate node id, E002 invalid id format, E003 unknown node type,
@@ -657,8 +664,8 @@ E004 unknown parameter, E005 parameter type mismatch, E006 value out of
 range, E007 invalid enum value, E008 unresolved reference, E009 port type
 mismatch, E010 required input missing, E011 multi-input given to single port,
 E012 cycle in parent chain, E013 cycle in input graph, E014 unknown layer,
-E015 effect duration invalid, E016 timeline phase invalid (end<=start or
-outside duration), E017 unknown port, E018 keyframe time invalid,
+E015 effect duration or time_scale invalid, E016 timeline phase invalid
+(end<=start or outside duration), E017 unknown port, E018 keyframe time invalid,
 E019 curve/gradient keys not sorted or out of [0,1], E020 schema version
 unsupported, E021 invalid or duplicate control id, E022 control binds to an
 unknown node or parameter, E023 control op does not fit the parameter type,

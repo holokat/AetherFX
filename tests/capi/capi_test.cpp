@@ -877,3 +877,80 @@ TEST_CASE("void_nebula exposes its procedural volume", "[capi][volume]") {
     REQUIRE(plain_runtime.handle != nullptr);
     CHECK(aetherfx_runtime_volume_count(plain_runtime) == 0);
 }
+
+// ---------------------------------------------------------------------------
+// time_scale: the host's wall-clock -> effect-time mapping
+// ---------------------------------------------------------------------------
+
+// The same tiny document, with a Speed control on the reserved "$effect"
+// target and an authored time_scale to compose with.
+const char* kSpeedEffect = R"JSON({
+  "schema_version": "0.1.0",
+  "name": "Speedy",
+  "duration": 2.0,
+  "time_scale": 1.5,
+  "seed": 1,
+  "layers": [],
+  "nodes": [{"id": "glow", "type": "light", "parameters": {"intensity": 10.0}}],
+  "controls": [
+    {"id": "global_speed", "label": "Speed", "group": "Global", "min": 0.25, "max": 4.0,
+     "default": 1.0, "value": 1.0, "step": 0.05, "unit": "x",
+     "bindings": [{"node": "$effect", "parameter": "time_scale", "op": "multiply"}]}
+  ]
+})JSON";
+
+TEST_CASE("time_scale is readable on the effect and the compiled plan", "[capi]") {
+    Effect fireball(example("fireball.json"));
+    REQUIRE(fireball.handle != nullptr);
+    CHECK(aetherfx_effect_time_scale(fireball) == Approx(1.0));
+
+    aetherfx_compiled* compiled = aetherfx_compile(fireball, 1.0 / 60.0);
+    REQUIRE(compiled != nullptr);
+    CHECK(aetherfx_compiled_time_scale(compiled) == Approx(1.0));
+    CHECK(aetherfx_compiled_wall_duration(compiled) == Approx(aetherfx_effect_duration(fireball)));
+    aetherfx_compiled_free(compiled);
+
+    CHECK(aetherfx_effect_time_scale(nullptr) < 0.0);
+    CHECK(aetherfx_compiled_time_scale(nullptr) < 0.0);
+    CHECK(aetherfx_compiled_wall_duration(nullptr) < 0.0);
+}
+
+TEST_CASE("a Speed control folds into the compiled time_scale", "[capi][controls]") {
+    aetherfx_effect* effect = aetherfx_effect_load_json(kSpeedEffect, 0);
+    REQUIRE(effect != nullptr);
+
+    // The authored value is what the document says; the control is separate.
+    CHECK(aetherfx_effect_time_scale(effect) == Approx(1.5));
+    REQUIRE(aetherfx_effect_control_index(effect, "global_speed") == 0);
+
+    aetherfx_compiled* plain = aetherfx_compile(effect, 1.0 / 60.0);
+    REQUIRE(plain != nullptr);
+    REQUIRE(aetherfx_compiled_ok(plain) == 1);
+    CHECK(aetherfx_compiled_time_scale(plain) == Approx(1.5));
+    CHECK(aetherfx_compiled_wall_duration(plain) == Approx(2.0 / 1.5));
+    aetherfx_compiled_free(plain);
+
+    // Set the control, then compile: a faster instance of the same effect.
+    REQUIRE(aetherfx_effect_set_control(effect, "global_speed", 2.0) == AETHERFX_OK);
+    aetherfx_compiled* fast = aetherfx_compile(effect, 1.0 / 60.0);
+    REQUIRE(fast != nullptr);
+    REQUIRE(aetherfx_compiled_ok(fast) == 1);
+    CHECK(aetherfx_compiled_time_scale(fast) == Approx(3.0));
+    CHECK(aetherfx_compiled_wall_duration(fast) == Approx(2.0 / 3.0));
+
+    // The simulation is untouched: the same fixed step, and the effect time a
+    // host reaches is simply its wall clock times the scale.
+    CHECK(aetherfx_compiled_fixed_dt(fast) == Approx(1.0 / 60.0));
+    aetherfx_runtime* runtime = aetherfx_runtime_create(fast);
+    REQUIRE(runtime != nullptr);
+    const double wall = 0.2;
+    REQUIRE(aetherfx_runtime_simulate_to(runtime, wall * aetherfx_compiled_time_scale(fast)) == AETHERFX_OK);
+    CHECK(aetherfx_runtime_time(runtime) == Approx(0.6).margin(1.0 / 60.0));
+
+    // The authored document still says 1.5: controls never rewrite it.
+    CHECK(aetherfx_effect_time_scale(effect) == Approx(1.5));
+
+    aetherfx_runtime_free(runtime);
+    aetherfx_compiled_free(fast);
+    aetherfx_effect_free(effect);
+}

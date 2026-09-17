@@ -247,7 +247,7 @@ or on an existing actor:
 UAetherFXComponent* FX = CreateDefaultSubobject<UAetherFXComponent>(TEXT("FX"));
 FX->Effect = MyEffect;
 FX->bLoop  = false;
-FX->PlaybackRate = 1.0f;
+FX->PlaybackRate = 1.0f;   // on top of the effect's own TimeScale; see "Speed" below
 // ...
 FX->Play();
 ```
@@ -265,13 +265,45 @@ FX->Play();
 | `Spawn Effect At Location` (static) | spawn + play in one call |
 
 `UAetherFXComponent` is `BlueprintSpawnableComponent` and exposes `Play`,
-`Stop`, `Seek`, `AdvanceAndRender`, `bLoop`, `PlaybackRate`, `LightScale` and a
-`Stats` category (`GetInstanceCount`, `GetLightCount`, `GetDecalCount`,
-`GetRibbonSectionCount`, `GetDrawableParticleCount`, `GetStatisticsJson`).
+`Stop`, `Seek`, `AdvanceAndRender`, `bLoop`, `PlaybackRate`, `LightScale`,
+`GetTimeScale` and a `Stats` category (`GetInstanceCount`, `GetLightCount`,
+`GetDecalCount`, `GetRibbonSectionCount`, `GetDrawableParticleCount`,
+`GetStatisticsJson`).
 
 `Seek` never runs the simulation backwards -- seeking to an earlier time resets
 the runtime and re-simulates from 0, which is exact but costs one fixed step per
 frame of the interval.
+
+### Speed
+
+Wall-clock seconds become effect seconds in exactly one place, the first line of
+`AdvanceAndRender`:
+
+```cpp
+PlayTime += DeltaSeconds * PlaybackRate * Effect->TimeScale;
+aetherfx_runtime_simulate_to(Runtime, PlayTime);
+```
+
+Two multipliers, and they compose:
+
+| | belongs to | saved with | use it for |
+|---|---|---|---|
+| `UAetherFXEffect::TimeScale` | the **effect** | the document and the package | "this explosion is a slow one" -- the author's choice, the same in the studio, in a flipbook and in game |
+| `UAetherFXComponent::PlaybackRate` | this **instance** | nothing | a per-cast slow motion, a hit-stop, a difficulty tier |
+
+`Compile()` sets `TimeScale` from `aetherfx_compiled_time_scale()`, the
+*resolved* value -- the document's `time_scale` with its Speed control folded in
+-- so a control an artist moved in the studio reaches the game. Editing the
+asset's `TimeScale` by hand is therefore temporary; `PlaybackRate` is the knob
+that is yours.
+
+`PlayTime`, `GetPlaybackTime()`, `Seek()`, `Duration` and `TailSeconds` are all
+**effect** seconds, so nothing about windows, phases or the loop wrap changes
+when the speed does. What changes is only how much real time an instance takes:
+`Effect->GetWallDuration()` is `Duration / TimeScale`. And because the
+simulation itself never sees `TimeScale` -- same fixed step, same seeds, same
+buffers at the same effect time -- playing an effect faster costs nothing and
+stays bit-identical to the studio. See docs/RUNTIME.md section 11.
 
 ## 7. What maps to what
 
@@ -477,6 +509,9 @@ export DEVELOPER_DIR=/Applications/Xcode-26.6.app/Contents/Developer   # macOS
   `sync_libs.sh` already writes `lib/Linux/` when run on Linux.
 * **Determinism.** `FixedTimeStep` is stored as a `double` on purpose -- 1/60
   rounded to `float` is larger than 1/60 and silently costs one simulation step
-  per second, which is enough to make Unreal disagree with the studio. If you
-  need lockstep-identical playback, drive `AdvanceAndRender` from the
-  authoritative clock and keep `PlaybackRate` at 1.
+  per second, which is enough to make Unreal disagree with the studio.
+  `TimeScale` is a `double` for the same reason: it multiplies the delta that
+  drives that accumulator. If you need lockstep-identical playback, drive
+  `AdvanceAndRender` from the authoritative clock and keep `PlaybackRate` at 1
+  (the effect's own `TimeScale` is fine -- it is part of the document, so every
+  host applies the same one).

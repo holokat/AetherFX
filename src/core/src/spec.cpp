@@ -619,7 +619,7 @@ const std::vector<std::pair<std::string, std::string>>& validation_code_table() 
         {"E012", "cycle in the parent chain"},
         {"E013", "cycle in the input graph"},
         {"E014", "unknown layer"},
-        {"E015", "effect duration invalid"},
+        {"E015", "effect duration or time_scale invalid"},
         {"E016", "timeline phase invalid (end<=start or outside duration)"},
         {"E017", "unknown port"},
         {"E018", "keyframe time invalid"},
@@ -881,10 +881,14 @@ nlohmann::json SpecRegistry::effect_json_schema() const {
     json control_ops = json::array();
     for (int i = 0; i <= static_cast<int>(ControlOp::HueShift); ++i)
         control_ops.push_back(to_string(static_cast<ControlOp>(i)));
+    defs["control_target"] = {
+        {"description", R"(a node id, or "$effect" for the document's own properties)"},
+        {"type", "string"},
+        {"pattern", R"(^(\$effect|[a-z][a-z0-9_]*)$)"}};
     defs["control_binding"] = {
         {"type", "object"},
         {"required", json::array({"node", "parameter"})},
-        {"properties", json{{"node", json{{"$ref", "#/$defs/node_id"}}},
+        {"properties", json{{"node", json{{"$ref", "#/$defs/control_target"}}},
                             {"parameter", json{{"type", "string"}}},
                             {"op", json{{"type", "string"}, {"enum", control_ops}}}}},
         {"additionalProperties", false}};
@@ -972,6 +976,11 @@ nlohmann::json SpecRegistry::effect_json_schema() const {
                   {"description", json{{"type", "string"},
                                        {"description", "one line describing the effect, for humans and libraries"}}},
                   {"duration", json{{"type", "number"}, {"minimum", 0.01}}},
+                  {"time_scale", json{{"type", "number"},
+                                      {"minimum", kMinTimeScale},
+                                      {"maximum", kMaxTimeScale},
+                                      {"description", "playback speed; effect_time = wall_time * time_scale, so "
+                                                      "the effect lasts duration / time_scale seconds"}}},
                   {"seed", json{{"type", "integer"}, {"minimum", 0}}},
                   {"timeline", json{{"$ref", "#/$defs/timeline"}}},
                   {"layers", json{{"type", "array"}, {"items", json{{"$ref", "#/$defs/layer"}}}}},

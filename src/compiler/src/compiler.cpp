@@ -329,6 +329,10 @@ nlohmann::json CompiledEffect::plan_json() const {
     j["fixed_dt"] = fixed_dt;
     j["source_hash"] = hex64(source_hash);
     j["controls"] = {{"count", effect.controls.size()}, {"applied", controls_applied}};
+    // The resolved speed, after the document's controls have been folded in:
+    // what a host must map its wall clock through (docs/RUNTIME.md 11).
+    j["time_scale"] = effect.time_scale;
+    j["wall_duration"] = effect.wall_duration();
 
     nlohmann::json node_array = nlohmann::json::array();
     std::map<std::string, size_t> backend_counts;

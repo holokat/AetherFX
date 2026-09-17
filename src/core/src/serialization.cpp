@@ -189,6 +189,12 @@ Effect effect_from_json(const nlohmann::json& j) {
         if (!j.at("duration").is_number()) throw Error("E005", "\"duration\" must be a number");
         e.duration = j.at("duration").get<double>();
     }
+    if (j.contains("time_scale") && !j.at("time_scale").is_null()) {
+        if (!j.at("time_scale").is_number()) throw Error("E005", "\"time_scale\" must be a number");
+        // Out of range is E015 from validate(), not a load failure: a document
+        // with a silly speed still opens so it can be seen and fixed.
+        e.time_scale = j.at("time_scale").get<double>();
+    }
     if (j.contains("seed")) {
         if (!j.at("seed").is_number_integer()) throw Error("E005", "\"seed\" must be an integer");
         e.seed = j.at("seed").get<uint32_t>();
@@ -279,6 +285,9 @@ nlohmann::json effect_to_json(const Effect& e) {
     // Optional members are only written when they carry something, so a
     // document without controls stays byte-for-byte what it was.
     if (!e.description.empty()) j["description"] = e.description;
+    // 1.0 is "plays at its authored speed", so the key stays out of every
+    // document that never asked for anything else and effect_hash is unmoved.
+    if (e.time_scale != 1.0) j["time_scale"] = e.time_scale;
     if (!e.controls.empty()) {
         nlohmann::json controls = nlohmann::json::array();
         for (const Control& c : e.controls) controls.push_back(control_to_json(c));

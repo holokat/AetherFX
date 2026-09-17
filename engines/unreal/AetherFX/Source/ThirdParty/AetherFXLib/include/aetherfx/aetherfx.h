@@ -209,6 +209,23 @@ AETHERFX_API const char* aetherfx_effect_name(const aetherfx_effect* effect);
 AETHERFX_API double aetherfx_effect_duration(const aetherfx_effect* effect);
 
 /*
+ * Authored playback speed, or a negative status on failure. Default 1.0,
+ * always within [0.1, 8.0] for a valid effect.
+ *
+ * It is the mapping the HOST owes the effect: advance the runtime by
+ * `delta_seconds * time_scale` effect seconds per wall-clock second, so the
+ * instance finishes after `duration / time_scale` seconds. The simulation is
+ * untouched by it -- same fixed timestep, same seeds, same buffers at the same
+ * effect time -- so playing an effect faster costs nothing and stays
+ * deterministic.
+ *
+ * This is the value the author typed. A control bound to the effect's speed
+ * only folds in at compile time, so read aetherfx_compiled_time_scale() for the
+ * number to actually drive the clock with.
+ */
+AETHERFX_API double aetherfx_effect_time_scale(const aetherfx_effect* effect);
+
+/*
  * Validates the effect and writes the diagnostics as JSON into `buf`:
  *   {"ok":bool,"errors":n,"warnings":n,"items":[{severity,code,message,node,param}]}
  *
@@ -248,6 +265,55 @@ AETHERFX_API int aetherfx_effect_set_parameter(aetherfx_effect* effect, const ch
 AETHERFX_API char* aetherfx_effect_to_json(const aetherfx_effect* effect, int indent);
 
 /* -------------------------------------------------------------------------
+ * Controls
+ * -------------------------------------------------------------------------
+ * An effect may ship named numeric knobs -- "Intensity", "Flame height",
+ * "Hue" -- that scale, offset or hue-rotate the parameters they are bound to.
+ * They are how a game spawns a weaker or a stronger instance of the same
+ * effect without touching the graph: set the controls, then compile. Moving a
+ * control is not an edit; the authored values stay as they are and the change
+ * is folded in by aetherfx_compile(). See docs/CONTROLS.md.
+ *
+ * Controls are indexed [0, count) in document order.
+ */
+
+struct aetherfx_control_info {
+    const char* id;            /* "flames_intensity" */
+    const char* label;         /* "Flame height", for a UI */
+    const char* group;         /* "Global", or the layer name */
+    const char* unit;          /* "x", "deg", or "" */
+    double min;
+    double max;
+    double default_value;      /* what a reset returns to */
+    double value;              /* what the next compile will apply */
+    double step;               /* increment a slider or an arrow key should use */
+    int binding_count;         /* node parameters this control drives */
+};
+
+/* Number of controls on the effect, or a negative status. */
+AETHERFX_API int aetherfx_effect_control_count(const aetherfx_effect* effect);
+
+/* Fills `out` for control `index`. The strings point into the effect and stay
+ * valid until it is freed or that control is changed. Returns AETHERFX_OK or a
+ * negative status. */
+AETHERFX_API int aetherfx_control_info(const aetherfx_effect* effect, int index,
+                                       struct aetherfx_control_info* out);
+
+/* Index of the control with this id, or AETHERFX_ERROR_OUT_OF_RANGE. */
+AETHERFX_API int aetherfx_effect_control_index(const aetherfx_effect* effect, const char* id);
+
+/*
+ * Sets one control. `value` must lie inside the control's [min, max];
+ * AETHERFX_ERROR_OUT_OF_RANGE says it does not, and
+ * AETHERFX_ERROR_INVALID_ARGUMENT that there is no such control.
+ *
+ * Like aetherfx_effect_set_parameter, the change applies to the next
+ * aetherfx_compile(); compiled effects and runtimes that already exist keep
+ * running the plan they were made with.
+ */
+AETHERFX_API int aetherfx_effect_set_control(aetherfx_effect* effect, const char* id, double value);
+
+/* -------------------------------------------------------------------------
  * Compilation
  * ------------------------------------------------------------------------- */
 
@@ -276,6 +342,21 @@ AETHERFX_API int aetherfx_compiled_ok(const aetherfx_compiled* compiled);
 
 /* The timestep this effect was compiled with, in seconds. Negative on failure. */
 AETHERFX_API double aetherfx_compiled_fixed_dt(const aetherfx_compiled* compiled);
+
+/*
+ * The resolved playback speed: the authored `time_scale` with the document's
+ * controls folded in. This is what a host drives its clock with:
+ *
+ *     play_time += delta_seconds * aetherfx_compiled_time_scale(compiled);
+ *     aetherfx_runtime_simulate_to(runtime, play_time);
+ *
+ * Negative on failure. See aetherfx_effect_time_scale().
+ */
+AETHERFX_API double aetherfx_compiled_time_scale(const aetherfx_compiled* compiled);
+
+/* Wall-clock seconds this compiled effect lasts: duration / time_scale.
+ * Negative on failure. */
+AETHERFX_API double aetherfx_compiled_wall_duration(const aetherfx_compiled* compiled);
 
 /* Compile diagnostics, same JSON shape as aetherfx_effect_validate(). Release
  * with aetherfx_free_string(). NULL on failure. */
@@ -598,10 +679,66 @@ AETHERFX_API int aetherfx_mesh_instance_info(const aetherfx_runtime* runtime, in
                                              struct aetherfx_mesh_instance_info* out);
 
 /* -------------------------------------------------------------------------
+ * Frame state: volumes
+ * -------------------------------------------------------------------------
+ * A `volume` node. `mode` is "procedural" -- a raymarched closed-form density
+ * field a host can draw on its own -- or "simulation", the V1 fluid stub that
+ * fills only id/bounds/density/temperature (and compiles with warning W104).
+ *
+ * The density function every backend must agree on, the meaning of `shape` and
+ * of `height` per shape, and the marching recipe are in docs/VOLUMES.md. The
+ * field is exactly zero outside the local box, so march
+ * `transform * [-extent, extent]` and nothing else.
+ *
+ * Added after ABI 1 shipped: purely additive (new struct, new functions), so
+ * AETHERFX_ABI_VERSION is unchanged. A host built against the older header
+ * simply never calls these.
+ */
+struct aetherfx_volume_info {
+    const char* id;
+    const char* mode;          /* "procedural" | "simulation" */
+    const char* shape;         /* sphere | column | disc | ring | nebula | cone */
+    const char* volume_type;   /* smoke | fire | fog | dust | magic | generic_density */
+    const char* backend;       /* "procedural_volume" | "volume_stub" */
+    float transform[16];       /* local -> world, column-major, meters */
+    float bounds_min[3];       /* world-space AABB of the shape */
+    float bounds_max[3];
+    float radius;              /* meters */
+    float height;              /* meters */
+    float density;             /* extinction per meter */
+    float emission;            /* HDR emission multiplier */
+    float color[4];            /* linear rgba, the shell tint */
+    float color_hot[4];        /* linear rgba, the core tint */
+    float filament_scale;      /* noise frequency, 1/m */
+    float strands;             /* 0 = soft clouds, 1 = ridged filaments */
+    float carve;               /* density threshold */
+    float softness;            /* shape edge falloff */
+    int spiral_arms;
+    float arm_sharpness;
+    float twist;               /* rad per meter of height */
+    float spin;                /* revolutions per second about local +Y */
+    float climb;               /* m/s of upward noise advection */
+    float scatter;             /* single-scatter weight from scene lights */
+    int march_steps;           /* quality hint; a backend may clamp it */
+    uint32_t seed;             /* noise seed */
+    float time;                /* effect time the fields above were evaluated at */
+    float temperature;         /* simulation mode */
+};
+
+/* Number of volumes this frame, or a negative status. */
+AETHERFX_API int aetherfx_runtime_volume_count(const aetherfx_runtime* runtime);
+
+/* Fills `out` for volume `index`. Returns AETHERFX_OK or a negative status. */
+AETHERFX_API int aetherfx_volume_info(const aetherfx_runtime* runtime, int index,
+                                      struct aetherfx_volume_info* out);
+
+/* -------------------------------------------------------------------------
  * Frame state: beams
  * -------------------------------------------------------------------------
  * A beam is one or more polylines: polyline 0 is the main bolt, the rest are
- * branches (draw them thinner -- the reference renderer uses 0.6x).
+ * branches. `width` is the node's nominal width; aetherfx_beam_path() below
+ * gives the real per-vertex width (already carrying the branch ratio, the width
+ * profile and the per-vertex variance) plus the rest of the strike detail.
  */
 struct aetherfx_beam_info {
     const char* id;
@@ -628,6 +765,67 @@ AETHERFX_API int aetherfx_beam_info(const aetherfx_runtime* runtime, int index,
  */
 AETHERFX_API int aetherfx_beam_polyline(const aetherfx_runtime* runtime, int beam, int polyline,
                                         const float** xyz, size_t* count);
+
+/* -------------------------------------------------------------------------
+ * Frame state: beam detail (added after ABI 1)
+ * -------------------------------------------------------------------------
+ * Everything a strike-quality bolt needs on top of the bare polylines: a width
+ * and a brightness per vertex, which generation of branch a path is, the fading
+ * copies of the previous path (`afterglow`) and the flares at the ends.
+ *
+ * Purely additive -- new structs and new functions, no existing layout touched --
+ * so AETHERFX_ABI_VERSION is unchanged and a host built against the older header
+ * simply never calls these and keeps drawing constant-width polylines.
+ *
+ * Draw a beam as a camera-facing ribbon of half-width
+ *   0.5 * vertex width * max(glow_width, 3 * core_width)
+ * and shade across it with, at |across| = t in [0, 1] over that half-width:
+ *   k(t, r)  = (1 - min(t/r, 1)^2)^2
+ *   core     = k(t, core_width / s)        * 2.20    with s = max(glow_width, 3 * core_width)
+ *   inner    = k(t, 3 * core_width / s)    * 0.80
+ *   outer    = k(t, 1)                     * 0.28
+ *   rgb      = mix(color, white, 0.85) * core + color * (inner + outer)
+ *   alpha    = saturate((core + inner + outer) * vertex intensity * path fade)
+ * That is exactly what the reference renderer and the studio viewer do.
+ */
+struct aetherfx_beam_style {
+    float core_width;   /* white-hot core, as a fraction of `width` */
+    float glow_width;   /* outer glow, as a fraction of `width` */
+    size_t path_count;  /* live paths; the same as aetherfx_beam_info.polyline_count */
+    size_t ghost_count; /* fading afterglow copies of the previous paths */
+    size_t flare_count;
+};
+
+struct aetherfx_beam_path {
+    size_t vertex_count;
+    int depth;               /* 0 = the main bolt, 1 = a branch, 2 = a sub-branch */
+    float fade;              /* whole-path multiplier; below 1 for branches and ghosts */
+    const float* position;   /* 3 * vertex_count floats, world space */
+    const float* width;      /* vertex_count floats, metres, full width */
+    const float* intensity;  /* vertex_count floats, multiplier on `emissive` */
+};
+
+struct aetherfx_beam_flare {
+    float position[3];
+    float radius;     /* metres */
+    float intensity;  /* multiplier on the beam's `emissive` */
+};
+
+/* Fills `out` with beam `beam`'s cross-section and buffer counts. */
+AETHERFX_API int aetherfx_beam_style(const aetherfx_runtime* runtime, int beam,
+                                     struct aetherfx_beam_style* out);
+
+/* One live path of one beam. The pointers stay valid until the next step. */
+AETHERFX_API int aetherfx_beam_path(const aetherfx_runtime* runtime, int beam, int path,
+                                    struct aetherfx_beam_path* out);
+
+/* One fading afterglow path of one beam; identical layout, lower `fade`. */
+AETHERFX_API int aetherfx_beam_ghost(const aetherfx_runtime* runtime, int beam, int ghost,
+                                     struct aetherfx_beam_path* out);
+
+/* One flare of one beam: index 0 is the target end, 1 the origin. */
+AETHERFX_API int aetherfx_beam_flare(const aetherfx_runtime* runtime, int beam, int index,
+                                     struct aetherfx_beam_flare* out);
 
 /* -------------------------------------------------------------------------
  * Frame state: trails

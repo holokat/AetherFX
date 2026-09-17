@@ -165,6 +165,17 @@ void UAetherFXComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 	AdvanceAndRender(DeltaTime);
 }
 
+double UAetherFXComponent::GetEffectTimeScale() const
+{
+	// A missing or nonsensical value plays the effect at its authored speed
+	// rather than freezing it.
+	if (Effect && Effect->TimeScale > 0.0)
+	{
+		return Effect->TimeScale;
+	}
+	return 1.0;
+}
+
 void UAetherFXComponent::AdvanceAndRender(float DeltaSeconds)
 {
 	if (!EnsureRuntime())
@@ -172,7 +183,20 @@ void UAetherFXComponent::AdvanceAndRender(float DeltaSeconds)
 		return;
 	}
 
-	PlayTime += static_cast<double>(FMath::Max(0.0f, DeltaSeconds)) * static_cast<double>(FMath::Max(0.0f, PlaybackRate));
+	// Wall-clock seconds become effect seconds here, and nowhere else.
+	//
+	// Two multipliers, and they compose. `TimeScale` belongs to the effect: the
+	// author chose it, its Speed control drives it, and every host plays the
+	// effect at it. `PlaybackRate` belongs to this component: a per-instance
+	// override for slow motion, a hit-stop, a difficulty tier.
+	//
+	// PlayTime stays an EFFECT time throughout, which is why Duration,
+	// TailSeconds, the loop wrap and Seek() all keep meaning exactly what they
+	// meant before. Doubles all the way: this delta drives a fixed-step
+	// accumulator inside the library, and rounding it costs steps.
+	PlayTime += static_cast<double>(FMath::Max(0.0f, DeltaSeconds))
+		* static_cast<double>(FMath::Max(0.0f, PlaybackRate))
+		* GetEffectTimeScale();
 
 	const double AuthoredDuration = (Effect && Effect->Duration > 0.0f) ? static_cast<double>(Effect->Duration) : 0.0;
 	if (bLoop && AuthoredDuration > 0.0 && PlayTime >= AuthoredDuration)

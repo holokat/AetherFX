@@ -4,9 +4,11 @@
 #include <string>
 #include <vector>
 
+#include "aether/core/controls.hpp"
 #include "aether/core/error.hpp"
 #include "aether/core/spec.hpp"
 #include "aether/core/validation.hpp"
+
 #include "tool_support.hpp"
 
 namespace aether::tools {
@@ -78,7 +80,16 @@ nlohmann::json get_timeline(Session& session, const nlohmann::json& args) {
         }
         bound[phase].push_back(node.id);
     }
+    // Phases and durations are effect seconds; `wall_duration` is how long the
+    // effect takes to play at its own `time_scale` (docs/RUNTIME.md 11). The
+    // speed is reported *resolved*, i.e. with the document's controls folded in
+    // the way compile() folds them, so this is the number a host would use.
+    // get_effect_json is where the authored value lives.
+    Effect resolved = doc.effect;
+    apply_controls(resolved);
     return {{"duration", doc.effect.duration},
+            {"time_scale", resolved.time_scale},
+            {"wall_duration", resolved.wall_duration()},
             {"phases", timeline_json(doc.effect.timeline)["phases"]},
             {"bound_nodes", std::move(bound)},
             {"unknown_phases", std::move(unknown)}};
@@ -105,7 +116,9 @@ void register_timeline_tools(ToolRegistry& registry) {
                  remove_timeline_phase);
 
     registry.add({"get_timeline",
-                  "Return the effect duration, the timeline phases and, per phase, the ids of the nodes bound to it "
+                  "Return the effect duration, its resolved time_scale and wall_duration (duration / time_scale: "
+                  "how long it takes to play, with any Speed control folded in), the timeline phases and, per "
+                  "phase, the ids of the nodes bound to it "
                   "(nodes whose `phase` parameter names it). Use it to see how the effect is staged in time.",
                   make_schema({}), false, "timeline"},
                  get_timeline);

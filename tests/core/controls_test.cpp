@@ -215,6 +215,7 @@ TEST_CASE("generated defaults cover Global and every layer", "[core][controls]")
     CHECK(std::find(ids.begin(), ids.end(), "global_intensity") != ids.end());
     CHECK(std::find(ids.begin(), ids.end(), "global_hue") != ids.end());
     CHECK(std::find(ids.begin(), ids.end(), "primary_density") != ids.end());
+    CHECK(std::find(ids.begin(), ids.end(), "global_speed") != ids.end());
 
     for (const Control& c : controls) {
         CAPTURE(c.id);
@@ -227,6 +228,14 @@ TEST_CASE("generated defaults cover Global and every layer", "[core][controls]")
             CHECK(c.max == Approx(180.0));
             CHECK(c.default_value == Approx(0.0));
             CHECK(c.unit == "deg");
+        } else if (c.id == "global_speed") {
+            // Speed drives the document's time_scale and runs tighter than the
+            // other multipliers: past 4x an effect is a flicker.
+            CHECK(c.min == Approx(0.25));
+            CHECK(c.max == Approx(4.0));
+            CHECK(c.default_value == Approx(1.0));
+            CHECK(c.step == Approx(0.05));
+            CHECK(c.unit == "x");
         } else {
             CHECK(c.min == Approx(0.0));
             CHECK(c.max == Approx(3.0));
@@ -344,4 +353,147 @@ TEST_CASE("a control only materialises a parameter when it changes it", "[core][
     // emissive defaults to 0, so doubling it is still 0 and nothing is written.
     CHECK(apply_controls(e) == 0);
     CHECK_FALSE(e.find_node("scorch")->has_param("emissive"));
+}
+
+// ---------------------------------------------------------------------------
+// time_scale: the effect's own speed, and the control that drives it
+// ---------------------------------------------------------------------------
+
+TEST_CASE("time_scale round trips and stays out of documents that never set it", "[core][serialization]") {
+    Effect e = make_effect();
+    CHECK(e.time_scale == Approx(1.0));
+    CHECK(e.wall_duration() == Approx(e.duration));
+
+    // 1.0 is the identity, so the key is never written and the canonical form
+    // of every existing document (and therefore its effect_hash) is unmoved.
+    CHECK_FALSE(effect_to_json(e).contains("time_scale"));
+
+    e.time_scale = 2.5;
+    const nlohmann::json j = effect_to_json(e);
+    REQUIRE(j.contains("time_scale"));
+    CHECK(j.at("time_scale").get<double>() == Approx(2.5));
+    CHECK(effect_from_json(j).time_scale == Approx(2.5));
+    CHECK(e.wall_duration() == Approx(e.duration / 2.5));
+
+    // Out of range still loads; validate() is what reports it.
+    const Effect wild = effect_from_json(nlohmann::json::parse(R"({"time_scale":99,"nodes":[]})"));
+    CHECK(wild.time_scale == Approx(99.0));
+    CHECK(effect_from_json(nlohmann::json::parse(R"({"nodes":[]})")).time_scale == Approx(1.0));
+}
+
+TEST_CASE("time_scale outside its range is E015", "[core][validation]") {
+    Effect e = make_effect();
+    for (const double good : {kMinTimeScale, 0.5, 1.0, 2.0, kMaxTimeScale}) {
+        CAPTURE(good);
+        e.time_scale = good;
+        CHECK(validate(e).ok());
+    }
+    for (const double bad : {0.0, -1.0, 0.09, 8.01, 1000.0}) {
+        CAPTURE(bad);
+        e.time_scale = bad;
+        const Diagnostics d = validate(e);
+        CHECK_FALSE(d.ok());
+        CHECK(has_code(d, "E015"));
+    }
+}
+
+TEST_CASE("a control can bind to $effect.time_scale", "[core][controls]") {
+    Effect e = make_effect();
+    Control speed;
+    speed.id = "speed";
+    speed.label = "Speed";
+    speed.group = "Global";
+    speed.min = 0.25;
+    speed.max = 4.0;
+    speed.step = 0.05;
+    speed.unit = "x";
+    speed.bindings.push_back(
+        ControlBinding{std::string(kEffectBindingNode), std::string(kTimeScaleParameter), ControlOp::Multiply});
+    e.controls.push_back(speed);
+    CHECK(validate(e).ok());
+
+    SECTION("at its default it folds to nothing") {
+        Effect folded = e;
+        CHECK(apply_controls(folded) == 0);
+        CHECK(folded.time_scale == Approx(1.0));
+    }
+
+    SECTION("multiply scales the document's time_scale") {
+        Effect folded = e;
+        folded.controls[0].value = 2.0;
+        CHECK(apply_controls(folded) == 1);
+        CHECK(folded.time_scale == Approx(2.0));
+        CHECK(folded.wall_duration() == Approx(folded.duration / 2.0));
+
+        // It composes with an authored time_scale, like every other multiplier.
+        Effect authored = e;
+        authored.time_scale = 1.5;
+        authored.controls[0].value = 2.0;
+        CHECK(apply_controls(authored) == 1);
+        CHECK(authored.time_scale == Approx(3.0));
+    }
+
+    SECTION("set replaces it") {
+        Effect folded = e;
+        folded.time_scale = 3.0;
+        folded.controls[0].bindings[0].op = ControlOp::Set;
+        folded.controls[0].value = 0.5;
+        CHECK(apply_controls(folded) == 1);
+        CHECK(folded.time_scale == Approx(0.5));
+    }
+
+    SECTION("the result is clamped into the range validate() enforces") {
+        Effect folded = e;
+        folded.time_scale = 4.0;
+        folded.controls[0].value = 4.0;  // 16x, well past kMaxTimeScale
+        CHECK(apply_controls(folded) == 1);
+        CHECK(folded.time_scale == Approx(kMaxTimeScale));
+        CHECK(validate(folded).ok());
+    }
+}
+
+TEST_CASE("$effect rejects anything but time_scale, multiply and set", "[core][controls]") {
+    Effect e = make_effect();
+    Control c;
+    c.id = "speed";
+    c.bindings.push_back(ControlBinding{std::string(kEffectBindingNode), "duration", ControlOp::Multiply});
+    e.controls.push_back(c);
+    CHECK(has_code(validate(e), "E022"));
+
+    e.controls[0].bindings[0].parameter = std::string(kTimeScaleParameter);
+    CHECK(validate(e).ok());
+
+    for (const ControlOp op : {ControlOp::Add, ControlOp::HueShift}) {
+        CAPTURE(to_string(op));
+        e.controls[0].bindings[0].op = op;
+        CHECK(has_code(validate(e), "E023"));
+        // A rejected op is skipped when folding, never applied.
+        Effect folded = e;
+        folded.controls[0].value = 2.0;
+        CHECK(apply_controls(folded) == 0);
+        CHECK(folded.time_scale == Approx(1.0));
+    }
+}
+
+TEST_CASE("the generated Speed control drives time_scale", "[core][controls]") {
+    const Effect e = make_effect();
+    const std::vector<Control> controls = generate_default_controls(e);
+    const Control* speed = nullptr;
+    for (const Control& c : controls)
+        if (c.id == "global_speed") speed = &c;
+    REQUIRE(speed != nullptr);
+    CHECK(speed->label == "Speed");
+    CHECK(speed->group == "Global");
+    REQUIRE(speed->bindings.size() == 1);
+    CHECK(speed->bindings[0].node == kEffectBindingNode);
+    CHECK(speed->bindings[0].parameter == kTimeScaleParameter);
+    CHECK(speed->bindings[0].op == ControlOp::Multiply);
+
+    Effect controlled = e;
+    controlled.controls = controls;
+    REQUIRE(validate(controlled).ok());
+    controlled.find_control("global_speed")->value = 0.5;
+    CHECK(apply_controls(controlled) == 1);
+    CHECK(controlled.time_scale == Approx(0.5));
+    CHECK(controlled.wall_duration() == Approx(controlled.duration * 2.0));
 }

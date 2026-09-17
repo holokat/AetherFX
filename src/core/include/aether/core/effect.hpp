@@ -4,6 +4,7 @@
 #include <map>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <nlohmann/json.hpp>
@@ -89,11 +90,25 @@ struct Control {
     bool operator==(const Control&) const = default;
 };
 
+// The reserved binding target that addresses the effect document itself rather
+// than a node, so a control can drive an effect-level property (docs/CONTROLS.md).
+inline constexpr std::string_view kEffectBindingNode = "$effect";
+// The only effect-level property a control may bind to today.
+inline constexpr std::string_view kTimeScaleParameter = "time_scale";
+// The range `time_scale` is valid in; outside it validate() reports E015.
+inline constexpr double kMinTimeScale = 0.1;
+inline constexpr double kMaxTimeScale = 8.0;
+
 struct Effect {
     std::string schema_version = "0.1.0";
     std::string name = "untitled";
     std::string description;  // one line for humans and the library UI (optional)
     double duration = 2.0;
+    // How fast the effect plays. A host maps wall-clock seconds to effect
+    // seconds as `effect_time = wall_time * time_scale`, so the effect's wall
+    // duration is `duration / time_scale`. The simulation itself is untouched:
+    // the same effect time always produces the same frame (docs/RUNTIME.md 11).
+    double time_scale = 1.0;
     uint32_t seed = 1;
     Timeline timeline;
     std::vector<Layer> layers;
@@ -120,6 +135,9 @@ struct Effect {
     NodeId unique_id(std::string_view base) const;
     // Generates a control id that is not in use, same scheme as unique_id.
     std::string unique_control_id(std::string_view base) const;
+    // Wall-clock seconds this effect lasts at its own speed: `duration /
+    // time_scale`. Falls back to `duration` when time_scale is not positive.
+    double wall_duration() const { return time_scale > 0.0 ? duration / time_scale : duration; }
     // World transform of a spatial node at `time`, composing `parent` chains
     // (position/rotation/scale parameters). Identity for non-spatial nodes.
     Mat4 world_transform(const Node& node, double time) const;

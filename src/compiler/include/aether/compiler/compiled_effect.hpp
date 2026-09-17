@@ -63,6 +63,12 @@ struct CompiledEffect {
     uint64_t source_hash = 0;           // effect_hash at compile time
     int controls_applied = 0;           // bindings that changed a parameter in `effect`
 
+    // The resolved playback speed and the wall-clock seconds the effect lasts
+    // at it. Both read `effect`, which already has the controls folded in, so a
+    // host never has to re-apply anything (docs/RUNTIME.md 11).
+    double time_scale() const { return effect.time_scale; }
+    double wall_duration() const { return effect.wall_duration(); }
+
     const CompiledNode* find(std::string_view id) const;
     std::vector<const CompiledNode*> of_type(NodeType t) const;
     nlohmann::json plan_json() const;   // {"nodes":[...], "tiers": {...counts}, "resources": {...}, "diagnostics": ...}

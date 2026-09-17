@@ -48,6 +48,27 @@ public:
 	float Duration = 0.0f;
 
 	/**
+	 * The effect's own playback speed (default 1).
+	 *
+	 * It is a mapping from wall time to effect time, not a change to the
+	 * simulation: the component advances the runtime by
+	 * `DeltaTime * TimeScale`, so the instance finishes after
+	 * `Duration / TimeScale` seconds while every frame at a given effect time
+	 * is bit-identical to what the studio shows.
+	 *
+	 * Compile() overwrites it with the *resolved* speed from the plan -- the
+	 * document's `time_scale` with its Speed control folded in -- because that
+	 * is what the effect actually is. To make one instance faster than the
+	 * others, use the component's `PlaybackRate`, which multiplies this.
+	 *
+	 * Double, not float, for the same reason as FixedTimeStep below: this
+	 * multiplies the delta that drives a fixed-step accumulator, and rounding
+	 * it costs simulation steps.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AetherFX")
+	double TimeScale = 1.0;
+
+	/**
 	 * Simulation timestep the package was exported with; 0 means "library
 	 * default" (1/60).
 	 *
@@ -58,6 +79,13 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AetherFX")
 	double FixedTimeStep = 0.0;
+
+	/** Wall-clock seconds this effect lasts: Duration / TimeScale. */
+	UFUNCTION(BlueprintPure, Category = "AetherFX")
+	float GetWallDuration() const
+	{
+		return TimeScale > 0.0 ? static_cast<float>(Duration / TimeScale) : Duration;
+	}
 
 	/** 16 hex digits identifying the source document; used to skip needless re-imports. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AetherFX")

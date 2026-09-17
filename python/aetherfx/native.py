@@ -566,6 +566,7 @@ _SIGNATURES: dict[str, tuple[Any, tuple[Any, ...]]] = {
     "aetherfx_effect_free": (None, (c_void_p,)),
     "aetherfx_effect_name": (c_char_p, (c_void_p,)),
     "aetherfx_effect_duration": (c_double, (c_void_p,)),
+    "aetherfx_effect_time_scale": (c_double, (c_void_p,)),
     "aetherfx_effect_validate": (c_int, (c_void_p, c_char_p, c_size_t)),
     "aetherfx_effect_set_parameter": (c_int, (c_void_p, c_char_p, c_char_p, c_char_p)),
     "aetherfx_effect_to_json": (c_void_p, (c_void_p, c_int)),
@@ -579,6 +580,8 @@ _SIGNATURES: dict[str, tuple[Any, tuple[Any, ...]]] = {
     "aetherfx_compiled_free": (None, (c_void_p,)),
     "aetherfx_compiled_ok": (c_int, (c_void_p,)),
     "aetherfx_compiled_fixed_dt": (c_double, (c_void_p,)),
+    "aetherfx_compiled_time_scale": (c_double, (c_void_p,)),
+    "aetherfx_compiled_wall_duration": (c_double, (c_void_p,)),
     "aetherfx_compiled_diagnostics_json": (c_void_p, (c_void_p,)),
     "aetherfx_compiled_plan_json": (c_void_p, (c_void_p,)),
     # -- baked textures ----------------------------------------------------
@@ -923,6 +926,28 @@ class Effect(_Handle):
             raise NativeError(int(value), _last_error(library), "aetherfx_effect_duration")
         return float(value)
 
+    @property
+    def time_scale(self) -> float:
+        """Authored playback speed (default 1.0, valid in ``[0.1, 8.0]``).
+
+        The mapping a host owes the effect: ``effect_time = wall_time *
+        time_scale``, so the instance lasts ``duration / time_scale`` seconds.
+        The simulation itself is untouched by it.  A control bound to the
+        effect's speed only folds in at compile time, so drive a clock with
+        :attr:`Compiled.time_scale`, not with this.
+        """
+        library, handle = self._use()
+        value = library.aetherfx_effect_time_scale(handle)
+        if value < 0.0:
+            raise NativeError(int(value), _last_error(library), "aetherfx_effect_time_scale")
+        return float(value)
+
+    @property
+    def wall_duration(self) -> float:
+        """Wall-clock seconds this effect lasts: ``duration / time_scale``."""
+        scale = self.time_scale
+        return self.duration / scale if scale > 0.0 else self.duration
+
     def validate(self) -> dict[str, Any]:
         """Diagnostics as ``{"ok", "errors", "warnings", "items": [...]}``.
 
@@ -1052,6 +1077,30 @@ class Compiled(_Handle):
         value = library.aetherfx_compiled_fixed_dt(handle)
         if value < 0.0:
             raise NativeError(int(value), _last_error(library), "aetherfx_compiled_fixed_dt")
+        return float(value)
+
+    @property
+    def time_scale(self) -> float:
+        """Resolved playback speed: the authored value with controls folded in.
+
+        This is the number to drive a clock with::
+
+            play_time += delta_seconds * compiled.time_scale
+            runtime.simulate_to(play_time)
+        """
+        library, handle = self._use()
+        value = library.aetherfx_compiled_time_scale(handle)
+        if value < 0.0:
+            raise NativeError(int(value), _last_error(library), "aetherfx_compiled_time_scale")
+        return float(value)
+
+    @property
+    def wall_duration(self) -> float:
+        """Wall-clock seconds this effect lasts: ``duration / time_scale``."""
+        library, handle = self._use()
+        value = library.aetherfx_compiled_wall_duration(handle)
+        if value < 0.0:
+            raise NativeError(int(value), _last_error(library), "aetherfx_compiled_wall_duration")
         return float(value)
 
     @property

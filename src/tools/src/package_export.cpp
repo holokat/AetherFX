@@ -559,6 +559,11 @@ nlohmann::json export_package(Session& session, Document& doc, const nlohmann::j
                            {"version", kPackageVersion},
                            {"effect", effect.name},
                            {"duration", effect.duration},
+                           // `duration` is effect seconds; a host maps its wall
+                           // clock through `time_scale` and the instance lasts
+                           // `wall_duration` (docs/PACKAGE_FORMAT.md 5).
+                           {"time_scale", resolved.time_scale},
+                           {"wall_duration", resolved.wall_duration()},
                            {"seed", effect.seed},
                            {"fixed_dt", plan->fixed_dt},
                            {"source_hash", hex16(plan->source_hash)},
@@ -629,6 +634,8 @@ nlohmann::json export_package(Session& session, Document& doc, const nlohmann::j
                             {"version", kPackageVersion},
                             {"effect", effect.name},
                             {"duration", effect.duration},
+                            {"time_scale", resolved.time_scale},
+                            {"wall_duration", resolved.wall_duration()},
                             {"seed", effect.seed},
                             {"fixed_dt", plan->fixed_dt},
                             {"generator", kGenerator},
