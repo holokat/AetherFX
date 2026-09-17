@@ -1,7 +1,7 @@
 {
   "schema_version": "0.1.0",
   "name": "Fire Bolt",
-  "description": "A focused bolt of fiery energy that streaks toward the target, leaving a trail of embers and heat.",
+  "description": "A charred molten bolt: a dark cracked core venting lava light, wrapped in a flame sheath that streams back into long curling ribbons of fire, embers and smoke, ending in a scorching impact.",
   "duration": 3.0,
   "seed": 8317,
   "timeline": {
@@ -75,8 +75,8 @@
       "id": "tex_flame",
       "type": "texture",
       "parameters": {
-        "width": 128,
-        "height": 160,
+        "width": 176,
+        "height": 224,
         "frames": 26,
         "graph": {
           "nodes": [
@@ -286,7 +286,7 @@
               "op": "erosion",
               "params": {
                 "amount": 0.2,
-                "frequency": 11.0,
+                "frequency": 30.0,
                 "seed": 330
               },
               "inputs": {
@@ -348,6 +348,16 @@
               },
               "inputs": {
                 "a": "heat"
+              }
+            },
+            {
+              "id": "soften",
+              "op": "blur",
+              "params": {
+                "radius": 1.4
+              },
+              "inputs": {
+                "a": "lift"
               }
             },
             {
@@ -421,7 +431,7 @@
                 ]
               },
               "inputs": {
-                "a": "lift"
+                "a": "soften"
               }
             }
           ],
@@ -433,8 +443,8 @@
       "id": "tex_flame_thin",
       "type": "texture",
       "parameters": {
-        "width": 96,
-        "height": 192,
+        "width": 144,
+        "height": 288,
         "frames": 24,
         "graph": {
           "nodes": [
@@ -644,7 +654,7 @@
               "op": "erosion",
               "params": {
                 "amount": 0.26,
-                "frequency": 15.0,
+                "frequency": 38.0,
                 "seed": 366
               },
               "inputs": {
@@ -706,6 +716,16 @@
               },
               "inputs": {
                 "a": "heat"
+              }
+            },
+            {
+              "id": "soften",
+              "op": "blur",
+              "params": {
+                "radius": 1.4
+              },
+              "inputs": {
+                "a": "lift"
               }
             },
             {
@@ -779,7 +799,7 @@
                 ]
               },
               "inputs": {
-                "a": "lift"
+                "a": "soften"
               }
             }
           ],
@@ -791,8 +811,8 @@
       "id": "tex_petal",
       "type": "texture",
       "parameters": {
-        "width": 160,
-        "height": 160,
+        "width": 224,
+        "height": 224,
         "frames": 20,
         "graph": {
           "nodes": [
@@ -1002,7 +1022,7 @@
               "op": "erosion",
               "params": {
                 "amount": 0.18,
-                "frequency": 9.0,
+                "frequency": 24.0,
                 "seed": 404
               },
               "inputs": {
@@ -1064,6 +1084,16 @@
               },
               "inputs": {
                 "a": "heat"
+              }
+            },
+            {
+              "id": "soften",
+              "op": "blur",
+              "params": {
+                "radius": 1.4
+              },
+              "inputs": {
+                "a": "lift"
               }
             },
             {
@@ -1137,7 +1167,7 @@
                 ]
               },
               "inputs": {
-                "a": "lift"
+                "a": "soften"
               }
             }
           ],
@@ -1164,6 +1194,153 @@
             }
           ],
           "output": "r"
+        }
+      }
+    },
+    {
+      "id": "tex_vent",
+      "type": "texture",
+      "parameters": {
+        "width": 128,
+        "height": 40,
+        "graph": {
+          "nodes": [
+            {
+              "id": "gu",
+              "op": "gradient_linear",
+              "params": {
+                "angle": 0.0,
+                "start": 0.0,
+                "end": 1.0
+              }
+            },
+            {
+              "id": "gui",
+              "op": "invert",
+              "inputs": {
+                "a": "gu"
+              }
+            },
+            {
+              "id": "hb",
+              "op": "math",
+              "params": {
+                "mode": "min"
+              },
+              "inputs": {
+                "a": "gu",
+                "b": "gui"
+              }
+            },
+            {
+              "id": "hprof",
+              "op": "levels",
+              "params": {
+                "in_low": 0.02,
+                "in_high": 0.3,
+                "gamma": 1.3
+              },
+              "inputs": {
+                "a": "hb"
+              }
+            },
+            {
+              "id": "gv",
+              "op": "gradient_linear",
+              "params": {
+                "angle": 90.0,
+                "start": 0.0,
+                "end": 1.0
+              }
+            },
+            {
+              "id": "gvi",
+              "op": "invert",
+              "inputs": {
+                "a": "gv"
+              }
+            },
+            {
+              "id": "vb",
+              "op": "math",
+              "params": {
+                "mode": "min"
+              },
+              "inputs": {
+                "a": "gv",
+                "b": "gvi"
+              }
+            },
+            {
+              "id": "vprof",
+              "op": "levels",
+              "params": {
+                "in_low": 0.02,
+                "in_high": 0.42,
+                "gamma": 1.0
+              },
+              "inputs": {
+                "a": "vb"
+              }
+            },
+            {
+              "id": "bm",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "hprof",
+                "b": "vprof"
+              }
+            },
+            {
+              "id": "n",
+              "op": "fbm",
+              "params": {
+                "frequency": 5.0,
+                "octaves": 4,
+                "gain": 0.55,
+                "seed": 821
+              }
+            },
+            {
+              "id": "nl",
+              "op": "levels",
+              "params": {
+                "in_low": 0.28,
+                "in_high": 0.8,
+                "out_low": 0.35,
+                "out_high": 1.0
+              },
+              "inputs": {
+                "a": "n"
+              }
+            },
+            {
+              "id": "m",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "bm",
+                "b": "nl"
+              }
+            },
+            {
+              "id": "l",
+              "op": "levels",
+              "params": {
+                "in_low": 0.03,
+                "in_high": 0.55
+              },
+              "inputs": {
+                "a": "m"
+              }
+            }
+          ],
+          "output": "l"
         }
       }
     },
@@ -1222,15 +1399,71 @@
       }
     },
     {
-      "id": "tex_ribbon",
+      "id": "tex_erosion",
       "type": "texture",
       "parameters": {
-        "width": 16,
-        "height": 64,
+        "width": 256,
+        "height": 256,
         "graph": {
           "nodes": [
             {
-              "id": "g",
+              "id": "a",
+              "op": "fbm",
+              "params": {
+                "frequency": 9.0,
+                "octaves": 5,
+                "gain": 0.55,
+                "seed": 4407
+              }
+            },
+            {
+              "id": "b",
+              "op": "fbm",
+              "params": {
+                "frequency": 23.0,
+                "octaves": 3,
+                "gain": 0.5,
+                "seed": 9931
+              }
+            },
+            {
+              "id": "m",
+              "op": "math",
+              "params": {
+                "mode": "lerp",
+                "factor": 0.42
+              },
+              "inputs": {
+                "a": "a",
+                "b": "b"
+              }
+            },
+            {
+              "id": "l",
+              "op": "levels",
+              "params": {
+                "in_low": 0.24,
+                "in_high": 0.8
+              },
+              "inputs": {
+                "a": "m"
+              }
+            }
+          ],
+          "output": "l"
+        }
+      }
+    },
+    {
+      "id": "tex_ribbon",
+      "type": "texture",
+      "parameters": {
+        "width": 256,
+        "height": 128,
+        "graph": {
+          "nodes": [
+            {
+              "id": "gv",
               "op": "gradient_linear",
               "params": {
                 "angle": 90.0,
@@ -1239,31 +1472,112 @@
               }
             },
             {
-              "id": "gi",
+              "id": "gvi",
               "op": "invert",
               "inputs": {
-                "a": "g"
+                "a": "gv"
+              }
+            },
+            {
+              "id": "band",
+              "op": "math",
+              "params": {
+                "mode": "min"
+              },
+              "inputs": {
+                "a": "gv",
+                "b": "gvi"
+              }
+            },
+            {
+              "id": "prof",
+              "op": "levels",
+              "params": {
+                "in_low": 0.015,
+                "in_high": 0.46,
+                "gamma": 1.7,
+                "out_high": 1.0
+              },
+              "inputs": {
+                "a": "band"
+              }
+            },
+            {
+              "id": "wisp",
+              "op": "fbm",
+              "params": {
+                "frequency": 3.0,
+                "octaves": 4,
+                "gain": 0.55,
+                "seed": 611
+              }
+            },
+            {
+              "id": "wispl",
+              "op": "levels",
+              "params": {
+                "in_low": 0.3,
+                "in_high": 0.78,
+                "out_low": 0.58,
+                "out_high": 1.0
+              },
+              "inputs": {
+                "a": "wisp"
+              }
+            },
+            {
+              "id": "fine",
+              "op": "fbm",
+              "params": {
+                "frequency": 7.0,
+                "octaves": 3,
+                "gain": 0.5,
+                "seed": 733
+              }
+            },
+            {
+              "id": "finel",
+              "op": "levels",
+              "params": {
+                "in_low": 0.34,
+                "in_high": 0.8,
+                "out_low": 0.76,
+                "out_high": 1.0
+              },
+              "inputs": {
+                "a": "fine"
+              }
+            },
+            {
+              "id": "streaks",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "wispl",
+                "b": "finel"
               }
             },
             {
               "id": "m",
               "op": "math",
               "params": {
-                "mode": "min"
+                "mode": "multiply"
               },
               "inputs": {
-                "a": "g",
-                "b": "gi"
+                "a": "prof",
+                "b": "streaks"
               }
             },
             {
               "id": "l",
               "op": "levels",
               "params": {
-                "in_low": 0.02,
-                "in_high": 0.44,
-                "gamma": 1.9,
-                "out_high": 0.8
+                "in_low": 0.0,
+                "in_high": 0.72,
+                "gamma": 1.15,
+                "out_high": 0.92
               },
               "inputs": {
                 "a": "m"
@@ -1277,27 +1591,36 @@
                   [
                     0.0,
                     [
-                      0.22,
-                      0.01,
+                      0.16,
+                      0.008,
                       0.0,
                       1.0
                     ]
                   ],
                   [
-                    0.4,
+                    0.32,
                     [
-                      0.95,
-                      0.17,
-                      0.015,
+                      0.9,
+                      0.14,
+                      0.012,
                       1.0
                     ]
                   ],
                   [
-                    0.78,
+                    0.66,
                     [
                       1.0,
-                      0.44,
+                      0.42,
                       0.06,
+                      1.0
+                    ]
+                  ],
+                  [
+                    0.88,
+                    [
+                      1.0,
+                      0.72,
+                      0.26,
                       1.0
                     ]
                   ],
@@ -1305,8 +1628,8 @@
                     1.0,
                     [
                       1.0,
-                      0.76,
-                      0.28,
+                      0.94,
+                      0.72,
                       1.0
                     ]
                   ]
@@ -1330,61 +1653,116 @@
         "graph": {
           "nodes": [
             {
-              "id": "g",
+              "id": "core",
               "op": "gradient_radial",
               "params": {
                 "radius": 0.5,
-                "inner_radius": 0.03,
+                "inner_radius": 0.07,
                 "falloff": "quadratic"
               }
             },
             {
-              "id": "st",
-              "op": "star",
+              "id": "halo",
+              "op": "gradient_radial",
               "params": {
-                "points": 6,
-                "width": 0.045,
-                "outer_radius": 0.48,
-                "core_radius": 0.07,
-                "softness": 0.012
+                "radius": 0.5,
+                "inner_radius": 0.0,
+                "falloff": "smooth"
               }
             },
             {
-              "id": "st2",
-              "op": "star",
+              "id": "n",
+              "op": "fbm",
               "params": {
-                "points": 4,
-                "width": 0.028,
-                "outer_radius": 0.5,
-                "core_radius": 0.05,
-                "softness": 0.01,
-                "rotation": 24.0
+                "frequency": 3.4,
+                "octaves": 4,
+                "gain": 0.55,
+                "seed": 5171
               }
             },
             {
-              "id": "a",
+              "id": "nl",
+              "op": "levels",
+              "params": {
+                "in_low": 0.3,
+                "in_high": 0.84,
+                "out_low": 0.1,
+                "out_high": 1.0
+              },
+              "inputs": {
+                "a": "n"
+              }
+            },
+            {
+              "id": "n2",
+              "op": "fbm",
+              "params": {
+                "frequency": 8.0,
+                "octaves": 3,
+                "gain": 0.5,
+                "seed": 2213
+              }
+            },
+            {
+              "id": "n2l",
+              "op": "levels",
+              "params": {
+                "in_low": 0.36,
+                "in_high": 0.88,
+                "out_low": 0.4,
+                "out_high": 1.0
+              },
+              "inputs": {
+                "a": "n2"
+              }
+            },
+            {
+              "id": "lick0",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "halo",
+                "b": "nl"
+              }
+            },
+            {
+              "id": "lick1",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "lick0",
+                "b": "n2l"
+              }
+            },
+            {
+              "id": "lick",
+              "op": "levels",
+              "params": {
+                "in_low": 0.03,
+                "in_high": 0.52,
+                "gamma": 1.1
+              },
+              "inputs": {
+                "a": "lick1"
+              }
+            },
+            {
+              "id": "out",
               "op": "math",
               "params": {
                 "mode": "max"
               },
               "inputs": {
-                "a": "g",
-                "b": "st"
-              }
-            },
-            {
-              "id": "b",
-              "op": "math",
-              "params": {
-                "mode": "max"
-              },
-              "inputs": {
-                "a": "a",
-                "b": "st2"
+                "a": "core",
+                "b": "lick"
               }
             }
           ],
-          "output": "b"
+          "output": "out"
         }
       }
     },
@@ -1456,7 +1834,57 @@
         ],
         "emissive_intensity": 0.25,
         "dissolve": 0.34,
-        "erosion": 0.26
+        "erosion": 0.26,
+        "temperature_gradient": [
+          [
+            0.0,
+            [
+              0.18,
+              0.02,
+              0.004,
+              1.0
+            ]
+          ],
+          [
+            0.3,
+            [
+              0.8,
+              0.13,
+              0.015,
+              1.0
+            ]
+          ],
+          [
+            0.6,
+            [
+              1.0,
+              0.4,
+              0.06,
+              1.0
+            ]
+          ],
+          [
+            0.85,
+            [
+              1.0,
+              0.72,
+              0.26,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              1.0,
+              0.86,
+              0.5,
+              1.0
+            ]
+          ]
+        ]
+      },
+      "inputs": {
+        "noise_texture": "tex_erosion"
       }
     },
     {
@@ -1474,7 +1902,57 @@
         ],
         "emissive_intensity": 0.18,
         "dissolve": 0.46,
-        "erosion": 0.3
+        "erosion": 0.3,
+        "temperature_gradient": [
+          [
+            0.0,
+            [
+              0.18,
+              0.02,
+              0.004,
+              1.0
+            ]
+          ],
+          [
+            0.3,
+            [
+              0.8,
+              0.13,
+              0.015,
+              1.0
+            ]
+          ],
+          [
+            0.6,
+            [
+              1.0,
+              0.4,
+              0.06,
+              1.0
+            ]
+          ],
+          [
+            0.85,
+            [
+              1.0,
+              0.72,
+              0.26,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              1.0,
+              0.86,
+              0.5,
+              1.0
+            ]
+          ]
+        ]
+      },
+      "inputs": {
+        "noise_texture": "tex_erosion"
       }
     },
     {
@@ -1492,7 +1970,57 @@
         ],
         "emissive_intensity": 0.2,
         "dissolve": 0.26,
-        "erosion": 0.2
+        "erosion": 0.2,
+        "temperature_gradient": [
+          [
+            0.0,
+            [
+              0.18,
+              0.02,
+              0.004,
+              1.0
+            ]
+          ],
+          [
+            0.3,
+            [
+              0.8,
+              0.13,
+              0.015,
+              1.0
+            ]
+          ],
+          [
+            0.6,
+            [
+              1.0,
+              0.4,
+              0.06,
+              1.0
+            ]
+          ],
+          [
+            0.85,
+            [
+              1.0,
+              0.72,
+              0.26,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              1.0,
+              0.86,
+              0.5,
+              1.0
+            ]
+          ]
+        ]
+      },
+      "inputs": {
+        "noise_texture": "tex_erosion"
       }
     },
     {
@@ -1546,10 +2074,10 @@
         "depth_fade": 0.1,
         "emissive_color": [
           1.0,
-          0.5,
-          0.18
+          0.52,
+          0.2
         ],
-        "emissive_intensity": 0.2
+        "emissive_intensity": 0.24
       },
       "inputs": {
         "base_texture": "tex_ribbon"
@@ -1560,9 +2088,9 @@
       "type": "material",
       "parameters": {
         "base_color": [
-          0.045,
-          0.024,
-          0.017,
+          0.022,
+          0.011,
+          0.008,
           1.0
         ],
         "blend": "premultiplied",
@@ -1580,17 +2108,17 @@
       "type": "material",
       "parameters": {
         "base_color": [
-          0.55,
-          0.2,
-          0.035,
+          0.62,
+          0.24,
+          0.05,
           1.0
         ],
         "blend": "premultiplied",
         "shading": "lit",
         "emissive_color": [
           1.0,
-          0.44,
-          0.1
+          0.5,
+          0.13
         ],
         "emissive_intensity": 0.0
       }
@@ -1610,8 +2138,8 @@
       "type": "force",
       "parameters": {
         "force_type": "curl_noise",
-        "strength": 3.4,
-        "frequency": 1.7,
+        "strength": 3.1,
+        "frequency": 1.55,
         "octaves": 2,
         "speed": 1.6
       }
@@ -1632,10 +2160,10 @@
       "type": "force",
       "parameters": {
         "force_type": "curl_noise",
-        "strength": 2.1,
-        "frequency": 2.4,
+        "strength": 2.2,
+        "frequency": 1.05,
         "octaves": 2,
-        "speed": 1.2
+        "speed": 0.8
       }
     },
     {
@@ -1643,7 +2171,7 @@
       "type": "force",
       "parameters": {
         "force_type": "buoyancy",
-        "strength": 2.6
+        "strength": 2.15
       }
     },
     {
@@ -1686,7 +2214,7 @@
       "type": "force",
       "parameters": {
         "force_type": "directional",
-        "strength": 2.6,
+        "strength": 3.1,
         "direction": [
           -1.0,
           0.26,
@@ -1869,9 +2397,9 @@
       },
       "parameters": {
         "primitive": "rock",
-        "radius": 0.33,
-        "segments": 8,
-        "irregularity": 0.58,
+        "radius": 0.44,
+        "segments": 16,
+        "irregularity": 0.42,
         "variants": 1,
         "color": [
           1.0,
@@ -1879,7 +2407,7 @@
           1.0,
           1.0
         ],
-        "emissive": 0.22,
+        "emissive": 0.11,
         "start_time": 0.0,
         "duration": 2.36,
         "rotation": {
@@ -1976,14 +2504,14 @@
       },
       "parameters": {
         "primitive": "rock",
-        "radius": 0.29,
-        "segments": 12,
-        "irregularity": 0.42,
+        "radius": 0.375,
+        "segments": 16,
+        "irregularity": 0.78,
         "variants": 1,
         "color": [
           1.0,
-          0.72,
-          0.34,
+          0.76,
+          0.42,
           1.0
         ],
         "start_time": 0.0,
@@ -1994,31 +2522,31 @@
           63.0
         ],
         "emissive": {
-          "value": 0.4,
+          "value": 0.6,
           "track": [
             {
               "time": 0.0,
-              "value": 0.4
+              "value": 0.6
             },
             {
               "time": 0.3,
-              "value": 0.5
+              "value": 0.85
             },
             {
               "time": 0.54,
-              "value": 0.7
+              "value": 1.25
             },
             {
               "time": 2.1,
-              "value": 0.8
+              "value": 1.45
             },
             {
               "time": 2.3,
-              "value": 1.5
+              "value": 2.3
             },
             {
               "time": 2.36,
-              "value": 1.9
+              "value": 2.9
             }
           ]
         }
@@ -2032,31 +2560,32 @@
         "sprite": "tex_flame",
         "material": "mat_fire_head",
         "forces": [
-          "f_curl_fire"
+          "f_curl_fire",
+          "f_slipstream"
         ]
       },
       "parameters": {
-        "max_particles": 2000,
-        "lifetime": 0.26,
-        "lifetime_variance": 0.1,
-        "size": 0.4,
-        "size_variance": 0.14,
+        "max_particles": 1200,
+        "lifetime": 0.36,
+        "lifetime_variance": 0.13,
+        "size": 0.55,
+        "size_variance": 0.22,
         "size_over_life": [
           [
             0.0,
-            0.5
+            0.4
           ],
           [
-            0.3,
+            0.32,
             1.0
           ],
           [
-            0.75,
-            0.9
+            0.78,
+            0.95
           ],
           [
             1.0,
-            0.25
+            0.2
           ]
         ],
         "color": [
@@ -2069,61 +2598,57 @@
           [
             0.0,
             [
-              0.95,
-              0.84,
-              0.62
+              1.0,
+              1.0,
+              1.0
             ]
           ],
           [
-            0.35,
+            0.5,
             [
+              1.0,
               0.92,
-              0.6,
-              0.24
-            ]
-          ],
-          [
-            0.75,
-            [
-              0.85,
-              0.28,
-              0.05
+              0.82
             ]
           ],
           [
             1.0,
             [
-              0.38,
-              0.05,
-              0.005
+              1.0,
+              0.85,
+              0.72
             ]
           ]
         ],
         "opacity_over_life": [
           [
             0.0,
+            0.01
+          ],
+          [
+            0.14,
+            0.08
+          ],
+          [
+            0.42,
             0.18
           ],
           [
-            0.16,
-            0.66
-          ],
-          [
-            0.7,
-            0.55
+            0.78,
+            0.15
           ],
           [
             1.0,
             0.0
           ]
         ],
-        "emissive": 0.75,
-        "drag": 3.0,
+        "emissive": 0.45,
+        "drag": 2.2,
         "blend": "additive",
         "render_mode": "stretched_billboard",
-        "velocity_stretch": 0.05,
+        "velocity_stretch": 0.2,
         "rotation_variance": 180.0,
-        "sprite_fps": 0.0
+        "sprite_fps": 20.0
       }
     },
     {
@@ -2136,16 +2661,16 @@
       },
       "parameters": {
         "shape": "sphere",
-        "radius": 0.42,
+        "radius": 0.24,
         "surface_only": true,
         "direction": [
-          0.0,
-          0.0,
+          -1.0,
+          0.1,
           0.0
         ],
-        "velocity": 0.95,
-        "velocity_variance": 0.5,
-        "inherit_velocity": 0.88,
+        "velocity": 1.8,
+        "velocity_variance": 0.9,
+        "inherit_velocity": 0.9,
         "rate": {
           "value": 60.0,
           "track": [
@@ -2159,22 +2684,23 @@
             },
             {
               "time": 0.32,
-              "value": 560.0
+              "value": 360.0
             },
             {
               "time": 0.54,
-              "value": 1000.0
+              "value": 520.0
             },
             {
               "time": 2.26,
-              "value": 1000.0
+              "value": 520.0
             },
             {
               "time": 2.32,
               "value": 0.0
             }
           ]
-        }
+        },
+        "spread": 88.0
       }
     },
     {
@@ -2190,10 +2716,10 @@
       },
       "parameters": {
         "max_particles": 800,
-        "lifetime": 0.16,
+        "lifetime": 0.22,
         "lifetime_variance": 0.05,
-        "size": 0.3,
-        "size_variance": 0.1,
+        "size": 0.42,
+        "size_variance": 0.16,
         "size_over_life": [
           [
             0.0,
@@ -2218,49 +2744,49 @@
           [
             0.0,
             [
-              1.05,
-              0.95,
-              0.74
+              1.0,
+              1.0,
+              1.0
             ]
           ],
           [
-            0.45,
+            0.5,
             [
-              0.95,
-              0.62,
-              0.26
+              1.0,
+              0.92,
+              0.82
             ]
           ],
           [
             1.0,
             [
-              0.75,
-              0.2,
-              0.03
+              1.0,
+              0.85,
+              0.72
             ]
           ]
         ],
         "opacity_over_life": [
           [
             0.0,
-            0.3
+            0.04
           ],
           [
-            0.2,
-            0.78
+            0.3,
+            0.2
           ],
           [
             1.0,
             0.0
           ]
         ],
-        "emissive": 1.25,
+        "emissive": 0.6,
         "drag": 4.0,
         "blend": "additive",
         "render_mode": "stretched_billboard",
         "velocity_stretch": 0.05,
         "rotation_variance": 180.0,
-        "sprite_fps": 0.0
+        "sprite_fps": 25.0
       }
     },
     {
@@ -2273,10 +2799,10 @@
       },
       "parameters": {
         "shape": "sphere",
-        "radius": 0.21,
+        "radius": 0.26,
         "surface_only": true,
         "position": [
-          0.3,
+          0.34,
           0.0,
           0.0
         ],
@@ -2285,9 +2811,9 @@
           0.0,
           0.0
         ],
-        "spread": 85.0,
-        "velocity": 0.5,
-        "velocity_variance": 0.3,
+        "spread": 130.0,
+        "velocity": 0.9,
+        "velocity_variance": 0.45,
         "inherit_velocity": 0.95,
         "rate": {
           "value": 0.0,
@@ -2302,15 +2828,15 @@
             },
             {
               "time": 0.38,
-              "value": 320.0
+              "value": 230.0
             },
             {
               "time": 0.56,
-              "value": 620.0
+              "value": 420.0
             },
             {
               "time": 2.26,
-              "value": 620.0
+              "value": 420.0
             },
             {
               "time": 2.32,
@@ -2325,27 +2851,31 @@
       "type": "particle_system",
       "layer": "core",
       "inputs": {
-        "sprite": "tex_spark",
+        "sprite": "tex_vent",
         "material": "mat_spark"
       },
       "parameters": {
-        "max_particles": 700,
-        "lifetime": 0.22,
-        "lifetime_variance": 0.09,
-        "size": 0.085,
-        "size_variance": 0.035,
+        "max_particles": 900,
+        "lifetime": 0.34,
+        "lifetime_variance": 0.12,
+        "size": 0.155,
+        "size_variance": 0.075,
         "size_over_life": [
           [
             0.0,
-            0.3
+            0.25
           ],
           [
-            0.3,
+            0.22,
             1.0
           ],
           [
+            0.7,
+            0.9
+          ],
+          [
             1.0,
-            0.1
+            0.12
           ]
         ],
         "color": [
@@ -2358,17 +2888,17 @@
           [
             0.0,
             [
-              1.25,
-              1.05,
-              0.68
+              1.5,
+              1.32,
+              0.95
             ]
           ],
           [
-            0.5,
+            0.45,
             [
-              1.1,
-              0.5,
-              0.1
+              1.25,
+              0.6,
+              0.12
             ]
           ],
           [
@@ -2383,25 +2913,26 @@
         "opacity_over_life": [
           [
             0.0,
-            0.2
+            0.25
           ],
           [
-            0.25,
+            0.2,
             1.0
           ],
           [
-            0.8,
-            0.9
+            0.75,
+            0.85
           ],
           [
             1.0,
             0.0
           ]
         ],
-        "emissive": 2.8,
-        "drag": 2.0,
+        "emissive": 4.2,
+        "drag": 7.0,
         "blend": "additive",
-        "render_mode": "billboard"
+        "render_mode": "billboard",
+        "rotation_variance": 180.0
       }
     },
     {
@@ -2420,9 +2951,9 @@
           0.0,
           0.0
         ],
-        "velocity": 0.16,
-        "velocity_variance": 0.1,
-        "inherit_velocity": 0.92,
+        "velocity": 0.06,
+        "velocity_variance": 0.05,
+        "inherit_velocity": 1.0,
         "rate": {
           "value": 0.0,
           "track": [
@@ -2432,15 +2963,15 @@
             },
             {
               "time": 0.3,
-              "value": 110.0
+              "value": 180.0
             },
             {
               "time": 0.52,
-              "value": 280.0
+              "value": 570.0
             },
             {
               "time": 2.26,
-              "value": 280.0
+              "value": 570.0
             },
             {
               "time": 2.32,
@@ -2464,23 +2995,23 @@
         ]
       },
       "parameters": {
-        "max_particles": 3000,
-        "lifetime": 0.3,
-        "lifetime_variance": 0.1,
-        "size": 0.56,
-        "size_variance": 0.19,
+        "max_particles": 1700,
+        "lifetime": 0.44,
+        "lifetime_variance": 0.16,
+        "size": 0.74,
+        "size_variance": 0.28,
         "size_over_life": [
           [
             0.0,
-            0.45
+            0.4
           ],
           [
-            0.22,
+            0.24,
             1.0
           ],
           [
-            0.7,
-            0.95
+            0.72,
+            1.05
           ],
           [
             1.0,
@@ -2497,61 +3028,53 @@
           [
             0.0,
             [
-              1.1,
-              0.9,
-              0.62
+              1.0,
+              1.0,
+              1.0
             ]
           ],
           [
-            0.3,
+            0.5,
             [
               1.0,
-              0.56,
-              0.18
-            ]
-          ],
-          [
-            0.7,
-            [
-              0.9,
-              0.24,
-              0.04
+              0.92,
+              0.82
             ]
           ],
           [
             1.0,
             [
-              0.32,
-              0.04,
-              0.005
+              1.0,
+              0.85,
+              0.72
             ]
           ]
         ],
         "opacity_over_life": [
           [
             0.0,
+            0.04
+          ],
+          [
+            0.16,
+            0.21
+          ],
+          [
+            0.66,
             0.18
-          ],
-          [
-            0.12,
-            0.72
-          ],
-          [
-            0.7,
-            0.6
           ],
           [
             1.0,
             0.0
           ]
         ],
-        "emissive": 0.95,
-        "drag": 1.4,
+        "emissive": 0.7,
+        "drag": 1.2,
         "blend": "additive",
         "render_mode": "stretched_billboard",
-        "velocity_stretch": 0.34,
+        "velocity_stretch": 0.44,
         "rotation_variance": 180.0,
-        "sprite_fps": 0.0
+        "sprite_fps": 20.0
       }
     },
     {
@@ -2564,15 +3087,15 @@
       },
       "parameters": {
         "shape": "sphere",
-        "radius": 0.3,
+        "radius": 0.28,
         "direction": [
           -1.0,
-          0.16,
+          0.18,
           0.0
         ],
-        "spread": 44.0,
-        "velocity": 2.3,
-        "velocity_variance": 0.9,
+        "spread": 32.0,
+        "velocity": 2.7,
+        "velocity_variance": 1.0,
         "inherit_velocity": 0.44,
         "rate": {
           "value": 0.0,
@@ -2587,19 +3110,19 @@
             },
             {
               "time": 0.34,
-              "value": 700.0
+              "value": 420.0
             },
             {
               "time": 0.46,
-              "value": 1500.0
+              "value": 740.0
             },
             {
               "time": 0.62,
-              "value": 1550.0
+              "value": 770.0
             },
             {
               "time": 2.26,
-              "value": 1550.0
+              "value": 770.0
             },
             {
               "time": 2.32,
@@ -2623,27 +3146,31 @@
         ]
       },
       "parameters": {
-        "max_particles": 2600,
-        "lifetime": 0.66,
-        "lifetime_variance": 0.26,
-        "size": 0.95,
-        "size_variance": 0.34,
+        "max_particles": 2200,
+        "lifetime": 1.02,
+        "lifetime_variance": 0.4,
+        "size": 0.98,
+        "size_variance": 0.4,
         "size_over_life": [
           [
             0.0,
-            0.4
+            0.3
           ],
           [
-            0.3,
-            1.0
+            0.22,
+            0.92
           ],
           [
-            0.75,
-            1.15
+            0.6,
+            1.22
+          ],
+          [
+            0.85,
+            1.05
           ],
           [
             1.0,
-            0.35
+            0.4
           ]
         ],
         "color": [
@@ -2657,60 +3184,56 @@
             0.0,
             [
               1.0,
-              0.66,
-              0.28
+              1.0,
+              1.0
             ]
           ],
           [
-            0.35,
+            0.5,
             [
-              0.95,
-              0.3,
-              0.06
-            ]
-          ],
-          [
-            0.75,
-            [
-              0.62,
-              0.1,
-              0.012
+              1.0,
+              0.92,
+              0.82
             ]
           ],
           [
             1.0,
             [
-              0.16,
-              0.015,
-              0.0
+              1.0,
+              0.85,
+              0.72
             ]
           ]
         ],
         "opacity_over_life": [
           [
             0.0,
-            0.1
+            0.035
           ],
           [
             0.16,
-            0.6
+            0.27
           ],
           [
-            0.6,
-            0.45
+            0.48,
+            0.24
+          ],
+          [
+            0.8,
+            0.13
           ],
           [
             1.0,
             0.0
           ]
         ],
-        "emissive": 0.62,
-        "drag": 0.9,
+        "emissive": 0.56,
+        "drag": 1.15,
         "blend": "additive",
         "render_mode": "stretched_billboard",
-        "velocity_stretch": 0.5,
+        "velocity_stretch": 0.72,
         "rotation_variance": 180.0,
-        "sprite_fps": 0.0
+        "sprite_fps": 16.0
       }
     },
     {
@@ -2723,15 +3246,15 @@
       },
       "parameters": {
         "shape": "sphere",
-        "radius": 0.22,
+        "radius": 0.24,
         "direction": [
           -1.0,
-          0.22,
+          0.3,
           0.0
         ],
-        "spread": 52.0,
-        "velocity": 3.5,
-        "velocity_variance": 1.4,
+        "spread": 26.0,
+        "velocity": 3.9,
+        "velocity_variance": 1.5,
         "inherit_velocity": 0.06,
         "rate": {
           "value": 0.0,
@@ -2746,19 +3269,19 @@
             },
             {
               "time": 0.38,
-              "value": 320.0
+              "value": 240.0
             },
             {
               "time": 0.52,
-              "value": 620.0
+              "value": 420.0
             },
             {
               "time": 0.72,
-              "value": 660.0
+              "value": 450.0
             },
             {
               "time": 2.26,
-              "value": 660.0
+              "value": 450.0
             },
             {
               "time": 2.32,
@@ -2847,9 +3370,9 @@
         ]
       },
       "parameters": {
-        "max_particles": 60,
-        "lifetime": 0.34,
-        "lifetime_variance": 0.085,
+        "max_particles": 130,
+        "lifetime": 1.0,
+        "lifetime_variance": 0.25,
         "size": 0.05,
         "drag": 0.7,
         "render_mode": "none"
@@ -2865,17 +3388,17 @@
       },
       "parameters": {
         "shape": "sphere",
-        "radius": 0.22,
+        "radius": 0.26,
         "surface_only": true,
         "direction": [
           -1.0,
-          0.24,
+          0.2,
           0.0
         ],
-        "spread": 60.0,
-        "velocity": 0.55,
-        "velocity_variance": 0.30250000000000005,
-        "inherit_velocity": 0.93,
+        "spread": 52.0,
+        "velocity": 0.75,
+        "velocity_variance": 0.4,
+        "inherit_velocity": 0.96,
         "rate": {
           "value": 0.0,
           "track": [
@@ -2889,15 +3412,15 @@
             },
             {
               "time": 0.38,
-              "value": 27.599999999999998
+              "value": 46.0
             },
             {
               "time": 0.54,
-              "value": 46.0
+              "value": 78.0
             },
             {
               "time": 2.26,
-              "value": 46.0
+              "value": 78.0
             },
             {
               "time": 2.32,
@@ -2916,28 +3439,36 @@
         "material": "mat_ribbon"
       },
       "parameters": {
-        "width": 0.05,
-        "lifetime": 0.34,
+        "width": 0.26,
+        "lifetime": 0.7,
         "blend": "additive",
         "color": [
           1.0,
-          0.54,
-          0.17,
+          0.56,
+          0.2,
           1.0
         ],
-        "emissive": 0.5,
+        "emissive": 0.9,
         "taper": [
           [
             0.0,
-            0.12
+            0.0
           ],
           [
-            0.1,
+            0.12,
+            0.55
+          ],
+          [
+            0.3,
             1.0
           ],
           [
-            0.5,
-            0.7
+            0.58,
+            0.86
+          ],
+          [
+            0.84,
+            0.4
           ],
           [
             1.0,
@@ -2947,24 +3478,33 @@
         "opacity_over_life": [
           [
             0.0,
-            0.62
+            0.0
           ],
           [
-            0.35,
-            0.38
+            0.13,
+            0.6
+          ],
+          [
+            0.4,
+            0.5
+          ],
+          [
+            0.74,
+            0.26
           ],
           [
             1.0,
             0.0
           ]
         ],
-        "noise_amplitude": 0.11,
-        "noise_frequency": 5.0,
+        "noise_amplitude": 0.03,
+        "noise_frequency": 0.9,
         "min_vertex_distance": 0.03,
-        "max_segments": 72,
+        "max_segments": 210,
         "twist": 0.0,
         "start_time": 0.3,
-        "duration": 2.25
+        "duration": 2.25,
+        "uv_scroll": -1.8
       }
     },
     {
@@ -2978,9 +3518,9 @@
         ]
       },
       "parameters": {
-        "max_particles": 60,
-        "lifetime": 0.44,
-        "lifetime_variance": 0.11,
+        "max_particles": 110,
+        "lifetime": 0.9,
+        "lifetime_variance": 0.28,
         "size": 0.05,
         "drag": 0.7,
         "render_mode": "none"
@@ -2996,17 +3536,17 @@
       },
       "parameters": {
         "shape": "sphere",
-        "radius": 0.22,
+        "radius": 0.28,
         "surface_only": true,
         "direction": [
           -1.0,
-          0.24,
+          0.3,
           0.0
         ],
-        "spread": 58.0,
-        "velocity": 0.8,
-        "velocity_variance": 0.44000000000000006,
-        "inherit_velocity": 0.89,
+        "spread": 68.0,
+        "velocity": 1.05,
+        "velocity_variance": 0.55,
+        "inherit_velocity": 0.88,
         "rate": {
           "value": 0.0,
           "track": [
@@ -3020,15 +3560,15 @@
             },
             {
               "time": 0.38,
-              "value": 19.2
+              "value": 34.0
             },
             {
               "time": 0.54,
-              "value": 32.0
+              "value": 58.0
             },
             {
               "time": 2.26,
-              "value": 32.0
+              "value": 58.0
             },
             {
               "time": 2.32,
@@ -3047,28 +3587,36 @@
         "material": "mat_ribbon"
       },
       "parameters": {
-        "width": 0.08,
-        "lifetime": 0.46,
+        "width": 0.21,
+        "lifetime": 0.64,
         "blend": "additive",
         "color": [
           1.0,
-          0.27,
-          0.05,
+          0.48,
+          0.15,
           1.0
         ],
-        "emissive": 0.32,
+        "emissive": 0.85,
         "taper": [
           [
             0.0,
-            0.12
+            0.0
           ],
           [
-            0.1,
+            0.14,
+            0.52
+          ],
+          [
+            0.32,
             1.0
           ],
           [
-            0.5,
-            0.7
+            0.6,
+            0.78
+          ],
+          [
+            0.86,
+            0.34
           ],
           [
             1.0,
@@ -3078,24 +3626,33 @@
         "opacity_over_life": [
           [
             0.0,
-            0.62
+            0.0
           ],
           [
-            0.35,
-            0.38
+            0.15,
+            0.54
+          ],
+          [
+            0.42,
+            0.44
+          ],
+          [
+            0.76,
+            0.23
           ],
           [
             1.0,
             0.0
           ]
         ],
-        "noise_amplitude": 0.19,
-        "noise_frequency": 3.4,
-        "min_vertex_distance": 0.035,
-        "max_segments": 72,
+        "noise_amplitude": 0.045,
+        "noise_frequency": 0.75,
+        "min_vertex_distance": 0.03,
+        "max_segments": 190,
         "twist": 0.0,
         "start_time": 0.3,
-        "duration": 2.25
+        "duration": 2.25,
+        "uv_scroll": -1.4040000000000001
       }
     },
     {
@@ -3109,9 +3666,9 @@
         ]
       },
       "parameters": {
-        "max_particles": 60,
-        "lifetime": 0.56,
-        "lifetime_variance": 0.14,
+        "max_particles": 95,
+        "lifetime": 0.78,
+        "lifetime_variance": 0.3,
         "size": 0.05,
         "drag": 0.7,
         "render_mode": "none"
@@ -3127,17 +3684,17 @@
       },
       "parameters": {
         "shape": "sphere",
-        "radius": 0.22,
+        "radius": 0.3,
         "surface_only": true,
         "direction": [
           -1.0,
-          0.24,
+          0.42,
           0.0
         ],
-        "spread": 56.0,
-        "velocity": 1.15,
-        "velocity_variance": 0.6325,
-        "inherit_velocity": 0.84,
+        "spread": 80.0,
+        "velocity": 1.5,
+        "velocity_variance": 0.8,
+        "inherit_velocity": 0.74,
         "rate": {
           "value": 0.0,
           "track": [
@@ -3151,15 +3708,15 @@
             },
             {
               "time": 0.38,
-              "value": 13.2
+              "value": 24.0
             },
             {
               "time": 0.54,
-              "value": 22.0
+              "value": 40.0
             },
             {
               "time": 2.26,
-              "value": 22.0
+              "value": 40.0
             },
             {
               "time": 2.32,
@@ -3178,28 +3735,36 @@
         "material": "mat_ribbon"
       },
       "parameters": {
-        "width": 0.115,
-        "lifetime": 0.6,
+        "width": 0.155,
+        "lifetime": 0.58,
         "blend": "additive",
         "color": [
-          0.93,
-          0.14,
-          0.02,
+          1.0,
+          0.42,
+          0.12,
           1.0
         ],
-        "emissive": 0.2,
+        "emissive": 0.78,
         "taper": [
           [
             0.0,
-            0.12
+            0.0
           ],
           [
-            0.1,
+            0.16,
+            0.5
+          ],
+          [
+            0.34,
             1.0
           ],
           [
-            0.5,
+            0.62,
             0.7
+          ],
+          [
+            0.88,
+            0.28
           ],
           [
             1.0,
@@ -3209,24 +3774,33 @@
         "opacity_over_life": [
           [
             0.0,
-            0.62
+            0.0
           ],
           [
-            0.35,
+            0.17,
+            0.48
+          ],
+          [
+            0.44,
             0.38
+          ],
+          [
+            0.78,
+            0.2
           ],
           [
             1.0,
             0.0
           ]
         ],
-        "noise_amplitude": 0.28,
-        "noise_frequency": 2.3,
-        "min_vertex_distance": 0.04,
-        "max_segments": 72,
+        "noise_amplitude": 0.07,
+        "noise_frequency": 0.6,
+        "min_vertex_distance": 0.03,
+        "max_segments": 170,
         "twist": 0.0,
         "start_time": 0.3,
-        "duration": 2.25
+        "duration": 2.25,
+        "uv_scroll": -2.25
       }
     },
     {
@@ -3263,7 +3837,7 @@
             }
           ]
         },
-        "lifetime": 0.2,
+        "lifetime": 0.3,
         "blend": "additive",
         "color": [
           1.0,
@@ -3271,7 +3845,7 @@
           0.34,
           1.0
         ],
-        "emissive": 0.9,
+        "emissive": 1.0,
         "taper": [
           [
             0.0,
@@ -3282,7 +3856,7 @@
             1.0
           ],
           [
-            0.45,
+            0.5,
             0.6
           ],
           [
@@ -3306,8 +3880,9 @@
         ],
         "noise_amplitude": 0.012,
         "noise_frequency": 7.0,
-        "min_vertex_distance": 0.03,
-        "max_segments": 48
+        "min_vertex_distance": 0.04,
+        "max_segments": 80,
+        "uv_scroll": -2.8800000000000003
       }
     },
     {
@@ -3328,8 +3903,8 @@
         "max_particles": 2400,
         "lifetime": 0.95,
         "lifetime_variance": 0.45,
-        "size": 0.045,
-        "size_variance": 0.022,
+        "size": 0.05,
+        "size_variance": 0.028,
         "size_over_life": [
           [
             0.0,
@@ -3402,11 +3977,11 @@
             0.0
           ]
         ],
-        "emissive": 2.4,
+        "emissive": 2.6,
         "drag": 0.5,
         "blend": "additive",
         "render_mode": "stretched_billboard",
-        "velocity_stretch": 0.24,
+        "velocity_stretch": 0.3,
         "kill_on_collision": true
       }
     },
@@ -3420,17 +3995,17 @@
       },
       "parameters": {
         "shape": "sphere",
-        "radius": 0.22,
+        "radius": 0.26,
         "surface_only": true,
         "direction": [
           -1.0,
-          0.14,
+          0.24,
           0.0
         ],
-        "spread": 62.0,
-        "velocity": 3.0,
-        "velocity_variance": 1.9,
-        "inherit_velocity": 0.3,
+        "spread": 52.0,
+        "velocity": 3.3,
+        "velocity_variance": 2.1,
+        "inherit_velocity": 0.26,
         "rate": {
           "value": 0.0,
           "track": [
@@ -4010,10 +4585,10 @@
       },
       "parameters": {
         "max_particles": 900,
-        "lifetime": 0.5,
+        "lifetime": 0.56,
         "lifetime_variance": 0.2,
-        "size": 0.62,
-        "size_variance": 0.24,
+        "size": 0.78,
+        "size_variance": 0.3,
         "size_over_life": [
           [
             0.0,
@@ -4075,28 +4650,28 @@
         "opacity_over_life": [
           [
             0.0,
-            0.25
+            0.18
           ],
           [
-            0.15,
-            0.78
+            0.16,
+            0.62
           ],
           [
             0.6,
-            0.62
+            0.5
           ],
           [
             1.0,
             0.0
           ]
         ],
-        "emissive": 1.2,
+        "emissive": 1.35,
         "drag": 3.4,
         "blend": "additive",
         "render_mode": "stretched_billboard",
-        "velocity_stretch": 0.22,
+        "velocity_stretch": 0.32,
         "rotation_variance": 180.0,
-        "sprite_fps": 0.0
+        "sprite_fps": 18.0
       }
     },
     {
@@ -4125,8 +4700,8 @@
           0.0,
           0.0
         ],
-        "radial_velocity": 1.6,
-        "velocity": 4.6,
+        "radial_velocity": 2.0,
+        "velocity": 5.6,
         "velocity_variance": 2.0,
         "rate": 0.0,
         "burst_count": 95,
@@ -4159,7 +4734,7 @@
           0.0
         ],
         "spread": 62.0,
-        "velocity": 3.6,
+        "velocity": 4.2,
         "velocity_variance": 1.8,
         "rate": 0.0,
         "burst_count": 80,
@@ -4345,7 +4920,7 @@
         "max_particles": 12,
         "lifetime": 0.24,
         "lifetime_variance": 0.05,
-        "size": 1.5,
+        "size": 1.75,
         "size_variance": 0.25,
         "size_over_life": [
           [
@@ -4610,7 +5185,12 @@
               "value": 0.0
             }
           ]
-        }
+        },
+        "position": [
+          -0.5,
+          0.05,
+          0.0
+        ]
       }
     },
     {

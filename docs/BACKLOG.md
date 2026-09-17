@@ -114,3 +114,17 @@ simplified once the feature lands.
   `soft_particle_distance: 0.05` acts as a hard depth clip against the ground.
 - Library effects should each get 4-8 hand-named controls (the studio generates defaults per working
   copy until then).
+
+## From the Fire Bolt second pass
+- Point lights are physical in the viewer (`intensity x 3.2`, true 1/d^2): a light at a mesh's own
+  position burns it to white regardless of albedo. Wanted: the documented `intensity / (d^2 + 1)` in
+  both renderers, or a per-light "affects" mask. Workaround: offset the light 0.5 m from the mesh.
+- `mesh primitive: rock` has one subdivision step (20 facets below `segments` 10, 80 at or above): no
+  fine cracked-plate surface. Wanted: more subdivision levels and a crack displacement option.
+- The opaque ground plane hard-clips additive sprite quads that dip below y = 0 (depth-test occlusion,
+  `soft_particle` does not help). Wanted: a per-material "ignore scene depth" / ground-fade flag.
+- Trail `noise_amplitude` displaces per vertex: on ribbons wider than ~0.15 m it reads as a zigzag
+  staircase, and `taper` / `opacity_over_life` that do not start at 0 leave blunt stepped tips.
+  Wanted: smoothed lateral noise.
+- `fire_sim` lost the A/B at Fire Bolt's 0.36-1.0 m sprite sizes (sparser and wispier than hand-built
+  warped-noise sheets); it won on Fire AOE's 1.2-2.0 m sprites. Consider a denser-body variant.
