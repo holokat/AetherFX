@@ -688,7 +688,7 @@ export function createGLViewer(options) {
     viewer: viewer,
     renderMode: viewer.renderMode,
     mode: viewer.renderMode ? viewer.renderMode.detail : 'GPU',
-    play: function (fps, loop, time) { viewer.client.play(fps || 60, loop !== false, time); },
+    play: function (fps, loop, time, speed) { viewer.client.play(fps || 60, loop !== false, time, speed || 1); },
     pause: function () { viewer.client.pause(); },
     seek: function (time) { viewer.client.seek(time); },
     step: function (frames) { viewer.client.step(frames); },

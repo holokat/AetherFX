@@ -140,7 +140,9 @@ export class StreamClient {
 
   open() { this.send({ type: 'open' }); }
   resources() { this.send({ type: 'resources' }); }
-  play(fps, loop, time) { this.send({ type: 'play', fps: fps, loop: !!loop, time: time }); }
+  play(fps, loop, time, speed) {
+    this.send({ type: 'play', fps: fps, loop: !!loop, time: time, speed: (speed > 0 ? speed : 1) });
+  }
   pause() { this.send({ type: 'pause' }); }
   seek(time) { this.send({ type: 'seek', time: time }); }
   step(frames) { this.send({ type: 'step', frames: frames }); }

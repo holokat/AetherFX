@@ -152,6 +152,7 @@ var S = {
   lists: { examples: [], saved: [], open: [] },
 
   fps: 24,
+  speed: 1,              /* playback speed multiplier (1 = real time) */
   size: 384,
   loop: true,
   index: 0,
@@ -305,7 +306,7 @@ function attachViewer(api) {
       setPlayIcon(false);
     } else if (status.kind === 'connected' && S.playing) {
       /* the socket came back (server restart): pick playback up where it was */
-      api.play(S.fps, S.loop, S.glTime || 0);
+      api.play(S.fps, S.loop, S.glTime || 0, S.speed);
     } else if (status.kind === 'context_restored') {
       /* The GPU path is live again.  The CPU image is only ever the fallback
          for a viewer that never came up, so make sure nothing left it showing. */
@@ -316,6 +317,13 @@ function attachViewer(api) {
 
   api.setStage(stageParam());
   api.setResolution($('sel-size').value);
+
+  /* 24 fps is a CPU-preview budget; the live stream runs at the simulation's own 60 Hz */
+  if ($('sel-fps').querySelector('option[value="60"]')) {
+    S.fps = 60;
+    $('sel-fps').value = '60';
+    syncTransportRange();
+  }
 
   /* the old "Preview" button becomes the CPU reference comparison */
   var preview = $('btn-preview');
@@ -1579,7 +1587,7 @@ function play() {
     if (!S.data) { toast('load or create an effect first', 'warn'); return; }
     S.playing = true;
     setPlayIcon(true);
-    S.gl.play(S.fps, S.loop, timeAt(S.index));
+    S.gl.play(S.fps, S.loop, timeAt(S.index), S.speed);
     return;
   }
   if (!S.preview || !S.preview.count) { renderPreview(true); return; }
@@ -1603,14 +1611,17 @@ function togglePlay() { if (S.playing) pause(); else play(); }
 function tick(now) {
   if (!S.playing) return;
   var fps = (S.preview && S.preview.fps) || S.fps;
-  var interval = 1000 / Math.max(1, fps);
-  if (!S.lastTick || now - S.lastTick >= interval) {
-    S.lastTick = now;
+  var interval = 1000 / (Math.max(1, fps) * Math.max(0.05, S.speed || 1));
+  if (!S.lastTick) S.lastTick = now;
+  var steps = Math.floor((now - S.lastTick) / interval);
+  if (steps >= 1) {
+    S.lastTick += steps * interval;
+    if (now - S.lastTick > 250) S.lastTick = now;       /* tab was hidden: do not fast-forward */
     var max = timelineMax();
-    var next = S.index + 1;
+    var next = S.index + steps;
     if (next > max) {
-      if (!S.loop) { pause(); return; }
-      next = 0;
+      if (!S.loop) { setIndex(max, true); pause(); return; }
+      next = max > 0 ? next % (max + 1) : 0;
     }
     setIndex(next, true);
   }
@@ -2114,9 +2125,22 @@ function wire() {
   $('btn-random').addEventListener('click', randomizeEffect);
   wireCamera();
   wireStage();
+  $('sel-speed').addEventListener('change', function () {
+    S.speed = parseFloat($('sel-speed').value) || 1;
+    try { localStorage.setItem('aetherfx.speed', String(S.speed)); } catch (err) { /* private mode */ }
+    if (glActive() && S.playing) S.gl.play(S.fps, S.loop, currentTime(), S.speed);
+  });
+  try {
+    var savedSpeed = parseFloat(localStorage.getItem('aetherfx.speed'));
+    if (savedSpeed > 0 && $('sel-speed').querySelector('option[value="' + savedSpeed + '"]')) {
+      S.speed = savedSpeed;
+      $('sel-speed').value = String(savedSpeed);
+    }
+  } catch (err) { /* storage unavailable: keep 1x */ }
+
   $('chk-loop').addEventListener('change', function () {
     S.loop = $('chk-loop').checked;
-    if (glActive() && S.playing) S.gl.play(S.fps, S.loop, currentTime());
+    if (glActive() && S.playing) S.gl.play(S.fps, S.loop, currentTime(), S.speed);
   });
 
   var slider = $('frame-slider');
@@ -2126,7 +2150,7 @@ function wire() {
     S.fps = parseInt($('sel-fps').value, 10) || 24;
     syncTransportRange();
     if (glActive()) {
-      if (S.playing) S.gl.play(S.fps, S.loop, currentTime());
+      if (S.playing) S.gl.play(S.fps, S.loop, currentTime(), S.speed);
       return;
     }
     if (S.preview) invalidatePreview();

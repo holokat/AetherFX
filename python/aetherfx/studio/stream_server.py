@@ -63,6 +63,9 @@ LOGGER = logging.getLogger("aetherfx.studio.stream")
 
 DEFAULT_FPS = 60.0
 MAX_FPS = 240.0
+#: Playback speed multiplier limits (1.0 = real time).
+MIN_SPEED = 0.1
+MAX_SPEED = 8.0
 NO_STORE = {"Cache-Control": "no-store"}
 
 
@@ -170,6 +173,23 @@ def public_resources(raw: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
+
+def clamp_speed(value: Any, default: float = 1.0) -> float:
+    """Playback speed multiplier from a client command, clamped to a sane range."""
+    try:
+        speed = float(value)
+    except (TypeError, ValueError):
+        return default
+    if speed != speed or speed <= 0.0:  # NaN or non-positive
+        return default
+    return max(MIN_SPEED, min(MAX_SPEED, speed))
+
+
+def playback_target(origin_time: float, elapsed_wall: float, speed: float) -> float:
+    """Effect time reached after ``elapsed_wall`` seconds of wall clock at ``speed``x."""
+    return origin_time + elapsed_wall * speed
+
+
 class ResourceCache:
     """The last opened resource set, so plain GETs can serve textures/meshes."""
 
@@ -230,6 +250,7 @@ class _Connection:
         self.time = 0.0
         self.fps = DEFAULT_FPS
         self.loop_playback = True
+        self.speed = 1.0
         self.duration = 1.0
         self.opened = False
         self._resources: dict[str, Any] | None = None
@@ -331,6 +352,8 @@ class _Connection:
         self.fps = max(1.0, min(MAX_FPS, _float(command.get("fps"), self.fps)))
         if "loop" in command:
             self.loop_playback = bool(command.get("loop"))
+        if "speed" in command:
+            self.speed = clamp_speed(command.get("speed"), self.speed)
         if "time" in command:
             self.time = self._clamp(_float(command.get("time"), self.time))
         self.play_task = asyncio.create_task(self._play_loop())
@@ -355,7 +378,7 @@ class _Connection:
         try:
             while True:
                 started = time.monotonic()
-                target = origin_time + (started - origin_wall)
+                target = playback_target(origin_time, started - origin_wall, self.speed)
                 if self.duration > 0.0 and target >= self.duration:
                     if self.loop_playback:
                         origin_wall = started
@@ -408,6 +431,7 @@ class _Connection:
             "type": "state",
             "playing": bool(self.play_task is not None) if playing is None else playing,
             "time": self.time, "fps": self.fps, "loop": self.loop_playback, "duration": self.duration,
+            "speed": self.speed,
         })
 
     async def send_error(self, code: str, message: str) -> None:
