@@ -200,6 +200,80 @@ var ICON_PAUSE = '<svg class="ic" viewBox="0 0 16 16" aria-hidden="true">' +
 
 function glActive() { return !!(S.gl && S.gl.available); }
 
+/* ---------------------------------------------------------------------- *
+ * viewport mode badge (#gl-mode)
+ *
+ * The viewport has two very different paths behind it and used to say nothing
+ * about which one was drawing, so a tab that quietly dropped to the CPU
+ * reference frames - a 404 on a vendored three.js file, a lost GL context, a
+ * dead stream socket - just looked like the renderer had regressed.  The badge
+ * is the answer: one line, always visible, and a console.warn with the reason
+ * whenever it is not the full GPU pipeline.
+ *
+ * viewer/bootstrap.js drives it for everything the viewer knows about; the
+ * watchdog below covers the one case bootstrap.js cannot report, which is
+ * bootstrap.js never running.
+ * ---------------------------------------------------------------------- */
+
+var GL_MODE_TONES = { ok: 1, warn: 1, bad: 1 };
+
+function setGlMode(tone, text, detail) {
+  var box = $('gl-mode');
+  if (!box) return;
+  box.hidden = false;
+  box.className = 'gl-mode mono ' + (GL_MODE_TONES[tone] ? tone : 'warn');
+  box.title = detail || text;
+  var label = box.querySelector('.gl-mode-text');
+  if (label) label.textContent = text;
+}
+
+/* The longer explanation under the viewport; one box, rewritten in place. */
+function glNote(message) {
+  var viewport = $('viewport');
+  if (!viewport) return;
+  var box = viewport.querySelector('.gl-note');
+  if (!box) {
+    box = el('div', { class: 'gl-note' });
+    viewport.appendChild(box);
+  }
+  box.textContent = message;
+}
+
+window.aetherSetGlMode = setGlMode;
+window.aetherGlNote = glNote;
+
+/* If the viewer module never publishes window.aetherViewer nothing else in the
+ * page notices: app.js simply keeps using the CPU image path, silently.  Watch
+ * for the module's load error (a missing vendored file fires `error` at the
+ * <script>, which reaches window in the capture phase) and, because a module
+ * can also fail in ways that raise nothing at all, time it out. */
+function watchViewerBoot() {
+  var settled = false;
+
+  function fail(why) {
+    if (settled || window.aetherViewer) return;     /* bootstrap.js owns the badge once it runs */
+    settled = true;
+    console.warn('[aetherfx studio] GPU viewer did not start: ' + why + ' - showing CPU reference frames instead.');
+    setGlMode('bad', 'CPU fallback · ' + why, 'GPU viewer did not start: ' + why);
+    glNote('GPU viewer did not start (' + why + ') - showing rendered frames instead.');
+  }
+
+  window.addEventListener('error', function (event) {
+    var target = event && event.target;
+    if (!target || target === window || target.nodeName !== 'SCRIPT') return;
+    var src = String(target.src || '');
+    if (src.indexOf('/static/viewer/') < 0 && src.indexOf('/static/vendor/') < 0) return;
+    fail('viewer module failed to load');
+  }, true);
+
+  var arm = function () { setTimeout(function () { fail('viewer module failed to load'); }, 5000); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', arm);
+  else arm();
+}
+
+watchViewerBoot();
+
+
 /* Show the active effect: the live stream when the GPU viewer is up, the CPU
  * preview sequence otherwise. */
 function startViewing() {
@@ -232,6 +306,11 @@ function attachViewer(api) {
     } else if (status.kind === 'connected' && S.playing) {
       /* the socket came back (server restart): pick playback up where it was */
       api.play(S.fps, S.loop, S.glTime || 0);
+    } else if (status.kind === 'context_restored') {
+      /* The GPU path is live again.  The CPU image is only ever the fallback
+         for a viewer that never came up, so make sure nothing left it showing. */
+      document.body.classList.add('gl-active');
+      $('viewport-img').hidden = true;
     }
   };
 

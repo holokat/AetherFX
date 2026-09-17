@@ -145,7 +145,10 @@
             <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.6 4.6l6.8 6.8M11.4 4.6l-6.8 6.8"/></svg>
           </button></figcaption>
         </figure>
-        <div id="gl-stats" class="gl-stats mono"></div>
+        <div class="gl-hud">
+          <div id="gl-stats" class="gl-stats mono"></div>
+          <div id="gl-mode" class="gl-mode mono" title="which path is drawing the viewport" hidden><i class="gl-dot"></i><span class="gl-mode-text"></span></div>
+        </div>
         <div id="viewport-empty">
           <svg class="empty-mark" viewBox="0 0 48 48" aria-hidden="true">
             <circle cx="24" cy="24" r="15" stroke-dasharray="3 5"/>

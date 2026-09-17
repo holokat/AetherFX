@@ -88,6 +88,9 @@ export class GLViewer {
     this.volumes = new VolumeRenderer(this.scene, this.shared);
 
     this.depthTarget = null;
+    this.composer = null;
+    this.renderMode = null;            /* which rung of the pipeline fallback we landed on */
+    this.contextLost = false;
     this.buildComposer();
 
     this.frame = null;
@@ -100,6 +103,9 @@ export class GLViewer {
     this.fpsAverage = 0;
     this.particleCount = 0;
     this.running = false;
+    this.started = false;
+    this.hasResources = false;
+    this.keepCameraOnResources = false;
     this.effectCamera = null;
 
     this.client = new StreamClient({
@@ -117,6 +123,8 @@ export class GLViewer {
       : null;
     if (this.resizeObserver && this.container) this.resizeObserver.observe(this.container);
     else window.addEventListener('resize', () => this.resize());
+
+    this.installContextHandlers();
   }
 
   /* Shift + left drag pans, matching the studio's old image viewport. */
@@ -129,17 +137,62 @@ export class GLViewer {
 
   // -- pipeline -------------------------------------------------------
 
+  /* The scene target, best format first.
+   *
+   * 4x MSAA on the scene pass.  SMAA alone runs *after* tone mapping and barely
+   * touches a bright mesh silhouette on a dark background - an ice crystal edge
+   * stair-steps because the HDR values either side of it differ by an order of
+   * magnitude.  Multisampling the HDR target fixes it at the source; three.js
+   * resolves the buffer when a pass reads its texture.  `depthTarget` stays
+   * single-sampled: the soft-particle and volume passes sample it directly as a
+   * depth texture, which a multisampled attachment cannot be.
+   *
+   * Not every context can do that.  Rendering *into* a half-float buffer is an
+   * extension in WebGL2 (a browser running on a software rasteriser, or with
+   * the GPU blocklisted, often has neither), and MAX_SAMPLES can be 0.  Each
+   * rung below costs image quality; none of them costs the viewer, which is the
+   * point - a studio that silently drops to the CPU reference frames looks like
+   * the renderer regressed.
+   */
+  targetModes() {
+    const gl = this.renderer.getContext();
+    const float = !!(gl.getExtension('EXT_color_buffer_float') || gl.getExtension('EXT_color_buffer_half_float'));
+    let samples = 0;
+    try { samples = gl.getParameter(gl.MAX_SAMPLES) | 0; } catch (err) { samples = 0; }
+    const modes = [];
+    if (float && samples >= 4) {
+      modes.push({ samples: 4, type: THREE.HalfFloatType, tone: 'ok', label: 'GPU · MSAA 4x', detail: 'GPU · MSAA 4x · HDR' });
+    }
+    if (float) {
+      modes.push({ samples: 0, type: THREE.HalfFloatType, tone: 'warn', label: 'GPU · no MSAA', detail: 'GPU · no MSAA · HDR' });
+    }
+    modes.push({ samples: 0, type: THREE.UnsignedByteType, tone: 'warn', label: 'GPU · no MSAA', detail: 'GPU · no MSAA · 8-bit' });
+    return modes;
+  }
+
   buildComposer() {
     const size = this.drawingSize();
-    // 4x MSAA on the scene pass.  SMAA alone runs *after* tone mapping and barely
-    // touches a bright mesh silhouette on a dark background - an ice crystal edge
-    // stair-steps because the HDR values either side of it differ by an order of
-    // magnitude.  Multisampling the HDR target fixes it at the source; three.js
-    // resolves the buffer when a pass reads its texture.  `depthTarget` stays
-    // single-sampled: the soft-particle and volume passes sample it directly as a
-    // depth texture, which a multisampled attachment cannot be.
+    this.rebuildDepthTarget(size);              // the probe render samples it
+    const modes = this.targetModes();
+    let lastError = null;
+    for (let i = 0; i < modes.length; i++) {
+      try {
+        this.assembleComposer(modes[i], size);
+        this.probeComposer();
+        this.renderMode = modes[i];
+        if (lastError) console.warn('[aetherfx viewer] ' + lastError + ' - falling back to ' + modes[i].detail);
+        return;
+      } catch (err) {
+        lastError = modes[i].detail + ' failed (' + ((err && err.message) || err) + ')';
+        this.disposeComposer();
+      }
+    }
+    throw new Error('no usable render target: ' + (lastError || 'unknown'));
+  }
+
+  assembleComposer(mode, size) {
     const target = new THREE.WebGLRenderTarget(size.width, size.height, {
-      type: THREE.HalfFloatType, colorSpace: THREE.LinearSRGBColorSpace, depthBuffer: true, samples: 4
+      type: mode.type, colorSpace: THREE.LinearSRGBColorSpace, depthBuffer: true, samples: mode.samples
     });
     this.composer = new EffectComposer(this.renderer, target);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
@@ -156,7 +209,76 @@ export class GLViewer {
     this.smaaPass = new SMAAPass();
     this.composer.addPass(this.smaaPass);
 
-    this.rebuildDepthTarget(size);
+    if (mode.type !== THREE.HalfFloatType) this.demoteHalfFloatTargets(mode.type);
+  }
+
+  /* The addon passes allocate half-float buffers of their own - the bloom mip
+   * pyramid and its bright pass, SMAA's edge and weight targets - with the type
+   * hard-coded.  A context that cannot render into a half-float buffer cannot
+   * render into those either, so without this the 8-bit rung of the fallback is
+   * not actually reachable: the scene target is fine and the post chain fails
+   * with INVALID_FRAMEBUFFER_OPERATION.  Walking the passes rather than naming
+   * their fields keeps this working across a three.js upgrade. */
+  demoteHalfFloatTargets(type) {
+    let changed = 0;
+    const visit = function (value, depth) {
+      if (!value || typeof value !== 'object' || depth > 2) return;
+      if (Array.isArray(value)) { value.forEach(function (item) { visit(item, depth + 1); }); return; }
+      if (!value.isWebGLRenderTarget) return;
+      (value.textures || [value.texture]).forEach(function (texture) {
+        if (texture && texture.type === THREE.HalfFloatType) { texture.type = type; changed++; }
+      });
+    };
+    this.composer.passes.forEach(function (pass) {
+      Object.keys(pass).forEach(function (key) { visit(pass[key], 0); });
+    });
+    return changed;
+  }
+
+  /* Allocate the target for real and draw one frame through the whole chain.
+   * A driver that advertises a format it cannot actually attach fails here -
+   * at boot, where there is still a cheaper rung to drop to - instead of
+   * leaving a black viewport for the rest of the session. */
+  probeComposer() {
+    const gl = this.renderer.getContext();
+    for (let guard = 0; guard < 32 && gl.getError() !== gl.NO_ERROR; guard++) { /* drain older errors */ }
+
+    this.renderer.setRenderTarget(this.composer.renderTarget1);
+    const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+    this.renderer.setRenderTarget(null);
+    if (status !== gl.FRAMEBUFFER_COMPLETE) throw new Error('framebuffer incomplete 0x' + status.toString(16));
+
+    this.composer.render();
+    // Only the errors that mean "this pipeline cannot draw" count; INVALID_ENUM
+    // and INVALID_VALUE come from capability probing and are harmless here.
+    const error = gl.getError();
+    if (error === gl.INVALID_FRAMEBUFFER_OPERATION || error === gl.OUT_OF_MEMORY || error === gl.CONTEXT_LOST_WEBGL) {
+      throw new Error('gl error 0x' + error.toString(16));
+    }
+  }
+
+  /* EffectComposer.dispose() frees only its two buffers and the internal copy
+   * pass, so the passes this viewer added are freed here.
+   *
+   * `stale` means the GL objects behind them died with a lost context: the
+   * driver has already freed every one, and deleting the old handles through
+   * the restored context logs a couple of hundred `INVALID_OPERATION: delete:
+   * object does not belong to this context` warnings for nothing.  Dropping
+   * the references is the whole job - three.js threw away its own maps in
+   * initGLContext(), so nothing is left pointing at them either. */
+  disposeComposer(stale) {
+    if (!this.composer) return;
+    if (!stale) {
+      this.composer.passes.forEach(function (pass) {
+        if (!pass || typeof pass.dispose !== 'function') return;
+        try { pass.dispose(); } catch (err) { /* half-built */ }
+      });
+      try { this.composer.dispose(); } catch (err) { /* ditto */ }
+    }
+    this.composer = null;
+    this.hazePass = null;
+    this.bloomPass = null;
+    this.smaaPass = null;
   }
 
   rebuildDepthTarget(size) {
@@ -204,6 +326,9 @@ export class GLViewer {
   }
 
   resize() {
+    // Nothing to size while the context is gone; restoreContext() resizes once
+    // the pipeline is back.
+    if (this.contextLost || !this.composer) return;
     const css = this.cssSize();
     const ratio = this.pixelRatio();
     this.renderer.setPixelRatio(ratio);
@@ -218,10 +343,17 @@ export class GLViewer {
   // -- stream ---------------------------------------------------------
 
   start() {
-    if (this.running) return;
-    this.running = true;
+    if (this.started) return;
+    this.started = true;
     this.client.connect();
     this.resize();
+    this.startLoop();
+  }
+
+  startLoop() {
+    if (this.running) return;
+    this.running = true;
+    this.lastFrameAt = 0;               // do not average a context-loss gap into the fps
     const loop = (now) => {
       if (!this.running) return;
       // One bad frame must not stop the viewer: report it once and keep drawing.
@@ -240,11 +372,102 @@ export class GLViewer {
     this.rafHandle = requestAnimationFrame(loop);
   }
 
+  stopLoop() {
+    this.running = false;
+    if (this.rafHandle) { cancelAnimationFrame(this.rafHandle); this.rafHandle = null; }
+  }
+
+  // -- context loss ---------------------------------------------------
+
+  /* A Chromium tab loses its GL context on a GPU process restart, a driver
+   * reset, or when the browser reclaims a background tab's contexts.  Left
+   * alone the canvas goes black and stays black for the rest of the session,
+   * which reads as a rendering regression rather than as what it is.
+   *
+   * three.js registers its own handlers inside the WebGLRenderer constructor,
+   * i.e. before these, so they run first: it re-initialises its GL state and
+   * then re-uploads geometries, attributes, textures and programs lazily from
+   * the CPU-side copies it still holds (that covers every layer - particles,
+   * ribbons, mesh instances, decals, volumes).  What it cannot know about is
+   * the pipeline this viewer built on top of it, which is what restoreContext()
+   * puts back. */
+  installContextHandlers() {
+    this.canvas.addEventListener('webglcontextlost', (event) => {
+      // Without preventDefault() the browser never fires webglcontextrestored.
+      event.preventDefault();
+      if (this.contextLost) return;
+      this.contextLost = true;
+      this.stopLoop();
+      console.warn('[aetherfx viewer] WebGL context lost - render loop paused until the browser restores it');
+      this.onStatus({ kind: 'context_lost' });
+    }, false);
+
+    this.canvas.addEventListener('webglcontextrestored', () => {
+      if (!this.contextLost) return;
+      this.contextLost = false;
+      try {
+        this.restoreContext();
+      } catch (err) {
+        console.error('[aetherfx viewer] context restored but the pipeline could not be rebuilt', err);
+        this.onStatus({ kind: 'error', error: { code: 'restore_failed', message: String((err && err.message) || err) } });
+      }
+    }, false);
+  }
+
+  restoreContext() {
+    // Everything that lived in GL memory went with the context: the composer's
+    // buffers, the bloom mip pyramid, SMAA's targets and the depth target the
+    // soft-particle and volume shaders sample.  Rebuild them - the whole
+    // fallback chain runs again, because a restored context may well be a
+    // different (software) one - then push back every piece of state that lives
+    // on a pass rather than in the scene graph.
+    this.disposeComposer(true);
+    this.depthTarget = null;                 // its GL objects went with the context
+    this.reportedError = false;
+    this.buildComposer();
+    this.resize();
+    this.applyStageToPipeline();             // exposure, bloom strength / radius / threshold
+    if (this.frame) {
+      this.frameIsNew = true;                // re-push every layer on the next draw
+      this.applyPostEffects(this.frame.post_effects);
+    }
+    // three.js re-uploads a texture from the image it still holds, so normally
+    // there is nothing to fetch.  A source that dropped its pixels (a closed
+    // ImageBitmap, a decode that never finished) cannot be re-uploaded from
+    // anything, and only then is a resources message worth the round trip and
+    // the full asset rebuild it triggers.  Keep the user's camera either way.
+    if (this.hasResources && this.texturesNeedReupload()) {
+      console.warn('[aetherfx viewer] re-requesting resources: a texture lost its pixels with the context');
+      this.keepCameraOnResources = true;
+      this.client.resources();
+    }
+    // Playback never stopped server side - the socket stayed up - so resuming
+    // the loop is all it takes to be live again.
+    this.startLoop();
+    console.info('[aetherfx viewer] WebGL context restored (' + this.renderMode.detail + ')');
+    this.onStatus({ kind: 'context_restored', mode: this.renderMode });
+  }
+
+  /* True when some loaded texture can no longer be uploaded from its own image. */
+  texturesNeedReupload() {
+    let stale = false;
+    this.resources.textures.forEach(function (texture) {
+      const image = texture && texture.image;
+      if (!image) { stale = true; return; }
+      if (!image.data && !(image.width > 0 && image.height > 0)) stale = true;
+    });
+    return stale;
+  }
+
   receiveResources(message) {
     this.resources.load(message);
+    this.hasResources = true;
     this.duration = (message.effect && message.effect.duration) || 0;
     this.effectCamera = message.camera || null;
-    this.cameraDirty = true;
+    // A re-request made purely to re-upload assets after a context loss must
+    // not yank the view back to the effect's framing.
+    if (this.keepCameraOnResources) this.keepCameraOnResources = false;
+    else this.cameraDirty = true;
     this.stage.apply(message.render_settings || {});
     this.applyStageToPipeline();
     this.onStatus({ kind: 'resources', resources: message, duration: this.duration });
@@ -336,6 +559,7 @@ export class GLViewer {
   }
 
   renderFrame(now) {
+    if (this.contextLost || !this.composer) return;
     this.controls.update();
     if (this.cameraDirty && this.effectCamera) this.resetView();
 
@@ -400,6 +624,7 @@ export class GLViewer {
   }
 
   snapshot(filename) {
+    if (this.contextLost || !this.composer) return;
     // The composer leaves its result on the default framebuffer; render once
     // more first so the canvas is guaranteed to hold the current frame.
     this.renderer.info.reset();
@@ -415,8 +640,8 @@ export class GLViewer {
   }
 
   dispose() {
-    this.running = false;
-    if (this.rafHandle) cancelAnimationFrame(this.rafHandle);
+    this.stopLoop();
+    this.started = false;
     if (this.resizeObserver) this.resizeObserver.disconnect();
     this.client.close();
     this.particles.dispose();
@@ -427,8 +652,8 @@ export class GLViewer {
     this.stage.dispose();
     this.resources.dispose();
     this.noiseTexture.dispose();
-    if (this.depthTarget) this.depthTarget.dispose();
-    this.composer.dispose();
+    if (this.depthTarget) { this.depthTarget.dispose(); this.depthTarget = null; }
+    this.disposeComposer();
     this.renderer.dispose();
   }
 }
@@ -439,6 +664,9 @@ export class GLViewer {
 
 export function createGLViewer(options) {
   const canvas = options.canvas;
+  if (typeof WebGL2RenderingContext === 'undefined') {
+    return { available: false, reason: 'WebGL2 is not supported by this browser' };
+  }
   let viewer = null;
   try {
     // Do not probe with canvas.getContext() first: the first call fixes the
@@ -447,6 +675,10 @@ export function createGLViewer(options) {
     viewer = new GLViewer(canvas, options);
     if (!viewer.renderer.getContext()) throw new Error('WebGL2 is not available');
   } catch (err) {
+    // Everything short of "there is no WebGL2 here" has already been retried on
+    // a cheaper pipeline by buildComposer(), so reaching this really does mean
+    // the CPU frames are the only thing left.
+    if (viewer) { try { viewer.dispose(); } catch (cleanup) { /* half-built */ } }
     return { available: false, reason: (err && err.message) || 'WebGL is not available' };
   }
   viewer.start();
@@ -454,6 +686,8 @@ export function createGLViewer(options) {
   return {
     available: true,
     viewer: viewer,
+    renderMode: viewer.renderMode,
+    mode: viewer.renderMode ? viewer.renderMode.detail : 'GPU',
     play: function (fps, loop, time) { viewer.client.play(fps || 60, loop !== false, time); },
     pause: function () { viewer.client.pause(); },
     seek: function (time) { viewer.client.seek(time); },
