@@ -128,3 +128,14 @@ simplified once the feature lands.
   Wanted: smoothed lateral noise.
 - `fire_sim` lost the A/B at Fire Bolt's 0.36-1.0 m sprite sizes (sparser and wispier than hand-built
   warped-noise sheets); it won on Fire AOE's 1.2-2.0 m sprites. Consider a denser-body variant.
+
+## From Earth Shatter (top priority for look: mesh surface detail)
+- Meshes have no texture or normal detail, so rock spikes read as flat-shaded paper cones however
+  varied their silhouettes are. Wanted: a procedural triplanar surface (albedo + bump from a texture
+  graph) and emissive seam masks on `mesh` nodes and mesh particles, in both renderers.
+- A `mesh` node renders variant 0 only (each hero spike needs its own node and seed).
+- Decals show their `color` at `emissive: 0` (`out = rgb * (1 + emissive)`): fade with `opacity`.
+- Decals cannot be revealed along their length: a travelling crack needs 8 staggered overlapping decals.
+  Wanted: a reveal/wipe parameter (progress along U with a soft edge).
+- `tools/gl_capture.py`: a capture right after a seek can show the previous frame; give the viewer a
+  settle signal to wait on instead of a fixed delay.

@@ -79,10 +79,14 @@ TEST_CASE("default controls change nothing in any example", "[sim][controls]") {
         REQUIRE(b.diagnostics.error_count() == 0);
         CHECK(b.controls_applied == 0);
 
-        // The compiled document: the controls ride along, the nodes do not move.
+        // The compiled document: the controls ride along, the nodes do not move.  An example may ship
+        // its own authored controls (at their defaults), so compare the two documents without either
+        // side's control list.
         Effect folded = b.effect;
         folded.controls.clear();
-        CHECK(effect_to_canonical_string(folded) == effect_to_canonical_string(a.effect));
+        Effect baseline = a.effect;
+        baseline.controls.clear();
+        CHECK(effect_to_canonical_string(folded) == effect_to_canonical_string(baseline));
         CHECK(comparable_plan(b) == comparable_plan(a));
 
         // ... and the simulation it drives.
