@@ -235,6 +235,20 @@ class Studio:
     #: The studio's working document (a copy of a library entry or a new effect) and where it came from.
     working_id: str | None = None
     working_source: JsonDict | None = None
+    #: studio.revision when the working document was loaded/created/saved; dirty = revision differs
+    working_revision: int = 0
+
+    def working_dirty(self) -> bool:
+        return self.working_id is not None and self.revision != self.working_revision
+
+    def decorate_active(self, active: JsonDict | None) -> JsonDict | None:
+        """Replace the engine's 'dirty' flag (true for any new document) with the studio's."""
+        if not active:
+            return active
+        out = dict(active)
+        if out.get("effect_id") == self.working_id:
+            out["dirty"] = self.working_dirty()
+        return out
 
     def is_builtin_path(self, path: Path | str | None) -> bool:
         if not path:
@@ -285,6 +299,7 @@ class Studio:
         previous = self.working_id
         self.working_id = new_id
         self.working_source = source
+        self.working_revision = self.revision
         if previous and previous != new_id:
             try:
                 await self.acall("delete_effect", effect_id=previous)
@@ -646,7 +661,7 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
     @endpoint
     async def api_status(_request: Request) -> JsonDict:
         engine = await run_in_threadpool(studio.engine_status)
-        active = await studio.active_effect() if engine.get("ok") else None
+        active = studio.decorate_active(await studio.active_effect()) if engine.get("ok") else None
         job = studio.jobs.active()
         return {
             "engine": engine,
@@ -691,7 +706,7 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
             }
             for entry in (listed.get("effects") or [])
         ]
-        active = await studio.active_effect()
+        active = studio.decorate_active(await studio.active_effect())
         working = dict(active) if active else None
         if working is not None:
             working["source"] = studio.working_source
@@ -764,6 +779,7 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
         result = await studio.acall("save_effect", path=str(path))
         saved = result.get("path") or str(path)
         studio.working_source = {"path": saved, "builtin": False, "name": name}
+        studio.working_revision = studio.revision
         LOGGER.info("saved effect %s as %s (%s)", active.get("effect_id"), name, saved)
         return {"path": saved, "effect_id": active.get("effect_id"), "name": name}
 

@@ -289,7 +289,7 @@ function refreshEffects() {
 function currentIsDirty() { return !!(S.status && S.status.active_effect && S.status.active_effect.dirty); }
 function openLibraryItem(item) {
   var name = (S.status && S.status.active_effect && S.status.active_effect.name) || 'the current effect';
-  if (currentIsDirty() && !window.confirm('Discard unsaved changes to "' + name + '" and load "' + item.name + '"?')) return;
+  if (currentIsDirty()) toast('unsaved changes to "' + name + '" were discarded', 'warn');
   loadEffect(item.path);
 }
 
