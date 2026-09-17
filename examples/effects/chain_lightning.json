@@ -339,7 +339,7 @@
        "id": "hot",
        "op": "gradient_radial",
        "params": {
-        "radius": 0.15,
+        "radius": 0.085,
         "falloff": "quadratic"
        }
       },
@@ -866,16 +866,16 @@
        "id": "r1",
        "op": "ring",
        "params": {
-        "radius": 0.4,
-        "thickness": 0.012,
-        "softness": 0.018
+        "radius": 0.38,
+        "thickness": 0.03,
+        "softness": 0.07
        }
       },
       {
        "id": "r1d",
        "op": "distort",
        "params": {
-        "amount": 0.035
+        "amount": 0.09
        },
        "inputs": {
         "a": "r1",
@@ -886,7 +886,7 @@
        "id": "n",
        "op": "fbm",
        "params": {
-        "frequency": 5.0,
+        "frequency": 3.5,
         "octaves": 3,
         "seed": 5
        }
@@ -895,9 +895,8 @@
        "id": "nl",
        "op": "levels",
        "params": {
-        "in_low": 0.36,
-        "in_high": 0.66,
-        "out_low": 0.06
+        "in_low": 0.42,
+        "in_high": 0.7
        },
        "inputs": {
         "a": "n"
@@ -1372,14 +1371,14 @@
    }
   },
   {
-   "id": "ps_flash",
+   "id": "ps_flash_1",
    "type": "particle_system",
    "layer": "impact",
    "parameters": {
     "max_particles": 8,
-    "lifetime": 0.15,
-    "size": 1.0,
-    "size_variance": 0.1,
+    "lifetime": 0.155,
+    "size": 0.7,
+    "size_variance": 0.08,
     "size_over_life": [
      [
       0.0,
@@ -1395,8 +1394,8 @@
      ]
     ],
     "color": [
-     0.4,
-     0.6,
+     1.0,
+     1.0,
      1.0,
      1.0
     ],
@@ -1404,17 +1403,26 @@
      [
       0.0,
       [
-       1.0,
-       1.0,
+       0.9,
+       0.95,
        1.0,
        1.0
       ]
      ],
      [
-      0.3,
+      0.25,
       [
-       0.82,
-       0.9,
+       0.66,
+       0.8,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      0.6,
+      [
+       0.22,
+       0.42,
        1.0,
        1.0
       ]
@@ -1422,14 +1430,14 @@
      [
       1.0,
       [
-       0.256,
-       0.384,
-       1.36,
+       0.2,
+       0.13,
+       0.85,
        1.0
       ]
      ]
     ],
-    "opacity": 0.8,
+    "opacity": 0.76,
     "opacity_over_life": [
      [
       0.0,
@@ -1437,14 +1445,14 @@
      ],
      [
       0.3,
-      0.6
+      0.55
      ],
      [
       1.0,
       0.0
      ]
     ],
-    "emissive": 1.3,
+    "emissive": 0.82,
     "render_mode": "billboard",
     "blend": "additive"
    },
@@ -1453,96 +1461,15 @@
    }
   },
   {
-   "id": "ps_flash_big",
+   "id": "ps_rays_1",
    "type": "particle_system",
    "layer": "impact",
    "parameters": {
     "max_particles": 8,
-    "lifetime": 0.2,
-    "size": 1.45,
-    "size_variance": 0.12,
-    "size_over_life": [
-     [
-      0.0,
-      0.28
-     ],
-     [
-      0.18,
-      1.0
-     ],
-     [
-      1.0,
-      1.3
-     ]
-    ],
-    "color": [
-     0.4,
-     0.6,
-     1.0,
-     1.0
-    ],
-    "color_over_life": [
-     [
-      0.0,
-      [
-       1.0,
-       1.0,
-       1.0,
-       1.0
-      ]
-     ],
-     [
-      0.3,
-      [
-       0.82,
-       0.9,
-       1.0,
-       1.0
-      ]
-     ],
-     [
-      1.0,
-      [
-       0.256,
-       0.384,
-       1.36,
-       1.0
-      ]
-     ]
-    ],
-    "opacity": 0.85,
-    "opacity_over_life": [
-     [
-      0.0,
-      1.0
-     ],
-     [
-      0.3,
-      0.62
-     ],
-     [
-      1.0,
-      0.0
-     ]
-    ],
-    "emissive": 1.5,
-    "render_mode": "billboard",
-    "blend": "additive"
-   },
-   "inputs": {
-    "sprite": "tex_glow"
-   }
-  },
-  {
-   "id": "ps_rays",
-   "type": "particle_system",
-   "layer": "impact",
-   "parameters": {
-    "max_particles": 12,
-    "lifetime": 0.17,
-    "lifetime_variance": 0.03,
-    "size": 2.3,
-    "size_variance": 0.35,
+    "lifetime": 0.165,
+    "lifetime_variance": 0.02,
+    "size": 1.7,
+    "size_variance": 0.204,
     "size_over_life": [
      [
       0.0,
@@ -1559,8 +1486,8 @@
     ],
     "rotation_variance": 180.0,
     "color": [
-     0.4,
-     0.6,
+     1.0,
+     1.0,
      1.0,
      1.0
     ],
@@ -1568,8 +1495,8 @@
      [
       0.0,
       [
-       1.0,
-       1.0,
+       0.66,
+       0.8,
        1.0,
        1.0
       ]
@@ -1577,8 +1504,8 @@
      [
       0.4,
       [
-       0.82,
-       0.9,
+       0.22,
+       0.42,
        1.0,
        1.0
       ]
@@ -1586,9 +1513,355 @@
      [
       1.0,
       [
-       0.4,
-       0.6,
+       0.2,
+       0.13,
+       0.85,
+       1.0
+      ]
+     ]
+    ],
+    "opacity": 1.0,
+    "opacity_over_life": [
+     [
+      0.0,
+      1.0
+     ],
+     [
+      0.35,
+      0.7
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 2.0,
+    "render_mode": "billboard",
+    "blend": "additive"
+   },
+   "inputs": {
+    "sprite": "tex_rays"
+   }
+  },
+  {
+   "id": "ps_flash_2",
+   "type": "particle_system",
+   "layer": "impact",
+   "parameters": {
+    "max_particles": 8,
+    "lifetime": 0.18,
+    "size": 0.95,
+    "size_variance": 0.08,
+    "size_over_life": [
+     [
+      0.0,
+      0.3
+     ],
+     [
+      0.2,
+      1.0
+     ],
+     [
+      1.0,
+      1.3
+     ]
+    ],
+    "color": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "color_over_life": [
+     [
+      0.0,
+      [
+       0.9,
+       0.95,
        1.0,
+       1.0
+      ]
+     ],
+     [
+      0.25,
+      [
+       0.66,
+       0.8,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      0.6,
+      [
+       0.22,
+       0.42,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      1.0,
+      [
+       0.2,
+       0.13,
+       0.85,
+       1.0
+      ]
+     ]
+    ],
+    "opacity": 0.82,
+    "opacity_over_life": [
+     [
+      0.0,
+      1.0
+     ],
+     [
+      0.3,
+      0.55
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 0.94,
+    "render_mode": "billboard",
+    "blend": "additive"
+   },
+   "inputs": {
+    "sprite": "tex_glow"
+   }
+  },
+  {
+   "id": "ps_rays_2",
+   "type": "particle_system",
+   "layer": "impact",
+   "parameters": {
+    "max_particles": 8,
+    "lifetime": 0.19,
+    "lifetime_variance": 0.02,
+    "size": 2.4,
+    "size_variance": 0.288,
+    "size_over_life": [
+     [
+      0.0,
+      0.35
+     ],
+     [
+      0.25,
+      1.0
+     ],
+     [
+      1.0,
+      1.2
+     ]
+    ],
+    "rotation_variance": 180.0,
+    "color": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "color_over_life": [
+     [
+      0.0,
+      [
+       0.66,
+       0.8,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      0.4,
+      [
+       0.22,
+       0.42,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      1.0,
+      [
+       0.2,
+       0.13,
+       0.85,
+       1.0
+      ]
+     ]
+    ],
+    "opacity": 1.0,
+    "opacity_over_life": [
+     [
+      0.0,
+      1.0
+     ],
+     [
+      0.35,
+      0.7
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 2.3,
+    "render_mode": "billboard",
+    "blend": "additive"
+   },
+   "inputs": {
+    "sprite": "tex_rays"
+   }
+  },
+  {
+   "id": "ps_flash_3",
+   "type": "particle_system",
+   "layer": "impact",
+   "parameters": {
+    "max_particles": 8,
+    "lifetime": 0.205,
+    "size": 1.25,
+    "size_variance": 0.08,
+    "size_over_life": [
+     [
+      0.0,
+      0.3
+     ],
+     [
+      0.2,
+      1.0
+     ],
+     [
+      1.0,
+      1.3
+     ]
+    ],
+    "color": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "color_over_life": [
+     [
+      0.0,
+      [
+       0.9,
+       0.95,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      0.25,
+      [
+       0.66,
+       0.8,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      0.6,
+      [
+       0.22,
+       0.42,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      1.0,
+      [
+       0.2,
+       0.13,
+       0.85,
+       1.0
+      ]
+     ]
+    ],
+    "opacity": 0.88,
+    "opacity_over_life": [
+     [
+      0.0,
+      1.0
+     ],
+     [
+      0.3,
+      0.55
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 1.06,
+    "render_mode": "billboard",
+    "blend": "additive"
+   },
+   "inputs": {
+    "sprite": "tex_glow"
+   }
+  },
+  {
+   "id": "ps_rays_3",
+   "type": "particle_system",
+   "layer": "impact",
+   "parameters": {
+    "max_particles": 8,
+    "lifetime": 0.215,
+    "lifetime_variance": 0.02,
+    "size": 3.4,
+    "size_variance": 0.408,
+    "size_over_life": [
+     [
+      0.0,
+      0.35
+     ],
+     [
+      0.25,
+      1.0
+     ],
+     [
+      1.0,
+      1.2
+     ]
+    ],
+    "rotation_variance": 180.0,
+    "color": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "color_over_life": [
+     [
+      0.0,
+      [
+       0.66,
+       0.8,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      0.4,
+      [
+       0.22,
+       0.42,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      1.0,
+      [
+       0.2,
+       0.13,
+       0.85,
        1.0
       ]
      ]
@@ -1637,8 +1910,8 @@
      ]
     ],
     "color": [
-     0.82,
-     0.9,
+     1.0,
+     1.0,
      1.0,
      1.0
     ],
@@ -1646,17 +1919,17 @@
      [
       0.0,
       [
-       1.0,
-       1.0,
+       0.66,
+       0.8,
        1.0,
        1.0
       ]
      ],
      [
-      0.5,
+      0.4,
       [
-       0.4,
-       0.6,
+       0.22,
+       0.42,
        1.0,
        1.0
       ]
@@ -1664,8 +1937,8 @@
      [
       1.0,
       [
-       0.16,
-       0.24,
+       0.2,
+       0.13,
        0.85,
        1.0
       ]
@@ -1685,7 +1958,7 @@
       0.0
      ]
     ],
-    "emissive": 6.0,
+    "emissive": 3.2,
     "render_mode": "stretched_billboard",
     "velocity_stretch": 1.5,
     "drag": 7.5,
@@ -1720,8 +1993,8 @@
     ],
     "rotation_variance": 180.0,
     "color": [
-     0.4,
-     0.6,
+     1.0,
+     1.0,
      1.0,
      1.0
     ],
@@ -1729,8 +2002,8 @@
      [
       0.0,
       [
-       0.82,
-       0.9,
+       0.22,
+       0.42,
        1.0,
        1.0
       ]
@@ -1738,8 +2011,8 @@
      [
       0.5,
       [
-       0.4,
-       0.6,
+       0.22,
+       0.42,
        1.0,
        1.0
       ]
@@ -1747,14 +2020,14 @@
      [
       1.0,
       [
-       0.16,
-       0.24,
+       0.2,
+       0.13,
        0.85,
        1.0
       ]
      ]
     ],
-    "opacity": 0.6,
+    "opacity": 0.55,
     "opacity_over_life": [
      [
       0.0,
@@ -1773,7 +2046,7 @@
       0.0
      ]
     ],
-    "emissive": 1.2,
+    "emissive": 1.1,
     "render_mode": "billboard",
     "blend": "additive"
    },
@@ -1792,8 +2065,8 @@
     "size": 0.032,
     "size_variance": 0.012,
     "color": [
-     0.82,
-     0.9,
+     1.0,
+     1.0,
      1.0,
      1.0
     ],
@@ -1801,32 +2074,32 @@
      [
       0.0,
       [
-       1.0,
-       1.0,
+       0.66,
+       0.8,
        1.0,
        1.0
       ]
      ],
      [
-      0.35,
+      0.3,
       [
-       0.48,
-       0.72,
-       1.2,
+       0.22,
+       0.42,
+       1.0,
        1.0
       ]
      ],
      [
       1.0,
       [
-       0.16,
-       0.24,
+       0.2,
+       0.13,
        0.85,
        1.0
       ]
      ]
     ],
-    "emissive": 7.0,
+    "emissive": 3.4,
     "opacity_over_life": [
      [
       0.0,
@@ -1863,14 +2136,14 @@
    "type": "particle_system",
    "layer": "sparks",
    "parameters": {
-    "max_particles": 420,
+    "max_particles": 520,
     "lifetime": 0.44,
     "lifetime_variance": 0.11,
     "size": 0.032,
     "size_variance": 0.012,
     "color": [
-     0.82,
-     0.9,
+     1.0,
+     1.0,
      1.0,
      1.0
     ],
@@ -1878,32 +2151,32 @@
      [
       0.0,
       [
-       1.0,
-       1.0,
+       0.66,
+       0.8,
        1.0,
        1.0
       ]
      ],
      [
-      0.35,
+      0.3,
       [
-       0.48,
-       0.72,
-       1.2,
+       0.22,
+       0.42,
+       1.0,
        1.0
       ]
      ],
      [
       1.0,
       [
-       0.16,
-       0.24,
+       0.2,
+       0.13,
        0.85,
        1.0
       ]
      ]
     ],
-    "emissive": 7.0,
+    "emissive": 3.4,
     "opacity_over_life": [
      [
       0.0,
@@ -1943,8 +2216,8 @@
     "max_particles": 500,
     "lifetime": 0.55,
     "lifetime_variance": 0.14,
-    "size": 0.052,
-    "size_variance": 0.03,
+    "size": 0.06,
+    "size_variance": 0.035,
     "size_over_life": [
      [
       0.0,
@@ -1956,30 +2229,30 @@
      ],
      [
       1.0,
-      0.35
+      0.4
      ]
     ],
     "color": [
-     0.52,
-     0.78,
-     1.3,
+     1.0,
+     1.0,
+     1.0,
      1.0
     ],
     "color_over_life": [
      [
       0.0,
       [
-       0.82,
-       0.9,
+       0.66,
+       0.8,
        1.0,
        1.0
       ]
      ],
      [
-      0.4,
+      0.3,
       [
-       0.4,
-       0.6,
+       0.22,
+       0.42,
        1.0,
        1.0
       ]
@@ -1987,26 +2260,26 @@
      [
       1.0,
       [
-       0.16,
-       0.24,
+       0.2,
+       0.13,
        0.85,
        1.0
       ]
      ]
     ],
-    "emissive": 5.0,
+    "emissive": 3.4,
     "opacity_over_life": [
      [
       0.0,
       0.0
      ],
      [
-      0.12,
+      0.1,
       1.0
      ],
      [
-      0.65,
-      0.8
+      0.75,
+      0.9
      ],
      [
       1.0,
@@ -2033,8 +2306,8 @@
     "max_particles": 1100,
     "lifetime": 0.2,
     "lifetime_variance": 0.02,
-    "size": 0.052,
-    "size_variance": 0.03,
+    "size": 0.06,
+    "size_variance": 0.035,
     "size_over_life": [
      [
       0.0,
@@ -2046,30 +2319,30 @@
      ],
      [
       1.0,
-      0.35
+      0.4
      ]
     ],
     "color": [
-     0.52,
-     0.78,
-     1.3,
+     1.0,
+     1.0,
+     1.0,
      1.0
     ],
     "color_over_life": [
      [
       0.0,
       [
-       0.82,
-       0.9,
+       0.66,
+       0.8,
        1.0,
        1.0
       ]
      ],
      [
-      0.4,
+      0.3,
       [
-       0.4,
-       0.6,
+       0.22,
+       0.42,
        1.0,
        1.0
       ]
@@ -2077,26 +2350,26 @@
      [
       1.0,
       [
-       0.16,
-       0.24,
+       0.2,
+       0.13,
        0.85,
        1.0
       ]
      ]
     ],
-    "emissive": 5.0,
+    "emissive": 3.4,
     "opacity_over_life": [
      [
       0.0,
       0.0
      ],
      [
-      0.12,
+      0.1,
       1.0
      ],
      [
-      0.65,
-      0.8
+      0.75,
+      0.9
      ],
      [
       1.0,
@@ -2127,17 +2400,26 @@
     "size_variance": 0.24,
     "rotation_variance": 180.0,
     "color": [
-     0.645,
-     0.57,
-     1.5,
+     1.0,
+     1.0,
+     1.0,
      1.0
     ],
     "color_over_life": [
      [
       0.0,
       [
+       0.66,
+       0.8,
        1.0,
-       1.0,
+       1.0
+      ]
+     ],
+     [
+      0.4,
+      [
+       0.46,
+       0.25,
        1.0,
        1.0
       ]
@@ -2145,9 +2427,9 @@
      [
       1.0,
       [
-       0.43,
-       0.38,
-       1.0,
+       0.2,
+       0.13,
+       0.85,
        1.0
       ]
      ]
@@ -2166,7 +2448,7 @@
       0.0
      ]
     ],
-    "emissive": 4.0,
+    "emissive": 2.6,
     "render_mode": "billboard",
     "blend": "additive"
    },
@@ -2202,17 +2484,17 @@
     "angular_velocity": 60.0,
     "angular_velocity_variance": 120.0,
     "color": [
-     0.48,
-     0.72,
-     1.2,
+     1.0,
+     1.0,
+     1.0,
      1.0
     ],
     "color_over_life": [
      [
       0.0,
       [
-       1.0,
-       1.0,
+       0.66,
+       0.8,
        1.0,
        1.0
       ]
@@ -2220,8 +2502,8 @@
      [
       0.5,
       [
-       0.82,
-       0.9,
+       0.22,
+       0.42,
        1.0,
        1.0
       ]
@@ -2229,8 +2511,8 @@
      [
       1.0,
       [
-       0.27,
-       0.45,
+       0.46,
+       0.25,
        1.0,
        1.0
       ]
@@ -2255,7 +2537,7 @@
       0.0
      ]
     ],
-    "emissive": 2.6,
+    "emissive": 2.0,
     "render_mode": "billboard",
     "blend": "additive"
    },
@@ -2341,8 +2623,8 @@
      ]
     ],
     "color": [
-     0.82,
-     0.9,
+     1.0,
+     1.0,
      1.0,
      1.0
     ],
@@ -2350,8 +2632,17 @@
      [
       0.0,
       [
+       0.9,
+       0.95,
        1.0,
-       1.0,
+       1.0
+      ]
+     ],
+     [
+      0.5,
+      [
+       0.66,
+       0.8,
        1.0,
        1.0
       ]
@@ -2359,8 +2650,8 @@
      [
       1.0,
       [
-       0.4,
-       0.6,
+       0.22,
+       0.42,
        1.0,
        1.0
       ]
@@ -2381,7 +2672,7 @@
       0.0
      ]
     ],
-    "emissive": 2.2,
+    "emissive": 1.8,
     "render_mode": "billboard",
     "blend": "additive"
    },
@@ -2462,8 +2753,8 @@
      ]
     ],
     "color": [
-     0.4,
-     0.6,
+     1.0,
+     1.0,
      1.0,
      1.0
     ],
@@ -2471,8 +2762,8 @@
      [
       0.0,
       [
-       0.16,
-       0.24,
+       0.2,
+       0.13,
        0.85,
        1.0
       ]
@@ -2480,8 +2771,8 @@
      [
       0.6,
       [
-       0.4,
-       0.6,
+       0.22,
+       0.42,
        1.0,
        1.0
       ]
@@ -2489,8 +2780,8 @@
      [
       1.0,
       [
-       1.0,
-       1.0,
+       0.66,
+       0.8,
        1.0,
        1.0
       ]
@@ -2514,7 +2805,7 @@
       0.0
      ]
     ],
-    "emissive": 5.0,
+    "emissive": 3.0,
     "render_mode": "stretched_billboard",
     "velocity_stretch": 0.28,
     "blend": "additive"
@@ -2578,12 +2869,12 @@
      0.75
     ],
     "color": [
-     0.5,
-     0.66,
+     0.2,
+     0.36,
      1.0,
      1.0
     ],
-    "radius": 6.0,
+    "radius": 3.4,
     "intensity": {
      "value": 0.0,
      "track": [
@@ -2593,23 +2884,23 @@
       },
       {
        "time": 0.2,
-       "value": 2.6
+       "value": 1.3
       },
       {
        "time": 0.3333,
-       "value": 3.6
+       "value": 1.9
       },
       {
        "time": 0.4,
-       "value": 6.0
+       "value": 3.0
       },
       {
        "time": 0.5333,
-       "value": 2.4
+       "value": 1.0
       },
       {
        "time": 1.6167,
-       "value": 1.7
+       "value": 0.7
       },
       {
        "time": 1.7167,
@@ -2703,8 +2994,8 @@
      ]
     },
     "color": [
-     0.4,
-     0.6,
+     0.22,
+     0.42,
      1.0,
      1.0
     ],
@@ -2899,11 +3190,11 @@
      ]
     },
     "width": {
-     "value": 0.0356,
+     "value": 0.0269,
      "track": [
       {
        "time": 0.0647,
-       "value": 0.0356,
+       "value": 0.0269,
        "interp": "step"
       },
       {
@@ -2913,7 +3204,7 @@
       },
       {
        "time": 0.1813,
-       "value": 0.0382,
+       "value": 0.0287,
        "interp": "step"
       },
       {
@@ -2923,7 +3214,7 @@
       },
       {
        "time": 0.2813,
-       "value": 0.0266,
+       "value": 0.0204,
        "interp": "step"
       },
       {
@@ -2933,7 +3224,7 @@
       },
       {
        "time": 0.3813,
-       "value": 0.0397,
+       "value": 0.0298,
        "interp": "step"
       },
       {
@@ -2943,7 +3234,7 @@
       },
       {
        "time": 0.4813,
-       "value": 0.0374,
+       "value": 0.0281,
        "interp": "step"
       },
       {
@@ -2953,7 +3244,7 @@
       },
       {
        "time": 0.5647,
-       "value": 0.0293,
+       "value": 0.0224,
        "interp": "step"
       },
       {
@@ -2963,7 +3254,7 @@
       },
       {
        "time": 0.7147,
-       "value": 0.0304,
+       "value": 0.0231,
        "interp": "step"
       },
       {
@@ -2973,7 +3264,7 @@
       },
       {
        "time": 0.948,
-       "value": 0.0338,
+       "value": 0.0255,
        "interp": "step"
       },
       {
@@ -2983,7 +3274,7 @@
       },
       {
        "time": 1.1647,
-       "value": 0.0354,
+       "value": 0.0267,
        "interp": "step"
       },
       {
@@ -2993,7 +3284,7 @@
       },
       {
        "time": 1.3647,
-       "value": 0.0332,
+       "value": 0.0251,
        "interp": "step"
       },
       {
@@ -3003,7 +3294,7 @@
       },
       {
        "time": 1.5647,
-       "value": 0.0312,
+       "value": 0.0237,
        "interp": "step"
       },
       {
@@ -3032,17 +3323,17 @@
     "core_width": 0.2,
     "glow_width": 2.6,
     "color": [
-     0.43,
-     0.38,
+     0.46,
+     0.25,
      1.0,
      1.0
     ],
     "emissive": {
-     "value": 5.9618,
+     "value": 3.4986,
      "track": [
       {
        "time": 0.0647,
-       "value": 5.9618,
+       "value": 3.4986,
        "interp": "step"
       },
       {
@@ -3052,7 +3343,7 @@
       },
       {
        "time": 0.1813,
-       "value": 6.2274,
+       "value": 3.6473,
        "interp": "step"
       },
       {
@@ -3062,7 +3353,7 @@
       },
       {
        "time": 0.2813,
-       "value": 5.9891,
+       "value": 3.5139,
        "interp": "step"
       },
       {
@@ -3072,7 +3363,7 @@
       },
       {
        "time": 0.3813,
-       "value": 4.906,
+       "value": 2.9074,
        "interp": "step"
       },
       {
@@ -3082,7 +3373,7 @@
       },
       {
        "time": 0.4813,
-       "value": 4.5155,
+       "value": 2.6887,
        "interp": "step"
       },
       {
@@ -3092,7 +3383,7 @@
       },
       {
        "time": 0.5647,
-       "value": 3.3539,
+       "value": 1.9902,
        "interp": "step"
       },
       {
@@ -3102,7 +3393,7 @@
       },
       {
        "time": 0.7147,
-       "value": 4.019,
+       "value": 2.3627,
        "interp": "step"
       },
       {
@@ -3112,7 +3403,7 @@
       },
       {
        "time": 0.948,
-       "value": 4.4868,
+       "value": 2.6246,
        "interp": "step"
       },
       {
@@ -3122,7 +3413,7 @@
       },
       {
        "time": 1.1647,
-       "value": 3.8241,
+       "value": 2.2535,
        "interp": "step"
       },
       {
@@ -3132,7 +3423,7 @@
       },
       {
        "time": 1.3647,
-       "value": 3.2266,
+       "value": 1.9189,
        "interp": "step"
       },
       {
@@ -3142,7 +3433,7 @@
       },
       {
        "time": 1.5647,
-       "value": 3.6116,
+       "value": 2.1345,
        "interp": "step"
       },
       {
@@ -3276,11 +3567,11 @@
      ]
     },
     "width": {
-     "value": 0.0271,
+     "value": 0.0208,
      "track": [
       {
        "time": 0.0813,
-       "value": 0.0271,
+       "value": 0.0208,
        "interp": "step"
       },
       {
@@ -3290,7 +3581,7 @@
       },
       {
        "time": 0.1647,
-       "value": 0.0329,
+       "value": 0.0249,
        "interp": "step"
       },
       {
@@ -3300,7 +3591,7 @@
       },
       {
        "time": 0.248,
-       "value": 0.0338,
+       "value": 0.0256,
        "interp": "step"
       },
       {
@@ -3310,7 +3601,7 @@
       },
       {
        "time": 0.348,
-       "value": 0.0286,
+       "value": 0.0219,
        "interp": "step"
       },
       {
@@ -3320,7 +3611,7 @@
       },
       {
        "time": 0.4147,
-       "value": 0.0322,
+       "value": 0.0244,
        "interp": "step"
       },
       {
@@ -3330,7 +3621,7 @@
       },
       {
        "time": 0.5313,
-       "value": 0.0309,
+       "value": 0.0235,
        "interp": "step"
       },
       {
@@ -3340,7 +3631,7 @@
       },
       {
        "time": 0.7313,
-       "value": 0.0261,
+       "value": 0.0201,
        "interp": "step"
       },
       {
@@ -3350,7 +3641,7 @@
       },
       {
        "time": 0.948,
-       "value": 0.0282,
+       "value": 0.0216,
        "interp": "step"
       },
       {
@@ -3360,7 +3651,7 @@
       },
       {
        "time": 1.198,
-       "value": 0.0355,
+       "value": 0.0268,
        "interp": "step"
       },
       {
@@ -3370,7 +3661,7 @@
       },
       {
        "time": 1.3813,
-       "value": 0.027,
+       "value": 0.0207,
        "interp": "step"
       },
       {
@@ -3380,7 +3671,7 @@
       },
       {
        "time": 1.548,
-       "value": 0.0395,
+       "value": 0.0297,
        "interp": "step"
       },
       {
@@ -3409,17 +3700,17 @@
     "core_width": 0.2,
     "glow_width": 2.6,
     "color": [
-     0.43,
-     0.38,
+     0.46,
+     0.25,
      1.0,
      1.0
     ],
     "emissive": {
-     "value": 4.6973,
+     "value": 2.7905,
      "track": [
       {
        "time": 0.0813,
-       "value": 4.6973,
+       "value": 2.7905,
        "interp": "step"
       },
       {
@@ -3429,7 +3720,7 @@
       },
       {
        "time": 0.1647,
-       "value": 4.4753,
+       "value": 2.6662,
        "interp": "step"
       },
       {
@@ -3439,7 +3730,7 @@
       },
       {
        "time": 0.248,
-       "value": 4.6688,
+       "value": 2.7745,
        "interp": "step"
       },
       {
@@ -3449,7 +3740,7 @@
       },
       {
        "time": 0.348,
-       "value": 4.7872,
+       "value": 2.8408,
        "interp": "step"
       },
       {
@@ -3459,7 +3750,7 @@
       },
       {
        "time": 0.4147,
-       "value": 5.997,
+       "value": 3.5183,
        "interp": "step"
       },
       {
@@ -3469,7 +3760,7 @@
       },
       {
        "time": 0.5313,
-       "value": 4.3818,
+       "value": 2.5658,
        "interp": "step"
       },
       {
@@ -3479,7 +3770,7 @@
       },
       {
        "time": 0.7313,
-       "value": 3.3791,
+       "value": 2.0043,
        "interp": "step"
       },
       {
@@ -3489,7 +3780,7 @@
       },
       {
        "time": 0.948,
-       "value": 3.8992,
+       "value": 2.2955,
        "interp": "step"
       },
       {
@@ -3499,7 +3790,7 @@
       },
       {
        "time": 1.198,
-       "value": 2.9598,
+       "value": 1.7695,
        "interp": "step"
       },
       {
@@ -3509,7 +3800,7 @@
       },
       {
        "time": 1.3813,
-       "value": 3.3062,
+       "value": 1.9635,
        "interp": "step"
       },
       {
@@ -3519,7 +3810,7 @@
       },
       {
        "time": 1.548,
-       "value": 4.5346,
+       "value": 2.6514,
        "interp": "step"
       },
       {
@@ -3653,11 +3944,11 @@
      ]
     },
     "width": {
-     "value": 0.0266,
+     "value": 0.0204,
      "track": [
       {
        "time": 0.098,
-       "value": 0.0266,
+       "value": 0.0204,
        "interp": "step"
       },
       {
@@ -3667,7 +3958,7 @@
       },
       {
        "time": 0.1647,
-       "value": 0.0326,
+       "value": 0.0247,
        "interp": "step"
       },
       {
@@ -3677,7 +3968,7 @@
       },
       {
        "time": 0.2313,
-       "value": 0.0276,
+       "value": 0.0212,
        "interp": "step"
       },
       {
@@ -3687,7 +3978,7 @@
       },
       {
        "time": 0.3313,
-       "value": 0.0342,
+       "value": 0.0258,
        "interp": "step"
       },
       {
@@ -3697,7 +3988,7 @@
       },
       {
        "time": 0.4147,
-       "value": 0.0379,
+       "value": 0.0285,
        "interp": "step"
       },
       {
@@ -3707,7 +3998,7 @@
       },
       {
        "time": 0.5313,
-       "value": 0.0355,
+       "value": 0.0268,
        "interp": "step"
       },
       {
@@ -3717,7 +4008,7 @@
       },
       {
        "time": 0.6647,
-       "value": 0.0375,
+       "value": 0.0282,
        "interp": "step"
       },
       {
@@ -3727,7 +4018,7 @@
       },
       {
        "time": 0.8813,
-       "value": 0.0362,
+       "value": 0.0273,
        "interp": "step"
       },
       {
@@ -3737,7 +4028,7 @@
       },
       {
        "time": 1.0813,
-       "value": 0.0325,
+       "value": 0.0247,
        "interp": "step"
       },
       {
@@ -3747,7 +4038,7 @@
       },
       {
        "time": 1.3313,
-       "value": 0.0308,
+       "value": 0.0234,
        "interp": "step"
       },
       {
@@ -3757,7 +4048,7 @@
       },
       {
        "time": 1.4647,
-       "value": 0.0324,
+       "value": 0.0245,
        "interp": "step"
       },
       {
@@ -3786,17 +4077,17 @@
     "core_width": 0.2,
     "glow_width": 2.6,
     "color": [
-     0.43,
-     0.38,
+     0.46,
+     0.25,
      1.0,
      1.0
     ],
     "emissive": {
-     "value": 4.2845,
+     "value": 2.5593,
      "track": [
       {
        "time": 0.098,
-       "value": 4.2845,
+       "value": 2.5593,
        "interp": "step"
       },
       {
@@ -3806,7 +4097,7 @@
       },
       {
        "time": 0.1647,
-       "value": 6.3438,
+       "value": 3.7125,
        "interp": "step"
       },
       {
@@ -3816,7 +4107,7 @@
       },
       {
        "time": 0.2313,
-       "value": 5.2818,
+       "value": 3.1178,
        "interp": "step"
       },
       {
@@ -3826,7 +4117,7 @@
       },
       {
        "time": 0.3313,
-       "value": 6.2606,
+       "value": 3.666,
        "interp": "step"
       },
       {
@@ -3836,7 +4127,7 @@
       },
       {
        "time": 0.4147,
-       "value": 6.173,
+       "value": 3.6169,
        "interp": "step"
       },
       {
@@ -3846,7 +4137,7 @@
       },
       {
        "time": 0.5313,
-       "value": 3.3839,
+       "value": 2.007,
        "interp": "step"
       },
       {
@@ -3856,7 +4147,7 @@
       },
       {
        "time": 0.6647,
-       "value": 3.9661,
+       "value": 2.333,
        "interp": "step"
       },
       {
@@ -3866,7 +4157,7 @@
       },
       {
        "time": 0.8813,
-       "value": 4.0033,
+       "value": 2.3538,
        "interp": "step"
       },
       {
@@ -3876,7 +4167,7 @@
       },
       {
        "time": 1.0813,
-       "value": 3.9043,
+       "value": 2.2984,
        "interp": "step"
       },
       {
@@ -3886,7 +4177,7 @@
       },
       {
        "time": 1.3313,
-       "value": 4.1084,
+       "value": 2.4127,
        "interp": "step"
       },
       {
@@ -3896,7 +4187,7 @@
       },
       {
        "time": 1.4647,
-       "value": 3.0179,
+       "value": 1.802,
        "interp": "step"
       },
       {
@@ -4002,7 +4293,7 @@
       }
      ]
     },
-    "width": 0.05,
+    "width": 0.046,
     "segments": 8,
     "detail": 3,
     "noise_amplitude": 0.3,
@@ -4020,12 +4311,12 @@
     "flicker": 0.5,
     "flicker_frequency": 52.0,
     "afterglow": 0.05,
-    "impact_flare": 0.15,
-    "core_width": 0.18,
-    "glow_width": 2.8,
+    "impact_flare": 0.13,
+    "core_width": 0.16,
+    "glow_width": 3.0,
     "color": [
-     0.27,
-     0.45,
+     0.17,
+     0.33,
      1.0,
      1.0
     ],
@@ -4039,15 +4330,15 @@
       },
       {
        "time": 0.2,
-       "value": 3.4
+       "value": 2.2
       },
       {
        "time": 0.3333,
-       "value": 6.0
+       "value": 3.6
       },
       {
        "time": 0.3667,
-       "value": 2.5
+       "value": 1.6
       },
       {
        "time": 0.3813,
@@ -4097,27 +4388,27 @@
      ]
     },
     "width": {
-     "value": 0.09,
+     "value": 0.0736,
      "track": [
       {
        "time": 0.3333,
-       "value": 0.09
+       "value": 0.0736
       },
       {
        "time": 0.4,
-       "value": 0.15
+       "value": 0.115
       },
       {
        "time": 0.45,
-       "value": 0.13
+       "value": 0.1012
       },
       {
        "time": 0.5667,
-       "value": 0.1
+       "value": 0.0828
       },
       {
        "time": 0.7167,
-       "value": 0.07
+       "value": 0.0598
       }
      ]
     },
@@ -4126,8 +4417,8 @@
     "noise_amplitude": 0.4,
     "noise_frequency": 1.15,
     "jitter_rate": 30.0,
-    "width_profile": "bulge",
-    "width_variance": 0.28,
+    "width_profile": "taper_end",
+    "width_variance": 0.34,
     "branching": 5,
     "branch_probability": 0.75,
     "branch_length": 0.3,
@@ -4138,12 +4429,12 @@
     "flicker": 0.45,
     "flicker_frequency": 48.0,
     "afterglow": 0.08,
-    "impact_flare": 0.27,
-    "core_width": 0.12,
-    "glow_width": 3.2,
+    "impact_flare": 0.23,
+    "core_width": 0.1,
+    "glow_width": 3.6,
     "color": [
-     0.27,
-     0.45,
+     0.17,
+     0.33,
      1.0,
      1.0
     ],
@@ -4157,39 +4448,39 @@
       },
       {
        "time": 0.35,
-       "value": 10.0
+       "value": 4.6
       },
       {
        "time": 0.3833,
-       "value": 12.0
+       "value": 5.52
       },
       {
        "time": 0.4,
-       "value": 15.5
+       "value": 6.992
       },
       {
        "time": 0.4333,
-       "value": 8.5
+       "value": 3.864
       },
       {
        "time": 0.4667,
-       "value": 12.5
+       "value": 5.704
       },
       {
        "time": 0.5167,
-       "value": 6.0
+       "value": 2.76
       },
       {
        "time": 0.5667,
-       "value": 9.0
+       "value": 4.048
       },
       {
        "time": 0.6167,
-       "value": 4.2
+       "value": 2.024
       },
       {
        "time": 0.6667,
-       "value": 5.8
+       "value": 2.668
       },
       {
        "time": 0.7147,
@@ -4219,19 +4510,19 @@
      -0.7
     ],
     "width": {
-     "value": 0.08,
+     "value": 0.0736,
      "track": [
       {
        "time": 0.4333,
-       "value": 0.08
+       "value": 0.0736
       },
       {
        "time": 0.6333,
-       "value": 0.07
+       "value": 0.0644
       },
       {
        "time": 1.6833,
-       "value": 0.05
+       "value": 0.046
       }
      ]
     },
@@ -4252,12 +4543,12 @@
     "flicker": 0.55,
     "flicker_frequency": 36.0,
     "afterglow": 0.06,
-    "impact_flare": 0.16,
-    "core_width": 0.14,
-    "glow_width": 3.0,
+    "impact_flare": 0.138,
+    "core_width": 0.12,
+    "glow_width": 3.3,
     "color": [
-     0.27,
-     0.45,
+     0.17,
+     0.33,
      1.0,
      1.0
     ],
@@ -4275,83 +4566,83 @@
       },
       {
        "time": 0.55,
-       "value": 2.7
+       "value": 1.5
       },
       {
        "time": 0.8833,
-       "value": 2.7
+       "value": 1.5
       },
       {
        "time": 0.9,
-       "value": 8.25
+       "value": 3.536
       },
       {
        "time": 0.95,
-       "value": 4.6425
+       "value": 2.2126
       },
       {
        "time": 1.0333,
-       "value": 2.7
+       "value": 1.5
       },
       {
        "time": 1.1,
-       "value": 2.7
+       "value": 1.5
       },
       {
        "time": 1.1167,
-       "value": 5.6
+       "value": 3.0
       },
       {
        "time": 1.1667,
-       "value": 3.715
+       "value": 2.025
       },
       {
        "time": 1.25,
-       "value": 2.7
+       "value": 1.5
       },
       {
        "time": 1.3833,
-       "value": 2.7
+       "value": 1.5
       },
       {
        "time": 1.4,
-       "value": 9.3
+       "value": 4.012
       },
       {
        "time": 1.4167,
-       "value": 2.7
+       "value": 1.5
       },
       {
        "time": 1.4333,
-       "value": 9.9
+       "value": 4.216
       },
       {
        "time": 1.45,
-       "value": 5.01
+       "value": 2.3792
       },
       {
        "time": 1.4833,
-       "value": 5.22
+       "value": 2.4506
       },
       {
        "time": 1.5333,
-       "value": 2.7
+       "value": 1.5
       },
       {
        "time": 1.5667,
-       "value": 2.7
+       "value": 1.5
       },
       {
        "time": 1.6,
-       "value": 2.16
+       "value": 1.2
       },
       {
        "time": 1.6333,
-       "value": 4.4
+       "value": 2.8
       },
       {
        "time": 1.6667,
-       "value": 1.2
+       "value": 0.8
       },
       {
        "time": 1.6813,
@@ -4380,12 +4671,12 @@
      1.3831,
      -0.61
     ],
-    "width": 0.046,
-    "segments": 9,
+    "width": 0.0405,
+    "segments": 6,
     "detail": 3,
-    "noise_amplitude": 0.36,
-    "noise_frequency": 1.0,
-    "jitter_rate": 22.0,
+    "noise_amplitude": 0.5,
+    "noise_frequency": 0.8,
+    "jitter_rate": 20.0,
     "width_profile": "taper_both",
     "width_variance": 0.3,
     "branching": 2,
@@ -4400,8 +4691,8 @@
     "core_width": 0.17,
     "glow_width": 2.7,
     "color": [
-     0.43,
-     0.38,
+     0.46,
+     0.25,
      1.0,
      1.0
     ],
@@ -4415,15 +4706,15 @@
       },
       {
        "time": 0.4,
-       "value": 7.0
+       "value": 4.2
       },
       {
        "time": 0.4833,
-       "value": 4.0
+       "value": 2.6
       },
       {
        "time": 0.6,
-       "value": 2.3
+       "value": 1.5
       },
       {
        "time": 0.6647,
@@ -4432,19 +4723,19 @@
       },
       {
        "time": 0.7333,
-       "value": 4.1411
+       "value": 2.7007
       },
       {
        "time": 0.8,
-       "value": 2.3
+       "value": 1.5
       },
       {
        "time": 0.9,
-       "value": 5.94
+       "value": 3.12
       },
       {
        "time": 0.9833,
-       "value": 2.3
+       "value": 1.5
       },
       {
        "time": 1.098,
@@ -4453,11 +4744,11 @@
       },
       {
        "time": 1.1667,
-       "value": 3.6098
+       "value": 2.3542
       },
       {
        "time": 1.2333,
-       "value": 2.3
+       "value": 1.5
       },
       {
        "time": 1.3313,
@@ -4466,27 +4757,27 @@
       },
       {
        "time": 1.3833,
-       "value": 3.1101
+       "value": 2.0283
       },
       {
        "time": 1.4,
-       "value": 6.696
+       "value": 3.54
       },
       {
        "time": 1.4333,
-       "value": 7.128
+       "value": 3.72
       },
       {
        "time": 1.45,
-       "value": 2.3
+       "value": 1.5
       },
       {
        "time": 1.4833,
-       "value": 2.3
+       "value": 1.5
       },
       {
        "time": 1.5167,
-       "value": 2.3
+       "value": 1.5
       },
       {
        "time": 1.648,
@@ -4515,12 +4806,12 @@
      1.4493,
      -0.5739
     ],
-    "width": 0.038,
-    "segments": 9,
+    "width": 0.0331,
+    "segments": 12,
     "detail": 3,
-    "noise_amplitude": 0.42,
-    "noise_frequency": 1.0,
-    "jitter_rate": 27.0,
+    "noise_amplitude": 0.24,
+    "noise_frequency": 1.7,
+    "jitter_rate": 28.0,
     "width_profile": "taper_both",
     "width_variance": 0.3,
     "branching": 2,
@@ -4535,8 +4826,8 @@
     "core_width": 0.17,
     "glow_width": 2.7,
     "color": [
-     0.43,
-     0.38,
+     0.46,
+     0.25,
      1.0,
      1.0
     ],
@@ -4550,15 +4841,15 @@
       },
       {
        "time": 0.4,
-       "value": 6.0
+       "value": 3.6
       },
       {
        "time": 0.4833,
-       "value": 4.0
+       "value": 2.6
       },
       {
        "time": 0.6,
-       "value": 1.9
+       "value": 1.2
       },
       {
        "time": 0.648,
@@ -4567,19 +4858,19 @@
       },
       {
        "time": 0.7167,
-       "value": 2.5781
+       "value": 1.6283
       },
       {
        "time": 0.7833,
-       "value": 1.9
+       "value": 1.2
       },
       {
        "time": 0.9,
-       "value": 5.94
+       "value": 3.12
       },
       {
        "time": 0.9833,
-       "value": 1.9
+       "value": 1.2
       },
       {
        "time": 1.0647,
@@ -4588,19 +4879,19 @@
       },
       {
        "time": 1.1333,
-       "value": 2.5027
+       "value": 1.5807
       },
       {
        "time": 1.2,
-       "value": 1.9
+       "value": 1.2
       },
       {
        "time": 1.4,
-       "value": 6.696
+       "value": 3.54
       },
       {
        "time": 1.4333,
-       "value": 7.128
+       "value": 3.72
       },
       {
        "time": 1.4647,
@@ -4609,19 +4900,19 @@
       },
       {
        "time": 1.4833,
-       "value": 1.9
+       "value": 1.2
       },
       {
        "time": 1.5167,
-       "value": 1.9
+       "value": 1.2
       },
       {
        "time": 1.5333,
-       "value": 2.605
+       "value": 1.6453
       },
       {
        "time": 1.6,
-       "value": 1.9
+       "value": 1.2
       }
      ]
     },
@@ -4721,7 +5012,7 @@
       }
      ]
     },
-    "width": 0.055,
+    "width": 0.052,
     "segments": 8,
     "detail": 3,
     "noise_amplitude": 0.3,
@@ -4739,12 +5030,12 @@
     "flicker": 0.5,
     "flicker_frequency": 52.0,
     "afterglow": 0.05,
-    "impact_flare": 0.15,
-    "core_width": 0.18,
-    "glow_width": 2.8,
+    "impact_flare": 0.13,
+    "core_width": 0.16,
+    "glow_width": 3.0,
     "color": [
-     0.27,
-     0.45,
+     0.17,
+     0.33,
      1.0,
      1.0
     ],
@@ -4758,15 +5049,15 @@
       },
       {
        "time": 0.7,
-       "value": 3.4
+       "value": 2.2
       },
       {
        "time": 0.8333,
-       "value": 6.0
+       "value": 3.6
       },
       {
        "time": 0.8667,
-       "value": 2.5
+       "value": 1.6
       },
       {
        "time": 0.8813,
@@ -4816,27 +5107,27 @@
      ]
     },
     "width": {
-     "value": 0.099,
+     "value": 0.0832,
      "track": [
       {
        "time": 0.8333,
-       "value": 0.099
+       "value": 0.0832
       },
       {
        "time": 0.9,
-       "value": 0.165
+       "value": 0.13
       },
       {
        "time": 0.95,
-       "value": 0.143
+       "value": 0.1144
       },
       {
        "time": 1.0667,
-       "value": 0.11
+       "value": 0.0936
       },
       {
        "time": 1.2167,
-       "value": 0.077
+       "value": 0.0676
       }
      ]
     },
@@ -4845,8 +5136,8 @@
     "noise_amplitude": 0.4,
     "noise_frequency": 1.15,
     "jitter_rate": 30.0,
-    "width_profile": "bulge",
-    "width_variance": 0.28,
+    "width_profile": "taper_end",
+    "width_variance": 0.34,
     "branching": 5,
     "branch_probability": 0.75,
     "branch_length": 0.3,
@@ -4857,12 +5148,12 @@
     "flicker": 0.45,
     "flicker_frequency": 48.0,
     "afterglow": 0.08,
-    "impact_flare": 0.297,
-    "core_width": 0.12,
-    "glow_width": 3.2,
+    "impact_flare": 0.26,
+    "core_width": 0.1,
+    "glow_width": 3.6,
     "color": [
-     0.27,
-     0.45,
+     0.17,
+     0.33,
      1.0,
      1.0
     ],
@@ -4876,39 +5167,39 @@
       },
       {
        "time": 0.85,
-       "value": 10.08
+       "value": 5.2
       },
       {
        "time": 0.8833,
-       "value": 12.096
+       "value": 6.24
       },
       {
        "time": 0.9,
-       "value": 15.624
+       "value": 7.904
       },
       {
        "time": 0.9333,
-       "value": 8.568
+       "value": 4.368
       },
       {
        "time": 0.9667,
-       "value": 12.6
+       "value": 6.448
       },
       {
        "time": 1.0167,
-       "value": 6.048
+       "value": 3.12
       },
       {
        "time": 1.0667,
-       "value": 9.072
+       "value": 4.576
       },
       {
        "time": 1.1167,
-       "value": 4.2336
+       "value": 2.288
       },
       {
        "time": 1.1667,
-       "value": 5.8464
+       "value": 3.016
       },
       {
        "time": 1.2147,
@@ -4938,19 +5229,19 @@
      0.9
     ],
     "width": {
-     "value": 0.088,
+     "value": 0.0832,
      "track": [
       {
        "time": 0.9333,
-       "value": 0.088
+       "value": 0.0832
       },
       {
        "time": 1.1333,
-       "value": 0.077
+       "value": 0.0728
       },
       {
        "time": 1.7,
-       "value": 0.055
+       "value": 0.052
       }
      ]
     },
@@ -4971,12 +5262,12 @@
     "flicker": 0.55,
     "flicker_frequency": 36.0,
     "afterglow": 0.06,
-    "impact_flare": 0.176,
-    "core_width": 0.14,
-    "glow_width": 3.0,
+    "impact_flare": 0.156,
+    "core_width": 0.12,
+    "glow_width": 3.3,
     "color": [
-     0.27,
-     0.45,
+     0.17,
+     0.33,
      1.0,
      1.0
     ],
@@ -4994,51 +5285,51 @@
       },
       {
        "time": 1.05,
-       "value": 2.7
+       "value": 1.5
       },
       {
        "time": 1.3833,
-       "value": 2.7
+       "value": 1.5
       },
       {
        "time": 1.4,
-       "value": 9.3
+       "value": 4.012
       },
       {
        "time": 1.4167,
-       "value": 2.7
+       "value": 1.5
       },
       {
        "time": 1.4333,
-       "value": 9.9
+       "value": 4.216
       },
       {
        "time": 1.45,
-       "value": 5.01
+       "value": 2.3792
       },
       {
        "time": 1.4833,
-       "value": 5.22
+       "value": 2.4506
       },
       {
        "time": 1.5333,
-       "value": 2.7
+       "value": 1.5
       },
       {
        "time": 1.5667,
-       "value": 2.7
+       "value": 1.5
       },
       {
        "time": 1.6167,
-       "value": 2.16
+       "value": 1.2
       },
       {
        "time": 1.65,
-       "value": 4.4
+       "value": 2.8
       },
       {
        "time": 1.6833,
-       "value": 1.2
+       "value": 0.8
       },
       {
        "time": 1.698,
@@ -5067,12 +5358,12 @@
      1.3081,
      0.9025
     ],
-    "width": 0.0506,
-    "segments": 9,
+    "width": 0.0458,
+    "segments": 6,
     "detail": 3,
-    "noise_amplitude": 0.36,
-    "noise_frequency": 1.0,
-    "jitter_rate": 22.0,
+    "noise_amplitude": 0.5,
+    "noise_frequency": 0.8,
+    "jitter_rate": 20.0,
     "width_profile": "taper_both",
     "width_variance": 0.3,
     "branching": 2,
@@ -5087,8 +5378,8 @@
     "core_width": 0.17,
     "glow_width": 2.7,
     "color": [
-     0.43,
-     0.38,
+     0.46,
+     0.25,
      1.0,
      1.0
     ],
@@ -5102,15 +5393,15 @@
       },
       {
        "time": 0.9,
-       "value": 7.0
+       "value": 4.2
       },
       {
        "time": 0.9833,
-       "value": 4.0
+       "value": 2.6
       },
       {
        "time": 1.1,
-       "value": 2.3
+       "value": 1.5
       },
       {
        "time": 1.2147,
@@ -5119,27 +5410,27 @@
       },
       {
        "time": 1.2667,
-       "value": 2.8511
+       "value": 1.8594
       },
       {
        "time": 1.3333,
-       "value": 2.3
+       "value": 1.5
       },
       {
        "time": 1.4,
-       "value": 6.696
+       "value": 3.54
       },
       {
        "time": 1.4333,
-       "value": 7.128
+       "value": 3.72
       },
       {
        "time": 1.4833,
-       "value": 2.3
+       "value": 1.5
       },
       {
        "time": 1.5167,
-       "value": 2.3
+       "value": 1.5
       },
       {
        "time": 1.598,
@@ -5168,12 +5459,12 @@
      0.9363,
      0.9144
     ],
-    "width": 0.0418,
-    "segments": 9,
+    "width": 0.0374,
+    "segments": 12,
     "detail": 3,
-    "noise_amplitude": 0.42,
-    "noise_frequency": 1.0,
-    "jitter_rate": 27.0,
+    "noise_amplitude": 0.24,
+    "noise_frequency": 1.7,
+    "jitter_rate": 28.0,
     "width_profile": "taper_both",
     "width_variance": 0.3,
     "branching": 2,
@@ -5188,8 +5479,8 @@
     "core_width": 0.17,
     "glow_width": 2.7,
     "color": [
-     0.43,
-     0.38,
+     0.46,
+     0.25,
      1.0,
      1.0
     ],
@@ -5203,15 +5494,15 @@
       },
       {
        "time": 0.9,
-       "value": 6.0
+       "value": 3.6
       },
       {
        "time": 0.9833,
-       "value": 4.0
+       "value": 2.6
       },
       {
        "time": 1.1,
-       "value": 1.9
+       "value": 1.2
       },
       {
        "time": 1.1647,
@@ -5220,19 +5511,19 @@
       },
       {
        "time": 1.2167,
-       "value": 2.736
+       "value": 1.728
       },
       {
        "time": 1.2833,
-       "value": 1.9
+       "value": 1.2
       },
       {
        "time": 1.4,
-       "value": 6.696
+       "value": 3.54
       },
       {
        "time": 1.4333,
-       "value": 7.128
+       "value": 3.72
       },
       {
        "time": 1.4813,
@@ -5241,11 +5532,11 @@
       },
       {
        "time": 1.5167,
-       "value": 2.8584
+       "value": 1.8053
       },
       {
        "time": 1.5833,
-       "value": 1.9
+       "value": 1.2
       },
       {
        "time": 1.6147,
@@ -5350,7 +5641,7 @@
       }
      ]
     },
-    "width": 0.062,
+    "width": 0.059,
     "segments": 8,
     "detail": 3,
     "noise_amplitude": 0.3,
@@ -5368,12 +5659,12 @@
     "flicker": 0.5,
     "flicker_frequency": 52.0,
     "afterglow": 0.05,
-    "impact_flare": 0.15,
-    "core_width": 0.18,
-    "glow_width": 2.8,
+    "impact_flare": 0.13,
+    "core_width": 0.16,
+    "glow_width": 3.0,
     "color": [
-     0.27,
-     0.45,
+     0.17,
+     0.33,
      1.0,
      1.0
     ],
@@ -5387,15 +5678,15 @@
       },
       {
        "time": 1.2,
-       "value": 3.4
+       "value": 2.2
       },
       {
        "time": 1.3333,
-       "value": 6.0
+       "value": 3.6
       },
       {
        "time": 1.3667,
-       "value": 2.5
+       "value": 1.6
       },
       {
        "time": 1.3813,
@@ -5445,27 +5736,27 @@
      ]
     },
     "width": {
-     "value": 0.0893,
+     "value": 0.0736,
      "track": [
       {
        "time": 1.3333,
-       "value": 0.0893
+       "value": 0.0736
       },
       {
        "time": 1.4,
-       "value": 0.1488
+       "value": 0.115
       },
       {
        "time": 1.45,
-       "value": 0.129
+       "value": 0.1012
       },
       {
        "time": 1.5667,
-       "value": 0.0992
+       "value": 0.0828
       },
       {
        "time": 1.7167,
-       "value": 0.0694
+       "value": 0.0598
       }
      ]
     },
@@ -5474,8 +5765,8 @@
     "noise_amplitude": 0.4,
     "noise_frequency": 1.15,
     "jitter_rate": 30.0,
-    "width_profile": "bulge",
-    "width_variance": 0.28,
+    "width_profile": "taper_end",
+    "width_variance": 0.34,
     "branching": 5,
     "branch_probability": 0.75,
     "branch_length": 0.3,
@@ -5486,12 +5777,12 @@
     "flicker": 0.45,
     "flicker_frequency": 48.0,
     "afterglow": 0.08,
-    "impact_flare": 0.3348,
-    "core_width": 0.12,
-    "glow_width": 3.2,
+    "impact_flare": 0.295,
+    "core_width": 0.1,
+    "glow_width": 3.6,
     "color": [
-     0.27,
-     0.45,
+     0.17,
+     0.33,
      1.0,
      1.0
     ],
@@ -5505,39 +5796,39 @@
       },
       {
        "time": 1.35,
-       "value": 10.192
+       "value": 5.9
       },
       {
        "time": 1.3833,
-       "value": 12.2304
+       "value": 7.08
       },
       {
        "time": 1.4,
-       "value": 15.7976
+       "value": 8.968
       },
       {
        "time": 1.4333,
-       "value": 8.6632
+       "value": 4.956
       },
       {
        "time": 1.4667,
-       "value": 12.74
+       "value": 7.316
       },
       {
        "time": 1.5167,
-       "value": 6.1152
+       "value": 3.54
       },
       {
        "time": 1.5667,
-       "value": 9.1728
+       "value": 5.192
       },
       {
        "time": 1.6167,
-       "value": 4.2806
+       "value": 2.596
       },
       {
        "time": 1.6667,
-       "value": 5.9114
+       "value": 3.422
       },
       {
        "time": 1.7147,
@@ -5567,19 +5858,19 @@
      -0.9
     ],
     "width": {
-     "value": 0.0992,
+     "value": 0.0944,
      "track": [
       {
        "time": 1.4333,
-       "value": 0.0992
+       "value": 0.0944
       },
       {
        "time": 1.6333,
-       "value": 0.0868
+       "value": 0.0826
       },
       {
        "time": 1.7167,
-       "value": 0.062
+       "value": 0.059
       }
      ]
     },
@@ -5600,12 +5891,12 @@
     "flicker": 0.55,
     "flicker_frequency": 36.0,
     "afterglow": 0.06,
-    "impact_flare": 0.1984,
-    "core_width": 0.14,
-    "glow_width": 3.0,
+    "impact_flare": 0.177,
+    "core_width": 0.12,
+    "glow_width": 3.3,
     "color": [
-     0.27,
-     0.45,
+     0.17,
+     0.33,
      1.0,
      1.0
     ],
@@ -5623,19 +5914,19 @@
       },
       {
        "time": 1.55,
-       "value": 2.7
+       "value": 1.5
       },
       {
        "time": 1.6333,
-       "value": 2.16
+       "value": 1.2
       },
       {
        "time": 1.6667,
-       "value": 4.4
+       "value": 2.8
       },
       {
        "time": 1.7,
-       "value": 1.2
+       "value": 0.8
       },
       {
        "time": 1.7147,
@@ -5664,12 +5955,12 @@
      1.2159,
      -1.0824
     ],
-    "width": 0.057,
-    "segments": 9,
+    "width": 0.0519,
+    "segments": 6,
     "detail": 3,
-    "noise_amplitude": 0.36,
-    "noise_frequency": 1.0,
-    "jitter_rate": 22.0,
+    "noise_amplitude": 0.5,
+    "noise_frequency": 0.8,
+    "jitter_rate": 20.0,
     "width_profile": "taper_both",
     "width_variance": 0.3,
     "branching": 2,
@@ -5684,8 +5975,8 @@
     "core_width": 0.17,
     "glow_width": 2.7,
     "color": [
-     0.43,
-     0.38,
+     0.46,
+     0.25,
      1.0,
      1.0
     ],
@@ -5699,15 +5990,15 @@
       },
       {
        "time": 1.4,
-       "value": 7.0
+       "value": 4.2
       },
       {
        "time": 1.4833,
-       "value": 4.0
+       "value": 2.6
       },
       {
        "time": 1.6,
-       "value": 2.3
+       "value": 1.5
       },
       {
        "time": 1.6313,
@@ -5736,12 +6027,12 @@
      1.5914,
      -0.8297
     ],
-    "width": 0.0471,
-    "segments": 9,
+    "width": 0.0425,
+    "segments": 12,
     "detail": 3,
-    "noise_amplitude": 0.42,
-    "noise_frequency": 1.0,
-    "jitter_rate": 27.0,
+    "noise_amplitude": 0.24,
+    "noise_frequency": 1.7,
+    "jitter_rate": 28.0,
     "width_profile": "taper_both",
     "width_variance": 0.3,
     "branching": 2,
@@ -5756,8 +6047,8 @@
     "core_width": 0.17,
     "glow_width": 2.7,
     "color": [
-     0.43,
-     0.38,
+     0.46,
+     0.25,
      1.0,
      1.0
     ],
@@ -5771,15 +6062,15 @@
       },
       {
        "time": 1.4,
-       "value": 6.0
+       "value": 3.6
       },
       {
        "time": 1.4833,
-       "value": 4.0
+       "value": 2.6
       },
       {
        "time": 1.6,
-       "value": 1.9
+       "value": 1.2
       },
       {
        "time": 1.6147,
@@ -5892,7 +6183,7 @@
       }
      ]
     },
-    "width": 0.066,
+    "width": 0.062,
     "segments": 8,
     "detail": 3,
     "noise_amplitude": 0.3,
@@ -5910,12 +6201,12 @@
     "flicker": 0.5,
     "flicker_frequency": 52.0,
     "afterglow": 0.05,
-    "impact_flare": 0.15,
-    "core_width": 0.18,
-    "glow_width": 2.8,
+    "impact_flare": 0.13,
+    "core_width": 0.16,
+    "glow_width": 3.0,
     "color": [
-     0.27,
-     0.45,
+     0.17,
+     0.33,
      1.0,
      1.0
     ],
@@ -5929,15 +6220,15 @@
       },
       {
        "time": 1.2167,
-       "value": 3.4
+       "value": 2.2
       },
       {
        "time": 1.3667,
-       "value": 6.0
+       "value": 3.6
       },
       {
        "time": 1.4,
-       "value": 2.5
+       "value": 1.6
       },
       {
        "time": 1.4147,
@@ -5987,27 +6278,27 @@
      ]
     },
     "width": {
-     "value": 0.095,
+     "value": 0.0774,
      "track": [
       {
        "time": 1.3667,
-       "value": 0.095
+       "value": 0.0774
       },
       {
        "time": 1.4333,
-       "value": 0.1584
+       "value": 0.1209
       },
       {
        "time": 1.4833,
-       "value": 0.1373
+       "value": 0.1064
       },
       {
        "time": 1.6,
-       "value": 0.1056
+       "value": 0.087
       },
       {
        "time": 1.75,
-       "value": 0.0739
+       "value": 0.0629
       }
      ]
     },
@@ -6016,8 +6307,8 @@
     "noise_amplitude": 0.4,
     "noise_frequency": 1.15,
     "jitter_rate": 30.0,
-    "width_profile": "bulge",
-    "width_variance": 0.28,
+    "width_profile": "taper_end",
+    "width_variance": 0.34,
     "branching": 5,
     "branch_probability": 0.75,
     "branch_length": 0.3,
@@ -6028,12 +6319,12 @@
     "flicker": 0.45,
     "flicker_frequency": 48.0,
     "afterglow": 0.08,
-    "impact_flare": 0.3564,
-    "core_width": 0.12,
-    "glow_width": 3.2,
+    "impact_flare": 0.31,
+    "core_width": 0.1,
+    "glow_width": 3.6,
     "color": [
-     0.27,
-     0.45,
+     0.17,
+     0.33,
      1.0,
      1.0
     ],
@@ -6047,39 +6338,39 @@
       },
       {
        "time": 1.3833,
-       "value": 10.256
+       "value": 6.2
       },
       {
        "time": 1.4167,
-       "value": 12.3072
+       "value": 7.44
       },
       {
        "time": 1.4333,
-       "value": 15.8968
+       "value": 9.424
       },
       {
        "time": 1.4667,
-       "value": 8.7176
+       "value": 5.208
       },
       {
        "time": 1.5,
-       "value": 12.82
+       "value": 7.688
       },
       {
        "time": 1.55,
-       "value": 6.1536
+       "value": 3.72
       },
       {
        "time": 1.6,
-       "value": 9.2304
+       "value": 5.456
       },
       {
        "time": 1.65,
-       "value": 4.3075
+       "value": 2.728
       },
       {
        "time": 1.7,
-       "value": 5.9485
+       "value": 3.596
       },
       {
        "time": 1.748,
@@ -6109,19 +6400,19 @@
      1.7
     ],
     "width": {
-     "value": 0.1056,
+     "value": 0.0992,
      "track": [
       {
        "time": 1.4667,
-       "value": 0.1056
+       "value": 0.0992
       },
       {
        "time": 1.6667,
-       "value": 0.0924
+       "value": 0.0868
       },
       {
        "time": 1.7333,
-       "value": 0.066
+       "value": 0.062
       }
      ]
     },
@@ -6142,12 +6433,12 @@
     "flicker": 0.55,
     "flicker_frequency": 36.0,
     "afterglow": 0.06,
-    "impact_flare": 0.2112,
-    "core_width": 0.14,
-    "glow_width": 3.0,
+    "impact_flare": 0.186,
+    "core_width": 0.12,
+    "glow_width": 3.3,
     "color": [
-     0.27,
-     0.45,
+     0.17,
+     0.33,
      1.0,
      1.0
     ],
@@ -6165,19 +6456,19 @@
       },
       {
        "time": 1.5833,
-       "value": 2.7
+       "value": 1.5
       },
       {
        "time": 1.65,
-       "value": 2.16
+       "value": 1.2
       },
       {
        "time": 1.6833,
-       "value": 4.4
+       "value": 2.8
       },
       {
        "time": 1.7167,
-       "value": 1.2
+       "value": 0.8
       },
       {
        "time": 1.7313,
@@ -6206,12 +6497,12 @@
      1.011,
      1.6893
     ],
-    "width": 0.0607,
-    "segments": 9,
+    "width": 0.0546,
+    "segments": 6,
     "detail": 3,
-    "noise_amplitude": 0.36,
-    "noise_frequency": 1.0,
-    "jitter_rate": 22.0,
+    "noise_amplitude": 0.5,
+    "noise_frequency": 0.8,
+    "jitter_rate": 20.0,
     "width_profile": "taper_both",
     "width_variance": 0.3,
     "branching": 2,
@@ -6226,8 +6517,8 @@
     "core_width": 0.17,
     "glow_width": 2.7,
     "color": [
-     0.43,
-     0.38,
+     0.46,
+     0.25,
      1.0,
      1.0
     ],
@@ -6241,15 +6532,15 @@
       },
       {
        "time": 1.4333,
-       "value": 7.0
+       "value": 4.2
       },
       {
        "time": 1.5167,
-       "value": 4.0
+       "value": 2.6
       },
       {
        "time": 1.6333,
-       "value": 2.3
+       "value": 1.5
       },
       {
        "time": 1.6813,
@@ -6278,12 +6569,12 @@
      0.9564,
      1.8357
     ],
-    "width": 0.0502,
-    "segments": 9,
+    "width": 0.0446,
+    "segments": 12,
     "detail": 3,
-    "noise_amplitude": 0.42,
-    "noise_frequency": 1.0,
-    "jitter_rate": 27.0,
+    "noise_amplitude": 0.24,
+    "noise_frequency": 1.7,
+    "jitter_rate": 28.0,
     "width_profile": "taper_both",
     "width_variance": 0.3,
     "branching": 2,
@@ -6298,8 +6589,8 @@
     "core_width": 0.17,
     "glow_width": 2.7,
     "color": [
-     0.43,
-     0.38,
+     0.46,
+     0.25,
      1.0,
      1.0
     ],
@@ -6313,15 +6604,15 @@
       },
       {
        "time": 1.4333,
-       "value": 6.0
+       "value": 3.6
       },
       {
        "time": 1.5167,
-       "value": 4.0
+       "value": 2.6
       },
       {
        "time": 1.6333,
-       "value": 1.9
+       "value": 1.2
       },
       {
        "time": 1.698,
@@ -6356,7 +6647,7 @@
     "duration": 0.1
    },
    "inputs": {
-    "particle": "ps_flash"
+    "particle": "ps_flash_1"
    }
   },
   {
@@ -6380,7 +6671,7 @@
     "duration": 0.1
    },
    "inputs": {
-    "particle": "ps_rays"
+    "particle": "ps_rays_1"
    }
   },
   {
@@ -6424,9 +6715,9 @@
      0,
      0
     ],
-    "velocity": 10.5,
-    "velocity_variance": 6.0,
-    "burst_count": 30,
+    "velocity": 8.5,
+    "velocity_variance": 4.675,
+    "burst_count": 20,
     "rate": 0.0,
     "burst_times": [
      0.0
@@ -6456,10 +6747,10 @@
      -0.3539
     ],
     "spread": 80.0,
-    "velocity": 4.2,
-    "velocity_variance": 2.8,
+    "velocity": 3.8,
+    "velocity_variance": 2.356,
     "radial_velocity": 1.6,
-    "burst_count": 78,
+    "burst_count": 55,
     "rate": 0.0,
     "burst_times": [
      0.0
@@ -6497,7 +6788,7 @@
       },
       {
        "time": 0.4,
-       "value": 60.0
+       "value": 55.2
       },
       {
        "time": 0.5667,
@@ -6573,7 +6864,7 @@
       },
       {
        "time": 0.4,
-       "value": 90.0
+       "value": 82.8
       },
       {
        "time": 0.5,
@@ -6628,7 +6919,7 @@
       },
       {
        "time": 1.7,
-       "value": 150.0
+       "value": 138.0
       },
       {
        "time": 1.75,
@@ -6640,7 +6931,7 @@
       }
      ]
     },
-    "burst_count": 46,
+    "burst_count": 42,
     "burst_times": [
      0.0
     ],
@@ -6710,12 +7001,12 @@
      -0.3
     ],
     "color": [
-     0.5,
-     0.66,
+     0.2,
+     0.36,
      1.0,
      1.0
     ],
-    "radius": 7.5,
+    "radius": 3.1,
     "intensity": {
      "value": 0.0,
      "track": [
@@ -6725,55 +7016,55 @@
       },
       {
        "time": 0.4,
-       "value": 9.0
+       "value": 3.0
       },
       {
        "time": 0.45,
-       "value": 4.5
+       "value": 1.35
       },
       {
        "time": 0.55,
-       "value": 2.0
+       "value": 0.55
       },
       {
        "time": 0.8833,
-       "value": 1.7
+       "value": 0.5
       },
       {
        "time": 0.9,
-       "value": 3.96
+       "value": 1.352
       },
       {
        "time": 1.0,
-       "value": 1.8
+       "value": 0.5
       },
       {
        "time": 1.3833,
-       "value": 1.7
+       "value": 0.5
       },
       {
        "time": 1.4,
-       "value": 4.464
+       "value": 1.534
       },
       {
        "time": 1.4167,
-       "value": 1.7
+       "value": 0.5
       },
       {
        "time": 1.4333,
-       "value": 4.752
+       "value": 1.612
       },
       {
        "time": 1.5,
-       "value": 1.8
+       "value": 0.5
       },
       {
        "time": 1.5333,
-       "value": 1.8
+       "value": 0.5
       },
       {
        "time": 1.65,
-       "value": 1.5
+       "value": 0.45
       },
       {
        "time": 1.7333,
@@ -6799,8 +7090,8 @@
      -0.7
     ],
     "size": [
-     1.6,
-     1.6
+     1.52,
+     1.52
     ],
     "rotation": [
      0.0,
@@ -6857,29 +7148,29 @@
     ],
     "size": {
      "value": [
-      1.0,
-      1.0
+      0.95,
+      0.95
      ],
      "track": [
       {
        "time": 0.3833,
        "value": [
-        1.0,
-        1.0
+        0.95,
+        0.95
        ]
       },
       {
        "time": 0.4667,
        "value": [
-        2.0,
-        2.0
+        1.9,
+        1.9
        ]
       },
       {
        "time": 1.7833,
        "value": [
-        2.24,
-        2.24
+        2.128,
+        2.128
        ]
       }
      ]
@@ -6910,8 +7201,8 @@
      ]
     },
     "color": [
-     0.4,
-     0.6,
+     0.22,
+     0.42,
      1.0,
      1.0
     ],
@@ -6953,7 +7244,7 @@
       },
       {
        "time": 0.9,
-       "value": 2.09
+       "value": 1.976
       },
       {
        "time": 0.9333,
@@ -6977,7 +7268,7 @@
       },
       {
        "time": 1.4,
-       "value": 2.356
+       "value": 2.242
       },
       {
        "time": 1.4167,
@@ -6985,7 +7276,7 @@
       },
       {
        "time": 1.4333,
-       "value": 2.508
+       "value": 2.356
       },
       {
        "time": 1.4833,
@@ -7048,29 +7339,29 @@
     ],
     "size": {
      "value": [
-      1.0,
-      1.0
+      0.95,
+      0.95
      ],
      "track": [
       {
        "time": 0.3833,
        "value": [
-        1.0,
-        1.0
+        0.95,
+        0.95
        ]
       },
       {
        "time": 0.4667,
        "value": [
-        2.0,
-        2.0
+        1.9,
+        1.9
        ]
       },
       {
        "time": 1.7833,
        "value": [
-        2.24,
-        2.24
+        2.128,
+        2.128
        ]
       }
      ]
@@ -7101,8 +7392,8 @@
      ]
     },
     "color": [
-     0.4,
-     0.6,
+     0.22,
+     0.42,
      1.0,
      1.0
     ],
@@ -7140,7 +7431,7 @@
       },
       {
        "time": 0.9,
-       "value": 2.09
+       "value": 1.976
       },
       {
        "time": 0.95,
@@ -7168,7 +7459,7 @@
       },
       {
        "time": 1.4333,
-       "value": 2.508
+       "value": 2.356
       },
       {
        "time": 1.5,
@@ -7426,11 +7717,11 @@
      ]
     },
     "width": {
-     "value": 0.0434,
+     "value": 0.0272,
      "track": [
       {
        "time": 0.398,
-       "value": 0.0434,
+       "value": 0.0272,
        "interp": "step"
       },
       {
@@ -7440,7 +7731,7 @@
       },
       {
        "time": 0.4647,
-       "value": 0.0414,
+       "value": 0.0259,
        "interp": "step"
       },
       {
@@ -7450,7 +7741,7 @@
       },
       {
        "time": 0.5813,
-       "value": 0.038,
+       "value": 0.0236,
        "interp": "step"
       },
       {
@@ -7460,7 +7751,7 @@
       },
       {
        "time": 0.6647,
-       "value": 0.0366,
+       "value": 0.0228,
        "interp": "step"
       },
       {
@@ -7470,7 +7761,7 @@
       },
       {
        "time": 0.7813,
-       "value": 0.0359,
+       "value": 0.0223,
        "interp": "step"
       },
       {
@@ -7480,7 +7771,7 @@
       },
       {
        "time": 0.8647,
-       "value": 0.0362,
+       "value": 0.0225,
        "interp": "step"
       },
       {
@@ -7490,7 +7781,7 @@
       },
       {
        "time": 0.9647,
-       "value": 0.0319,
+       "value": 0.0196,
        "interp": "step"
       },
       {
@@ -7500,7 +7791,7 @@
       },
       {
        "time": 1.1813,
-       "value": 0.036,
+       "value": 0.0223,
        "interp": "step"
       },
       {
@@ -7510,7 +7801,7 @@
       },
       {
        "time": 1.3647,
-       "value": 0.0393,
+       "value": 0.0245,
        "interp": "step"
       },
       {
@@ -7520,7 +7811,7 @@
       },
       {
        "time": 1.598,
-       "value": 0.033,
+       "value": 0.0204,
        "interp": "step"
       },
       {
@@ -7549,17 +7840,17 @@
     "core_width": 0.2,
     "glow_width": 2.6,
     "color": [
-     0.43,
-     0.38,
+     0.46,
+     0.25,
      1.0,
      1.0
     ],
     "emissive": {
-     "value": 5.1039,
+     "value": 2.943,
      "track": [
       {
        "time": 0.398,
-       "value": 5.1039,
+       "value": 2.943,
        "interp": "step"
       },
       {
@@ -7569,7 +7860,7 @@
       },
       {
        "time": 0.4647,
-       "value": 6.9933,
+       "value": 3.9736,
        "interp": "step"
       },
       {
@@ -7579,7 +7870,7 @@
       },
       {
        "time": 0.5813,
-       "value": 4.944,
+       "value": 2.8558,
        "interp": "step"
       },
       {
@@ -7589,7 +7880,7 @@
       },
       {
        "time": 0.6647,
-       "value": 5.3525,
+       "value": 3.0786,
        "interp": "step"
       },
       {
@@ -7599,7 +7890,7 @@
       },
       {
        "time": 0.7813,
-       "value": 6.9857,
+       "value": 3.9695,
        "interp": "step"
       },
       {
@@ -7609,7 +7900,7 @@
       },
       {
        "time": 0.8647,
-       "value": 6.0122,
+       "value": 3.4385,
        "interp": "step"
       },
       {
@@ -7619,7 +7910,7 @@
       },
       {
        "time": 0.9647,
-       "value": 4.8968,
+       "value": 2.7983,
        "interp": "step"
       },
       {
@@ -7629,7 +7920,7 @@
       },
       {
        "time": 1.1813,
-       "value": 4.6054,
+       "value": 2.6393,
        "interp": "step"
       },
       {
@@ -7639,7 +7930,7 @@
       },
       {
        "time": 1.3647,
-       "value": 5.0917,
+       "value": 2.9046,
        "interp": "step"
       },
       {
@@ -7649,7 +7940,7 @@
       },
       {
        "time": 1.598,
-       "value": 4.7292,
+       "value": 2.7068,
        "interp": "step"
       },
       {
@@ -7886,11 +8177,11 @@
      ]
     },
     "width": {
-     "value": 0.0385,
+     "value": 0.024,
      "track": [
       {
        "time": 0.4313,
-       "value": 0.0385,
+       "value": 0.024,
        "interp": "step"
       },
       {
@@ -7900,7 +8191,7 @@
       },
       {
        "time": 0.5313,
-       "value": 0.0386,
+       "value": 0.024,
        "interp": "step"
       },
       {
@@ -7910,7 +8201,7 @@
       },
       {
        "time": 0.6147,
-       "value": 0.0365,
+       "value": 0.0226,
        "interp": "step"
       },
       {
@@ -7920,7 +8211,7 @@
       },
       {
        "time": 0.7147,
-       "value": 0.038,
+       "value": 0.0236,
        "interp": "step"
       },
       {
@@ -7930,7 +8221,7 @@
       },
       {
        "time": 0.798,
-       "value": 0.0411,
+       "value": 0.0257,
        "interp": "step"
       },
       {
@@ -7940,7 +8231,7 @@
       },
       {
        "time": 0.8647,
-       "value": 0.0408,
+       "value": 0.0255,
        "interp": "step"
       },
       {
@@ -7950,7 +8241,7 @@
       },
       {
        "time": 0.9813,
-       "value": 0.0438,
+       "value": 0.0274,
        "interp": "step"
       },
       {
@@ -7960,7 +8251,7 @@
       },
       {
        "time": 1.098,
-       "value": 0.033,
+       "value": 0.0204,
        "interp": "step"
       },
       {
@@ -7970,7 +8261,7 @@
       },
       {
        "time": 1.2813,
-       "value": 0.0385,
+       "value": 0.024,
        "interp": "step"
       },
       {
@@ -7980,7 +8271,7 @@
       },
       {
        "time": 1.4813,
-       "value": 0.0384,
+       "value": 0.0239,
        "interp": "step"
       },
       {
@@ -7990,7 +8281,7 @@
       },
       {
        "time": 1.6647,
-       "value": 0.0403,
+       "value": 0.0252,
        "interp": "step"
       },
       {
@@ -8019,17 +8310,17 @@
     "core_width": 0.2,
     "glow_width": 2.6,
     "color": [
-     0.43,
-     0.38,
+     0.46,
+     0.25,
      1.0,
      1.0
     ],
     "emissive": {
-     "value": 5.0014,
+     "value": 2.8871,
      "track": [
       {
        "time": 0.4313,
-       "value": 5.0014,
+       "value": 2.8871,
        "interp": "step"
       },
       {
@@ -8039,7 +8330,7 @@
       },
       {
        "time": 0.5313,
-       "value": 5.8346,
+       "value": 3.3416,
        "interp": "step"
       },
       {
@@ -8049,7 +8340,7 @@
       },
       {
        "time": 0.6147,
-       "value": 5.2589,
+       "value": 3.0276,
        "interp": "step"
       },
       {
@@ -8059,7 +8350,7 @@
       },
       {
        "time": 0.7147,
-       "value": 6.2899,
+       "value": 3.5899,
        "interp": "step"
       },
       {
@@ -8069,7 +8360,7 @@
       },
       {
        "time": 0.798,
-       "value": 5.0213,
+       "value": 2.898,
        "interp": "step"
       },
       {
@@ -8079,7 +8370,7 @@
       },
       {
        "time": 0.8647,
-       "value": 6.1762,
+       "value": 3.528,
        "interp": "step"
       },
       {
@@ -8089,7 +8380,7 @@
       },
       {
        "time": 0.9813,
-       "value": 5.2435,
+       "value": 2.9874,
        "interp": "step"
       },
       {
@@ -8099,7 +8390,7 @@
       },
       {
        "time": 1.098,
-       "value": 5.5107,
+       "value": 3.1331,
        "interp": "step"
       },
       {
@@ -8109,7 +8400,7 @@
       },
       {
        "time": 1.2813,
-       "value": 4.5968,
+       "value": 2.6346,
        "interp": "step"
       },
       {
@@ -8119,7 +8410,7 @@
       },
       {
        "time": 1.4813,
-       "value": 4.1562,
+       "value": 2.3943,
        "interp": "step"
       },
       {
@@ -8129,7 +8420,7 @@
       },
       {
        "time": 1.6647,
-       "value": 4.0346,
+       "value": 2.328,
        "interp": "step"
       },
       {
@@ -8330,11 +8621,11 @@
      ]
     },
     "width": {
-     "value": 0.0422,
+     "value": 0.0264,
      "track": [
       {
        "time": 0.4647,
-       "value": 0.0422,
+       "value": 0.0264,
        "interp": "step"
       },
       {
@@ -8344,7 +8635,7 @@
       },
       {
        "time": 0.5647,
-       "value": 0.042,
+       "value": 0.0263,
        "interp": "step"
       },
       {
@@ -8354,7 +8645,7 @@
       },
       {
        "time": 0.6647,
-       "value": 0.0423,
+       "value": 0.0265,
        "interp": "step"
       },
       {
@@ -8364,7 +8655,7 @@
       },
       {
        "time": 0.798,
-       "value": 0.0438,
+       "value": 0.0275,
        "interp": "step"
       },
       {
@@ -8374,7 +8665,7 @@
       },
       {
        "time": 0.8813,
-       "value": 0.0318,
+       "value": 0.0196,
        "interp": "step"
       },
       {
@@ -8384,7 +8675,7 @@
       },
       {
        "time": 0.9647,
-       "value": 0.0397,
+       "value": 0.0248,
        "interp": "step"
       },
       {
@@ -8394,7 +8685,7 @@
       },
       {
        "time": 1.2313,
-       "value": 0.0366,
+       "value": 0.0227,
        "interp": "step"
       },
       {
@@ -8404,7 +8695,7 @@
       },
       {
        "time": 1.448,
-       "value": 0.0433,
+       "value": 0.0271,
        "interp": "step"
       },
       {
@@ -8414,7 +8705,7 @@
       },
       {
        "time": 1.5647,
-       "value": 0.0323,
+       "value": 0.0199,
        "interp": "step"
       },
       {
@@ -8443,17 +8734,17 @@
     "core_width": 0.2,
     "glow_width": 2.6,
     "color": [
-     0.43,
-     0.38,
+     0.46,
+     0.25,
      1.0,
      1.0
     ],
     "emissive": {
-     "value": 6.1705,
+     "value": 3.5248,
      "track": [
       {
        "time": 0.4647,
-       "value": 6.1705,
+       "value": 3.5248,
        "interp": "step"
       },
       {
@@ -8463,7 +8754,7 @@
       },
       {
        "time": 0.5647,
-       "value": 6.1929,
+       "value": 3.537,
        "interp": "step"
       },
       {
@@ -8473,7 +8764,7 @@
       },
       {
        "time": 0.6647,
-       "value": 7.4633,
+       "value": 4.23,
        "interp": "step"
       },
       {
@@ -8483,7 +8774,7 @@
       },
       {
        "time": 0.798,
-       "value": 5.4934,
+       "value": 3.1555,
        "interp": "step"
       },
       {
@@ -8493,7 +8784,7 @@
       },
       {
        "time": 0.8813,
-       "value": 6.644,
+       "value": 3.7831,
        "interp": "step"
       },
       {
@@ -8503,7 +8794,7 @@
       },
       {
        "time": 0.9647,
-       "value": 5.2055,
+       "value": 2.9666,
        "interp": "step"
       },
       {
@@ -8513,7 +8804,7 @@
       },
       {
        "time": 1.2313,
-       "value": 4.9473,
+       "value": 2.8258,
        "interp": "step"
       },
       {
@@ -8523,7 +8814,7 @@
       },
       {
        "time": 1.448,
-       "value": 4.9193,
+       "value": 2.8105,
        "interp": "step"
       },
       {
@@ -8533,7 +8824,7 @@
       },
       {
        "time": 1.5647,
-       "value": 5.6809,
+       "value": 3.226,
        "interp": "step"
       },
       {
@@ -8569,7 +8860,7 @@
     "duration": 0.1
    },
    "inputs": {
-    "particle": "ps_flash"
+    "particle": "ps_flash_2"
    }
   },
   {
@@ -8593,7 +8884,7 @@
     "duration": 0.1
    },
    "inputs": {
-    "particle": "ps_rays"
+    "particle": "ps_rays_2"
    }
   },
   {
@@ -8637,9 +8928,9 @@
      0,
      0
     ],
-    "velocity": 11.55,
-    "velocity_variance": 6.6,
-    "burst_count": 33,
+    "velocity": 11.0,
+    "velocity_variance": 6.05,
+    "burst_count": 32,
     "rate": 0.0,
     "burst_times": [
      0.0
@@ -8669,10 +8960,10 @@
      0.5544
     ],
     "spread": 80.0,
-    "velocity": 4.62,
-    "velocity_variance": 3.08,
+    "velocity": 4.6,
+    "velocity_variance": 2.852,
     "radial_velocity": 1.6,
-    "burst_count": 91,
+    "burst_count": 90,
     "rate": 0.0,
     "burst_times": [
      0.0
@@ -8710,7 +9001,7 @@
       },
       {
        "time": 0.9,
-       "value": 66.0
+       "value": 62.4
       },
       {
        "time": 1.0667,
@@ -8798,7 +9089,7 @@
       },
       {
        "time": 0.9,
-       "value": 99.0
+       "value": 93.6
       },
       {
        "time": 1.0,
@@ -8853,7 +9144,7 @@
       },
       {
        "time": 1.7333,
-       "value": 165.0
+       "value": 156.0
       },
       {
        "time": 1.75,
@@ -8865,7 +9156,7 @@
       }
      ]
     },
-    "burst_count": 51,
+    "burst_count": 48,
     "burst_times": [
      0.0
     ],
@@ -8935,12 +9226,12 @@
      1.3
     ],
     "color": [
-     0.5,
-     0.66,
+     0.2,
+     0.36,
      1.0,
      1.0
     ],
-    "radius": 7.65,
+    "radius": 3.6,
     "intensity": {
      "value": 0.0,
      "track": [
@@ -8950,43 +9241,43 @@
       },
       {
        "time": 0.9,
-       "value": 9.9
+       "value": 4.4
       },
       {
        "time": 0.95,
-       "value": 4.95
+       "value": 1.98
       },
       {
        "time": 1.05,
-       "value": 2.0
+       "value": 0.55
       },
       {
        "time": 1.3833,
-       "value": 1.7
+       "value": 0.5
       },
       {
        "time": 1.4,
-       "value": 4.464
+       "value": 1.534
       },
       {
        "time": 1.4167,
-       "value": 1.7
+       "value": 0.5
       },
       {
        "time": 1.4333,
-       "value": 4.752
+       "value": 1.612
       },
       {
        "time": 1.5,
-       "value": 1.8
+       "value": 0.5
       },
       {
        "time": 1.5333,
-       "value": 1.8
+       "value": 0.5
       },
       {
        "time": 1.6833,
-       "value": 1.5
+       "value": 0.45
       },
       {
        "time": 1.7667,
@@ -9012,8 +9303,8 @@
      0.9
     ],
     "size": [
-     1.825,
-     1.825
+     1.84,
+     1.84
     ],
     "rotation": [
      0.0,
@@ -9070,29 +9361,29 @@
     ],
     "size": {
      "value": [
-      1.1406,
-      1.1406
+      1.15,
+      1.15
      ],
      "track": [
       {
        "time": 0.8833,
        "value": [
-        1.1406,
-        1.1406
+        1.15,
+        1.15
        ]
       },
       {
        "time": 0.9667,
        "value": [
-        2.2812,
-        2.2812
+        2.3,
+        2.3
        ]
       },
       {
        "time": 1.8167,
        "value": [
-        2.5549,
-        2.5549
+        2.576,
+        2.576
        ]
       }
      ]
@@ -9123,8 +9414,8 @@
      ]
     },
     "color": [
-     0.4,
-     0.6,
+     0.22,
+     0.42,
      1.0,
      1.0
     ],
@@ -9162,7 +9453,7 @@
       },
       {
        "time": 1.4,
-       "value": 2.356
+       "value": 2.242
       },
       {
        "time": 1.4333,
@@ -9237,29 +9528,29 @@
     ],
     "size": {
      "value": [
-      1.1406,
-      1.1406
+      1.15,
+      1.15
      ],
      "track": [
       {
        "time": 0.8833,
        "value": [
-        1.1406,
-        1.1406
+        1.15,
+        1.15
        ]
       },
       {
        "time": 0.9667,
        "value": [
-        2.2812,
-        2.2812
+        2.3,
+        2.3
        ]
       },
       {
        "time": 1.8167,
        "value": [
-        2.5549,
-        2.5549
+        2.576,
+        2.576
        ]
       }
      ]
@@ -9290,8 +9581,8 @@
      ]
     },
     "color": [
-     0.4,
-     0.6,
+     0.22,
+     0.42,
      1.0,
      1.0
     ],
@@ -9329,11 +9620,11 @@
       },
       {
        "time": 1.4,
-       "value": 2.356
+       "value": 2.242
       },
       {
        "time": 1.4333,
-       "value": 2.508
+       "value": 2.356
       },
       {
        "time": 1.45,
@@ -9563,11 +9854,11 @@
      ]
     },
     "width": {
-     "value": 0.0412,
+     "value": 0.0263,
      "track": [
       {
        "time": 0.898,
-       "value": 0.0412,
+       "value": 0.0263,
        "interp": "step"
       },
       {
@@ -9577,7 +9868,7 @@
       },
       {
        "time": 1.0147,
-       "value": 0.0454,
+       "value": 0.0292,
        "interp": "step"
       },
       {
@@ -9587,7 +9878,7 @@
       },
       {
        "time": 1.1313,
-       "value": 0.0412,
+       "value": 0.0264,
        "interp": "step"
       },
       {
@@ -9597,7 +9888,7 @@
       },
       {
        "time": 1.248,
-       "value": 0.0437,
+       "value": 0.028,
        "interp": "step"
       },
       {
@@ -9607,7 +9898,7 @@
       },
       {
        "time": 1.3313,
-       "value": 0.0457,
+       "value": 0.0294,
        "interp": "step"
       },
       {
@@ -9617,7 +9908,7 @@
       },
       {
        "time": 1.4147,
-       "value": 0.0431,
+       "value": 0.0276,
        "interp": "step"
       },
       {
@@ -9627,7 +9918,7 @@
       },
       {
        "time": 1.498,
-       "value": 0.0395,
+       "value": 0.0252,
        "interp": "step"
       },
       {
@@ -9637,7 +9928,7 @@
       },
       {
        "time": 1.698,
-       "value": 0.0352,
+       "value": 0.0223,
        "interp": "step"
       },
       {
@@ -9666,17 +9957,17 @@
     "core_width": 0.2,
     "glow_width": 2.6,
     "color": [
-     0.43,
-     0.38,
+     0.46,
+     0.25,
      1.0,
      1.0
     ],
     "emissive": {
-     "value": 7.0024,
+     "value": 3.9786,
      "track": [
       {
        "time": 0.898,
-       "value": 7.0024,
+       "value": 3.9786,
        "interp": "step"
       },
       {
@@ -9686,7 +9977,7 @@
       },
       {
        "time": 1.0147,
-       "value": 5.2723,
+       "value": 3.0349,
        "interp": "step"
       },
       {
@@ -9696,7 +9987,7 @@
       },
       {
        "time": 1.1313,
-       "value": 5.0274,
+       "value": 2.9013,
        "interp": "step"
       },
       {
@@ -9706,7 +9997,7 @@
       },
       {
        "time": 1.248,
-       "value": 5.1228,
+       "value": 2.9534,
        "interp": "step"
       },
       {
@@ -9716,7 +10007,7 @@
       },
       {
        "time": 1.3313,
-       "value": 4.8802,
+       "value": 2.821,
        "interp": "step"
       },
       {
@@ -9726,7 +10017,7 @@
       },
       {
        "time": 1.4147,
-       "value": 6.0502,
+       "value": 3.4592,
        "interp": "step"
       },
       {
@@ -9736,7 +10027,7 @@
       },
       {
        "time": 1.498,
-       "value": 4.9308,
+       "value": 2.8168,
        "interp": "step"
       },
       {
@@ -9746,7 +10037,7 @@
       },
       {
        "time": 1.698,
-       "value": 4.0037,
+       "value": 2.3111,
        "interp": "step"
       },
       {
@@ -9911,11 +10202,11 @@
      ]
     },
     "width": {
-     "value": 0.0353,
+     "value": 0.0224,
      "track": [
       {
        "time": 0.9313,
-       "value": 0.0353,
+       "value": 0.0224,
        "interp": "step"
       },
       {
@@ -9925,7 +10216,7 @@
       },
       {
        "time": 1.0147,
-       "value": 0.0451,
+       "value": 0.029,
        "interp": "step"
       },
       {
@@ -9935,7 +10226,7 @@
       },
       {
        "time": 1.1147,
-       "value": 0.0373,
+       "value": 0.0237,
        "interp": "step"
       },
       {
@@ -9945,7 +10236,7 @@
       },
       {
        "time": 1.2313,
-       "value": 0.0458,
+       "value": 0.0295,
        "interp": "step"
       },
       {
@@ -9955,7 +10246,7 @@
       },
       {
        "time": 1.3647,
-       "value": 0.0477,
+       "value": 0.0307,
        "interp": "step"
       },
       {
@@ -9965,7 +10256,7 @@
       },
       {
        "time": 1.4647,
-       "value": 0.04,
+       "value": 0.0255,
        "interp": "step"
       },
       {
@@ -9975,7 +10266,7 @@
       },
       {
        "time": 1.698,
-       "value": 0.0442,
+       "value": 0.0284,
        "interp": "step"
       },
       {
@@ -10004,17 +10295,17 @@
     "core_width": 0.2,
     "glow_width": 2.6,
     "color": [
-     0.43,
-     0.38,
+     0.46,
+     0.25,
      1.0,
      1.0
     ],
     "emissive": {
-     "value": 7.3422,
+     "value": 4.1639,
      "track": [
       {
        "time": 0.9313,
-       "value": 7.3422,
+       "value": 4.1639,
        "interp": "step"
       },
       {
@@ -10024,7 +10315,7 @@
       },
       {
        "time": 1.0147,
-       "value": 5.7061,
+       "value": 3.2715,
        "interp": "step"
       },
       {
@@ -10034,7 +10325,7 @@
       },
       {
        "time": 1.1147,
-       "value": 6.2064,
+       "value": 3.5444,
        "interp": "step"
       },
       {
@@ -10044,7 +10335,7 @@
       },
       {
        "time": 1.2313,
-       "value": 5.5492,
+       "value": 3.1859,
        "interp": "step"
       },
       {
@@ -10054,7 +10345,7 @@
       },
       {
        "time": 1.3647,
-       "value": 6.8585,
+       "value": 3.9001,
        "interp": "step"
       },
       {
@@ -10064,7 +10355,7 @@
       },
       {
        "time": 1.4647,
-       "value": 4.3021,
+       "value": 2.4739,
        "interp": "step"
       },
       {
@@ -10074,7 +10365,7 @@
       },
       {
        "time": 1.698,
-       "value": 5.3439,
+       "value": 3.0421,
        "interp": "step"
       },
       {
@@ -10239,11 +10530,11 @@
      ]
     },
     "width": {
-     "value": 0.04,
+     "value": 0.0255,
      "track": [
       {
        "time": 0.9647,
-       "value": 0.04,
+       "value": 0.0255,
        "interp": "step"
       },
       {
@@ -10253,7 +10544,7 @@
       },
       {
        "time": 1.048,
-       "value": 0.0348,
+       "value": 0.022,
        "interp": "step"
       },
       {
@@ -10263,7 +10554,7 @@
       },
       {
        "time": 1.1647,
-       "value": 0.0473,
+       "value": 0.0305,
        "interp": "step"
       },
       {
@@ -10273,7 +10564,7 @@
       },
       {
        "time": 1.2647,
-       "value": 0.0341,
+       "value": 0.0215,
        "interp": "step"
       },
       {
@@ -10283,7 +10574,7 @@
       },
       {
        "time": 1.3647,
-       "value": 0.0448,
+       "value": 0.0287,
        "interp": "step"
       },
       {
@@ -10293,7 +10584,7 @@
       },
       {
        "time": 1.4813,
-       "value": 0.0372,
+       "value": 0.0236,
        "interp": "step"
       },
       {
@@ -10303,7 +10594,7 @@
       },
       {
        "time": 1.6813,
-       "value": 0.0433,
+       "value": 0.0277,
        "interp": "step"
       },
       {
@@ -10332,17 +10623,17 @@
     "core_width": 0.2,
     "glow_width": 2.6,
     "color": [
-     0.43,
-     0.38,
+     0.46,
+     0.25,
      1.0,
      1.0
     ],
     "emissive": {
-     "value": 5.7486,
+     "value": 3.2947,
      "track": [
       {
        "time": 0.9647,
-       "value": 5.7486,
+       "value": 3.2947,
        "interp": "step"
       },
       {
@@ -10352,7 +10643,7 @@
       },
       {
        "time": 1.048,
-       "value": 5.9471,
+       "value": 3.403,
        "interp": "step"
       },
       {
@@ -10362,7 +10653,7 @@
       },
       {
        "time": 1.1647,
-       "value": 7.1037,
+       "value": 4.0338,
        "interp": "step"
       },
       {
@@ -10372,7 +10663,7 @@
       },
       {
        "time": 1.2647,
-       "value": 6.3709,
+       "value": 3.6341,
        "interp": "step"
       },
       {
@@ -10382,7 +10673,7 @@
       },
       {
        "time": 1.3647,
-       "value": 5.0298,
+       "value": 2.9026,
        "interp": "step"
       },
       {
@@ -10392,7 +10683,7 @@
       },
       {
        "time": 1.4813,
-       "value": 5.3017,
+       "value": 3.0191,
        "interp": "step"
       },
       {
@@ -10402,7 +10693,7 @@
       },
       {
        "time": 1.6813,
-       "value": 5.5413,
+       "value": 3.1498,
        "interp": "step"
       },
       {
@@ -10438,7 +10729,7 @@
     "duration": 0.1
    },
    "inputs": {
-    "particle": "ps_flash_big"
+    "particle": "ps_flash_3"
    }
   },
   {
@@ -10462,7 +10753,7 @@
     "duration": 0.1
    },
    "inputs": {
-    "particle": "ps_rays"
+    "particle": "ps_rays_3"
    }
   },
   {
@@ -10507,9 +10798,9 @@
      0,
      0
     ],
-    "velocity": 13.02,
-    "velocity_variance": 7.44,
-    "burst_count": 37,
+    "velocity": 14.0,
+    "velocity_variance": 7.7,
+    "burst_count": 50,
     "rate": 0.0,
     "burst_times": [
      0.0
@@ -10539,10 +10830,10 @@
      -0.6155
     ],
     "spread": 80.0,
-    "velocity": 6.696,
+    "velocity": 5.6,
     "velocity_variance": 3.472,
     "radial_velocity": 1.6,
-    "burst_count": 110,
+    "burst_count": 150,
     "rate": 0.0,
     "burst_times": [
      0.0
@@ -10580,7 +10871,7 @@
       },
       {
        "time": 1.4,
-       "value": 74.4
+       "value": 70.8
       },
       {
        "time": 1.5667,
@@ -10643,7 +10934,7 @@
       },
       {
        "time": 1.7167,
-       "value": 186.0
+       "value": 177.0
       },
       {
        "time": 1.75,
@@ -10655,7 +10946,7 @@
       }
      ]
     },
-    "burst_count": 57,
+    "burst_count": 54,
     "burst_times": [
      0.0
     ],
@@ -10678,12 +10969,12 @@
      -0.5
     ],
     "color": [
-     0.5,
-     0.66,
+     0.2,
+     0.36,
      1.0,
      1.0
     ],
-    "radius": 7.86,
+    "radius": 4.1,
     "intensity": {
      "value": 0.0,
      "track": [
@@ -10693,19 +10984,19 @@
       },
       {
        "time": 1.4,
-       "value": 11.16
+       "value": 6.2
       },
       {
        "time": 1.45,
-       "value": 5.58
+       "value": 2.79
       },
       {
        "time": 1.55,
-       "value": 2.0
+       "value": 0.55
       },
       {
        "time": 1.6667,
-       "value": 1.5
+       "value": 0.45
       },
       {
        "time": 1.75,
@@ -10731,8 +11022,8 @@
      -0.9
     ],
     "size": [
-     2.14,
-     2.14
+     2.16,
+     2.16
     ],
     "rotation": [
      0.0,
@@ -10789,29 +11080,29 @@
     ],
     "size": {
      "value": [
-      1.3375,
-      1.3375
+      1.35,
+      1.35
      ],
      "track": [
       {
        "time": 1.3833,
        "value": [
-        1.3375,
-        1.3375
+        1.35,
+        1.35
        ]
       },
       {
        "time": 1.4667,
        "value": [
-        2.675,
-        2.675
+        2.7,
+        2.7
        ]
       },
       {
        "time": 1.8,
        "value": [
-        2.996,
-        2.996
+        3.024,
+        3.024
        ]
       }
      ]
@@ -10842,8 +11133,8 @@
      ]
     },
     "color": [
-     0.4,
-     0.6,
+     0.22,
+     0.42,
      1.0,
      1.0
     ],
@@ -10928,29 +11219,29 @@
     ],
     "size": {
      "value": [
-      1.3375,
-      1.3375
+      1.35,
+      1.35
      ],
      "track": [
       {
        "time": 1.3833,
        "value": [
-        1.3375,
-        1.3375
+        1.35,
+        1.35
        ]
       },
       {
        "time": 1.4667,
        "value": [
-        2.675,
-        2.675
+        2.7,
+        2.7
        ]
       },
       {
        "time": 1.8,
        "value": [
-        2.996,
-        2.996
+        3.024,
+        3.024
        ]
       }
      ]
@@ -10981,8 +11272,8 @@
      ]
     },
     "color": [
-     0.4,
-     0.6,
+     0.22,
+     0.42,
      1.0,
      1.0
     ],
@@ -11124,11 +11415,11 @@
      ]
     },
     "width": {
-     "value": 0.0438,
+     "value": 0.0281,
      "track": [
       {
        "time": 1.398,
-       "value": 0.0438,
+       "value": 0.0281,
        "interp": "step"
       },
       {
@@ -11138,7 +11429,7 @@
       },
       {
        "time": 1.5147,
-       "value": 0.0411,
+       "value": 0.0262,
        "interp": "step"
       },
       {
@@ -11148,7 +11439,7 @@
       },
       {
        "time": 1.6147,
-       "value": 0.0424,
+       "value": 0.0272,
        "interp": "step"
       },
       {
@@ -11177,17 +11468,17 @@
     "core_width": 0.2,
     "glow_width": 2.6,
     "color": [
-     0.43,
-     0.38,
+     0.46,
+     0.25,
      1.0,
      1.0
     ],
     "emissive": {
-     "value": 6.8658,
+     "value": 3.9041,
      "track": [
       {
        "time": 1.398,
-       "value": 6.8658,
+       "value": 3.9041,
        "interp": "step"
       },
       {
@@ -11197,7 +11488,7 @@
       },
       {
        "time": 1.5147,
-       "value": 6.1633,
+       "value": 3.5209,
        "interp": "step"
       },
       {
@@ -11207,7 +11498,7 @@
       },
       {
        "time": 1.6147,
-       "value": 6.8842,
+       "value": 3.9141,
        "interp": "step"
       },
       {
@@ -11300,11 +11591,11 @@
      ]
     },
     "width": {
-     "value": 0.0455,
+     "value": 0.0292,
      "track": [
       {
        "time": 1.4313,
-       "value": 0.0455,
+       "value": 0.0292,
        "interp": "step"
       },
       {
@@ -11314,7 +11605,7 @@
       },
       {
        "time": 1.5313,
-       "value": 0.0471,
+       "value": 0.0303,
        "interp": "step"
       },
       {
@@ -11324,7 +11615,7 @@
       },
       {
        "time": 1.6313,
-       "value": 0.0479,
+       "value": 0.0309,
        "interp": "step"
       },
       {
@@ -11353,17 +11644,17 @@
     "core_width": 0.2,
     "glow_width": 2.6,
     "color": [
-     0.43,
-     0.38,
+     0.46,
+     0.25,
      1.0,
      1.0
     ],
     "emissive": {
-     "value": 6.5532,
+     "value": 3.7336,
      "track": [
       {
        "time": 1.4313,
-       "value": 6.5532,
+       "value": 3.7336,
        "interp": "step"
       },
       {
@@ -11373,7 +11664,7 @@
       },
       {
        "time": 1.5313,
-       "value": 5.6059,
+       "value": 3.2169,
        "interp": "step"
       },
       {
@@ -11383,7 +11674,7 @@
       },
       {
        "time": 1.6313,
-       "value": 7.0042,
+       "value": 3.9796,
        "interp": "step"
       },
       {
@@ -11476,11 +11767,11 @@
      ]
     },
     "width": {
-     "value": 0.0422,
+     "value": 0.027,
      "track": [
       {
        "time": 1.4647,
-       "value": 0.0422,
+       "value": 0.027,
        "interp": "step"
       },
       {
@@ -11490,7 +11781,7 @@
       },
       {
        "time": 1.548,
-       "value": 0.0498,
+       "value": 0.0322,
        "interp": "step"
       },
       {
@@ -11500,7 +11791,7 @@
       },
       {
        "time": 1.6647,
-       "value": 0.0527,
+       "value": 0.0341,
        "interp": "step"
       },
       {
@@ -11529,17 +11820,17 @@
     "core_width": 0.2,
     "glow_width": 2.6,
     "color": [
-     0.43,
-     0.38,
+     0.46,
+     0.25,
      1.0,
      1.0
     ],
     "emissive": {
-     "value": 5.0389,
+     "value": 2.9076,
      "track": [
       {
        "time": 1.4647,
-       "value": 5.0389,
+       "value": 2.9076,
        "interp": "step"
       },
       {
@@ -11549,7 +11840,7 @@
       },
       {
        "time": 1.548,
-       "value": 7.105,
+       "value": 4.0345,
        "interp": "step"
       },
       {
@@ -11559,7 +11850,7 @@
       },
       {
        "time": 1.6647,
-       "value": 5.9764,
+       "value": 3.4189,
        "interp": "step"
       },
       {
@@ -11595,7 +11886,7 @@
     "duration": 0.1
    },
    "inputs": {
-    "particle": "ps_flash_big"
+    "particle": "ps_flash_3"
    }
   },
   {
@@ -11619,7 +11910,7 @@
     "duration": 0.1
    },
    "inputs": {
-    "particle": "ps_rays"
+    "particle": "ps_rays_3"
    }
   },
   {
@@ -11664,9 +11955,9 @@
      0,
      0
     ],
-    "velocity": 13.86,
-    "velocity_variance": 7.92,
-    "burst_count": 40,
+    "velocity": 14.0,
+    "velocity_variance": 7.7,
+    "burst_count": 50,
     "rate": 0.0,
     "burst_times": [
      0.0
@@ -11696,10 +11987,10 @@
      0.284
     ],
     "spread": 80.0,
-    "velocity": 7.128,
-    "velocity_variance": 3.696,
+    "velocity": 5.6,
+    "velocity_variance": 3.472,
     "radial_velocity": 1.6,
-    "burst_count": 122,
+    "burst_count": 150,
     "rate": 0.0,
     "burst_times": [
      0.0
@@ -11737,7 +12028,7 @@
       },
       {
        "time": 1.4333,
-       "value": 79.2
+       "value": 74.4
       },
       {
        "time": 1.6,
@@ -11800,7 +12091,7 @@
       },
       {
        "time": 1.7333,
-       "value": 198.0
+       "value": 186.0
       },
       {
        "time": 1.75,
@@ -11812,7 +12103,7 @@
       }
      ]
     },
-    "burst_count": 61,
+    "burst_count": 57,
     "burst_times": [
      0.0
     ],
@@ -11835,12 +12126,12 @@
      2.1
     ],
     "color": [
-     0.5,
-     0.66,
+     0.2,
+     0.36,
      1.0,
      1.0
     ],
-    "radius": 7.98,
+    "radius": 4.1,
     "intensity": {
      "value": 0.0,
      "track": [
@@ -11850,19 +12141,19 @@
       },
       {
        "time": 1.4333,
-       "value": 11.88
+       "value": 6.2
       },
       {
        "time": 1.4833,
-       "value": 5.94
+       "value": 2.79
       },
       {
        "time": 1.5833,
-       "value": 2.0
+       "value": 0.55
       },
       {
        "time": 1.6833,
-       "value": 1.5
+       "value": 0.45
       },
       {
        "time": 1.7667,
@@ -11888,8 +12179,8 @@
      1.7
     ],
     "size": [
-     2.32,
-     2.32
+     2.16,
+     2.16
     ],
     "rotation": [
      0.0,
@@ -11946,29 +12237,29 @@
     ],
     "size": {
      "value": [
-      1.45,
-      1.45
+      1.35,
+      1.35
      ],
      "track": [
       {
        "time": 1.4167,
        "value": [
-        1.45,
-        1.45
+        1.35,
+        1.35
        ]
       },
       {
        "time": 1.5,
        "value": [
-        2.9,
-        2.9
+        2.7,
+        2.7
        ]
       },
       {
        "time": 1.8167,
        "value": [
-        3.248,
-        3.248
+        3.024,
+        3.024
        ]
       }
      ]
@@ -11999,8 +12290,8 @@
      ]
     },
     "color": [
-     0.4,
-     0.6,
+     0.22,
+     0.42,
      1.0,
      1.0
     ],
@@ -12085,29 +12376,29 @@
     ],
     "size": {
      "value": [
-      1.45,
-      1.45
+      1.35,
+      1.35
      ],
      "track": [
       {
        "time": 1.4167,
        "value": [
-        1.45,
-        1.45
+        1.35,
+        1.35
        ]
       },
       {
        "time": 1.5,
        "value": [
-        2.9,
-        2.9
+        2.7,
+        2.7
        ]
       },
       {
        "time": 1.8167,
        "value": [
-        3.248,
-        3.248
+        3.024,
+        3.024
        ]
       }
      ]
@@ -12138,8 +12429,8 @@
      ]
     },
     "color": [
-     0.4,
-     0.6,
+     0.22,
+     0.42,
      1.0,
      1.0
     ],
@@ -12281,11 +12572,11 @@
      ]
     },
     "width": {
-     "value": 0.0403,
+     "value": 0.0253,
      "track": [
       {
        "time": 1.4313,
-       "value": 0.0403,
+       "value": 0.0253,
        "interp": "step"
       },
       {
@@ -12295,7 +12586,7 @@
       },
       {
        "time": 1.498,
-       "value": 0.0415,
+       "value": 0.0261,
        "interp": "step"
       },
       {
@@ -12305,7 +12596,7 @@
       },
       {
        "time": 1.6313,
-       "value": 0.0573,
+       "value": 0.0367,
        "interp": "step"
       },
       {
@@ -12334,17 +12625,17 @@
     "core_width": 0.2,
     "glow_width": 2.6,
     "color": [
-     0.43,
-     0.38,
+     0.46,
+     0.25,
      1.0,
      1.0
     ],
     "emissive": {
-     "value": 5.0156,
+     "value": 2.8949,
      "track": [
       {
        "time": 1.4313,
-       "value": 5.0156,
+       "value": 2.8949,
        "interp": "step"
       },
       {
@@ -12354,7 +12645,7 @@
       },
       {
        "time": 1.498,
-       "value": 5.3714,
+       "value": 3.089,
        "interp": "step"
       },
       {
@@ -12364,7 +12655,7 @@
       },
       {
        "time": 1.6313,
-       "value": 7.4058,
+       "value": 4.1986,
        "interp": "step"
       },
       {
@@ -12457,11 +12748,11 @@
      ]
     },
     "width": {
-     "value": 0.0469,
+     "value": 0.0297,
      "track": [
       {
        "time": 1.4647,
-       "value": 0.0469,
+       "value": 0.0297,
        "interp": "step"
       },
       {
@@ -12471,7 +12762,7 @@
       },
       {
        "time": 1.5813,
-       "value": 0.045,
+       "value": 0.0284,
        "interp": "step"
       },
       {
@@ -12481,7 +12772,7 @@
       },
       {
        "time": 1.6647,
-       "value": 0.0471,
+       "value": 0.0298,
        "interp": "step"
       },
       {
@@ -12510,17 +12801,17 @@
     "core_width": 0.2,
     "glow_width": 2.6,
     "color": [
-     0.43,
-     0.38,
+     0.46,
+     0.25,
      1.0,
      1.0
     ],
     "emissive": {
-     "value": 6.9775,
+     "value": 3.965,
      "track": [
       {
        "time": 1.4647,
-       "value": 6.9775,
+       "value": 3.965,
        "interp": "step"
       },
       {
@@ -12530,7 +12821,7 @@
       },
       {
        "time": 1.5813,
-       "value": 5.3792,
+       "value": 3.0932,
        "interp": "step"
       },
       {
@@ -12540,7 +12831,7 @@
       },
       {
        "time": 1.6647,
-       "value": 6.4048,
+       "value": 3.6526,
        "interp": "step"
       },
       {
@@ -12633,11 +12924,11 @@
      ]
     },
     "width": {
-     "value": 0.0431,
+     "value": 0.0272,
      "track": [
       {
        "time": 1.498,
-       "value": 0.0431,
+       "value": 0.0272,
        "interp": "step"
       },
       {
@@ -12647,7 +12938,7 @@
       },
       {
        "time": 1.6313,
-       "value": 0.0407,
+       "value": 0.0255,
        "interp": "step"
       },
       {
@@ -12657,7 +12948,7 @@
       },
       {
        "time": 1.7147,
-       "value": 0.0551,
+       "value": 0.0352,
        "interp": "step"
       },
       {
@@ -12686,17 +12977,17 @@
     "core_width": 0.2,
     "glow_width": 2.6,
     "color": [
-     0.43,
-     0.38,
+     0.46,
+     0.25,
      1.0,
      1.0
     ],
     "emissive": {
-     "value": 6.451,
+     "value": 3.6778,
      "track": [
       {
        "time": 1.498,
-       "value": 6.451,
+       "value": 3.6778,
        "interp": "step"
       },
       {
@@ -12706,7 +12997,7 @@
       },
       {
        "time": 1.6313,
-       "value": 6.8573,
+       "value": 3.8994,
        "interp": "step"
       },
       {
@@ -12716,7 +13007,7 @@
       },
       {
        "time": 1.7147,
-       "value": 5.8999,
+       "value": 3.3454,
        "interp": "step"
       },
       {
@@ -12732,12 +13023,61 @@
    }
   },
   {
+   "id": "hop1_light",
+   "type": "light",
+   "layer": "light",
+   "parameters": {
+    "light_type": "point",
+    "position": [
+     -3.15,
+     1.1,
+     -0.15
+    ],
+    "color": [
+     0.2,
+     0.36,
+     1.0,
+     1.0
+    ],
+    "radius": 3.0,
+    "intensity": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.35,
+       "value": 0.0
+      },
+      {
+       "time": 0.4,
+       "value": 2.024
+      },
+      {
+       "time": 0.4667,
+       "value": 0.9
+      },
+      {
+       "time": 0.6,
+       "value": 0.0
+      }
+     ]
+    },
+    "flicker_amplitude": 0.4,
+    "flicker_frequency": 46.0,
+    "start_time": 0.348,
+    "duration": 0.2687
+   }
+  },
+  {
    "id": "hop1_fade",
    "type": "emitter",
    "layer": "sparks",
    "parameters": {
-    "shape": "line",
-    "length": 2.8594,
+    "shape": "box",
+    "size": [
+     2.9216,
+     0.62,
+     0.62
+    ],
     "position": [
      -3.15,
      1.35,
@@ -12794,8 +13134,12 @@
    "type": "emitter",
    "layer": "sparks",
    "parameters": {
-    "shape": "line",
-    "length": 2.8594,
+    "shape": "box",
+    "size": [
+     2.9216,
+     0.62,
+     0.62
+    ],
     "position": [
      -3.15,
      1.35,
@@ -12847,12 +13191,61 @@
    }
   },
   {
+   "id": "hop2_light",
+   "type": "light",
+   "layer": "light",
+   "parameters": {
+    "light_type": "point",
+    "position": [
+     -0.5,
+     0.95,
+     0.1
+    ],
+    "color": [
+     0.2,
+     0.36,
+     1.0,
+     1.0
+    ],
+    "radius": 3.0,
+    "intensity": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.85,
+       "value": 0.0
+      },
+      {
+       "time": 0.9,
+       "value": 2.288
+      },
+      {
+       "time": 0.9667,
+       "value": 0.9
+      },
+      {
+       "time": 1.1,
+       "value": 0.0
+      }
+     ]
+    },
+    "flicker_amplitude": 0.4,
+    "flicker_frequency": 46.0,
+    "start_time": 0.848,
+    "duration": 0.2687
+   }
+  },
+  {
    "id": "hop2_fade",
    "type": "emitter",
    "layer": "sparks",
    "parameters": {
-    "shape": "line",
-    "length": 2.6553,
+    "shape": "box",
+    "size": [
+     2.713,
+     0.62,
+     0.62
+    ],
     "position": [
      -0.5,
      1.2,
@@ -12909,8 +13302,12 @@
    "type": "emitter",
    "layer": "sparks",
    "parameters": {
-    "shape": "line",
-    "length": 2.6553,
+    "shape": "box",
+    "size": [
+     2.713,
+     0.62,
+     0.62
+    ],
     "position": [
      -0.5,
      1.2,
@@ -12962,12 +13359,61 @@
    }
   },
   {
+   "id": "hop3_light",
+   "type": "light",
+   "layer": "light",
+   "parameters": {
+    "light_type": "point",
+    "position": [
+     1.85,
+     0.975,
+     0.0
+    ],
+    "color": [
+     0.2,
+     0.36,
+     1.0,
+     1.0
+    ],
+    "radius": 3.0,
+    "intensity": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 1.35,
+       "value": 0.0
+      },
+      {
+       "time": 1.4,
+       "value": 2.596
+      },
+      {
+       "time": 1.4667,
+       "value": 0.9
+      },
+      {
+       "time": 1.6,
+       "value": 0.0
+      }
+     ]
+    },
+    "flicker_amplitude": 0.4,
+    "flicker_frequency": 46.0,
+    "start_time": 1.348,
+    "duration": 0.2687
+   }
+  },
+  {
    "id": "hop3_fade",
    "type": "emitter",
    "layer": "sparks",
    "parameters": {
-    "shape": "line",
-    "length": 2.6905,
+    "shape": "box",
+    "size": [
+     2.749,
+     0.62,
+     0.62
+    ],
     "position": [
      1.85,
      1.225,
@@ -13020,12 +13466,61 @@
    }
   },
   {
+   "id": "hop4_light",
+   "type": "light",
+   "layer": "light",
+   "parameters": {
+    "light_type": "point",
+    "position": [
+     2.05,
+     0.925,
+     1.3
+    ],
+    "color": [
+     0.2,
+     0.36,
+     1.0,
+     1.0
+    ],
+    "radius": 3.0,
+    "intensity": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 1.3833,
+       "value": 0.0
+      },
+      {
+       "time": 1.4333,
+       "value": 2.728
+      },
+      {
+       "time": 1.5,
+       "value": 0.9
+      },
+      {
+       "time": 1.6333,
+       "value": 0.0
+      }
+     ]
+    },
+    "flicker_amplitude": 0.4,
+    "flicker_frequency": 46.0,
+    "start_time": 1.3813,
+    "duration": 0.2687
+   }
+  },
+  {
    "id": "hop4_fade",
    "type": "emitter",
    "layer": "sparks",
    "parameters": {
-    "shape": "line",
-    "length": 2.5912,
+    "shape": "box",
+    "size": [
+     2.6475,
+     0.62,
+     0.62
+    ],
     "position": [
      2.05,
      1.175,
@@ -13082,14 +13577,14 @@
    "type": "camera",
    "parameters": {
     "position": [
-     -1.66,
-     5.5,
-     9.85
+     3.8,
+     4.87,
+     8.94
     ],
     "target": [
-     -0.45,
-     0.8,
-     0.4
+     -0.2,
+     0.85,
+     0.35
     ],
     "fov": 40.0
    }
@@ -13597,22 +14092,32 @@
    "unit": "x",
    "bindings": [
     {
-     "node": "ps_flash",
+     "node": "ps_flash_1",
      "parameter": "emissive",
      "op": "multiply"
     },
     {
-     "node": "ps_flash_big",
+     "node": "ps_rays_1",
      "parameter": "emissive",
      "op": "multiply"
     },
     {
-     "node": "ps_rays",
+     "node": "ps_flash_2",
      "parameter": "emissive",
      "op": "multiply"
     },
     {
-     "node": "ps_ring",
+     "node": "ps_rays_2",
+     "parameter": "emissive",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_flash_3",
+     "parameter": "emissive",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_rays_3",
      "parameter": "emissive",
      "op": "multiply"
     },
@@ -13622,27 +14127,47 @@
      "op": "multiply"
     },
     {
-     "node": "ps_flash",
-     "parameter": "color",
-     "op": "multiply"
-    },
-    {
-     "node": "ps_flash_big",
-     "parameter": "color",
-     "op": "multiply"
-    },
-    {
-     "node": "ps_rays",
-     "parameter": "color",
-     "op": "multiply"
-    },
-    {
      "node": "ps_ring",
+     "parameter": "emissive",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_flash_1",
+     "parameter": "color",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_rays_1",
+     "parameter": "color",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_flash_2",
+     "parameter": "color",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_rays_2",
+     "parameter": "color",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_flash_3",
+     "parameter": "color",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_rays_3",
      "parameter": "color",
      "op": "multiply"
     },
     {
      "node": "ps_streaks",
+     "parameter": "color",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_ring",
      "parameter": "color",
      "op": "multiply"
     },
@@ -13663,6 +14188,26 @@
     },
     {
      "node": "t4_light",
+     "parameter": "intensity",
+     "op": "multiply"
+    },
+    {
+     "node": "hop1_light",
+     "parameter": "intensity",
+     "op": "multiply"
+    },
+    {
+     "node": "hop2_light",
+     "parameter": "intensity",
+     "op": "multiply"
+    },
+    {
+     "node": "hop3_light",
+     "parameter": "intensity",
+     "op": "multiply"
+    },
+    {
+     "node": "hop4_light",
      "parameter": "intensity",
      "op": "multiply"
     },
@@ -13833,32 +14378,62 @@
    "unit": "deg",
    "bindings": [
     {
-     "node": "ps_flash",
+     "node": "ps_flash_1",
      "parameter": "color",
      "op": "hue_shift"
     },
     {
-     "node": "ps_flash",
+     "node": "ps_flash_1",
      "parameter": "color_over_life",
      "op": "hue_shift"
     },
     {
-     "node": "ps_flash_big",
+     "node": "ps_rays_1",
      "parameter": "color",
      "op": "hue_shift"
     },
     {
-     "node": "ps_flash_big",
+     "node": "ps_rays_1",
      "parameter": "color_over_life",
      "op": "hue_shift"
     },
     {
-     "node": "ps_rays",
+     "node": "ps_flash_2",
      "parameter": "color",
      "op": "hue_shift"
     },
     {
-     "node": "ps_rays",
+     "node": "ps_flash_2",
+     "parameter": "color_over_life",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_rays_2",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_rays_2",
+     "parameter": "color_over_life",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_flash_3",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_flash_3",
+     "parameter": "color_over_life",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_rays_3",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_rays_3",
      "parameter": "color_over_life",
      "op": "hue_shift"
     },
@@ -14206,6 +14781,26 @@
      "node": "t4_crawl3",
      "parameter": "color",
      "op": "hue_shift"
+    },
+    {
+     "node": "hop1_light",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "hop2_light",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "hop3_light",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "hop4_light",
+     "parameter": "color",
+     "op": "hue_shift"
     }
    ]
   },
@@ -14302,7 +14897,7 @@
     0.0,
     1.0
    ],
-   "ground_albedo": 0.11,
+   "ground_albedo": 0.08,
    "bloom_intensity": 0.2,
    "bloom_radius": 0.034,
    "exposure": 0.9,

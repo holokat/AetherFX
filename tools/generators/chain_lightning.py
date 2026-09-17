@@ -90,28 +90,45 @@ class Hop:
     lead: int       # frame the leader leaves `a`
     hit: int        # frame the stroke lands on `b` (the impact)
     end: int        # frame the link dies
-    power: float    # impacts escalate along the chain
-    final: bool = False
+    tier: int       # impact tier: 1 modest, 2 bigger, 3 the final ones
+    power: float    # bolt width / brightness multiplier
+
+    @property
+    def final(self) -> bool:
+        return self.tier >= 3
 
 
 #: One row per jump. Two rows leaving the same anchor are a fork.
 HOPS = [
-    Hop("hop1", "src", "t1", lead=12, hit=24, end=101, power=1.00),
-    Hop("hop2", "t1", "t2", lead=42, hit=54, end=102, power=1.10),
-    Hop("hop3", "t2", "t3", lead=72, hit=84, end=103, power=1.24, final=True),
-    Hop("hop4", "t2", "t4", lead=73, hit=86, end=104, power=1.32, final=True),
+    Hop("hop1", "src", "t1", lead=12, hit=24, end=101, tier=1, power=0.92),
+    Hop("hop2", "t1", "t2", lead=42, hit=54, end=102, tier=2, power=1.04),
+    Hop("hop3", "t2", "t3", lead=72, hit=84, end=103, tier=3, power=1.18),
+    Hop("hop4", "t2", "t4", lead=73, hit=86, end=104, tier=3, power=1.24),
 ]
+
+#: What an impact is made of, per tier. The chain escalates: modest, bigger, and the two final ones
+#: clearly the strongest (a larger double ray burst, a double shock halo, the most sparks).
+TIERS: dict[int, dict[str, float]] = {
+    1: {"flash": 0.7, "rays": 1.7, "ray_count": 1, "halos": 1, "streaks": 20, "streak_speed": 8.5,
+        "sparks": 55, "spark_speed": 3.8, "light": 3.0, "veins": 1.9},
+    2: {"flash": 0.95, "rays": 2.4, "ray_count": 1, "halos": 1, "streaks": 32, "streak_speed": 11.0,
+        "sparks": 90, "spark_speed": 4.6, "light": 4.4, "veins": 2.3},
+    3: {"flash": 1.25, "rays": 3.4, "ray_count": 2, "halos": 2, "streaks": 50, "streak_speed": 14.0,
+        "sparks": 150, "spark_speed": 5.6, "light": 6.2, "veins": 2.7},
+}
 STROKE_TRAVEL = 4        # frames the stroke takes from `a` to `b` (0.067 s)
 CAPSULE_RADIUS = 0.45    # the human-sized region around a target: crawl arcs live on it
 CAPSULE_Y = (0.3, 1.8)
 
-# palette (linear). Beams wash their own core to white; keep the tints saturated.
-BOLT = [0.27, 0.45, 1.0, 1.0]        # electric blue
-BOLT_VIOLET = [0.43, 0.38, 1.0, 1.0]  # companions and crawl arcs lean violet
-HOT = [0.82, 0.9, 1.0, 1.0]
-MID = [0.4, 0.6, 1.0, 1.0]
-DEEP = [0.16, 0.24, 0.85, 1.0]
-LIGHT = [0.5, 0.66, 1.0, 1.0]
+# palette (linear). White lives only in the hot cores: the beam shader washes its own core to white,
+# everything else is saturated electric blue with violet in the glow. Beam emissive stays low enough
+# that the glow layers keep their colour instead of clipping to white.
+BOLT = [0.17, 0.33, 1.0, 1.0]         # electric blue
+BOLT_VIOLET = [0.46, 0.25, 1.0, 1.0]  # companions and crawl arcs lean violet
+HOT = [0.66, 0.8, 1.0, 1.0]           # the hottest a sprite gets
+MID = [0.22, 0.42, 1.0, 1.0]
+DEEP = [0.2, 0.13, 0.85, 1.0]         # ramps die into blue-violet
+LIGHT = [0.2, 0.36, 1.0, 1.0]
 
 # ---------------------------------------------------------------------------
 # helpers
@@ -272,7 +289,7 @@ def build_textures() -> None:
         {"id": "rays", "op": "math", "params": {"mode": "multiply"}, "inputs": {"a": "un", "b": "fall"}},
         {"id": "soft", "op": "blur", "params": {"radius": 1.6}, "inputs": {"a": "rays"}},
         {"id": "gain", "op": "levels", "params": {"in_high": 0.42}, "inputs": {"a": "soft"}},
-        {"id": "hot", "op": "gradient_radial", "params": {"radius": 0.15, "falloff": "quadratic"}},
+        {"id": "hot", "op": "gradient_radial", "params": {"radius": 0.085, "falloff": "quadratic"}},
         {"id": "k", "op": "math", "params": {"mode": "max"}, "inputs": {"a": "gain", "b": "hot"}},
     ], "output": "k"}})
 
@@ -326,10 +343,10 @@ def build_textures() -> None:
     # Charge ring under the caster: a broken soft ring with a faint inner pool.
     node("tex_charge", "texture", {"width": 256, "height": 256, "graph": {"nodes": [
         *warp_field("w", 3.0, 733),
-        {"id": "r1", "op": "ring", "params": {"radius": 0.4, "thickness": 0.012, "softness": 0.018}},
-        {"id": "r1d", "op": "distort", "params": {"amount": 0.035}, "inputs": {"a": "r1", "by": "w"}},
-        {"id": "n", "op": "fbm", "params": {"frequency": 5.0, "octaves": 3, "seed": 5}},
-        {"id": "nl", "op": "levels", "params": {"in_low": 0.36, "in_high": 0.66, "out_low": 0.06}, "inputs": {"a": "n"}},
+        {"id": "r1", "op": "ring", "params": {"radius": 0.38, "thickness": 0.03, "softness": 0.07}},
+        {"id": "r1d", "op": "distort", "params": {"amount": 0.09}, "inputs": {"a": "r1", "by": "w"}},
+        {"id": "n", "op": "fbm", "params": {"frequency": 3.5, "octaves": 3, "seed": 5}},
+        {"id": "nl", "op": "levels", "params": {"in_low": 0.42, "in_high": 0.7}, "inputs": {"a": "n"}},
         {"id": "rb", "op": "math", "params": {"mode": "multiply"}, "inputs": {"a": "r1d", "b": "nl"}},
         {"id": "cr", "op": "spokes", "params": {"count": 11, "width": 0.005, "softness": 0.004,
                                                 "inner_radius": 0.05, "outer_radius": 0.42, "rotation": 7.0}},
@@ -384,37 +401,35 @@ def build_shared() -> None:
                                  "speed": 0.8})
     node("ground", "collider", {"collider_type": "plane", "normal": [0, 1, 0], "bounce": 0.4, "friction": 0.45})
 
-    flash_ramp = [[0.0, [1.0, 1.0, 1.0, 1.0]], [0.3, HOT], [1.0, tint(DEEP, 1.6)]]
-    node("ps_flash", "particle_system", {
-        "max_particles": 8, "lifetime": 0.15, "size": 1.0, "size_variance": 0.1,
-        "size_over_life": [[0.0, 0.3], [0.2, 1.0], [1.0, 1.3]],
-        "color": MID, "color_over_life": flash_ramp,
-        "opacity": 0.8, "opacity_over_life": [[0.0, 1.0], [0.3, 0.6], [1.0, 0.0]],
-        "emissive": 1.3, "render_mode": "billboard", "blend": "additive",
-    }, {"sprite": "tex_glow"}, layer="impact")
-    node("ps_flash_big", "particle_system", {
-        "max_particles": 8, "lifetime": 0.2, "size": 1.45, "size_variance": 0.12,
-        "size_over_life": [[0.0, 0.28], [0.18, 1.0], [1.0, 1.3]],
-        "color": MID, "color_over_life": flash_ramp,
-        "opacity": 0.85, "opacity_over_life": [[0.0, 1.0], [0.3, 0.62], [1.0, 0.0]],
-        "emissive": 1.5, "render_mode": "billboard", "blend": "additive",
-    }, {"sprite": "tex_glow"}, layer="impact")
-
-    node("ps_rays", "particle_system", {
-        "max_particles": 12, "lifetime": 0.17, "lifetime_variance": 0.03, "size": 2.3, "size_variance": 0.35,
-        "size_over_life": [[0.0, 0.35], [0.25, 1.0], [1.0, 1.2]],
-        "rotation_variance": 180.0,
-        "color": MID, "color_over_life": [[0.0, [1.0, 1.0, 1.0, 1.0]], [0.4, HOT], [1.0, MID]],
-        "opacity": 1.0, "opacity_over_life": [[0.0, 1.0], [0.35, 0.7], [1.0, 0.0]],
-        "emissive": 2.6, "render_mode": "billboard", "blend": "additive",
-    }, {"sprite": "tex_rays"}, layer="impact")
+    # One flash and one ray-burst system per impact tier in use: a particle's size belongs to its
+    # system, and the impacts have to escalate.
+    white = [0.9, 0.95, 1.0, 1.0]
+    flash_ramp = [[0.0, white], [0.25, HOT], [0.6, MID], [1.0, DEEP]]
+    for tier in sorted({h.tier for h in HOPS}):
+        spec = TIERS[tier]
+        node(f"ps_flash_{tier}", "particle_system", {
+            "max_particles": 8, "lifetime": r4(0.13 + 0.025 * tier), "size": spec["flash"], "size_variance": 0.08,
+            "size_over_life": [[0.0, 0.3], [0.2, 1.0], [1.0, 1.3]],
+            "color": [1.0, 1.0, 1.0, 1.0], "color_over_life": flash_ramp,
+            "opacity": r4(0.7 + 0.06 * tier), "opacity_over_life": [[0.0, 1.0], [0.3, 0.55], [1.0, 0.0]],
+            "emissive": r4(0.7 + 0.12 * tier), "render_mode": "billboard", "blend": "additive",
+        }, {"sprite": "tex_glow"}, layer="impact")
+        node(f"ps_rays_{tier}", "particle_system", {
+            "max_particles": 8, "lifetime": r4(0.14 + 0.025 * tier), "lifetime_variance": 0.02,
+            "size": spec["rays"], "size_variance": r4(0.12 * spec["rays"]),
+            "size_over_life": [[0.0, 0.35], [0.25, 1.0], [1.0, 1.2]],
+            "rotation_variance": 180.0,
+            "color": [1.0, 1.0, 1.0, 1.0], "color_over_life": [[0.0, HOT], [0.4, MID], [1.0, DEEP]],
+            "opacity": 1.0, "opacity_over_life": [[0.0, 1.0], [0.35, 0.7], [1.0, 0.0]],
+            "emissive": r4(1.7 + 0.3 * tier), "render_mode": "billboard", "blend": "additive",
+        }, {"sprite": "tex_rays"}, layer="impact")
 
     node("ps_streaks", "particle_system", {
         "max_particles": 260, "lifetime": 0.17, "lifetime_variance": 0.07, "size": 0.03, "size_variance": 0.012,
         "size_over_life": [[0.0, 1.0], [1.0, 0.35]],
-        "color": HOT, "color_over_life": [[0.0, [1.0, 1.0, 1.0, 1.0]], [0.5, MID], [1.0, DEEP]],
+        "color": [1.0, 1.0, 1.0, 1.0], "color_over_life": [[0.0, HOT], [0.4, MID], [1.0, DEEP]],
         "opacity_over_life": [[0.0, 1.0], [0.6, 0.8], [1.0, 0.0]],
-        "emissive": 6.0, "render_mode": "stretched_billboard", "velocity_stretch": 1.5, "drag": 7.5,
+        "emissive": 3.2, "render_mode": "stretched_billboard", "velocity_stretch": 1.5, "drag": 7.5,
         "blend": "additive",
     }, {"sprite": "tex_spark"}, layer="impact")
 
@@ -422,15 +437,15 @@ def build_shared() -> None:
         "max_particles": 12, "lifetime": 0.22, "size": 2.3, "size_variance": 0.2,
         "size_over_life": [[0.0, 0.15], [0.35, 0.72], [1.0, 1.0]],
         "rotation_variance": 180.0,
-        "color": MID, "color_over_life": [[0.0, HOT], [0.5, MID], [1.0, DEEP]],
-        "opacity": 0.6, "opacity_over_life": [[0.0, 0.0], [0.12, 1.0], [0.5, 0.4], [1.0, 0.0]],
-        "emissive": 1.2, "render_mode": "billboard", "blend": "additive",
+        "color": [1.0, 1.0, 1.0, 1.0], "color_over_life": [[0.0, MID], [0.5, MID], [1.0, DEEP]],
+        "opacity": 0.55, "opacity_over_life": [[0.0, 0.0], [0.12, 1.0], [0.5, 0.4], [1.0, 0.0]],
+        "emissive": 1.1, "render_mode": "billboard", "blend": "additive",
     }, {"sprite": "tex_ring"}, layer="impact")
 
     spark = {
         "size": 0.032, "size_variance": 0.012,
-        "color": HOT, "color_over_life": [[0.0, [1.0, 1.0, 1.0, 1.0]], [0.35, tint(MID, 1.2)], [1.0, DEEP]],
-        "emissive": 7.0, "opacity_over_life": [[0.0, 1.0], [0.75, 1.0], [1.0, 0.0]],
+        "color": [1.0, 1.0, 1.0, 1.0], "color_over_life": [[0.0, HOT], [0.3, MID], [1.0, DEEP]],
+        "emissive": 3.4, "opacity_over_life": [[0.0, 1.0], [0.75, 1.0], [1.0, 0.0]],
         "render_mode": "stretched_billboard", "velocity_stretch": 0.2, "drag": 0.6, "bounce": 0.4, "friction": 0.4,
         "blend": "additive",
     }
@@ -438,13 +453,13 @@ def build_shared() -> None:
          {"sprite": "tex_spark", "forces": ["gravity"], "colliders": ["ground"]}, layer="sparks")
     # The final impacts land 0.57 s before the end: shorter lives, so nothing pops at the loop.
     node("ps_sparks_final", "particle_system",
-         {"max_particles": 420, "lifetime": 0.44, "lifetime_variance": 0.11, **spark},
+         {"max_particles": 520, "lifetime": 0.44, "lifetime_variance": 0.11, **spark},
          {"sprite": "tex_spark", "forces": ["gravity"], "colliders": ["ground"]}, layer="sparks")
 
     mote = {
-        "size": 0.052, "size_variance": 0.03, "size_over_life": [[0.0, 0.5], [0.2, 1.0], [1.0, 0.35]],
-        "color": tint(MID, 1.3), "color_over_life": [[0.0, HOT], [0.4, MID], [1.0, DEEP]],
-        "emissive": 5.0, "opacity_over_life": [[0.0, 0.0], [0.12, 1.0], [0.65, 0.8], [1.0, 0.0]],
+        "size": 0.06, "size_variance": 0.035, "size_over_life": [[0.0, 0.5], [0.2, 1.0], [1.0, 0.4]],
+        "color": [1.0, 1.0, 1.0, 1.0], "color_over_life": [[0.0, HOT], [0.3, MID], [1.0, DEEP]],
+        "emissive": 3.4, "opacity_over_life": [[0.0, 0.0], [0.1, 1.0], [0.75, 0.9], [1.0, 0.0]],
         "render_mode": "billboard", "drag": 1.6, "blend": "additive",
     }
     node("ps_motes", "particle_system", {"max_particles": 500, "lifetime": 0.55, "lifetime_variance": 0.14, **mote},
@@ -456,9 +471,9 @@ def build_shared() -> None:
     node("ps_crackle", "particle_system", {
         "max_particles": 80, "lifetime": 0.085, "lifetime_variance": 0.03, "size": 0.62, "size_variance": 0.24,
         "rotation_variance": 180.0,
-        "color": tint(BOLT_VIOLET, 1.5), "color_over_life": [[0.0, [1.0, 1.0, 1.0, 1.0]], [1.0, BOLT_VIOLET]],
+        "color": [1.0, 1.0, 1.0, 1.0], "color_over_life": [[0.0, HOT], [0.4, BOLT_VIOLET], [1.0, DEEP]],
         "opacity_over_life": [[0.0, 1.0], [0.7, 1.0], [1.0, 0.0]],
-        "emissive": 4.0, "render_mode": "billboard", "blend": "additive",
+        "emissive": 2.6, "render_mode": "billboard", "blend": "additive",
     }, {"sprite": "tex_crackle"}, layer="crawl")
 
 
@@ -470,18 +485,18 @@ def build_shared() -> None:
 def restrike_keys(hop: Hop, rng: random.Random) -> list[tuple]:
     """Emissive of the lingering link: a dim flickering base, a re-strike every time
     a later hop lands (the whole chain re-energises) and a couple of its own."""
-    base = 2.7
+    base = 1.5
     bumps: dict[int, float] = {}
     for later in hits_after(hop.hit):
         if later.hit - hop.hit >= 4:
-            bumps[later.hit] = max(bumps.get(later.hit, 0.0), 7.5 * later.power)
+            bumps[later.hit] = max(bumps.get(later.hit, 0.0), 3.4 * later.power)
     # its own re-strikes, dimmer each time, in the gaps
     frame = hop.hit + 24 + int(rng.uniform(0, 8))
-    own = 5.6
+    own = 3.0
     while frame < hop.end - 12:
         if all(abs(frame - b) > 9 for b in bumps):
             bumps[frame] = own
-            own = max(3.6, own * 0.82)
+            own = max(2.1, own * 0.82)
         frame += 15 + int(rng.uniform(0, 12))
     keys: list[tuple] = [(hop.hit + 1, 0.0, "step"), (hop.hit + 2, 0.0), (hop.hit + 9, base)]
     for frame in sorted(bumps):
@@ -490,7 +505,7 @@ def restrike_keys(hop: Hop, rng: random.Random) -> list[tuple]:
         keys += [(frame - 1, base), (frame, bumps[frame]), (frame + 3, base + (bumps[frame] - base) * 0.35),
                  (frame + 8, base)]
     # the death: one last flare, then nothing
-    keys += [(hop.end - 5, base * 0.8), (hop.end - 3, 4.4), (hop.end - 1, 1.2), (hop.end, 0.0, "step")]
+    keys += [(hop.end - 5, base * 0.8), (hop.end - 3, 2.8), (hop.end - 1, 0.8), (hop.end, 0.0, "step")]
     keys.sort(key=lambda k: k[0])
     clean: list[tuple] = []
     for key in keys:
@@ -506,7 +521,7 @@ def build_hop(hop: Hop, index: int) -> list[str]:
     p = hop.power
     beams: list[str] = []
     depart = hop.hit - STROKE_TRAVEL
-    prong = 0.8 if len(hops_out_of(hop.a)) > 1 else 1.0
+    prong = 0.78 if len(hops_out_of(hop.a)) > 1 else 1.0
 
     # --- leader: the travel arc. The tip accelerates into the target. ------------------
     steps = depart - hop.lead
@@ -519,9 +534,9 @@ def build_hop(hop: Hop, index: int) -> list[str]:
         "branching": 4, "branch_probability": 0.7, "branch_length": 0.32, "branch_width": 0.6,
         "branch_depth": 2, "branch_intensity": 0.6,
         "intensity_noise": 0.4, "flicker": 0.5, "flicker_frequency": 52.0, "afterglow": 0.05,
-        "impact_flare": 0.15, "core_width": 0.18, "glow_width": 2.8,
+        "impact_flare": 0.13, "core_width": 0.16, "glow_width": 3.0,
         "color": BOLT,
-        "emissive": track([(hop.lead - 1, 0.0, "step"), (hop.lead, 3.4), (depart, 6.0), (hop.hit - 2, 2.5),
+        "emissive": track([(hop.lead - 1, 0.0, "step"), (hop.lead, 2.2), (depart, 3.6), (hop.hit - 2, 1.6),
                            (hop.hit - 1, 0.0, "step")]),
         "blend": "additive", **window(hop.lead - 1, hop.hit),
     }, layer="links"))
@@ -530,18 +545,18 @@ def build_hop(hop: Hop, index: int) -> list[str]:
     h = hop.hit
     beams.append(node(f"{hop.id}_stroke", "beam", {
         "origin": v3(a), "target": track([(depart, v3(lerp3(a, b, 0.02))), (h, v3(b))]),
-        "width": track([(depart, 0.09), (h, 0.15), (h + 3, 0.13), (h + 10, 0.1), (h + 19, 0.07)], p * prong),
+        "width": track([(depart, 0.08), (h, 0.125), (h + 3, 0.11), (h + 10, 0.09), (h + 19, 0.065)], p * prong),
         "segments": 10, "detail": 3,
         "noise_amplitude": 0.4, "noise_frequency": 1.15, "jitter_rate": 30.0,
-        "width_profile": "bulge", "width_variance": 0.28,
+        "width_profile": "taper_end", "width_variance": 0.34,
         "branching": 5, "branch_probability": 0.75, "branch_length": 0.3, "branch_width": 0.5,
         "branch_depth": 2, "branch_intensity": 0.55,
         "intensity_noise": 0.4, "flicker": 0.45, "flicker_frequency": 48.0, "afterglow": 0.08,
-        "impact_flare": r4(0.27 * p), "core_width": 0.12, "glow_width": 3.2,
+        "impact_flare": r4(0.25 * p), "core_width": 0.1, "glow_width": 3.6,
         "color": BOLT,
-        "emissive": track([(depart, 0.0, "step"), (depart + 1, 10.0), (h - 1, 12.0), (h, 15.5), (h + 2, 8.5),
-                           (h + 4, 12.5), (h + 7, 6.0), (h + 10, 9.0), (h + 13, 4.2), (h + 16, 5.8),
-                           (h + 19, 0.0, "step")], 0.92 + 0.08 * p),
+        "emissive": track([(depart, 0.0, "step"), (depart + 1, 5.0), (h - 1, 6.0), (h, 7.6), (h + 2, 4.2),
+                           (h + 4, 6.2), (h + 7, 3.0), (h + 10, 4.4), (h + 13, 2.2), (h + 16, 2.9),
+                           (h + 19, 0.0, "step")], p),
         "blend": "additive", **window(depart, h + 19),
     }, layer="links"))
 
@@ -555,7 +570,7 @@ def build_hop(hop: Hop, index: int) -> list[str]:
         "branching": 3, "branch_probability": 0.6, "branch_length": 0.22, "branch_width": 0.5,
         "branch_depth": 1, "branch_intensity": 0.5,
         "intensity_noise": 0.45, "flicker": 0.55, "flicker_frequency": 36.0, "afterglow": 0.06,
-        "impact_flare": r4(0.16 * p), "core_width": 0.14, "glow_width": 3.0,
+        "impact_flare": r4(0.15 * p), "core_width": 0.12, "glow_width": 3.3,
         "color": BOLT, "emissive": track(restrike_keys(hop, rng)),
         "blend": "additive", **window(h + 1, hop.end),
     }, layer="links"))
@@ -564,8 +579,8 @@ def build_hop(hop: Hop, index: int) -> list[str]:
     for k in range(2):
         oa = [rng.uniform(-0.12, 0.12), rng.uniform(-0.14, 0.14), rng.uniform(-0.12, 0.12)]
         ob = [rng.uniform(-0.2, 0.2), rng.uniform(-0.3, 0.3), rng.uniform(-0.2, 0.2)]
-        level = 2.3 - 0.4 * k
-        keys: list[tuple] = [(h - 1, 0.0, "step"), (h, 7.0 - k), (h + 5, 4.0), (h + 12, level)]
+        level = 1.5 - 0.3 * k
+        keys: list[tuple] = [(h - 1, 0.0, "step"), (h, 4.2 - 0.6 * k), (h + 5, 2.6), (h + 12, level)]
         frame = h + 14 + int(rng.uniform(0, 8))
         stop = hop.end - 2 - int(rng.uniform(0, 5))
         later = {x.hit: x.power for x in hits_after(h)}
@@ -575,7 +590,7 @@ def build_hop(hop: Hop, index: int) -> list[str]:
             frame += gap + 9 + int(rng.uniform(0, 14))
         for hit_frame, power in later.items():
             if h + 12 < hit_frame < stop - 4:
-                keys += [(hit_frame, 5.4 * power), (hit_frame + 5, level)]
+                keys += [(hit_frame, 3.0 * power), (hit_frame + 5, level)]
         keys += [(stop, 0.0, "step")]
         keys.sort(key=lambda key: key[0])
         clean: list[tuple] = []
@@ -585,8 +600,9 @@ def build_hop(hop: Hop, index: int) -> list[str]:
             clean.append(key)
         beams.append(node(f"{hop.id}_arc{k + 1}", "beam", {
             "origin": v3(add3(a, oa)), "target": v3(add3(b, ob)),
-            "width": r4((0.046 - 0.008 * k) * p), "segments": 9, "detail": 3,
-            "noise_amplitude": r4(0.36 + 0.06 * k), "noise_frequency": 1.0, "jitter_rate": r4(22.0 + 5 * k),
+            "width": r4((0.044 - 0.008 * k) * p), "segments": 6 if k == 0 else 12, "detail": 3,
+            "noise_amplitude": 0.5 if k == 0 else 0.24, "noise_frequency": 0.8 if k == 0 else 1.7,
+            "jitter_rate": r4(20.0 + 8 * k),
             "width_profile": "taper_both", "width_variance": 0.3,
             "branching": 2, "branch_probability": 0.6, "branch_length": 0.25, "branch_width": 0.5,
             "branch_depth": 1, "branch_intensity": 0.5,
@@ -641,10 +657,10 @@ def build_crawl(anchor: str, index: int) -> list[str]:
                 turn = rng.uniform(0.8, 2.0) * (1 if rng.random() < 0.5 else -1)
                 p2, _, _ = capsule_point(rng, centre, theta + turn,
                                          y + rng.uniform(0.35, 0.85) * (1 if rng.random() < 0.5 else -1), swell=1.05)
-            level = rng.uniform(3.8, 6.0) * (1.25 if any(lo <= on <= hi for lo, hi in busy) else 1.0)
+            level = rng.uniform(2.2, 3.4) * (1.25 if any(lo <= on <= hi for lo, hi in busy) else 1.0)
             origin_keys.append((on, v3(p1), "step"))
             target_keys.append((on, v3(p2), "step"))
-            width_keys += [(on, r4(rng.uniform(0.03, 0.044) * power), "step"), (off, 0.0, "step")]
+            width_keys += [(on, r4(rng.uniform(0.02, 0.03) * power), "step"), (off, 0.0, "step")]
             glow_keys += [(on, r4(level), "step"), (off, 0.0, "step")]
         beams.append(node(f"{anchor}_crawl{k + 1}", "beam", {
             "origin": track(origin_keys), "target": track(target_keys), "width": track(width_keys),
@@ -677,8 +693,8 @@ def build_orb_arcs() -> list[str]:
             end = [centre[0] + math.cos(theta) * math.cos(phi) * reach, centre[1] + math.sin(phi) * reach,
                    centre[2] + math.sin(theta) * math.cos(phi) * reach]
             target_keys.append((on, v3(end), "step"))
-            width_keys += [(on, r4(rng.uniform(0.026, 0.04)), "step"), (off, 0.0, "step")]
-            glow_keys += [(on, r4(rng.uniform(4.0, 6.5) * (1.0 if on < first_hit + 6 else 0.7)), "step"),
+            width_keys += [(on, r4(rng.uniform(0.02, 0.03)), "step"), (off, 0.0, "step")]
+            glow_keys += [(on, r4(rng.uniform(2.4, 3.8) * (1.0 if on < first_hit + 6 else 0.7)), "step"),
                           (off, 0.0, "step")]
         beams.append(node(f"orb_arc{k + 1}", "beam", {
             "origin": v3(centre), "target": track(target_keys), "width": track(width_keys),
@@ -706,13 +722,14 @@ def build_cast() -> None:
     hit = min(x.hit for x in out)
     end = max(x.end for x in out)
 
+    white = [0.9, 0.95, 1.0, 1.0]
     node("ps_orb", "particle_system", {
         "max_particles": 24, "lifetime": 0.16, "lifetime_variance": 0.04, "size": 0.74, "size_variance": 0.16,
         "size_over_life": [[0.0, 0.55], [0.3, 1.0], [1.0, 0.8]],
         "rotation_variance": 180.0, "angular_velocity": 60.0, "angular_velocity_variance": 120.0,
-        "color": tint(MID, 1.2), "color_over_life": [[0.0, [1.0, 1.0, 1.0, 1.0]], [0.5, HOT], [1.0, BOLT]],
+        "color": [1.0, 1.0, 1.0, 1.0], "color_over_life": [[0.0, HOT], [0.5, MID], [1.0, BOLT_VIOLET]],
         "opacity": 0.85, "opacity_over_life": [[0.0, 0.0], [0.2, 1.0], [0.7, 0.8], [1.0, 0.0]],
-        "emissive": 2.6, "render_mode": "billboard", "blend": "additive",
+        "emissive": 2.0, "render_mode": "billboard", "blend": "additive",
     }, {"sprite": "tex_plasma"}, layer="cast")
     node("orb", "emitter", {
         "shape": "sphere", "radius": 0.03, "position": v3(src), "velocity": 0.0,
@@ -724,9 +741,9 @@ def build_cast() -> None:
     node("ps_orb_core", "particle_system", {
         "max_particles": 16, "lifetime": 0.11, "lifetime_variance": 0.03, "size": 0.42, "size_variance": 0.1,
         "size_over_life": [[0.0, 0.6], [0.4, 1.0], [1.0, 0.7]],
-        "color": HOT, "color_over_life": [[0.0, [1.0, 1.0, 1.0, 1.0]], [1.0, MID]],
+        "color": [1.0, 1.0, 1.0, 1.0], "color_over_life": [[0.0, white], [0.5, HOT], [1.0, MID]],
         "opacity": 0.9, "opacity_over_life": [[0.0, 0.0], [0.25, 1.0], [1.0, 0.0]],
-        "emissive": 2.2, "render_mode": "billboard", "blend": "additive",
+        "emissive": 1.8, "render_mode": "billboard", "blend": "additive",
     }, {"sprite": "tex_glow"}, layer="cast")
     node("orb_core", "emitter", {
         "shape": "point", "position": v3(src), "velocity": 0.0,
@@ -738,9 +755,9 @@ def build_cast() -> None:
     node("ps_gather", "particle_system", {
         "max_particles": 220, "lifetime": 0.24, "lifetime_variance": 0.04, "size": 0.04, "size_variance": 0.015,
         "size_over_life": [[0.0, 0.5], [0.6, 1.0], [1.0, 0.6]],
-        "color": MID, "color_over_life": [[0.0, DEEP], [0.6, MID], [1.0, [1.0, 1.0, 1.0, 1.0]]],
+        "color": [1.0, 1.0, 1.0, 1.0], "color_over_life": [[0.0, DEEP], [0.6, MID], [1.0, HOT]],
         "opacity_over_life": [[0.0, 0.0], [0.3, 1.0], [0.9, 1.0], [1.0, 0.0]],
-        "emissive": 5.0, "render_mode": "stretched_billboard", "velocity_stretch": 0.28, "blend": "additive",
+        "emissive": 3.0, "render_mode": "stretched_billboard", "velocity_stretch": 0.28, "blend": "additive",
     }, {"sprite": "tex_spark"}, layer="cast")
     node("orb_gather", "emitter", {
         "shape": "sphere", "radius": 0.95, "surface_only": True, "position": v3(src),
@@ -750,8 +767,8 @@ def build_cast() -> None:
     }, {"particle": "ps_gather"}, layer="cast")
 
     node("src_light", "light", {
-        "light_type": "point", "position": v3(add3(src, [0.0, 0.1, 0.35])), "color": LIGHT, "radius": 6.0,
-        "intensity": track([(0, 0.0), (12, 2.6), (depart, 3.6), (hit, 6.0), (hit + 8, 2.4), (end - 4, 1.7),
+        "light_type": "point", "position": v3(add3(src, [0.0, 0.1, 0.35])), "color": LIGHT, "radius": 3.4,
+        "intensity": track([(0, 0.0), (12, 1.3), (depart, 1.9), (hit, 3.0), (hit + 8, 1.0), (end - 4, 0.7),
                             (end + 2, 0.0)]),
         "flicker_amplitude": 0.35, "flicker_frequency": 34.0, **window(0, end + 2),
     }, layer="light")
@@ -791,6 +808,7 @@ def build_target(anchor: str, index: int) -> None:
     h, p = hop.hit, hop.power
     end = max(x.end for x in arriving + leaving)
     final = hop.final
+    tier = TIERS[hop.tier]
     incoming = ANCHORS[hop.a]
     along = [pos[i] - incoming[i] for i in range(3)]
     norm = math.sqrt(sum(c * c for c in along)) or 1.0
@@ -800,27 +818,28 @@ def build_target(anchor: str, index: int) -> None:
     # core flash + irregular ray burst + shock ring (one or two quads each)
     node(f"{anchor}_flash", "emitter", {"shape": "point", "position": v3(pos), "velocity": 0.0,
                                          "burst_count": 1, **burst},
-         {"particle": "ps_flash_big" if final else "ps_flash"}, layer="impact")
+         {"particle": f"ps_flash_{hop.tier}"}, layer="impact")
     node(f"{anchor}_rays", "emitter", {"shape": "point", "position": v3(pos), "velocity": 0.0,
-                                        "burst_count": 2 if final else 1, **burst},
-         {"particle": "ps_rays"}, layer="impact")
-    ring = dict(burst)
-    ring["burst_times"] = [0.0, 0.06] if final else [0.0]
+                                        "burst_count": int(tier["ray_count"]), **burst},
+         {"particle": f"ps_rays_{hop.tier}"}, layer="impact")
+    halo = dict(burst)
+    halo["burst_times"] = [0.0, 0.06][:int(tier["halos"])]
     node(f"{anchor}_ring", "emitter", {"shape": "point", "position": v3(pos), "velocity": 0.0,
-                                        "burst_count": 1, **ring},
+                                        "burst_count": 1, **halo},
          {"particle": "ps_ring"}, layer="impact")
     # radial streaks: the particle half of the ray burst, random by construction
     node(f"{anchor}_streaks", "emitter", {
         "shape": "sphere", "radius": 0.07, "position": v3(pos), "direction": [0, 0, 0],
-        "velocity": r4(10.5 * p), "velocity_variance": r4(6.0 * p), "burst_count": int(round(30 * p)), **burst,
+        "velocity": tier["streak_speed"], "velocity_variance": r4(tier["streak_speed"] * 0.55),
+        "burst_count": int(tier["streaks"]), **burst,
     }, {"particle": "ps_streaks"}, layer="impact")
 
     # sparks: thrown onward along the bolt and outward, gravity, ground bounce
     node(f"{anchor}_sparks", "emitter", {
         "shape": "sphere", "radius": 0.12, "position": v3(pos),
         "direction": v3([along[0], along[1] + 0.35, along[2]]), "spread": 80.0,
-        "velocity": r4((4.2 if not final else 5.4) * p), "velocity_variance": r4(2.8 * p), "radial_velocity": 1.6,
-        "burst_count": int(round(78 * p ** 1.6)), **burst,
+        "velocity": tier["spark_speed"], "velocity_variance": r4(tier["spark_speed"] * 0.62),
+        "radial_velocity": 1.6, "burst_count": int(tier["sparks"]), **burst,
     }, {"particle": "ps_sparks_final" if final else "ps_sparks"}, layer="sparks")
 
     # crackle sprites and drifting motes from the capsule volume (emit from it, never draw it)
@@ -859,20 +878,21 @@ def build_target(anchor: str, index: int) -> None:
 
     # light: a flash on the hit, then the glow of a target that is still in the chain
     later = sorted({x.hit: x.power for x in hits_after(h)}.items())
-    keys: list[tuple] = [(h - 1, 0.0), (h, 9.0 * p), (h + 3, 4.5 * p), (h + 9, 2.0)]
+    peak = tier["light"]
+    keys: list[tuple] = [(h - 1, 0.0), (h, peak), (h + 3, peak * 0.45), (h + 9, 0.55)]
     for frame, power in later:
         if h + 10 < frame < end - 4:
-            keys += [(frame - 1, 1.7), (frame, 3.6 * power), (frame + 6, 1.8)]
-    keys += [(end - 3, 1.5), (end + 2, 0.0)]
+            keys += [(frame - 1, 0.5), (frame, 1.3 * power), (frame + 6, 0.5)]
+    keys += [(end - 3, 0.45), (end + 2, 0.0)]
     keys.sort(key=lambda key: key[0])
     node(f"{anchor}_light", "light", {
         "light_type": "point", "position": v3(add3(pos, [0.0, -0.15, 0.4])), "color": LIGHT,
-        "radius": r4(6.0 + 1.5 * p), "intensity": track(keys),
+        "radius": r4(2.6 + 0.5 * hop.tier), "intensity": track(keys),
         "flicker_amplitude": 0.4, "flicker_frequency": 42.0, **window(h - 1, end + 2),
     }, layer="light")
 
     # ground: a faint scorch, and two vein decals flickering out of phase so the arcs crawl
-    size = r4(2.0 + 0.9 * (p - 1.0) / 0.32)
+    size = tier["veins"]
     node(f"{anchor}_scorch", "decal", {
         "shape": "circle", "position": [r4(pos[0]), 0.006, r4(pos[2])], "size": [r4(size * 0.8), r4(size * 0.8)],
         "rotation": [0.0, r4(rng.uniform(0, 360)), 0.0],
@@ -911,12 +931,20 @@ def build_target(anchor: str, index: int) -> None:
 
 
 def build_link_fades() -> None:
-    """When the links die, what is left of each one is a line of drifting sparks."""
+    """When the links die, what is left of each one is a drift of sparks where the bolt wandered -
+    a loose volume around the link, never a dotted ruler line. Plus the stroke's own brief light."""
     for hop in HOPS:
         a, b = ANCHORS[hop.a], ANCHORS[hop.b]
         mid = lerp3(a, b, 0.5)
         length = dist(a, b)
-        common = {"shape": "line", "length": r4(length * 0.92), "position": v3(mid), "rotation": link_rotation(a, b)}
+        common = {"shape": "box", "size": [r4(length * 0.94), 0.62, 0.62], "position": v3(mid),
+                  "rotation": link_rotation(a, b)}
+        h = hop.hit
+        node(f"{hop.id}_light", "light", {
+            "light_type": "point", "position": v3([mid[0], mid[1] - 0.25, mid[2]]), "color": LIGHT,
+            "radius": 3.0, "intensity": track([(h - 3, 0.0), (h, 2.2 * hop.power), (h + 4, 0.9), (h + 12, 0.0)]),
+            "flicker_amplitude": 0.4, "flicker_frequency": 46.0, **window(h - 3, h + 12),
+        }, layer="light")
         node(f"{hop.id}_fade", "emitter", {
             **common, "velocity": 0.6, "velocity_variance": 0.5, "direction": [0, 1, 0], "spread": 180.0,
             "rate": track([(hop.end - 2, 0.0), (hop.end, 170.0 * length / 3.0), (FADE_STOP - 1, 90.0),
@@ -956,7 +984,7 @@ def build_controls(link_beams: list[str], small_beams: list[str]) -> list[dict[s
         by_type.setdefault(n["type"], []).append(n)
     ids = lambda kind, test=lambda n: True: [n["id"] for n in by_type.get(kind, []) if test(n)]  # noqa: E731
     branched = [n["id"] for n in by_type["beam"] if n["id"] in link_beams]
-    impact_systems = ["ps_flash", "ps_flash_big", "ps_rays", "ps_ring", "ps_streaks"]
+    impact_systems = ids("particle_system", lambda n: n.get("layer") == "impact")
     spark_emitters = ids("emitter", lambda n: n["inputs"]["particle"] in
                          ("ps_sparks", "ps_sparks_final", "ps_motes", "ps_fade"))
 
@@ -1007,8 +1035,9 @@ def build() -> dict[str, Any]:
         build_target(name, i)
         small += build_crawl(name, i)
     build_link_fades()
-    # Slightly raised three-quarter view from the caster's side; the studio frames 1.45x wider.
-    node("cam", "camera", {"position": [-1.66, 5.5, 9.85], "target": [-0.45, 0.8, 0.4], "fov": 40.0})
+    # Raised three-quarter view from the far end of the chain: the caster is up-left in the distance, the
+    # hops come toward the viewer and the fork opens across the frame. The studio frames 1.45x wider.
+    node("cam", "camera", {"position": [3.8, 4.87, 8.94], "target": [-0.2, 0.85, 0.35], "fov": 40.0})
     controls = build_controls(links, small)
 
     return {
@@ -1042,7 +1071,7 @@ def build() -> dict[str, Any]:
                                  "dies": ft(x.end)} for x in HOPS]},
             "render_settings": {
                 "background": [0.0, 0.0, 0.0, 1.0],
-                "ground_albedo": 0.11,
+                "ground_albedo": 0.08,
                 "bloom_intensity": 0.2,
                 "bloom_radius": 0.034,
                 "exposure": 0.9,
