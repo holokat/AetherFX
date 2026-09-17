@@ -107,6 +107,47 @@ def test_create_node_set_parameter_inspect_graph(engine: Client) -> None:
     assert graph["diagnostics"]["errors"] == 1
 
 
+def test_controls_scale_an_effect_without_editing_it(engine: Client) -> None:
+    """The controls surface end to end: generate, list, set, reset (docs/CONTROLS.md)."""
+    engine.create_effect(name="Knobs", duration=1.5, seed=3)
+    engine.create_layer(id="primary", name="Flames", role="primary")
+    engine.create_particle_system(id="flame_ps", layer="primary", parameters={"emissive": 2.0, "size": 0.2})
+    engine.create_emitter(id="flames", layer="primary", parameters={"shape": "sphere", "rate": 120.0})
+    engine.connect_nodes(from_="flame_ps", to="flames", port="particle")
+
+    assert engine.list_controls()["count"] == 0
+    generated = engine.generate_default_controls()
+    assert generated["added"] > 0
+    assert generated["groups"][0] == "Global"
+
+    listed = engine.list_controls()
+    by_id = {control["id"]: control for control in listed["controls"]}
+    assert "global_intensity" in by_id
+    assert by_id["primary_intensity"]["group"] == "Flames"
+    assert by_id["global_intensity"]["value"] == pytest.approx(1.0)
+
+    moved = engine.set_control(id="global_intensity", value=2.0)
+    assert moved["control"]["value"] == pytest.approx(2.0)
+    # the authored value is untouched: a control is not an edit of the graph
+    assert engine.get_parameter(node_id="flame_ps", name="emissive")["value"] == pytest.approx(2.0)
+
+    with pytest.raises(AetherError) as excinfo:
+        engine.set_control(id="global_intensity", value=99.0)
+    assert excinfo.value.aether_code == "E024"
+
+    added = engine.add_control(
+        label="Flame height",
+        group="Flames",
+        bindings=[{"node": "flame_ps", "parameter": "size", "op": "multiply"}],
+    )
+    assert added["control"]["id"] == "flame_height"
+    assert engine.update_control(id="flame_height", max=4.0)["control"]["max"] == pytest.approx(4.0)
+    assert engine.remove_control(id="flame_height")["removed"] == "flame_height"
+
+    assert engine.reset_controls()["reset"] == 1
+    assert engine.list_controls()["controls"][0]["value"] == pytest.approx(1.0)
+
+
 def test_unknown_parameter_reports_an_aether_code(engine: Client) -> None:
     engine.create_effect(name="Diagnostics", duration=1.0)
     engine.create_node(type="emitter", id="probe")

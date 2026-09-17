@@ -139,6 +139,23 @@ class NativeError(RuntimeError):
 # =========================================================================
 
 
+class ControlInfo(ctypes.Structure):
+    """``struct aetherfx_control_info``: one named numeric knob on an effect."""
+
+    _fields_ = [
+        ("id", c_char_p),
+        ("label", c_char_p),
+        ("group", c_char_p),
+        ("unit", c_char_p),
+        ("min", c_double),
+        ("max", c_double),
+        ("default_value", c_double),
+        ("value", c_double),
+        ("step", c_double),
+        ("binding_count", c_int),
+    ]
+
+
 class TextureInfo(ctypes.Structure):
     """``struct aetherfx_texture_info``."""
 
@@ -514,6 +531,11 @@ _SIGNATURES: dict[str, tuple[Any, tuple[Any, ...]]] = {
     "aetherfx_effect_validate": (c_int, (c_void_p, c_char_p, c_size_t)),
     "aetherfx_effect_set_parameter": (c_int, (c_void_p, c_char_p, c_char_p, c_char_p)),
     "aetherfx_effect_to_json": (c_void_p, (c_void_p, c_int)),
+    # -- controls ----------------------------------------------------------
+    "aetherfx_effect_control_count": (c_int, (c_void_p,)),
+    "aetherfx_control_info": (c_int, (c_void_p, c_int, POINTER(ControlInfo))),
+    "aetherfx_effect_control_index": (c_int, (c_void_p, c_char_p)),
+    "aetherfx_effect_set_control": (c_int, (c_void_p, c_char_p, c_double)),
     # -- compilation -------------------------------------------------------
     "aetherfx_compile": (c_void_p, (c_void_p, c_double)),
     "aetherfx_compiled_free": (None, (c_void_p,)),
@@ -892,6 +914,50 @@ class Effect(_Handle):
                 handle, node_id.encode("utf-8"), name.encode("utf-8"), encoded.encode("utf-8")
             ),
             f"aetherfx_effect_set_parameter({node_id}.{name})",
+        )
+
+    def controls(self) -> list[dict[str, Any]]:
+        """The effect's named numeric knobs, in document order.
+
+        Each entry is ``{id, label, group, unit, min, max, default, value,
+        step, bindings}``.  Controls are non-destructive: moving one and
+        compiling gives a weaker or stronger instance of the same effect
+        without editing the graph (docs/CONTROLS.md).
+        """
+        library, handle = self._use()
+        count = library.aetherfx_effect_control_count(handle)
+        if count < 0:
+            raise NativeError(count, _last_error(library), "aetherfx_effect_control_count")
+        out: list[dict[str, Any]] = []
+        for index in range(count):
+            info = ControlInfo()
+            _check(library, library.aetherfx_control_info(handle, c_int(index), ctypes.byref(info)),
+                   f"aetherfx_control_info({index})")
+            out.append({
+                "id": _text(info.id),
+                "label": _text(info.label),
+                "group": _text(info.group),
+                "unit": _text(info.unit),
+                "min": float(info.min),
+                "max": float(info.max),
+                "default": float(info.default_value),
+                "value": float(info.value),
+                "step": float(info.step),
+                "bindings": int(info.binding_count),
+            })
+        return out
+
+    def set_control(self, control_id: str, value: float) -> None:
+        """Move one control, for the *next* compile.
+
+        ``value`` must lie inside the control's ``[min, max]``.  Nothing in the
+        graph is rewritten; the compiler folds controls into its own copy.
+        """
+        library, handle = self._use()
+        _check(
+            library,
+            library.aetherfx_effect_set_control(handle, control_id.encode("utf-8"), c_double(float(value))),
+            f"aetherfx_effect_set_control({control_id})",
         )
 
     def to_json(self, indent: int = 2) -> str:

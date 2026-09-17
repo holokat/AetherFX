@@ -91,6 +91,15 @@ int main(void) {
     CHECK(strstr(statistics, "total_alive") != NULL, "statistics content");
     aetherfx_free_string(statistics);
 
+    /* Controls: a plain C struct and four calls, on an effect that has none. */
+    {
+        struct aetherfx_control_info control;
+        CHECK(aetherfx_effect_control_count(effect) == 0, "control count");
+        CHECK(aetherfx_control_info(effect, 0, &control) == AETHERFX_ERROR_OUT_OF_RANGE, "control info range");
+        CHECK(aetherfx_effect_control_index(effect, "nope") == AETHERFX_ERROR_OUT_OF_RANGE, "control index");
+        CHECK(aetherfx_effect_set_control(effect, "nope", 1.0) == AETHERFX_ERROR_INVALID_ARGUMENT, "set control");
+    }
+
     /* Errors are reported, not thrown, in C too. */
     CHECK(aetherfx_effect_load_json("{ nope", 0) == NULL, "bad json rejected");
     CHECK(aetherfx_last_error()[0] != '\0', "error message");

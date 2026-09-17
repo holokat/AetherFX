@@ -248,6 +248,55 @@ AETHERFX_API int aetherfx_effect_set_parameter(aetherfx_effect* effect, const ch
 AETHERFX_API char* aetherfx_effect_to_json(const aetherfx_effect* effect, int indent);
 
 /* -------------------------------------------------------------------------
+ * Controls
+ * -------------------------------------------------------------------------
+ * An effect may ship named numeric knobs -- "Intensity", "Flame height",
+ * "Hue" -- that scale, offset or hue-rotate the parameters they are bound to.
+ * They are how a game spawns a weaker or a stronger instance of the same
+ * effect without touching the graph: set the controls, then compile. Moving a
+ * control is not an edit; the authored values stay as they are and the change
+ * is folded in by aetherfx_compile(). See docs/CONTROLS.md.
+ *
+ * Controls are indexed [0, count) in document order.
+ */
+
+struct aetherfx_control_info {
+    const char* id;            /* "flames_intensity" */
+    const char* label;         /* "Flame height", for a UI */
+    const char* group;         /* "Global", or the layer name */
+    const char* unit;          /* "x", "deg", or "" */
+    double min;
+    double max;
+    double default_value;      /* what a reset returns to */
+    double value;              /* what the next compile will apply */
+    double step;               /* increment a slider or an arrow key should use */
+    int binding_count;         /* node parameters this control drives */
+};
+
+/* Number of controls on the effect, or a negative status. */
+AETHERFX_API int aetherfx_effect_control_count(const aetherfx_effect* effect);
+
+/* Fills `out` for control `index`. The strings point into the effect and stay
+ * valid until it is freed or that control is changed. Returns AETHERFX_OK or a
+ * negative status. */
+AETHERFX_API int aetherfx_control_info(const aetherfx_effect* effect, int index,
+                                       struct aetherfx_control_info* out);
+
+/* Index of the control with this id, or AETHERFX_ERROR_OUT_OF_RANGE. */
+AETHERFX_API int aetherfx_effect_control_index(const aetherfx_effect* effect, const char* id);
+
+/*
+ * Sets one control. `value` must lie inside the control's [min, max];
+ * AETHERFX_ERROR_OUT_OF_RANGE says it does not, and
+ * AETHERFX_ERROR_INVALID_ARGUMENT that there is no such control.
+ *
+ * Like aetherfx_effect_set_parameter, the change applies to the next
+ * aetherfx_compile(); compiled effects and runtimes that already exist keep
+ * running the plan they were made with.
+ */
+AETHERFX_API int aetherfx_effect_set_control(aetherfx_effect* effect, const char* id, double value);
+
+/* -------------------------------------------------------------------------
  * Compilation
  * ------------------------------------------------------------------------- */
 

@@ -78,8 +78,9 @@ class TestLibrary:
 
     def test_every_abi_function_is_declared(self):
         library = native.load_library()
-        # 74 through ABI 1, plus the two additive volume entry points.
-        assert len(native._SIGNATURES) == 76
+        # 74 through ABI 1, plus the two additive volume entry points and the
+        # four additive control entry points.
+        assert len(native._SIGNATURES) == 80
         for name in native._SIGNATURES:
             assert getattr(library, name).argtypes is not None, name
 
@@ -113,6 +114,62 @@ class TestEffect:
                 runtime = compiled.runtime()
                 assert runtime.camera()["fov"] == pytest.approx(63.5)
                 runtime.close()
+
+    def test_controls_scale_the_effect_before_it_compiles(self):
+        # A game spawns a weaker instance of the same effect: set the control,
+        # then compile.  The authored values never change (docs/CONTROLS.md).
+        document = json.loads((EXAMPLES_DIR / "fireball.json").read_text())
+        document["controls"] = [
+            {
+                "id": "brightness",
+                "label": "Brightness",
+                "group": "Global",
+                "min": 0.0,
+                "max": 3.0,
+                "default": 1.0,
+                "value": 1.0,
+                "step": 0.01,
+                "unit": "x",
+                "bindings": [{"node": "glow", "parameter": "intensity", "op": "multiply"}],
+            }
+        ]
+        authored = next(n for n in document["nodes"] if n["id"] == "glow")["parameters"]["intensity"]
+
+        with native.Effect.from_json(json.dumps(document)) as effect:
+            controls = effect.controls()
+            assert [c["id"] for c in controls] == ["brightness"]
+            assert controls[0] == {
+                "id": "brightness", "label": "Brightness", "group": "Global", "unit": "x",
+                "min": 0.0, "max": 3.0, "default": 1.0, "value": 1.0, "step": 0.01, "bindings": 1,
+            }
+
+            with pytest.raises(native.NativeError):
+                effect.set_control("nope", 1.0)
+            with pytest.raises(native.NativeError):
+                effect.set_control("brightness", 9.0)
+
+            def light_at(time: float) -> float:
+                with effect.compile(1.0 / 60.0) as compiled:
+                    runtime = compiled.runtime()
+                    runtime.simulate_to(time)
+                    lights = runtime.frame().lights
+                    assert lights, "fireball has a light"
+                    value = float(lights[0]["intensity"])
+                    runtime.close()
+                    return value
+
+            full = light_at(0.2)
+            effect.set_control("brightness", 0.5)
+            assert effect.controls()[0]["value"] == pytest.approx(0.5)
+            assert light_at(0.2) == pytest.approx(full * 0.5, rel=1e-4)
+
+            # the document still carries what the author wrote
+            glow = next(n for n in effect.to_dict()["nodes"] if n["id"] == "glow")
+            assert glow["parameters"]["intensity"] == pytest.approx(authored)
+
+    def test_an_effect_without_controls_has_none(self):
+        with native.Effect.from_file(EXAMPLES_DIR / "fireball.json") as effect:
+            assert effect.controls() == []
 
     def test_closed_handles_refuse_to_be_used(self):
         effect = native.Effect.from_file(EXAMPLES_DIR / "fireball.json")
