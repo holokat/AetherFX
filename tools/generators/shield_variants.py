@@ -52,22 +52,22 @@ from typing import Any
 # ---------------------------------------------------------------------------
 
 GOLD = {
-    "hot": [1.00, 0.93, 0.74],      # seams, emblem outline, spark cores (near-white, tinted)
-    "mid": [1.00, 0.60, 0.13],      # the signature hue: barrier body, rings, ribbons
-    "deep": [0.36, 0.13, 0.012],    # halo falloff, dying sparks
-    "accent": [1.00, 0.40, 0.06],   # secondary hue
-    "light": [1.00, 0.70, 0.30],    # point lights
-    "shard": [0.78, 0.47, 0.16],    # crystal albedo
-    "shard_glow": [1.00, 0.62, 0.18],
+    "hot": [1.00, 0.84, 0.50],      # seams, emblem outline, spark cores (tinted, never white)
+    "mid": [1.00, 0.47, 0.07],      # the signature hue: barrier body, rings, ribbons
+    "deep": [0.40, 0.10, 0.008],    # halo falloff, dying sparks
+    "accent": [1.00, 0.33, 0.035],  # secondary hue
+    "light": [1.00, 0.60, 0.22],    # point lights
+    "shard": [0.80, 0.40, 0.10],    # crystal albedo
+    "shard_glow": [1.00, 0.52, 0.10],
     "mist": [0.52, 0.34, 0.14],
 }
 
 ICE = {
-    "hot": [0.86, 0.97, 1.00],
-    "mid": [0.20, 0.58, 1.00],
-    "deep": [0.02, 0.09, 0.40],
-    "accent": [0.42, 0.92, 1.00],
-    "light": [0.40, 0.72, 1.00],
+    "hot": [0.74, 0.93, 1.00],
+    "mid": [0.09, 0.40, 1.00],
+    "deep": [0.01, 0.05, 0.38],
+    "accent": [0.22, 0.78, 1.00],
+    "light": [0.30, 0.62, 1.00],
     "shard": [0.80, 0.93, 1.00],    # bright albedo -> the viewer's glass path: ice, not amber
     "shard_glow": [0.55, 0.85, 1.00],
     "mist": [0.30, 0.46, 0.66],
@@ -230,6 +230,13 @@ def tr(pairs: list[tuple[float, Any]], interp: str | None = None) -> dict[str, A
 
 def env(pairs: list[tuple[float, float]], scale: float = 1.0) -> dict[str, Any]:
     return tr([(t, round(v * scale, 5)) for t, v in pairs])
+
+
+def colour_env(rgb: list[float], pairs: list[tuple[float, float]]) -> dict[str, Any]:
+    """A keyframed colour: `rgb` scaled by an envelope.  Ribbons fade through this - a trail has no
+    opacity track, and the material's own emissive keeps it lit when only `emissive` goes to zero -
+    so a ribbon goes dark BEFORE it loses its width and never ends as a hairline."""
+    return tr([(t, c(rgb, 1.0, k)) for t, k in pairs])
 
 
 def curve(pairs: list[tuple[float, float]]) -> list[list[float]]:
@@ -404,7 +411,7 @@ def shell_cells_graph(seed: int, density: float, width: float, glow: float, soft
     return parts, "out"
 
 
-def shell_rim_graph() -> tuple[list[dict[str, Any]], str]:
+def shell_rim_graph(seed: int) -> tuple[list[dict[str, Any]], str]:
     """The glass body: almost nothing in the middle, a fresnel rise to a crisp silhouette, a soft halo."""
     parts = [
         op("rt", "gradient_radial", {"radius": RS_UV, "falloff": "linear"}),
@@ -412,16 +419,18 @@ def shell_rim_graph() -> tuple[list[dict[str, Any]], str]:
         op("fres", "levels", {"in_low": 0.0, "in_high": 1.0, "out_low": 0.10, "out_high": 0.88, "gamma": 0.22},
            {"a": "rr"}),
         op("disc", "shape", {"shape": "circle", "radius": RS_UV, "softness": 0.004}),
-        op("body", "math", {"mode": "multiply"}, {"a": "fres", "b": "disc"}),
-        op("edge", "shape", {"shape": "circle", "mode": "outline", "radius": RS_UV, "inset": 0.006,
+        # marbled energy inside the glass, so the body is not one flat tint
+        op("cloud", "fbm", {"frequency": 2.2, "octaves": 3, "seed": seed}),
+        op("cloudl", "levels", {"in_low": 0.28, "in_high": 0.75, "out_low": 0.62, "out_high": 1.0}, {"a": "cloud"}),
+        op("fresc", "math", {"mode": "multiply"}, {"a": "fres", "b": "cloudl"}),
+        op("body", "math", {"mode": "multiply"}, {"a": "fresc", "b": "disc"}),
+        op("edge", "shape", {"shape": "circle", "mode": "outline", "radius": RS_UV, "inset": 0.005,
                              "outline_width": 0.007, "softness": 0.006}),
-        op("halo", "shape", {"shape": "circle", "mode": "bevel", "radius": RS_UV, "inset": -0.04, "bevel": 0.04}),
-        op("halol", "levels", {"in_low": 0.0, "in_high": 1.0, "out_low": 0.0, "out_high": 0.5, "gamma": 0.55},
-           {"a": "halo"}),
-        op("ring_out", "math", {"mode": "subtract"}, {"a": "halol", "b": "disc"}),
-        op("halo_c", "levels", {"in_low": 0.0, "in_high": 1.0}, {"a": "ring_out"}),
+        # a glow that hugs the silhouette on both sides: an outline of zero width and a wide falloff
+        op("halo", "shape", {"shape": "circle", "mode": "outline", "radius": RS_UV, "outline_width": 0.0,
+                             "softness": 0.05}),
         op("m0", "math", {"mode": "max"}, {"a": "body", "b": "edge"}),
-        op("out", "math", {"mode": "max"}, {"a": "m0", "b": "halo_c"}),
+        op("out", "math", {"mode": "max"}, {"a": "m0", "b": "halo"}),
     ]
     return parts, "out"
 
@@ -441,7 +450,7 @@ def emblem_graph(seed: int) -> tuple[list[dict[str, Any]], str]:
         op("face", "shape", {**sh, "mode": "fill", "inset": 0.076, "softness": 0.005}),
         # two-tone facets either side of the ridge, the lit one on the left, and brighter towards the top
         op("split", "gradient_linear", {"angle": 0.0, "start": 0.0, "end": 1.0}),
-        op("tone", "levels", {"in_low": 0.492, "in_high": 0.508, "out_low": 0.62, "out_high": 0.36}, {"a": "split"}),
+        op("tone", "levels", {"in_low": 0.492, "in_high": 0.508, "out_low": 0.46, "out_high": 0.25}, {"a": "split"}),
         op("fall", "gradient_linear", {"angle": 90.0, "start": 1.0, "end": 0.55}),
         op("ft", "math", {"mode": "multiply"}, {"a": "tone", "b": "fall"}),
         op("en", "fbm", {"frequency": 5.0, "octaves": 3, "seed": seed}),
@@ -472,15 +481,15 @@ def ground_rings_graph(style: str) -> tuple[list[dict[str, Any]], str]:
     """Concentric hairline rings.  The rune style breaks two of them into arcs,
     sets hexagonal seals into the gaps and adds dot markers."""
     parts = [
-        op("r0", "ring", {"radius": 0.474, "thickness": 0.0055, "softness": 0.006}),
-        op("r1", "ring", {"radius": 0.449, "thickness": 0.011, "softness": 0.008}),
-        op("r2", "ring", {"radius": 0.372, "thickness": 0.0055, "softness": 0.006}),
-        op("r3", "ring", {"radius": 0.296, "thickness": 0.016, "softness": 0.010}),
-        op("r4", "ring", {"radius": 0.214, "thickness": 0.0055, "softness": 0.006}),
-        op("r5", "ring", {"radius": 0.128, "thickness": 0.009, "softness": 0.008}),
+        op("r0", "ring", {"radius": 0.474, "thickness": 0.004, "softness": 0.0045}),
+        op("r1", "ring", {"radius": 0.449, "thickness": 0.008, "softness": 0.006}),
+        op("r2", "ring", {"radius": 0.372, "thickness": 0.004, "softness": 0.0045}),
+        op("r3", "ring", {"radius": 0.296, "thickness": 0.011, "softness": 0.007}),
+        op("r4", "ring", {"radius": 0.214, "thickness": 0.004, "softness": 0.0045}),
+        op("r5", "ring", {"radius": 0.128, "thickness": 0.006, "softness": 0.006}),
         # a broad soft band under the footprint of the sphere so the hairlines sit in light
         op("wash", "ring", {"radius": 0.30, "thickness": 0.10, "softness": 0.11}),
-        scaled("washd", "wash", 0.30),
+        scaled("washd", "wash", 0.2),
         # nine gaps turn the second ring into arcs, so its slow rotation reads
         op("gaps", "spokes", {"count": 9, "width": 0.05, "softness": 0.02, "inner_radius": 0.40,
                               "outer_radius": 0.5, "rotation": 12.0}),
@@ -549,16 +558,21 @@ def ground_runes_graph(seed: int) -> tuple[list[dict[str, Any]], str]:
 
 
 def glyph_graph(seed: int) -> tuple[list[dict[str, Any]], str]:
-    """A small morphing glyph tile for the sprites of the equator band."""
+    """A small rune plate for the sprites of the equator band: a hexagonal seal (the same seal the
+    ground circle carries) with angular strokes morphing inside it over the flipbook."""
     parts = [
         op("w", "fbm", {"frequency": 2.6, "octaves": 2, "seed": seed + 5, "animate": 1.0}),
-        op("vo", "voronoi", {"cells": 5, "mode": "edges", "seed": seed}),
-        op("vl", "levels", {"in_low": 0.62, "in_high": 0.97}, {"a": "vo"}),
-        op("d", "distort", {"amount": 0.16}, {"a": "vl", "by": "w"}),
-        op("mask", "gradient_radial", {"radius": 0.44, "inner_radius": 0.05, "falloff": "smooth"}),
-        op("m", "math", {"mode": "multiply"}, {"a": "d", "b": "mask"}),
-        op("b", "blur", {"radius": 1.1}, {"a": "m"}),
-        op("lv", "levels", {"in_low": 0.05, "in_high": 0.56, "gamma": 0.8}, {"a": "b"}),
+        op("vo", "voronoi", {"cells": 4, "mode": "edges", "seed": seed}),
+        op("vl", "levels", {"in_low": 0.6, "in_high": 0.96}, {"a": "vo"}),
+        op("d", "distort", {"amount": 0.15}, {"a": "vl", "by": "w"}),
+        op("plate", "shape", {"shape": "hexagon", "radius": 0.33, "softness": 0.05}),
+        op("m", "math", {"mode": "multiply"}, {"a": "d", "b": "plate"}),
+        op("seal", "shape", {"shape": "hexagon", "mode": "outline", "radius": 0.43, "outline_width": 0.05,
+                             "inset": 0.025, "softness": 0.03}),
+        scaled("seald", "seal", 0.85),
+        op("all", "math", {"mode": "max"}, {"a": "m", "b": "seald"}),
+        op("b", "blur", {"radius": 0.8}, {"a": "all"}),
+        op("lv", "levels", {"in_low": 0.05, "in_high": 0.6, "gamma": 0.85}, {"a": "b"}),
     ]
     return parts, "lv"
 
@@ -637,7 +651,7 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
         op("m", "math", {"mode": "multiply"}, {"a": "r", "b": "nl"}),
         op("lv", "levels", {"in_low": 0.0, "in_high": 1.0, "gamma": 2.2}, {"a": "m"}),
     ], "lv"))
-    rim_nodes, rim_out = shell_rim_graph()
+    rim_nodes, rim_out = shell_rim_graph((seed + 29) % 991)
     add(tex("tex_shell_rim", 256, 256, rim_nodes, rim_out))
     cf_nodes, cf_out = shell_cells_graph(seed % 7919, density=5.4, width=0.0055, glow=0.38, soften=0.0,
                                          centre=0.5)
@@ -673,7 +687,7 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
 
     additive("mat_shell", mid, 0.3)
     additive("mat_seam", hot, 0.35)
-    additive("mat_break", hot, 0.4, dissolve=0.96, erosion=0.05)
+    additive("mat_break", hot, 0.35, dissolve=0.96, erosion=0.04)
     additive("mat_emblem", hot, 0.4)
     additive("mat_glow", mid, 0.3, depth_fade=0.3)
     additive("mat_spark", hot, 0.3)
@@ -683,20 +697,16 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
     additive("mat_ribbon", mid, 0.3, double_sided=True, inputs={"base_texture": "tex_band"})
     additive("mat_ribbon_soft", mid, 0.26, depth_fade=0.2, double_sided=True,
              inputs={"base_texture": "tex_band_soft"})
-    add(node("mat_bead", "material", {
-        "blend": "alpha", "shading": "unlit", "base_color": c(hot), "emissive_color": c(hot),
-        "emissive_intensity": 1.0,
-    }))
     ice = accent == "ice"
     add(node("mat_shard", "material", {
         "blend": "alpha", "shading": "lit", "base_color": c(p["shard"]),
-        "emissive_color": c(p["shard_glow"]), "emissive_intensity": round((0.34 if ice else 0.8) * g, 3),
-        "fresnel_power": 2.6, "double_sided": True, "opacity": 0.9 if ice else 0.86,
+        "emissive_color": c(p["shard_glow"]), "emissive_intensity": round((0.3 if ice else 0.62) * g, 3),
+        "fresnel_power": 3.0 if ice else 0.0, "double_sided": True, "opacity": 0.9 if ice else 0.92,
     }))
     add(node("mat_flake", "material", {
-        "blend": "additive", "shading": "unlit", "base_color": c(mix(mid, hot, 0.35), 1.0, 0.8),
-        "emissive_color": c(hot), "emissive_intensity": round(1.6 * gh, 3), "double_sided": True,
-        "opacity": 0.85,
+        "blend": "additive", "shading": "unlit", "base_color": c(mix(mid, hot, 0.2), 1.0, 0.5),
+        "emissive_color": c(hot), "emissive_intensity": round(1.0 * gh, 3), "double_sided": True,
+        "opacity": 0.7,
     }))
     add(node("mat_mist", "material", {
         "blend": "additive", "base_color": [1.0, 1.0, 1.0, 1.0], "emissive_color": c(p["mist"]),
@@ -728,9 +738,10 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
     ring_size = 3.8
     add(node("d_pool", "decal", {
         "shape": "circle", "size": [5.2, 5.2], "position": [0.0, 0.0, 0.0],
-        "color": c(mid), "emissive": round(0.8 * g, 3), "blend": "additive", "fade_in": 0.05, "fade_out": 0.2,
-        "opacity": tr([(0.0, 0.0), (0.08, 0.2), (0.2, 0.3), (0.5, 0.4), (2.0, 0.38), (2.12, 0.5),
-                       (2.4, 0.22), (2.58, 0.0)]),
+        "color": c(mix(mid, acc, 0.4)), "emissive": round(0.45 * g, 3), "blend": "additive", "fade_in": 0.05,
+        "fade_out": 0.2,
+        "opacity": tr([(0.0, 0.0), (0.08, 0.14), (0.2, 0.2), (0.5, 0.26), (2.0, 0.24), (2.12, 0.34),
+                       (2.4, 0.15), (2.58, 0.0)]),
     }, layer="ground", inputs={"texture": "tex_pool", "material": "mat_pool"}))
     add(node("d_rings", "decal", {
         "shape": "circle",
@@ -739,9 +750,9 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
                     (2.58, [ring_size * 0.96, ring_size * 0.96])]),
         "position": [0.0, 0.0, 0.0],
         "rotation": tr([(0.0, [0.0, 0.0, 0.0]), (DURATION, [0.0, 34.0, 0.0])]),
-        "color": c(mix(mid, hot, 0.55)), "blend": "additive", "fade_in": 0.04, "fade_out": 0.12,
-        "emissive": pulse_track(0.6, 2.0, 2.0, 0.16, 0.7, [(0.0, 1.0), (0.1, 2.6), (0.3, 2.0), (0.45, 2.9)],
-                                [(2.1, 2.6), (2.4, 1.3), (2.58, 0.4)], g),
+        "color": c(mix(mid, hot, 0.4)), "blend": "additive", "fade_in": 0.04, "fade_out": 0.12,
+        "emissive": pulse_track(0.6, 2.0, 0.85, 0.18, 0.7, [(0.0, 0.5), (0.1, 1.3), (0.3, 0.9), (0.45, 1.4)],
+                                [(2.1, 1.2), (2.4, 0.6), (2.58, 0.2)], g),
         "opacity": tr([(0.0, 0.0), (0.06, 0.8), (0.2, 0.95), (2.0, 0.92), (2.1, 1.0), (2.4, 0.5),
                        (2.58, 0.0)]),
     }, layer="ground", inputs={"texture": "tex_ground_rings", "material": "mat_ring"}))
@@ -749,7 +760,7 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
         "shape": "circle", "size": [ring_size, ring_size], "position": [0.0, 0.0, 0.0],
         "rotation": tr([(0.0, [0.0, 0.0, 0.0]), (DURATION, [0.0, -70.0, 0.0])]),
         "color": c(hot), "blend": "additive", "fade_in": 0.05, "fade_out": 0.12,
-        "emissive": pulse_track(0.6, 2.0, 2.2, 0.2, 0.7, [(0.0, 1.0), (0.3, 2.2)], [(2.4, 1.2), (2.58, 0.4)], gh),
+        "emissive": pulse_track(0.6, 2.0, 1.0, 0.2, 0.7, [(0.0, 0.5), (0.3, 1.1)], [(2.4, 0.6), (2.58, 0.2)], gh),
         "opacity": tr([(0.0, 0.0), (0.1, 0.4), (0.28, 0.95), (2.0, 0.9), (2.1, 1.0), (2.36, 0.35),
                        (2.55, 0.0)]),
     }, layer="ground", inputs={"texture": "tex_ground_runes", "material": "mat_ring"}, enabled=rune))
@@ -760,25 +771,29 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
     shaft_keys = [(0.0, [0.0, 0.02, 0.0])]
     for k in range(1, 13):
         u = k / 12.0
-        shaft_keys.append((round(0.02 + 0.36 * u, 4), [0.0, round(0.02 + 2.5 * (u ** 0.7), 4), 0.0]))
+        shaft_keys.append((round(0.02 + 0.26 * u, 4), [0.0, round(0.02 + 1.75 * (u ** 0.7), 4), 0.0]))
+    shaft_keys.append((0.5, [0.0, 2.2, 0.0]))
     shaft_keys.append((DURATION, [0.0, 2.8, 0.0]))
     add(node("cast_bead", "mesh", {"primitive": "sphere", "radius": 0.008, "visible": False,
                                    "position": tr(shaft_keys)}, layer="cast"))
     add(node("cast_shaft", "trail", {
-        "lifetime": 0.9, "max_segments": 160, "min_vertex_distance": 0.02,
-        "taper": curve([(0.0, 0.0), (0.06, 0.32), (0.16, 0.8), (0.32, 1.0), (0.75, 0.96), (1.0, 0.8)]),
-        "opacity_over_life": curve([(0.0, 0.9), (0.35, 1.0), (0.8, 0.85), (1.0, 0.7)]),
-        "color": c(mix(mid, hot, 0.4)), "blend": "additive", "noise_amplitude": 0.05, "noise_frequency": 0.8,
-        "width": env([(0.0, 0.0), (0.05, 0.36), (0.18, 0.7), (0.36, 0.78), (0.52, 0.5), (0.66, 0.0),
+        "lifetime": 0.9, "max_segments": 160, "min_vertex_distance": 0.03,
+        "taper": curve([(0.0, 0.0), (0.1, 0.3), (0.25, 0.72), (0.45, 1.0), (1.0, 0.92)]),
+        "opacity_over_life": curve([(0.0, 0.0), (0.12, 0.7), (0.4, 1.0), (1.0, 0.8)]),
+        "color": colour_env(mix(mid, hot, 0.3), [(0.0, 0.0), (0.06, 1.0), (0.26, 1.0), (0.36, 0.45),
+                                                 (0.43, 0.0), (DURATION, 0.0)]),
+        "blend": "additive",
+        "duration": 0.5,
+        "width": env([(0.0, 0.2), (0.05, 0.5), (0.16, 0.9), (0.28, 0.95), (0.44, 0.8), (0.46, 0.0),
                       (DURATION, 0.0)]),
-        "emissive": env([(0.0, 0.2), (0.1, 0.42), (0.3, 0.36), (0.48, 0.2), (0.66, 0.0), (DURATION, 0.0)], gh),
+        "emissive": env([(0.0, 0.1), (0.08, 0.2), (0.24, 0.17), (0.36, 0.08), (0.45, 0.0), (DURATION, 0.0)], gh),
     }, layer="cast", inputs={"source": "cast_bead", "material": "mat_ribbon_soft"}))
     add(node("ps_cast_glow", "particle_system", {
         "max_particles": 8, "lifetime": 0.62, "size": 2.3,
         "size_over_life": curve([(0.0, 0.35), (0.3, 1.0), (1.0, 1.25)]),
-        "color": c(mix(mid, hot, 0.3)), "opacity": 0.5,
+        "color": c(mid), "opacity": 0.3,
         "opacity_over_life": curve([(0.0, 0.0), (0.2, 1.0), (0.55, 0.6), (1.0, 0.0)]),
-        "emissive": round(0.5 * g, 3), "render_mode": "billboard", "blend": "additive",
+        "emissive": round(0.3 * g, 3), "render_mode": "billboard", "blend": "additive",
         "soft_particle_distance": 0.35,
     }, inputs={"sprite": "tex_glow", "material": "mat_glow"}))
     add(node("e_cast_glow", "emitter", {
@@ -810,14 +825,14 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
     shells = [
         # id, sprite, material, colour keys (age s, colour), opacity, emissive, roll deg/s, fade-in, breathe
         ("ps_shell_rim", "tex_shell_rim", "mat_shell",
-         [(0.0, c(mix(mid, hot, 0.75))), (0.35, c(mix(mid, hot, 0.3))), (0.6, c(mid))],
-         0.9, 1.15 * g, 0.0, 0.08, 0.012),
+         [(0.0, c(mix(mid, hot, 0.5))), (0.35, c(mid)), (0.6, c(mix(mid, acc, 0.35)))],
+         0.9, 0.5 * g, 0.0, 0.08, 0.012),
         ("ps_shell_cells", "tex_shell_cells", "mat_seam",
-         [(0.0, c(white)), (0.3, c(hot)), (0.7, c(mix(hot, mid, 0.3)))],
-         1.0, 1.9 * gh, 5.0, 0.2, 0.012),
+         [(0.0, c(hot)), (0.3, c(mix(hot, mid, 0.25))), (0.7, c(mix(hot, mid, 0.5)))],
+         1.0, 0.95 * gh, 5.0, 0.2, 0.012),
         ("ps_shell_back", "tex_shell_back", "mat_seam",
-         [(0.0, c(hot)), (0.5, c(mix(mid, hot, 0.35)))],
-         0.62, 0.8 * gh, -4.0, 0.26, 0.012),
+         [(0.0, c(mix(hot, mid, 0.4))), (0.5, c(mid))],
+         0.55, 0.4 * gh, -4.0, 0.26, 0.012),
     ]
     for sid, sprite, material, colours, opacity, emissive, roll, fade_in, breathe in shells:
         add(node(sid, "particle_system", {
@@ -840,33 +855,32 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
     add(node("ps_shell_core", "particle_system", {
         "max_particles": 4, "lifetime": shell_life + 0.2, "size": 2.5,
         "size_over_life": life_curve(shell_life + 0.2, grow_keys + [(shell_life, 1.0), (shell_life + 0.2, 1.2)]),
-        "color": c(mid), "opacity": 0.2,
+        "color": c(mix(mid, acc, 0.5)), "opacity": 0.085,
         "opacity_over_life": life_curve(shell_life + 0.2, [(0.0, 0.0), (0.25, 1.0), (0.45, 0.8),
                                                            (shell_life - 0.1, 0.8), (shell_life, 1.3),
                                                            (shell_life + 0.2, 0.0)]),
-        "emissive": round(0.5 * g, 3), "drag": RISE_DRAG, "render_mode": "billboard", "blend": "additive",
+        "emissive": round(0.3 * g, 3), "drag": RISE_DRAG, "render_mode": "billboard", "blend": "additive",
         "soft_particle_distance": 0.4,
     }, inputs={"sprite": "tex_glow", "material": "mat_glow"}))
     rise_emitter("e_shell_core", "ps_shell_core", "barrier")
 
     # ---------------- the shield emblem ----------------
-    em_life = 2.16                                             # 0.2 -> 2.36 s
+    em_life = 2.0                                              # 0.2 -> 2.2 s
     em_in = T_EMBLEM - T_FORM                                   # invisible while it rides up
-    em_out = T_BREAK - T_FORM
+    em_out = T_BREAK - 0.04 - T_FORM
     add(node("ps_emblem", "particle_system", {
         "max_particles": 4, "lifetime": em_life, "size": 1.14,
         "size_over_life": life_curve(em_life, [(0.0, 0.7), (em_in, 0.74), (em_in + 0.1, 1.09),
                                                (em_in + 0.2, 1.0), (1.0, 1.015), (1.4, 1.0), (em_out, 1.01),
                                                (em_life, 1.16)]),
         "color": [1.0, 1.0, 1.0, 1.0],
-        "color_over_life": life_gradient(em_life, [(0.0, c(mix(hot, white, 0.5))),
-                                                   (em_in + 0.12, c(mix(hot, white, 0.5))),
-                                                   (em_in + 0.3, c(mix(hot, mid, 0.1))),
-                                                   (em_out, c(mix(hot, mid, 0.1))), (em_life, c(mid))]),
+        "color_over_life": life_gradient(em_life, [(0.0, c(hot)), (em_in + 0.12, c(hot)),
+                                                   (em_in + 0.3, c(mix(hot, mid, 0.3))),
+                                                   (em_out, c(mix(hot, mid, 0.3))), (em_life, c(mid))]),
         "opacity": 1.0,
         "opacity_over_life": life_curve(em_life, [(0.0, 0.0), (em_in, 0.0), (em_in + 0.12, 1.0), (em_out, 1.0),
-                                                  (em_out + 0.16, 0.5), (em_life, 0.0)]),
-        "emissive": round(1.5 * gh, 3),
+                                                  (em_out + 0.12, 0.45), (em_life, 0.0)]),
+        "emissive": round(0.8 * gh, 3),
         "emissive_over_life": life_curve(em_life, [(0.0, 1.0), (em_in, 2.4), (em_in + 0.1, 2.6),
                                                    (em_in + 0.32, 1.0), (0.95, 1.12), (1.3, 1.0), (1.65, 1.12),
                                                    (em_out, 1.0), (em_life, 0.6)]),
@@ -874,25 +888,25 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
     }, inputs={"sprite": "tex_emblem", "material": "mat_emblem"}))
     rise_emitter("e_emblem", "ps_emblem", "emblem")
     add(node("ps_emblem_glow", "particle_system", {
-        "max_particles": 4, "lifetime": em_life, "size": 1.9,
+        "max_particles": 4, "lifetime": em_life, "size": 1.7,
         "size_over_life": life_curve(em_life, [(0.0, 0.5), (em_in, 0.6), (em_in + 0.1, 1.25), (em_in + 0.3, 1.0),
                                                (em_out, 1.0), (em_life, 1.3)]),
-        "color": c(mix(mid, hot, 0.25)), "opacity": 0.34,
+        "color": c(mid), "opacity": 0.15,
         "opacity_over_life": life_curve(em_life, [(0.0, 0.0), (em_in, 0.0), (em_in + 0.1, 1.6), (em_in + 0.32, 1.0),
                                                   (em_out, 1.0), (em_life, 0.0)]),
-        "emissive": round(0.6 * g, 3), "drag": RISE_DRAG, "render_mode": "billboard", "blend": "additive",
+        "emissive": round(0.35 * g, 3), "drag": RISE_DRAG, "render_mode": "billboard", "blend": "additive",
         "soft_particle_distance": 0.3,
     }, inputs={"sprite": "tex_glow", "material": "mat_glow"}))
     rise_emitter("e_emblem_glow", "ps_emblem_glow", "emblem")
 
     # ---------------- comet swirl: beads on tilted orbits carrying tapered ribbons ----------------
     add(node("ps_comet_head", "particle_system", {
-        "max_particles": 60, "lifetime": 0.15, "lifetime_variance": 0.04, "size": 0.36, "size_variance": 0.08,
+        "max_particles": 60, "lifetime": 0.13, "lifetime_variance": 0.03, "size": 0.27, "size_variance": 0.06,
         "size_over_life": curve([(0.0, 0.6), (0.25, 1.0), (1.0, 0.35)]),
-        "color": c(mix(hot, white, 0.3)),
+        "color": c(hot),
         "color_over_life": [[0.0, [1.0, 1.0, 1.0, 1.0]], [1.0, c(mix(mid, hot, 0.2))]],
-        "opacity": 0.55, "opacity_over_life": curve([(0.0, 0.0), (0.2, 1.0), (1.0, 0.0)]),
-        "emissive": round(1.5 * gh, 3), "render_mode": "billboard", "blend": "additive",
+        "opacity": 0.34, "opacity_over_life": curve([(0.0, 0.0), (0.2, 1.0), (1.0, 0.0)]),
+        "emissive": round(1.1 * gh, 3), "render_mode": "billboard", "blend": "additive",
         "soft_particle_distance": 0.15,
     }, inputs={"sprite": "tex_glow", "material": "mat_spark"}))
     comets = [
@@ -909,46 +923,50 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
             "rotation": angle_track(revs, direction, sw0, sw1 + 0.1, phase),
         }, layer="swirl", parent=f"swirl_hub_{key}"))
         add(node(f"comet_{key}", "mesh", {
-            "primitive": "sphere", "radius": 0.03, "segments": 10, "visible": True,
-            "position": [radius, 0.0, 0.0], "start_time": sw0, "duration": round(sw1 - sw0, 4),
-            "color": c(hot), "emissive": env([(sw0, 0.0), (sw0 + 0.14, 3.0 * gh), (T_BREAK, 3.0 * gh), (sw1, 0.0)]),
-            "scale": tr([(sw0, [0.2, 0.2, 0.2]), (sw0 + 0.16, [1.0, 1.0, 1.0]), (T_BREAK, [1.0, 1.0, 1.0]),
-                         (sw1, [0.1, 0.1, 0.1])]),
-        }, layer="swirl", parent=f"swirl_spin_{key}", inputs={"material": "mat_bead"}))
+            "primitive": "sphere", "radius": 0.008, "visible": False, "position": [radius, 0.0, 0.0],
+        }, layer="swirl", parent=f"swirl_spin_{key}"))
         life = round(0.46 / revs * 0.82, 4)
         add(node(f"comet_trail_{key}", "trail", {
             "lifetime": life, "max_segments": 180, "min_vertex_distance": 0.03,
             "taper": curve([(0.0, 0.35), (0.04, 1.0), (0.3, 0.7), (0.65, 0.34), (1.0, 0.0)]),
-            "opacity_over_life": curve([(0.0, 1.0), (0.25, 0.8), (0.7, 0.35), (1.0, 0.0)]),
-            "color": c(mix(hot, mid, 0.2)), "blend": "additive", "start_time": sw0,
-            "width": tr([(sw0, 0.0), (sw0 + 0.16, width), (T_BREAK, width), (sw1 - 0.04, width * 0.3), (sw1, 0.0)]),
+            "opacity_over_life": curve([(0.0, 1.0), (0.25, 0.8), (0.6, 0.3), (0.85, 0.0), (1.0, 0.0)]),
+            "color": colour_env(mix(hot, mid, 0.3), [(sw0, 0.0), (sw0 + 0.2, 1.0), (T_BREAK - 0.05, 1.0),
+                                                     (T_BREAK + 0.08, 0.0), (DURATION, 0.0)]),
+            "blend": "additive", "start_time": sw0, "duration": round(sw1 - sw0, 4),
+            "width": tr([(sw0, width * 0.4), (sw0 + 0.16, width), (T_BREAK + 0.08, width), (sw1, 0.0)]),
             "emissive": env([(sw0, 0.3), (sw0 + 0.18, emis), (T_BREAK, emis), (sw1, 0.0)], gh),
         }, layer="swirl", inputs={"source": f"comet_{key}", "material": "mat_ribbon"}))
+        if key != "a":
+            continue        # only the hero comet carries the broad haze ribbon and the glowing head
         add(node(f"comet_haze_{key}", "trail", {
             "lifetime": round(life * 0.8, 4), "max_segments": 140, "min_vertex_distance": 0.04,
             "taper": curve([(0.0, 0.3), (0.06, 1.0), (0.4, 0.62), (1.0, 0.0)]),
             "opacity_over_life": curve([(0.0, 0.5), (0.5, 0.3), (1.0, 0.0)]),
-            "color": c(mid), "blend": "additive", "start_time": sw0,
-            "width": tr([(sw0, 0.0), (sw0 + 0.16, width * 3.4), (T_BREAK, width * 3.4), (sw1, 0.0)]),
+            "color": colour_env(mid, [(sw0, 0.0), (sw0 + 0.2, 1.0), (T_BREAK - 0.05, 1.0),
+                                      (T_BREAK + 0.08, 0.0), (DURATION, 0.0)]),
+            "blend": "additive", "start_time": sw0, "duration": round(sw1 - sw0, 4),
+            "width": tr([(sw0, width * 1.4), (sw0 + 0.16, width * 3.4), (T_BREAK + 0.08, width * 3.4), (sw1, 0.0)]),
             "emissive": env([(sw0, 0.1), (sw0 + 0.18, emis * 0.4), (T_BREAK, emis * 0.4), (sw1, 0.0)], g),
         }, layer="swirl", inputs={"source": f"comet_{key}", "material": "mat_ribbon_soft"}))
         add(node(f"e_comet_head_{key}", "emitter", {
             "shape": "point", "velocity": 0.0, "start_time": sw0,
-            "rate": tr([(sw0, 0.0), (sw0 + 0.12, head_rate), (T_BREAK, head_rate), (sw1 - 0.02, 0.0)]),
+            "rate": tr([(sw0, 0.0), (sw0 + 0.2, 0.0), (sw0 + 0.32, head_rate), (T_BREAK - 0.04, head_rate),
+                        (T_BREAK + 0.04, 0.0)]),
         }, layer="swirl", parent=f"comet_{key}", inputs={"particle": "ps_comet_head"}))
 
     # ---------------- crystal shards ----------------
-    add(node("shard_mesh", "mesh", {"primitive": "sphere", "radius": 0.5, "segments": 3, "visible": False}))
+    add(node("shard_mesh", "mesh", {"primitive": "crystal", "radius": 0.5, "height": 1.0, "segments": 6,
+                                    "variants": 3, "irregularity": 0.45, "visible": False}))
     shard_life = 1.94
     add(node("ps_shard", "particle_system", {
         "max_particles": 40, "lifetime": shard_life, "lifetime_variance": 0.05,
-        "size": 0.21, "size_variance": 0.085,
+        "size": 0.25, "size_variance": 0.1,
         "size_over_life": life_curve(shard_life, [(0.0, 0.0), (0.2, 1.08), (0.3, 1.0), (shard_life - 0.34, 1.0),
                                                   (shard_life - 0.12, 0.5), (shard_life, 0.0)]),
         "color": c(p["shard"]), "opacity": 0.9, "emissive": 0.6,
         "render_mode": "mesh", "blend": "alpha", "orientation": "tumble",
         "angular_velocity": 34.0, "angular_velocity_variance": 22.0,
-        "mesh_scale": [0.5, 1.75, 0.5], "mesh_scale_variance": [0.13, 0.55, 0.13],
+        "mesh_scale": [0.62, 1.55, 0.62], "mesh_scale_variance": [0.14, 0.45, 0.14],
         "drag": 0.9, "sort": True,
     }, inputs={"mesh": "shard_mesh", "material": "mat_shard", "forces": ["f_orbit", "f_drift"]}))
     shard_rings = [
@@ -996,9 +1014,9 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
         "scale": tr([(0.36, [0.8, 0.8, 0.8]), (0.6, [1.0, 1.0, 1.0])]),
     }, layer="sparks", inputs={"particle": "ps_glint"}))
     add(node("ps_streak", "particle_system", {
-        "max_particles": 80, "lifetime": 0.9, "lifetime_variance": 0.25, "size": 0.2, "size_variance": 0.07,
+        "max_particles": 60, "lifetime": 0.72, "lifetime_variance": 0.16, "size": 0.26, "size_variance": 0.08,
         "size_over_life": curve([(0.0, 0.4), (0.3, 1.0), (1.0, 0.7)]),
-        "color": c(mix(mid, hot, 0.4)), "opacity": 0.2,
+        "color": c(mix(mid, hot, 0.25)), "opacity": 0.11,
         "opacity_over_life": curve([(0.0, 0.0), (0.3, 1.0), (0.65, 0.7), (1.0, 0.0)]),
         "emissive": round(0.9 * gh, 3), "render_mode": "stretched_billboard", "velocity_stretch": 3.2,
         "blend": "additive", "drag": 0.25, "soft_particle_distance": 0.2,
@@ -1006,21 +1024,22 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
     add(node("e_streak", "emitter", {
         "shape": "ring", "radius": 1.62, "inner_radius": 0.85, "position": [0.0, 0.12, 0.0],
         "velocity": 1.7, "velocity_variance": 0.6, "direction": [0.0, 1.0, 0.0], "spread": 2.0,
-        "rate": tr([(0.0, 0.0), (0.06, 26.0), (0.4, 18.0), (0.7, 11.0), (2.0, 11.0), (2.1, 20.0), (2.3, 0.0)]),
+        "rate": tr([(0.0, 0.0), (0.06, 16.0), (0.4, 12.0), (0.7, 8.0), (1.7, 8.0), (1.8, 0.0)]),
     }, layer="sparks", inputs={"particle": "ps_streak"}))
 
     # ---------------- rune band on the equator (rune style) ----------------
     add(node("ps_glyph", "particle_system", {
-        "max_particles": 120, "lifetime": 0.96, "lifetime_variance": 0.06, "size": 0.17, "size_variance": 0.025,
+        "max_particles": 120, "lifetime": 0.96, "lifetime_variance": 0.06, "size": 0.2, "size_variance": 0.02,
         "size_over_life": curve([(0.0, 0.5), (0.15, 1.0), (0.85, 1.0), (1.0, 0.6)]),
-        "color": c(hot), "color_over_life": [[0.0, c(white)], [0.3, c(hot)], [1.0, c(mix(hot, mid, 0.5))]],
-        "opacity": 0.95, "opacity_over_life": curve([(0.0, 0.0), (0.14, 1.0), (0.75, 0.85), (1.0, 0.0)]),
-        "emissive": round(2.6 * gh, 3), "render_mode": "billboard", "blend": "additive",
-        "rotation_variance": 180.0, "sprite_columns": 6, "sprite_rows": 1, "sprite_fps": 0.0,
+        "color": [1.0, 1.0, 1.0, 1.0],
+        "color_over_life": [[0.0, c(hot)], [0.3, c(mix(hot, mid, 0.35))], [1.0, c(mix(hot, mid, 0.6))]],
+        "opacity": 0.9, "opacity_over_life": curve([(0.0, 0.0), (0.14, 1.0), (0.75, 0.85), (1.0, 0.0)]),
+        "emissive": round(1.0 * gh, 3), "render_mode": "billboard", "blend": "additive",
+        "sprite_fps": 0.0,     # the texture's own `frames` strip is the flipbook: no sprite grid on top of it
         "soft_particle_distance": 0.05,
     }, inputs={"sprite": "tex_glyph", "material": "mat_glyph"}, enabled=rune))
     add(node("rune_hub", "mesh", {"primitive": "sphere", "radius": 0.008, "visible": False,
-                                  "position": [0.0, CY, 0.0], "rotation": [4.0, 0.0, 3.0]},
+                                  "position": [0.0, CY, 0.0], "rotation": [7.0, 0.0, -5.0]},
              layer="runes", enabled=rune))
     add(node("rune_spin", "mesh", {"primitive": "sphere", "radius": 0.008, "visible": False,
                                    "rotation": angle_track(0.22, 1.0, 0.5, 2.2, 0.0, ease=0.0)},
@@ -1034,7 +1053,7 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
         }, layer="runes", parent="rune_spin", enabled=rune))
         add(node(f"e_glyph{i + 1}", "emitter", {
             "shape": "point", "velocity": 0.0, "start_time": 0.5,
-            "rate": tr([(0.5, 0.0), (0.56, 9.0), (2.0, 9.0), (2.04, 0.0)]),
+            "rate": tr([(0.5, 0.0), (0.56, 8.0), (2.0, 8.0), (2.04, 0.0)]),
         }, layer="runes", parent=f"rune_bead{i + 1}", inputs={"particle": "ps_glyph"}, enabled=rune))
 
     # ---------------- the elemental accent (one cheap layer per element) ----------------
@@ -1108,42 +1127,44 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
     }, layer="accent", inputs={"particle": "ps_accent_mist"}, enabled=mist_on))
 
     # ---------------- dissipate: the shells dissolve, flakes and sparks leave the surface ----------------
-    break_life = 0.44
+    # the glass body does not crumble, it flares and lets go (the last 0.13 s of the intact rim); the seam
+    # network is what breaks up, through a dissolving material, while flakes and sparks leave the surface
     breaks = [
-        ("ps_break_rim", "tex_shell_rim", c(mid), 0.85, 1.2 * g, 0.0, 0.0),
-        ("ps_break_cells", "tex_shell_cells", c(mix(hot, mid, 0.3)), 1.0, 2.1 * gh, 5.0, 5.0 * (T_BREAK - T_FORM)),
+        # id, sprite, material, colour, opacity, emissive, roll, start angle, life, growth
+        ("ps_break_cells", "tex_shell_cells", "mat_break", c(mix(hot, mid, 0.3)), 1.0, 1.3 * gh, 5.0,
+         5.0 * (T_BREAK - T_FORM), 0.46, 1.16),
     ]
-    for sid, sprite, colour, opacity, emissive, roll, angle in breaks:
+    for sid, sprite, material, colour, opacity, emissive, roll, angle, life, growth in breaks:
         add(node(sid, "particle_system", {
-            "max_particles": 4, "lifetime": break_life, "size": SHELL_QUAD,
-            "size_over_life": curve([(0.0, 1.0), (1.0, 1.13)]),
+            "max_particles": 4, "lifetime": life, "size": SHELL_QUAD,
+            "size_over_life": curve([(0.0, 1.0), (1.0, growth)]),
             "rotation": round(angle, 3), "angular_velocity": roll,
             "color": colour,
-            "color_over_life": [[0.0, [1.0, 1.0, 1.0, 1.0]], [0.25, [1.25, 1.25, 1.25, 1.0]],
-                                [1.0, [0.7, 0.7, 0.7, 1.0]]],
-            "opacity": opacity, "opacity_over_life": curve([(0.0, 0.0), (0.2, 1.0), (0.75, 0.85), (1.0, 0.0)]),
+            "color_over_life": [[0.0, [1.0, 1.0, 1.0, 1.0]], [0.2, [1.2, 1.2, 1.2, 1.0]],
+                                [0.6, [0.55, 0.55, 0.55, 1.0]], [1.0, [0.3, 0.3, 0.3, 1.0]]],
+            "opacity": opacity, "opacity_over_life": curve([(0.0, 0.0), (0.2, 1.0), (0.6, 0.6), (1.0, 0.0)]),
             "emissive": round(emissive, 3), "render_mode": "billboard", "blend": "additive",
             "soft_particle_distance": 0.12,
-        }, inputs={"sprite": sprite, "material": "mat_break"}))
+        }, inputs={"sprite": sprite, "material": material}))
         add(node(sid.replace("ps_", "e_"), "emitter", {
             "shape": "point", "position": [0.0, CY, 0.0], "rate": 0.0, "burst_count": 1, "burst_times": [0.0],
             "velocity": 0.0, "start_time": T_BREAK,
         }, layer="breakup", inputs={"particle": sid}))
 
     add(node("flake_mesh", "mesh", {"primitive": "shard", "radius": 0.5, "height": 1.0, "segments": 5,
-                                    "variants": 4, "irregularity": 0.6, "visible": False}))
+                                    "variants": 2, "irregularity": 0.6, "visible": False}))
     add(node("ps_flake", "particle_system", {
-        "max_particles": 90, "lifetime": 0.5, "lifetime_variance": 0.16, "size": 0.125, "size_variance": 0.06,
-        "size_over_life": curve([(0.0, 0.2), (0.12, 1.0), (0.6, 0.75), (1.0, 0.0)]),
-        "color": c(mix(mid, hot, 0.4)), "opacity": 0.85, "emissive": 1.0,
+        "max_particles": 90, "lifetime": 0.55, "lifetime_variance": 0.16, "size": 0.19, "size_variance": 0.08,
+        "size_over_life": curve([(0.0, 0.2), (0.12, 1.0), (0.5, 0.6), (1.0, 0.0)]),
+        "color": c(mix(mid, hot, 0.3)), "opacity": 0.85, "emissive": 1.0,
         "render_mode": "mesh", "blend": "additive", "orientation": "tumble",
         "angular_velocity": 210.0, "angular_velocity_variance": 120.0,
         "mesh_scale": [1.0, 1.2, 1.0], "mesh_scale_variance": [0.3, 0.4, 0.3], "drag": 1.3,
     }, inputs={"mesh": "flake_mesh", "material": "mat_flake", "forces": ["f_fall"], "colliders": ["ground"]}))
     add(node("e_flake", "emitter", {
         "shape": "sphere", "radius": R_SPHERE, "surface_only": True, "position": [0.0, CY, 0.0],
-        "rate": 0.0, "burst_count": 24, "burst_times": [0.0, 0.1], "start_time": T_BREAK + 0.03,
-        "velocity": 1.5, "velocity_variance": 0.9, "direction": [0.0, 0.0, 0.0],
+        "rate": 0.0, "burst_count": 17, "burst_times": [0.0, 0.08, 0.16], "start_time": T_BREAK + 0.03,
+        "velocity": 1.1, "velocity_variance": 0.7, "direction": [0.0, 0.0, 0.0],
     }, layer="breakup", inputs={"particle": "ps_flake"}))
     add(node("ps_burst", "particle_system", {
         "max_particles": 400, "lifetime": 0.46, "lifetime_variance": 0.2, "size": 0.05, "size_variance": 0.025,
@@ -1165,17 +1186,17 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
     add(node("shield_light", "light", {
         "light_type": "point", "position": [0.0, CY, 0.55], "color": c(p["light"]), "radius": 5.5,
         "flicker_amplitude": 0.3 if fire else 0.06, "flicker_frequency": 11.0 if fire else 7.0,
-        "intensity": env([(0.0, 0.0), (0.1, 1.2), (0.3, 3.0), (0.46, 7.5), (0.62, 5.2), (2.0, 5.0),
-                          (2.08, 8.5), (2.3, 2.2), (2.55, 0.0)], g),
+        "intensity": env([(0.0, 0.0), (0.1, 0.5), (0.3, 1.3), (0.46, 3.2), (0.62, 2.2), (2.0, 2.1),
+                          (2.08, 3.6), (2.3, 0.9), (2.55, 0.0)], g),
     }, layer="light"))
     add(node("ground_light", "light", {
         "light_type": "point", "position": [0.0, 0.3, 0.0], "color": c(mix(mid, hot, 0.3)), "radius": 4.0,
         "flicker_amplitude": 0.22 if fire else 0.0, "flicker_frequency": 9.0,
-        "intensity": env([(0.0, 0.0), (0.06, 2.4), (0.25, 1.6), (2.0, 1.4), (2.4, 0.9), (2.58, 0.0)], g),
+        "intensity": env([(0.0, 0.0), (0.06, 1.1), (0.25, 0.7), (2.0, 0.6), (2.4, 0.4), (2.58, 0.0)], g),
     }, layer="light"))
 
     # ---------------- camera ----------------
-    add(node("cam", "camera", {"position": [0.0, 2.05, 6.4], "target": [0.0, 1.02, 0.0], "fov": 40.0}))
+    add(node("cam", "camera", {"position": [0.0, 1.8, 4.9], "target": [0.0, 1.02, 0.0], "fov": 40.0}))
 
     # ---------------- controls (identical ids and bindings in all eight) ----------------
     def bind(node_id: str, parameter: str, operation: str = "multiply") -> dict[str, str]:
@@ -1186,12 +1207,11 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
         return {"id": cid, "label": label, "group": group, "min": lo, "max": hi, "default": 1.0, "value": 1.0,
                 "step": step, "unit": "x", "bindings": bindings}
 
-    shell_ids = ["ps_shell_rim", "ps_shell_cells", "ps_shell_back", "ps_shell_core", "ps_break_rim",
-                 "ps_break_cells"]
+    shell_ids = ["ps_shell_rim", "ps_shell_cells", "ps_shell_back", "ps_shell_core", "ps_break_cells"]
     size_bindings = [bind(sid, "size") for sid in shell_ids + ["ps_emblem", "ps_emblem_glow"]]
     size_bindings += [bind(eid, "velocity") for eid in ("e_shell_rim", "e_shell_cells", "e_shell_back",
                                                         "e_shell_core", "e_emblem", "e_emblem_glow")]
-    size_bindings += [bind(eid, "position") for eid in ("e_break_rim", "e_break_cells")]
+    size_bindings += [bind("e_break_cells", "position")]
     for eid in ("e_flake", "e_burst", "e_glint"):
         size_bindings += [bind(eid, "position"), bind(eid, "radius")]
     for hub in ("swirl_hub_a", "swirl_hub_b", "rune_hub"):
