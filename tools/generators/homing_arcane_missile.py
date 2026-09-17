@@ -4,7 +4,7 @@
     python tools/generators/homing_arcane_missile.py            # rewrites the library file
     python tools/generators/homing_arcane_missile.py --out DIR  # writes DIR/homing_arcane_missile.json
 
-A violet crystal missile that bends after a target which moves mid-flight.  The
+A violet arcane comet that bends after a target which moves mid-flight.  The
 graph is authored from scratch for this effect; nothing is derived from another
 library document.
 
@@ -519,16 +519,6 @@ def build_textures() -> list[dict[str, Any]]:
         op("r", "gradient_radial", {"radius": 0.5, "falloff": "quadratic"}),
         op("lv", "levels", {"gamma": 0.8}, {"a": "r"}),
     ], "lv"))
-    # the aura: a thin bubble rim that is brightest ahead of the crystal and open behind it
-    out.append(tex("tex_aura", 128, 128, [
-        op("rim", "ring", {"radius": 0.45, "thickness": 0.012, "softness": 0.022}),
-        op("glow", "ring", {"radius": 0.44, "thickness": 0.05, "softness": 0.07}),
-        op("glowl", "levels", {"out_high": 0.22}, {"a": "glow"}),
-        op("shell", "math", {"mode": "max"}, {"a": "rim", "b": "glowl"}),
-        op("front", "gradient_linear", {"angle": 90.0, "start": 1.0, "end": 0.0}),
-        op("frontl", "levels", {"in_low": 0.2, "in_high": 0.95, "out_low": 0.05, "gamma": 0.8}, {"a": "front"}),
-        op("bow", "math", {"mode": "multiply"}, {"a": "shell", "b": "frontl"}),
-    ], "bow"))
     # a thin soft ring, slightly uneven so it never looks plotted
     out.append(tex("tex_ring", 128, 128, [
         op("ring", "ring", {"radius": 0.45, "thickness": 0.02, "softness": 0.03}),
@@ -589,7 +579,7 @@ def build_textures() -> list[dict[str, Any]]:
 
 LAYERS = [
     {"id": "charge", "name": "Spawn and launch", "role": "telegraph"},
-    {"id": "head", "name": "Crystal head", "role": "primary"},
+    {"id": "head", "name": "Comet head", "role": "primary"},
     {"id": "braid", "name": "Energy braid", "role": "primary"},
     {"id": "fragments", "name": "Orbiting fragments", "role": "secondary"},
     {"id": "motes", "name": "Sparkle motes", "role": "secondary"},
@@ -601,7 +591,7 @@ LAYERS = [
 # camera: raised, from the front right, so the hook curls down and back on screen
 CAMERA = {"position": [5.2, 3.9, 9.6], "target": [0.35, 1.7, -0.3], "fov": 40.0}
 
-# the crystal: a hexagonal bipyramid, long and pointed ahead, short behind - the hero of the effect
+# where the braid starts behind the comet head (kept from the first, crystal-headed version of the rig)
 GEM_RADIUS = 0.30
 GEM_FRONT = 0.98
 GEM_BACK = 0.50
@@ -650,23 +640,6 @@ def build() -> dict[str, Any]:
         "blend": "additive", "base_color": [1.0, 1.0, 1.0, 1.0], "emissive_color": rgba(ICE),
         "emissive_intensity": 0.3, "soft_particle": True, "depth_fade": 0.1, "double_sided": True,
     }, inputs={"base_texture": "tex_filament"}))
-    # the gem: translucent violet facets that catch the key light, over a white-hot inner crystal
-    add(node("mat_gem_shell", "material", {
-        "blend": "alpha", "shading": "lit", "base_color": [0.3, 0.1, 0.72, 1.0],
-        "emissive_color": rgba(violet), "emissive_intensity": 0.05, "opacity": 0.72,
-    }))
-    add(node("mat_gem_cut", "material", {
-        "blend": "alpha", "shading": "lit", "base_color": rgba(mix(AZURE, violet, 0.35), 1.0, 0.8),
-        "emissive_color": rgba(mix(violet, AZURE, 0.5)), "emissive_intensity": 0.05, "opacity": 0.34,
-    }))
-    add(node("mat_gem_core", "material", {
-        "blend": "alpha", "shading": "lit", "base_color": rgba(hot), "emissive_color": rgba(hot),
-        "emissive_intensity": 0.5, "opacity": 1.0,
-    }))
-    add(node("mat_fragment", "material", {
-        "blend": "alpha", "shading": "lit", "base_color": [0.34, 0.14, 0.78, 1.0],
-        "emissive_color": rgba(violet), "emissive_intensity": 0.1, "opacity": 1.0,
-    }))
     add(node("mat_burst_shard", "material", {
         "blend": "alpha", "shading": "lit", "base_color": [0.3, 0.12, 0.7, 1.0],
         "emissive_color": rgba(mix(violet, MAGENTA, 0.2)), "emissive_intensity": 0.22,
@@ -706,30 +679,9 @@ def build() -> dict[str, Any]:
     # everything that scales with the missile hangs off `body`
     add(hub("body", {"scale": [1.0, 1.0, 1.0]}, layer="head", parent="head_tilt"))
 
-    # ---------------- the crystal head ----------------
-    form = [(0.0, 0.001), (T_LAUNCH, 0.001), (0.25, 0.5), (0.31, 1.14), (0.38, 0.97), (0.44, 1.0),
-            (1.30, 1.0), (1.385, 1.1)]
-    add(hub("head_form", {"scale": track([(t, [round(s, 4), round(s, 4), round(s * 0.86, 4)]) for t, s in form])},
-            layer="head", parent="body"))
-    gem_window = {"start_time": round(T_LAUNCH, 4), "duration": round(T_IMPACT - T_LAUNCH - 0.006, 4)}
-    shell_glow = track([(T_LAUNCH, 0.3), (0.3, 1.0), (0.44, 0.3), (1.2, 0.3), (1.39, 0.9)])
-    cut_glow = track([(T_LAUNCH, 0.2), (0.3, 0.8), (0.44, 0.25), (1.2, 0.25), (1.39, 0.7)])
-    core_glow = track([(T_LAUNCH, 2.5), (0.3, 7.0), (0.44, 4.2), (1.2, 4.2), (1.39, 8.0)])
-    # (id, material, radius x, front x, back x, emissive, spin about the axis)
-    gem_parts = (
-        ("gem_shell", "mat_gem_shell", 1.0, 1.0, 1.0, shell_glow, 0.0),
-        ("gem_cut", "mat_gem_cut", 0.94, 0.8, 0.84, cut_glow, 30.0),
-        ("gem_core", "mat_gem_core", 0.3, 0.34, 0.36, core_glow, 30.0),
-    )
-    for nid, mat, kr, kf, kb, glow, spin in gem_parts:
-        for part, height, rot, sign in (("front", GEM_FRONT * kf, -90.0, 1.0), ("back", GEM_BACK * kb, 90.0, -1.0)):
-            add(node(f"{nid}_{part}", "mesh", {
-                "primitive": "crystal", "radius": round(GEM_RADIUS * kr, 4), "height": round(height, 4),
-                "segments": 6, "irregularity": 0.0,
-                "position": [round(GEM_GIRDLE_X + sign * height / 2.0, 4), 0.0, 0.0],
-                "rotation": [0.0, spin, rot], "color": [1.0, 1.0, 1.0, 1.0], "emissive": glow, **gem_window,
-            }, layer="head", parent="head_form", inputs={"material": mat}, seed=11))
-
+    # ---------------- the comet head ----------------
+    # The head is light, not geometry: a white-hot core and a soft violet coma that ride with the hub, and a
+    # tail of world-space glow that the head leaves behind, so the tail bends with the homing path.
     # follow sprites: emitted one frame of travel behind the hub with the hub's own velocity
     add(hub("follow_anchor", {"position": frame_track([[round(0.12 - fl.speed[i] * DT, 4) + 0.0, 0.0, 0.0]
                                                        if F_LAUNCH < i < F_IMPACT else [0.0, 0.0, 0.0]
@@ -747,18 +699,51 @@ def build() -> dict[str, Any]:
         "rate": track([(0.0, 0.0), (0.04, 120.0), (T_IMPACT - 0.02, 120.0), (T_IMPACT, 0.0)]),
         "duration": round(T_IMPACT + 0.01, 4),
     }, layer="head", parent="follow_anchor", inputs={"particle": "ps_halo"}))
-    add(node("ps_aura", "particle_system", {
-        "max_particles": 24, "lifetime": 0.05, "size": 1.56,
-        "color": rgba(mix(violet, AZURE, 0.35)), "opacity": 0.1,
-        "opacity_over_life": [[0.0, 0.7], [0.4, 1.0], [1.0, 0.0]],
-        "emissive": 1.6, "render_mode": "billboard", "align_to_velocity": True, "blend": "additive",
-        "soft_particle_distance": 0.1,
-    }, layer="head", inputs={"sprite": "tex_aura", "material": "mat_glow"}))
-    add(node("e_aura", "emitter", {
-        "shape": "point", "velocity": 0.0, "inherit_velocity": 1.0,
-        "rate": track([(0.26, 0.0), (0.34, 120.0), (T_IMPACT - 0.02, 120.0), (T_IMPACT, 0.0)]),
-        "start_time": 0.26, "duration": round(T_IMPACT - 0.25, 4),
-    }, layer="head", parent="follow_anchor", inputs={"particle": "ps_aura"}))
+    head_on = track([(0.0, 0.0), (T_LAUNCH, 0.0), (T_LAUNCH + 0.03, 120.0), (T_IMPACT - 0.02, 120.0), (T_IMPACT, 0.0)])
+    head_window = {"start_time": round(T_LAUNCH, 4), "duration": round(T_IMPACT - T_LAUNCH + 0.01, 4)}
+    add(node("ps_comet_core", "particle_system", {
+        "max_particles": 24, "lifetime": 0.05, "size": 0.56,
+        "color": rgba(hot), "opacity": 1.0, "opacity_over_life": [[0.0, 0.8], [0.4, 1.0], [1.0, 0.0]],
+        "emissive": 5.0, "render_mode": "billboard", "blend": "additive", "soft_particle_distance": 0.1,
+    }, layer="head", inputs={"sprite": "tex_core", "material": "mat_glow"}))
+    add(node("e_comet_core", "emitter", {
+        "shape": "point", "velocity": 0.0, "inherit_velocity": 1.0, "rate": head_on, **head_window,
+    }, layer="head", parent="follow_anchor", inputs={"particle": "ps_comet_core"}))
+    add(node("ps_comet_coma", "particle_system", {
+        "max_particles": 24, "lifetime": 0.05, "size": 0.92,
+        "color": rgba(mix(violet, hot, 0.12)), "opacity": 0.45, "opacity_over_life": [[0.0, 0.7], [0.4, 1.0], [1.0, 0.0]],
+        "emissive": 1.7, "render_mode": "stretched_billboard", "velocity_stretch": 0.05, "blend": "additive",
+        "soft_particle_distance": 0.15,
+    }, layer="head", inputs={"sprite": "tex_glow", "material": "mat_glow"}))
+    add(node("e_comet_coma", "emitter", {
+        "shape": "point", "velocity": 0.0, "inherit_velocity": 1.0, "rate": head_on, **head_window,
+    }, layer="head", parent="follow_anchor", inputs={"particle": "ps_comet_coma"}))
+    # the tail: glow left behind in world space, shrinking and cooling from white-violet to deep azure
+    tails = (
+        # id, rate, lifetime, size, emissive, opacity, colours over life, size over life
+        ("ps_comet_tail", 240.0, 0.55, 0.46, 1.05, 0.42,
+         [[0.0, rgba(mix(violet, hot, 0.25))], [0.2, rgba(violet)], [1.0, rgba(mix(violet, AZURE, 0.7))]],
+         [[0.0, 1.0], [0.12, 0.74], [0.45, 0.4], [1.0, 0.0]]),
+        ("ps_comet_streak", 200.0, 0.75, 0.17, 2.3, 0.7,
+         [[0.0, rgba(hot)], [0.2, rgba(mix(ICE, violet, 0.45))], [1.0, rgba(violet)]],
+         [[0.0, 1.0], [0.3, 0.6], [1.0, 0.0]]),
+    )
+    for pid, tail_rate, life, size, emissive, opacity, colours, sizes in tails:
+        add(node(pid, "particle_system", {
+            "max_particles": int(tail_rate * life * 1.25) + 8, "lifetime": life, "size": size,
+            "size_over_life": sizes, "color": colours[0][1], "color_over_life": colours,
+            "opacity": opacity, "opacity_over_life": [[0.0, 0.0], [0.06, 1.0], [0.45, 0.55], [1.0, 0.0]],
+            "emissive": emissive, "render_mode": "billboard", "blend": "additive", "soft_particle_distance": 0.15,
+        }, layer="head", inputs={"sprite": "tex_glow", "material": "mat_glow"}))
+        add(node("e" + pid[2:], "emitter", {
+            # particles are spawned once per step, so a point would leave beads one frame of travel apart:
+            # a line as long as that step, lying along the travel axis behind the head, fills the gaps
+            "shape": "line", "length": round(V_CRUISE * DT * 1.25, 4), "position": [round(-V_CRUISE * DT * 1.25, 4), 0.0, 0.0],
+            "velocity": 0.0,
+            "rate": track([(t, round(v * tail_rate, 2)) for t, v in ((0.0, 0.0), (T_LAUNCH, 0.0), (T_LAUNCH + 0.04, 1.0),
+                                                                     (T_IMPACT - 0.01, 1.0), (T_IMPACT, 0.0))]),
+            **head_window,
+        }, layer="head", parent="body", inputs={"particle": pid}))
 
     # ---------------- the braid ----------------
     for hid, pitch, phase in BRAID_HUBS:
@@ -805,17 +790,22 @@ def build() -> dict[str, Any]:
             "scale": track([(t, [round(s * size, 4), round(s * size, 4), round(s * size * 0.8, 4)]) for t, s in pop]),
         }, layer="fragments", parent=f"orbit_{i}_spin"))
         window = {"start_time": round(0.3 + 0.03 * i, 4), "duration": round(T_IMPACT - 0.306 - 0.03 * i, 4)}
-        for part, height, rot, sign in (("front", 0.38, -90.0, 1.0), ("back", 0.2, 90.0, -1.0)):
-            add(node(f"shard_{i}_{part}", "mesh", {
-                "primitive": "crystal", "radius": 0.1, "height": height, "segments": sides, "irregularity": 0.0,
-                "position": [round(sign * height / 2.0, 4), 0.0, 0.0], "rotation": [0.0, 0.0, rot],
-                "color": [1.0, 1.0, 1.0, 1.0], "emissive": 0.4, **window,
-            }, layer="fragments", parent=f"shard_{i}", inputs={"material": "mat_fragment"}, seed=20 + i))
-        w = round(0.1 * size, 4)
+        add(node(f"ps_shard_{i}", "particle_system", {
+            "max_particles": 16, "lifetime": 0.05, "size": round(0.2 * size, 4), "color": rgba(mix(hot, violet, 0.3)),
+            "opacity": 1.0, "opacity_over_life": [[0.0, 0.8], [0.4, 1.0], [1.0, 0.0]], "emissive": 4.0,
+            "render_mode": "billboard", "blend": "additive", "soft_particle_distance": 0.08,
+        }, layer="fragments", inputs={"sprite": "tex_mote", "material": "mat_glow"}))
+        add(node(f"e_shard_{i}", "emitter", {
+            "shape": "point", "velocity": 0.0, "inherit_velocity": 1.0,
+            "rate": track([(window["start_time"], 0.0), (round(window["start_time"] + 0.05, 4), 120.0),
+                           (T_IMPACT - 0.03, 120.0), (T_IMPACT, 0.0)]),
+            **window,
+        }, layer="fragments", parent=f"shard_{i}", inputs={"particle": f"ps_shard_{i}"}))
+        w = round(0.16 * size, 4)
         add(node(f"shard_{i}_trail", "trail", {
-            "lifetime": 0.12, "max_segments": 32, "min_vertex_distance": 0.02,
-            "taper": [[0.0, 0.2], [0.2, 1.0], [1.0, 0.0]], "opacity_over_life": [[0.0, 0.55], [0.5, 0.3], [1.0, 0.0]],
-            "color": rgba(mix(violet, ICE, 0.25)), "blend": "additive", "emissive": 0.8,
+            "lifetime": 0.22, "max_segments": 40, "min_vertex_distance": 0.02,
+            "taper": [[0.0, 0.2], [0.2, 1.0], [1.0, 0.0]], "opacity_over_life": [[0.0, 0.7], [0.5, 0.35], [1.0, 0.0]],
+            "color": rgba(mix(violet, ICE, 0.25)), "blend": "additive", "emissive": 1.5,
             "width": track([(0.34, 0.0), (0.48, w), (1.34, w), (T_IMPACT, 0.0)]),
             "start_time": 0.34,
         }, layer="fragments", inputs={"source": f"shard_{i}", "material": "mat_filament"}))
@@ -1062,8 +1052,8 @@ def build() -> dict[str, Any]:
     return {
         "schema_version": "0.1.0",
         "name": NAME,
-        "description": "A violet crystal missile charges, kicks off on a gentle arc, then hooks hard after a target "
-                       "that moves mid-flight, trailing a braid of soft ribbons and orbiting shards into a crystal burst.",
+        "description": "A violet arcane comet charges, kicks off on a gentle arc, then hooks hard after a target "
+                       "that moves mid-flight, trailing a braid of soft ribbons and orbiting sparks into a crystal burst.",
         "duration": DURATION,
         "seed": SEED,
         "timeline": {"phases": [{"name": name, "start": s, "end": e} for name, s, e in PHASES]},
@@ -1119,7 +1109,6 @@ def build_controls(nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
     ids = [n["id"] for n in nodes]
     ribbons = [i for i in ids if i.startswith(("ribbon_", "filament_")) and not i.endswith("_src")]
-    shard_hubs = [i for i in ids if i.startswith("shard_") and i.count("_") == 1]
     shard_trails = [i for i in ids if i.startswith("shard_") and i.endswith("_trail")]
 
     hue = []
@@ -1129,8 +1118,9 @@ def build_controls(nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 hue.append(bind(n["id"], parameter, "hue_shift"))
 
     return [
-        multiplier("missile_size", "Missile size", "Crystal head",
-                   [bind("body", "scale"), bind("ps_halo", "size"), bind("ps_aura", "size")]
+        multiplier("missile_size", "Missile size", "Comet head",
+                   [bind("body", "scale"), bind("ps_halo", "size"), bind("ps_comet_core", "size"),
+                    bind("ps_comet_coma", "size"), bind("ps_comet_tail", "size"), bind("ps_comet_streak", "size")]
                    + [bind(r, "width") for r in ribbons], 0.4, 1.6),
         multiplier("trail_intensity", "Braid glow", "Energy braid",
                    [bind(r, "color") for r in ribbons] + [bind("ps_haze", "color"), bind("ps_motes", "color"),
@@ -1139,7 +1129,8 @@ def build_controls(nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
                    [bind(r, "lifetime") for r in ribbons] + [bind("ps_haze", "lifetime"), bind("ps_motes", "lifetime")],
                    0.3, 2.5),
         multiplier("fragments", "Orbiting fragments", "Orbiting fragments",
-                   [bind(s, "scale") for s in shard_hubs] + [bind(t, "width") for t in shard_trails], 0.0, 2.5),
+                   [bind(f"ps_shard_{i}", "size") for i in range(1, len(SHARDS) + 1)]
+                   + [bind(t, "width") for t in shard_trails], 0.0, 2.5),
         multiplier("impact_burst", "Impact burst", "Impact",
                    [bind(e, "burst_count") for e in ("e_burst_shards", "e_burst_sparks", "e_streaks", "e_ring_motes")]
                    + [bind("ps_flash", "size"), bind("ps_rays", "size"), bind("ps_shock", "size"),
