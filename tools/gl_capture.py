@@ -332,24 +332,44 @@ def main() -> int:
                         help='optional JSON {"control_id": value} set through the studio API after loading the '
                              'effect and before capturing, e.g. \'{"primary_intensity": 2.0}\'')
     parser.add_argument("--gpu-lock", default="/tmp/aetherfx-gpu.lock",
-                        help="captures from every agent on this machine take this lock in turn, so --perf timings "
-                             "are not measured while another capture is using the GPU (empty string disables)")
+                        help="machine-wide lock file: look captures share it, a --perf probe holds it exclusively, so "
+                             "timings are never measured while another capture uses the GPU (empty string disables)")
     args = parser.parse_args()
     if ":8770" in args.url and not args.allow_user_studio:
         parser.error("refusing to drive the user's live studio on port 8770; start your own instance "
                      "and pass its --url (or --allow-user-studio if you really mean it)")
     if not args.gpu_lock:
         return asyncio.run(run(args))
+    # Reader/writer discipline over one lock file: look captures share the GPU with each other, a --perf
+    # probe gets it alone.  A probe announces itself with a marker first and captures politely wait for
+    # markers to clear, because flock() is not fair and a stream of shared holders would starve the probe.
     import fcntl
-    with open(args.gpu_lock, "a") as lock:
-        waited = time.time()
-        fcntl.flock(lock, fcntl.LOCK_EX)
-        if time.time() - waited > 1.0:
-            print(f"waited {time.time() - waited:.0f} s for the GPU lock", file=sys.stderr)
-        try:
-            return asyncio.run(run(args))
-        finally:
-            fcntl.flock(lock, fcntl.LOCK_UN)
+    import glob
+    marker = f"{args.gpu_lock}.perf-pending.{os.getpid()}"
+    exclusive = args.perf > 0
+    waited = time.time()
+    if exclusive:
+        with open(marker, "w") as handle:
+            handle.write(str(time.time()))
+    else:
+        while True:
+            fresh = [m for m in glob.glob(args.gpu_lock + ".perf-pending.*")
+                     if time.time() - os.path.getmtime(m) < 300]
+            if not fresh:
+                break
+            time.sleep(1.0)
+    try:
+        with open(args.gpu_lock, "a") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH)
+            if time.time() - waited > 1.0:
+                print(f"waited {time.time() - waited:.0f} s for the GPU lock", file=sys.stderr)
+            try:
+                return asyncio.run(run(args))
+            finally:
+                fcntl.flock(lock, fcntl.LOCK_UN)
+    finally:
+        if exclusive and os.path.exists(marker):
+            os.remove(marker)
 
 
 if __name__ == "__main__":
