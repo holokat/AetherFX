@@ -6626,7 +6626,6 @@
     }
   ],
   "metadata": {
-    "reference": "out/references/heal_sheet.jpg",
     "generator": "tools/generators/heal_variants.py",
     "variant": "heal_regen",
     "analysis": "Regen: 3.0 s seamless loop, three soft pulses, green palette, leaf motes instead of feathers, the swirl carried by a vortex on the motes rather than a ribbon (a trail cannot wrap a loop seam).",
@@ -6643,6 +6642,12 @@
       "bloom_radius": 0.05,
       "exposure": 0.74,
       "grid": false
-    }
+    },
+    "tags": [
+      "heal",
+      "support",
+      "target",
+      "regen"
+    ]
   }
 }

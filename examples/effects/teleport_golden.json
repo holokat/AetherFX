@@ -10770,7 +10770,6 @@
   }
  ],
  "metadata": {
-  "reference": "out/references/teleport_sheet.jpg",
   "generator": "tools/generators/teleport_variants.py",
   "variant": "teleport_golden",
   "rune_language": "script",
@@ -10787,6 +10786,12 @@
    "bloom_radius": 0.045,
    "exposure": 0.85,
    "grid": false
-  }
+  },
+  "tags": [
+   "teleport",
+   "utility",
+   "portal",
+   "golden"
+  ]
  }
 }

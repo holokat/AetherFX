@@ -2354,7 +2354,6 @@
     }
   ],
   "metadata": {
-    "reference": "Fire Area of Effect concept sheet: telegraph 0-0.4 (rune, embers gather), eruption 0.4-0.8 (flames burst across the whole disk, debris lifts), peak 0.8-1.6 (full AoE intensity, uniform sea of flames), sustain 1.6-2.4, fade 2.4-3.0 (flames recede, embers dissipate)",
     "camera_note": "The studio GPU viewer frames from the `cam` node and pulls the eye back by 1.45x, so cam [0, 3.6, 10.2] target [0, 1.4, 0] fov 42 puts the eye at about [0, 4.6, 14.8] - the 3/4 angle of the concept sheet with the whole burning disk in frame. cam.position.y, cam.target.y and fov are pinned by tests/sim/analytic_test.cpp, so distance is the only free framing knob.",
     "fire_note": "tex_flame is a baked `fire_sim` flipbook (32 frames, seamless loop), left grayscale so material.temperature_gradient colours every sprite over its own life - white hot at the fuel bed, blood red at the tip. Every fire system plays the sheet at sprite_fps 22 from its own birth, so no two sprites show the same frame. The half/vgr/byv/flip nodes in that graph mirror the sheet vertically: `fire_sim` bakes the flame root at v=0 (image row 0) but both renderers draw image row 0 at the TOP of the sprite, so an unmirrored sheet renders upside down. Delete those four nodes when that is fixed. base_ps deliberately uses tex_puff, not the fire sheet: a fire_sim tile is a bright fuel slab under its tongues and down at the bed the sprites are too sparse to overlap, so each slab read as a separate pale rectangle.",
     "render_settings": {
@@ -2381,6 +2380,11 @@
           0.0
         ]
       }
-    }
+    },
+    "tags": [
+      "fire",
+      "aoe",
+      "area"
+    ]
   }
 }

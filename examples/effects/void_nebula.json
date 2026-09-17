@@ -932,7 +932,6 @@
     }
   ],
   "metadata": {
-    "reference": "Astral Void Blast: a purple/teal nebula opening over a rune circle",
     "analysis": "telegraph: rune circle fades in | peak: the procedural nebula volume blooms, three spiral arms winding slowly | sustain: sparks and dark wisps are dragged into the vortex, astral motes drift inside the cloud | decay: density, light and emitters fall to zero",
     "timing": "anticipation 0-0.6, peak 0.6-1.4, sustain 1.4-3.2, decay 3.2-4.0",
     "render_settings": {
@@ -947,6 +946,12 @@
       "bloom_radius": 0.06,
       "exposure": 1.1,
       "grid": false
-    }
+    },
+    "tags": [
+      "void",
+      "volume",
+      "nebula",
+      "cosmic"
+    ]
   }
 }

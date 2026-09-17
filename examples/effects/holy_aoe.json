@@ -11826,7 +11826,6 @@
   }
  ],
  "metadata": {
-  "reference": "Holy Area of Effect concept sheet (heal / protect / purify / empower; 'light drives out darkness')",
   "analysis": "cast: gold rune circle + inner sigil fade in, sparkles gather inward | rise: eight candle pillars ascend from the ring, the central beam grows | peak: white-gold pillar at full height with volumetric column, spiral ribbons, glyph tablets, holy ring bands | sustain: gentle pulsing, feathers and sparkles rise | fade: pillars sink, motes drift up, the rune fades last",
   "timing": "cast 0-0.4, rise 0.4-0.8, peak 0.8-1.6, sustain 1.6-2.4, fade 2.4-3.0",
   "render_settings": {
@@ -11842,6 +11841,12 @@
    "exposure": 0.66,
    "grid": false
   },
-  "revision": "2026-09-17 house-style pass: no crosses, four-armed stars or ruler-straight lines anywhere."
+  "revision": "2026-09-17 house-style pass: no crosses, four-armed stars or ruler-straight lines anywhere.",
+  "tags": [
+   "holy",
+   "aoe",
+   "area",
+   "light"
+  ]
  }
 }

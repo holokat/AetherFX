@@ -5081,7 +5081,6 @@
     }
   ],
   "metadata": {
-    "reference": "out/references/heal_sheet.jpg",
     "generator": "tools/generators/heal_variants.py",
     "variant": "heal",
     "analysis": "Base variant: the concept sheet's six keyframes at full strength; the sheet's cross-shaped light core is a soft luminous core here (user feedback).",
@@ -5098,6 +5097,11 @@
       "bloom_radius": 0.05,
       "exposure": 0.72,
       "grid": false
-    }
+    },
+    "tags": [
+      "heal",
+      "support",
+      "target"
+    ]
   }
 }

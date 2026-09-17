@@ -5365,7 +5365,6 @@
     }
   ],
   "metadata": {
-    "reference": "Lesser Fireball concept sheet (projectile, weaker sibling of Fire Bolt): cast 0-0.3 (a small ember orb pulls in a handful of sparks), launch 0.3-0.54 (short pop), mid flight 0.54-1.6 (compact head, stubby tail), approach 1.6-2.3, impact 2.3-3.0 (a modest spark scatter, a few flame petals, a small flash).",
     "analysis": "A fist-sized molten pebble wrapped in a bright orange-yellow flame sheath about 0.35 m across; the tail licks barely one core length back instead of Fire Bolt's two to three; a thin ember scatter and a pale thinning smoke wisp read as a cantrip, not a siege spell.",
     "render_settings": {
       "ground_albedo": 0.014,
@@ -5392,6 +5391,12 @@
         ],
         "fov": 46.0
       }
-    }
+    },
+    "tags": [
+      "fire",
+      "projectile",
+      "explosion",
+      "lesser"
+    ]
   }
 }

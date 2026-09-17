@@ -23,7 +23,12 @@
     "library": {
       "hidden": true,
       "reason": "first-milestone test fixture; superseded by Fire Bolt and Lesser Fireball"
-    }
+    },
+    "tags": [
+      "fire",
+      "projectile",
+      "explosion"
+    ]
   },
   "name": "Fireball",
   "nodes": [

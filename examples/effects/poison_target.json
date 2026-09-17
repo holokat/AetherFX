@@ -3116,7 +3116,6 @@
   ],
   "metadata": {
     "description": "A corrupting poison debuff that clings to a humanoid target: an acid-green impact splash spreads over the body into clinging toxic vapour, glowing sludge drips, rising bubbles and corroding surface patches.",
-    "reference": "out/references/poison_target_sheet.jpg - POISON / TARGET EFFECT: debuff, corrupting, toxic, persistent. Acid-green vapours wrapping an armoured figure, viscous dripping sludge, translucent bubbles, glowing corrosion.",
     "analysis": "hit 0-0.2: green flash and droplet burst at chest height, arriving from the camera side | spread 0.2-0.6: the emission ellipsoid's scale grows from a chest patch to the whole body so splashes run outward over the target | envelop 0.6-1.0: the raymarched gas volumes bloom and licks wrap the body | active 1.0-2.8: full loop - swirling vapours, drips falling and splashing on the ground, bubbles rising and popping, flickering corrosion patches, green point light | linger 2.8-3.5: rates and density thin out | fade 3.5-4.0: everything falls to zero",
     "timing": "hit 0-0.2, spread 0.2-0.6, envelop 0.6-1.0, active 1.0-2.8 (loopable), linger 2.8-3.5, fade 3.5-4.0",
     "render_settings": {
@@ -3155,6 +3154,12 @@
         0.0
       ],
       "note": "The effect wraps this invisible volume; attach it to the character's root in the game."
-    }
+    },
+    "tags": [
+      "poison",
+      "target",
+      "debuff",
+      "nature"
+    ]
   }
 }
