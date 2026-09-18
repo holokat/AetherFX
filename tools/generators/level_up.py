@@ -53,6 +53,9 @@ PALETTE = {
     "mid": [1.00, 0.60, 0.20],     # the signature gold: glows, the rune, shafts
     "deep": [0.80, 0.32, 0.06],    # falloff, dying motes
     "stone": [0.085, 0.07, 0.06],   # debris albedo
+    # cool accents (the user's reference: an icy crystal, a blue-white column, blue shards among the gold)
+    "frost": [0.84, 0.92, 1.00],   # blue-white: the column, the crystal's heart
+    "ice": [0.50, 0.72, 1.00],     # the blue: crystal body, cool shafts, floating shards
 }
 
 SLUG = "level_up"
@@ -371,6 +374,7 @@ def colour_envelope(s: dict[str, Any], rgb: list[float]) -> dict[str, Any]:
 def build() -> dict[str, Any]:
     p = PALETTE
     white, hot, mid, deep, stone = p["white"], p["hot"], p["mid"], p["deep"], p["stone"]
+    frost, ice = p["frost"], p["ice"]
     nodes: list[dict[str, Any]] = []
     add = nodes.append
 
@@ -443,7 +447,8 @@ def build() -> dict[str, Any]:
     additive("mat_shaft", mid, 0.15, 0.2)
     additive("mat_glyph", hot, 0.25, 0.06)
     additive("mat_glow", mid, 0.15, 0.3)
-    additive("mat_crystal", white, 0.3, 0.05)
+    additive("mat_crystal", frost, 0.3, 0.05)
+    additive("mat_shaft_cool", ice, 0.15, 0.2)
     add(node("mat_rune", "material", {"blend": "additive", "emissive_color": c(mid), "emissive_intensity": 0.2,
                                       "soft_particle": False}))
     add(node("mat_rock", "material", {"blend": "alpha", "shading": "lit", "base_color": c(stone),
@@ -590,6 +595,38 @@ def build() -> dict[str, Any]:
         "start_time": 0.12, "duration": 1.63,
     }, {"particle": "ps_shaft"}, parent="anchor", layer="shafts"))
 
+    add(node("ps_shaft_cool", "particle_system", {
+        "max_particles": 30, "lifetime": 0.55, "lifetime_variance": 0.15,
+        "size": 0.1, "size_variance": 0.04,
+        "size_over_life": curve([(0.0, 0.5), (0.3, 1.0), (1.0, 0.7)]),
+        "color": c(ice), "color_over_life": [[0.0, c(frost)], [0.5, c(mix(frost, ice, 0.5))], [1.0, c(ice)]],
+        "opacity": 0.5, "opacity_over_life": curve([(0.0, 0.0), (0.25, 1.0), (0.6, 0.7), (1.0, 0.0)]),
+        "emissive": 0.9, "drag": 0.9, "render_mode": "stretched_billboard", "velocity_stretch": 4.2,
+        "blend": "additive", "soft_particle_distance": 0.1,
+    }, {"sprite": "tex_shaft", "material": "mat_shaft_cool"}))
+    add(node("e_shaft_cool", "emitter", {
+        "shape": "ring", "radius": 0.8, "inner_radius": 0.25, "position": [0.0, 0.15, 0.0],
+        "direction": [0.0, 1.0, 0.0], "spread": 4.0, "velocity": 3.2, "velocity_variance": 0.9,
+        "rate": tr([(0.0, 0.0), (0.12, 0.0), (0.25, 8.0), (0.5, 12.0), (1.05, 18.0), (1.4, 6.0), (1.7, 0.0)]),
+        "start_time": 0.12, "duration": 1.63,
+    }, {"particle": "ps_shaft_cool"}, parent="anchor", layer="shafts"))
+
+    # ================= ASCEND: small blue crystal shards float up among the debris =================
+    add(node("ps_shards", "particle_system", {
+        "max_particles": 12, "lifetime": 1.5, "lifetime_variance": 0.2,
+        "size": 0.13, "size_variance": 0.04,
+        "size_over_life": curve([(0.0, 0.1), (0.12, 1.05), (0.2, 1.0), (0.8, 0.9), (1.0, 0.0)]),
+        "color": c(ice), "color_over_life": [[0.0, c(frost)], [0.4, c(ice)], [1.0, c(ice)]],
+        "opacity": 0.9, "opacity_over_life": curve([(0.0, 0.0), (0.1, 1.0), (0.75, 0.8), (1.0, 0.0)]),
+        "emissive": 1.2, "drag": 1.4, "render_mode": "billboard", "blend": "additive",
+        "rotation_variance": 12.0, "soft_particle_distance": 0.04,
+    }, {"sprite": "tex_crystal", "material": "mat_crystal", "forces": ["f_float", "f_curl"]}))
+    add(node("e_shards", "emitter", {
+        "shape": "ring", "radius": 1.1, "inner_radius": 0.6, "position": [0.0, 0.5, 0.0],
+        "direction": [0.0, 1.0, 0.0], "spread": 25.0, "velocity": 1.6, "velocity_variance": 0.5,
+        "rate": 0.0, "burst_count": 9, "burst_times": [0.5],
+    }, {"particle": "ps_shards"}, parent="anchor", layer="core"))
+
     # ================= ASCEND: stone fragments lift off and float up =================
     add(node("rock_mesh", "mesh", {"primitive": "rock", "radius": 0.5, "segments": 12, "irregularity": 0.72,
                                    "variants": 8, "visible": False}))
@@ -627,7 +664,7 @@ def build() -> dict[str, Any]:
         "max_particles": 40, "lifetime": 0.5, "lifetime_variance": 0.12,
         "size": 0.34, "size_variance": 0.1,
         "size_over_life": curve([(0.0, 0.5), (0.3, 1.0), (1.0, 0.75)]),
-        "color": c(hot), "color_over_life": [[0.0, c(white)], [0.5, c(hot)], [1.0, c(mix(mid, hot, 0.5))]],
+        "color": c(frost), "color_over_life": [[0.0, c(frost)], [0.5, c(mix(frost, ice, 0.4))], [1.0, c(ice)]],
         "opacity": 0.16, "opacity_over_life": curve([(0.0, 0.0), (0.25, 1.0), (0.6, 0.75), (1.0, 0.0)]),
         "emissive": 0.55, "drag": 0.4, "render_mode": "stretched_billboard", "velocity_stretch": 0.55,
         "blend": "additive", "soft_particle_distance": 0.2,
@@ -643,7 +680,7 @@ def build() -> dict[str, Any]:
         "max_particles": 60, "lifetime": 0.4, "lifetime_variance": 0.1,
         "size": 0.05, "size_variance": 0.02,
         "size_over_life": curve([(0.0, 0.5), (0.3, 1.0), (1.0, 0.4)]),
-        "color": c(hot), "color_over_life": [[0.0, c(white)], [0.6, c(hot)], [1.0, c(mid)]],
+        "color": c(frost), "color_over_life": [[0.0, c(white)], [0.4, c(frost)], [1.0, c(mix(frost, ice, 0.6))]],
         "opacity": 0.85, "opacity_over_life": curve([(0.0, 0.0), (0.2, 1.0), (0.7, 0.8), (1.0, 0.0)]),
         "emissive": 1.8, "drag": 0.2, "render_mode": "stretched_billboard", "velocity_stretch": 0.55,
         "blend": "additive", "soft_particle_distance": 0.05,
@@ -671,7 +708,7 @@ def build() -> dict[str, Any]:
     add(node("ps_crystal", "particle_system", {
         "max_particles": 2, "lifetime": 1.1, "size": 0.62,
         "size_over_life": curve([(0.0, 0.05), (0.07, 1.12), (0.14, 1.0), (0.7, 0.95), (1.0, 0.55)]),
-        "color": c(hot), "color_over_life": [[0.0, c(white)], [0.3, c(hot)], [1.0, c(mid)]],
+        "color": c(frost), "color_over_life": [[0.0, c(frost)], [0.3, c(mix(frost, ice, 0.45))], [1.0, c(ice)]],
         "opacity": 0.95, "opacity_over_life": curve([(0.0, 0.0), (0.05, 1.0), (0.6, 0.85), (1.0, 0.0)]),
         "emissive": 1.3, "emissive_over_life": curve([(0.0, 2.0), (0.15, 1.15), (1.0, 0.8)]),
         "render_mode": "billboard", "blend": "additive", "soft_particle_distance": 0.05,
@@ -736,6 +773,11 @@ def build() -> dict[str, Any]:
                          (2.3, 0.0), (DURATION, 0.0)]),
     }, parent="anchor", layer="light"))
 
+    add(node("l_core", "light", {
+        "light_type": "point", "position": [0.0, CORE_Y, 0.0], "color": c(ice), "radius": 3.0,
+        "intensity": tr([(0.0, 0.0), (0.98, 0.0), (1.02, 1.6), (1.3, 0.8), (1.9, 0.0), (DURATION, 0.0)]),
+    }, parent="anchor", layer="light"))
+
     # ---------------- controls ----------------
     colour_bindings = []
     for n in nodes:
@@ -753,28 +795,28 @@ def build() -> dict[str, Any]:
 
     trails = [f"{k}_{s['id']}" for s in RIBBONS for k in ("glow", "core")]
     sprite_systems = ["ps_column", "ps_gather", "ps_glyph", "ps_shed", "ps_shaft", "ps_dust", "ps_stream", "ps_core_glow",
-                      "ps_crystal", "ps_rays", "ps_sparkle", "ps_motes"]
+                      "ps_crystal", "ps_rays", "ps_sparkle", "ps_motes", "ps_shaft_cool", "ps_shards"]
     decals = ["d_pool", "d_rune", "d_glyphs", "d_wave"]
     controls = [
         control("intensity", "Intensity", "Global", 0.0, 3.0,
                 [mul(t, "emissive") for t in trails]
                 + [mul(ps, "emissive") for ps in sprite_systems]
-                + [mul(d, "emissive") for d in decals] + [mul("l_glow", "intensity")]),
+                + [mul(d, "emissive") for d in decals] + [mul("l_glow", "intensity"), mul("l_core", "intensity")]),
         control("burst_size", "Burst size", "Level core", 0.3, 2.5,
                 [mul("ps_crystal", "size"), mul("ps_core_glow", "size"), mul("ps_column", "size"),
-                 mul("e_rays", "velocity"), mul("e_sparkle", "velocity"), mul("l_glow", "radius")]),
+                 mul("e_rays", "velocity"), mul("e_sparkle", "velocity"), mul("l_glow", "radius"), mul("l_core", "radius")]),
         control("ribbon_brightness", "Ribbon brightness", "Energy ribbons", 0.0, 3.0,
                 [mul(t, "emissive") for t in trails] + [mul("ps_glyph", "emissive"), mul("ps_shed", "emissive")]),
         control("debris_amount", "Debris amount", "Floating debris", 0.0, 1.25,
-                [mul("e_debris", "burst_count"), mul("e_dust", "burst_count")]),
+                [mul("e_debris", "burst_count"), mul("e_dust", "burst_count"), mul("e_shards", "burst_count")]),
         control("rune_brightness", "Rune brightness", "Ground rune", 0.0, 3.0,
                 [mul(d, "emissive") for d in decals]),
         control("character_height", "Character height", "Global", 0.5, 2.0,
                 [mul("anchor", "scale")] + [mul(t, "width") for t in trails]
                 + [mul(d, "size") for d in decals]
                 + [mul(ps, "size") for ps in sprite_systems + ["ps_debris"]]
-                + [mul(e, "velocity") for e in ("e_shaft", "e_stream", "e_debris", "e_dust", "e_motes")]
-                + [mul("l_glow", "radius")]),
+                + [mul(e, "velocity") for e in ("e_shaft", "e_shaft_cool", "e_stream", "e_debris", "e_dust", "e_motes", "e_shards")]
+                + [mul("l_glow", "radius"), mul("l_core", "radius")]),
         control("hue", "Energy hue", "Global", -180.0, 180.0, colour_bindings, "deg", 0.0, 1.0),
         control("global_speed", "Speed", "Global", 0.25, 4.0,
                 [{"node": "$effect", "parameter": "time_scale", "op": "multiply"}], step=0.05),
@@ -783,7 +825,7 @@ def build() -> dict[str, Any]:
     return {
         "schema_version": "0.1.0",
         "name": NAME,
-        "description": "A grand, short level-up celebration in holy gold: light and runes gather from the ground, "
+        "description": "A grand, short level-up celebration in holy gold with icy blue accents: light and runes gather from the ground, "
                        "energy ribbons and stone fragments rise, a crystalline level core bursts into being above "
                        "the head, then everything settles and the ground rune expands and fades. 2.2 s plus "
                        "lingering motes; origin at the character's feet (about 1.8 m tall).",

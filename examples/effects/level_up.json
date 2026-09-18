@@ -1,7 +1,7 @@
 {
  "schema_version": "0.1.0",
  "name": "Level Up",
- "description": "A grand, short level-up celebration in holy gold: light and runes gather from the ground, energy ribbons and stone fragments rise, a crystalline level core bursts into being above the head, then everything settles and the ground rune expands and fades. 2.2 s plus lingering motes; origin at the character's feet (about 1.8 m tall).",
+ "description": "A grand, short level-up celebration in holy gold with icy blue accents: light and runes gather from the ground, energy ribbons and stone fragments rise, a crystalline level core bursts into being above the head, then everything settles and the ground rune expands and fades. 2.2 s plus lingering motes; origin at the character's feet (about 1.8 m tall).",
  "duration": 2.6,
  "seed": 72201,
  "timeline": {
@@ -1829,14 +1829,36 @@
      1.0
     ],
     "emissive_color": [
-     1.0,
-     0.95,
      0.84,
+     0.92,
+     1.0,
      1.0
     ],
     "emissive_intensity": 0.3,
     "soft_particle": true,
     "depth_fade": 0.05
+   }
+  },
+  {
+   "id": "mat_shaft_cool",
+   "type": "material",
+   "parameters": {
+    "blend": "additive",
+    "base_color": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "emissive_color": [
+     0.5,
+     0.72,
+     1.0,
+     1.0
+    ],
+    "emissive_intensity": 0.15,
+    "soft_particle": true,
+    "depth_fade": 0.2
    }
   },
   {
@@ -7598,6 +7620,290 @@
    }
   },
   {
+   "id": "ps_shaft_cool",
+   "type": "particle_system",
+   "parameters": {
+    "max_particles": 30,
+    "lifetime": 0.55,
+    "lifetime_variance": 0.15,
+    "size": 0.1,
+    "size_variance": 0.04,
+    "size_over_life": [
+     [
+      0.0,
+      0.5
+     ],
+     [
+      0.3,
+      1.0
+     ],
+     [
+      1.0,
+      0.7
+     ]
+    ],
+    "color": [
+     0.5,
+     0.72,
+     1.0,
+     1.0
+    ],
+    "color_over_life": [
+     [
+      0.0,
+      [
+       0.84,
+       0.92,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      0.5,
+      [
+       0.67,
+       0.82,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      1.0,
+      [
+       0.5,
+       0.72,
+       1.0,
+       1.0
+      ]
+     ]
+    ],
+    "opacity": 0.5,
+    "opacity_over_life": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.25,
+      1.0
+     ],
+     [
+      0.6,
+      0.7
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 0.9,
+    "drag": 0.9,
+    "render_mode": "stretched_billboard",
+    "velocity_stretch": 4.2,
+    "blend": "additive",
+    "soft_particle_distance": 0.1
+   },
+   "inputs": {
+    "sprite": "tex_shaft",
+    "material": "mat_shaft_cool"
+   }
+  },
+  {
+   "id": "e_shaft_cool",
+   "type": "emitter",
+   "layer": "shafts",
+   "parent": "anchor",
+   "parameters": {
+    "shape": "ring",
+    "radius": 0.8,
+    "inner_radius": 0.25,
+    "position": [
+     0.0,
+     0.15,
+     0.0
+    ],
+    "direction": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "spread": 4.0,
+    "velocity": 3.2,
+    "velocity_variance": 0.9,
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.0,
+       "value": 0.0
+      },
+      {
+       "time": 0.12,
+       "value": 0.0
+      },
+      {
+       "time": 0.25,
+       "value": 8.0
+      },
+      {
+       "time": 0.5,
+       "value": 12.0
+      },
+      {
+       "time": 1.05,
+       "value": 18.0
+      },
+      {
+       "time": 1.4,
+       "value": 6.0
+      },
+      {
+       "time": 1.7,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.12,
+    "duration": 1.63
+   },
+   "inputs": {
+    "particle": "ps_shaft_cool"
+   }
+  },
+  {
+   "id": "ps_shards",
+   "type": "particle_system",
+   "parameters": {
+    "max_particles": 12,
+    "lifetime": 1.5,
+    "lifetime_variance": 0.2,
+    "size": 0.13,
+    "size_variance": 0.04,
+    "size_over_life": [
+     [
+      0.0,
+      0.1
+     ],
+     [
+      0.12,
+      1.05
+     ],
+     [
+      0.2,
+      1.0
+     ],
+     [
+      0.8,
+      0.9
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "color": [
+     0.5,
+     0.72,
+     1.0,
+     1.0
+    ],
+    "color_over_life": [
+     [
+      0.0,
+      [
+       0.84,
+       0.92,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      0.4,
+      [
+       0.5,
+       0.72,
+       1.0,
+       1.0
+      ]
+     ],
+     [
+      1.0,
+      [
+       0.5,
+       0.72,
+       1.0,
+       1.0
+      ]
+     ]
+    ],
+    "opacity": 0.9,
+    "opacity_over_life": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.1,
+      1.0
+     ],
+     [
+      0.75,
+      0.8
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 1.2,
+    "drag": 1.4,
+    "render_mode": "billboard",
+    "blend": "additive",
+    "rotation_variance": 12.0,
+    "soft_particle_distance": 0.04
+   },
+   "inputs": {
+    "sprite": "tex_crystal",
+    "material": "mat_crystal",
+    "forces": [
+     "f_float",
+     "f_curl"
+    ]
+   }
+  },
+  {
+   "id": "e_shards",
+   "type": "emitter",
+   "layer": "core",
+   "parent": "anchor",
+   "parameters": {
+    "shape": "ring",
+    "radius": 1.1,
+    "inner_radius": 0.6,
+    "position": [
+     0.0,
+     0.5,
+     0.0
+    ],
+    "direction": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "spread": 25.0,
+    "velocity": 1.6,
+    "velocity_variance": 0.5,
+    "rate": 0.0,
+    "burst_count": 9,
+    "burst_times": [
+     0.5
+    ]
+   },
+   "inputs": {
+    "particle": "ps_shards"
+   }
+  },
+  {
    "id": "rock_mesh",
    "type": "mesh",
    "parameters": {
@@ -7833,36 +8139,36 @@
      ]
     ],
     "color": [
-     1.0,
      0.84,
-     0.52,
+     0.92,
+     1.0,
      1.0
     ],
     "color_over_life": [
      [
       0.0,
       [
-       1.0,
-       0.95,
        0.84,
+       0.92,
+       1.0,
        1.0
       ]
      ],
      [
       0.5,
       [
-       1.0,
+       0.704,
        0.84,
-       0.52,
+       1.0,
        1.0
       ]
      ],
      [
       1.0,
       [
-       1.0,
+       0.5,
        0.72,
-       0.36,
+       1.0,
        1.0
       ]
      ]
@@ -8007,9 +8313,9 @@
      ]
     ],
     "color": [
-     1.0,
      0.84,
-     0.52,
+     0.92,
+     1.0,
      1.0
     ],
     "color_over_life": [
@@ -8023,20 +8329,20 @@
       ]
      ],
      [
-      0.6,
+      0.4,
       [
-       1.0,
        0.84,
-       0.52,
+       0.92,
+       1.0,
        1.0
       ]
      ],
      [
       1.0,
       [
+       0.636,
+       0.8,
        1.0,
-       0.6,
-       0.2,
        1.0
       ]
      ]
@@ -8255,36 +8561,36 @@
      ]
     ],
     "color": [
-     1.0,
      0.84,
-     0.52,
+     0.92,
+     1.0,
      1.0
     ],
     "color_over_life": [
      [
       0.0,
       [
-       1.0,
-       0.95,
        0.84,
+       0.92,
+       1.0,
        1.0
       ]
      ],
      [
       0.3,
       [
+       0.687,
+       0.83,
        1.0,
-       0.84,
-       0.52,
        1.0
       ]
      ],
      [
       1.0,
       [
+       0.5,
+       0.72,
        1.0,
-       0.6,
-       0.2,
        1.0
       ]
      ]
@@ -8863,6 +9169,56 @@
      ]
     }
    }
+  },
+  {
+   "id": "l_core",
+   "type": "light",
+   "layer": "light",
+   "parent": "anchor",
+   "parameters": {
+    "light_type": "point",
+    "position": [
+     0.0,
+     2.75,
+     0.0
+    ],
+    "color": [
+     0.5,
+     0.72,
+     1.0,
+     1.0
+    ],
+    "radius": 3.0,
+    "intensity": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.0,
+       "value": 0.0
+      },
+      {
+       "time": 0.98,
+       "value": 0.0
+      },
+      {
+       "time": 1.02,
+       "value": 1.6
+      },
+      {
+       "time": 1.3,
+       "value": 0.8
+      },
+      {
+       "time": 1.9,
+       "value": 0.0
+      },
+      {
+       "time": 2.6,
+       "value": 0.0
+      }
+     ]
+    }
+   }
   }
  ],
  "controls": [
@@ -8978,6 +9334,16 @@
      "op": "multiply"
     },
     {
+     "node": "ps_shaft_cool",
+     "parameter": "emissive",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_shards",
+     "parameter": "emissive",
+     "op": "multiply"
+    },
+    {
      "node": "d_pool",
      "parameter": "emissive",
      "op": "multiply"
@@ -8999,6 +9365,11 @@
     },
     {
      "node": "l_glow",
+     "parameter": "intensity",
+     "op": "multiply"
+    },
+    {
+     "node": "l_core",
      "parameter": "intensity",
      "op": "multiply"
     }
@@ -9042,6 +9413,11 @@
     },
     {
      "node": "l_glow",
+     "parameter": "radius",
+     "op": "multiply"
+    },
+    {
+     "node": "l_core",
      "parameter": "radius",
      "op": "multiply"
     }
@@ -9128,6 +9504,11 @@
     },
     {
      "node": "e_dust",
+     "parameter": "burst_count",
+     "op": "multiply"
+    },
+    {
+     "node": "e_shards",
      "parameter": "burst_count",
      "op": "multiply"
     }
@@ -9303,12 +9684,27 @@
      "op": "multiply"
     },
     {
+     "node": "ps_shaft_cool",
+     "parameter": "size",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_shards",
+     "parameter": "size",
+     "op": "multiply"
+    },
+    {
      "node": "ps_debris",
      "parameter": "size",
      "op": "multiply"
     },
     {
      "node": "e_shaft",
+     "parameter": "velocity",
+     "op": "multiply"
+    },
+    {
+     "node": "e_shaft_cool",
      "parameter": "velocity",
      "op": "multiply"
     },
@@ -9333,7 +9729,17 @@
      "op": "multiply"
     },
     {
+     "node": "e_shards",
+     "parameter": "velocity",
+     "op": "multiply"
+    },
+    {
      "node": "l_glow",
+     "parameter": "radius",
+     "op": "multiply"
+    },
+    {
+     "node": "l_core",
      "parameter": "radius",
      "op": "multiply"
     }
@@ -9382,6 +9788,11 @@
     },
     {
      "node": "mat_crystal",
+     "parameter": "emissive_color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "mat_shaft_cool",
      "parameter": "emissive_color",
      "op": "hue_shift"
     },
@@ -9496,6 +9907,26 @@
      "op": "hue_shift"
     },
     {
+     "node": "ps_shaft_cool",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_shaft_cool",
+     "parameter": "color_over_life",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_shards",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_shards",
+     "parameter": "color_over_life",
+     "op": "hue_shift"
+    },
+    {
      "node": "ps_dust",
      "parameter": "color",
      "op": "hue_shift"
@@ -9572,6 +10003,11 @@
     },
     {
      "node": "l_glow",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "l_core",
      "parameter": "color",
      "op": "hue_shift"
     }
