@@ -1,0 +1,1233 @@
+{
+  "schema_version": "0.1.0",
+  "name": "Ambient Energy",
+  "description": "A subtle, always-on magical presence: very sparse soft motes drifting and twinkling, a few rising sparks, rare small clusters and a slow wisp, over faint breathing pools of light.",
+  "duration": 16.0,
+  "seed": 60413,
+  "timeline": {
+    "phases": [
+      {
+        "name": "always_on",
+        "start": 0.0,
+        "end": 16.0
+      }
+    ]
+  },
+  "layers": [
+    {
+      "id": "presence",
+      "name": "Magical presence",
+      "role": "ambient"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "cam",
+      "type": "camera",
+      "parameters": {
+        "position": [
+          0.0,
+          1.55,
+          5.0
+        ],
+        "target": [
+          0.0,
+          1.05,
+          0.0
+        ],
+        "fov": 42.0
+      }
+    },
+    {
+      "id": "tex_mote",
+      "type": "texture",
+      "parameters": {
+        "width": 32,
+        "height": 32,
+        "graph": {
+          "nodes": [
+            {
+              "id": "r",
+              "op": "gradient_radial",
+              "params": {
+                "radius": 0.5,
+                "falloff": "smooth"
+              }
+            },
+            {
+              "id": "l",
+              "op": "levels",
+              "params": {
+                "gamma": 1.25
+              },
+              "inputs": {
+                "a": "r"
+              }
+            }
+          ],
+          "output": "l"
+        }
+      }
+    },
+    {
+      "id": "mat_glow",
+      "type": "material",
+      "parameters": {
+        "blend": "additive",
+        "shading": "unlit",
+        "emissive_color": [
+          0.36,
+          0.56,
+          1.0,
+          1.0
+        ],
+        "emissive_intensity": 0.0,
+        "soft_particle": true,
+        "depth_fade": 0.1
+      }
+    },
+    {
+      "id": "f_curl",
+      "type": "force",
+      "parameters": {
+        "force_type": "curl_noise",
+        "strength": 0.05,
+        "frequency": 0.45,
+        "speed": 0.08
+      }
+    },
+    {
+      "id": "f_rise",
+      "type": "force",
+      "parameters": {
+        "force_type": "directional",
+        "direction": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "strength": 0.012
+      }
+    },
+    {
+      "id": "ps_motes",
+      "type": "particle_system",
+      "layer": "presence",
+      "parameters": {
+        "max_particles": 40,
+        "lifetime": 9.0,
+        "lifetime_variance": 4.0,
+        "size": 0.1,
+        "size_variance": 0.045,
+        "color": [
+          0.36,
+          0.56,
+          1.0,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              0.66,
+              0.8,
+              1.0,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              0.36,
+              0.56,
+              1.0,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.26,
+              0.32,
+              0.96,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.24,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.12,
+            1.0
+          ],
+          [
+            0.26,
+            0.55
+          ],
+          [
+            0.4,
+            0.95
+          ],
+          [
+            0.55,
+            0.6
+          ],
+          [
+            0.7,
+            0.9
+          ],
+          [
+            0.86,
+            0.5
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 2.2,
+        "drag": 0.4,
+        "render_mode": "billboard",
+        "blend": "additive",
+        "soft_particle_distance": 0.1
+      },
+      "inputs": {
+        "sprite": "tex_mote",
+        "material": "mat_glow",
+        "forces": [
+          "f_curl",
+          "f_rise"
+        ]
+      }
+    },
+    {
+      "id": "e_motes",
+      "type": "emitter",
+      "layer": "presence",
+      "parameters": {
+        "shape": "box",
+        "size": [
+          7.0,
+          2.6,
+          5.0
+        ],
+        "position": [
+          0.0,
+          1.4,
+          0.0
+        ],
+        "direction": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "velocity": 0.05,
+        "velocity_variance": 0.03,
+        "rate": 0.9,
+        "burst_count": 9,
+        "burst_times": [
+          0.0
+        ],
+        "start_time": 0.0,
+        "duration": 16.0
+      },
+      "inputs": {
+        "particle": "ps_motes"
+      }
+    },
+    {
+      "id": "ps_risers",
+      "type": "particle_system",
+      "layer": "presence",
+      "parameters": {
+        "max_particles": 16,
+        "lifetime": 6.0,
+        "lifetime_variance": 2.0,
+        "size": 0.034,
+        "size_variance": 0.012,
+        "color": [
+          0.66,
+          0.8,
+          1.0,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              0.66,
+              0.8,
+              1.0,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.36,
+              0.56,
+              1.0,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.24,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.2,
+            1.0
+          ],
+          [
+            0.7,
+            0.8
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 1.8,
+        "drag": 0.2,
+        "render_mode": "stretched_billboard",
+        "velocity_stretch": 16.0,
+        "blend": "additive",
+        "soft_particle_distance": 0.1
+      },
+      "inputs": {
+        "sprite": "tex_mote",
+        "material": "mat_glow"
+      }
+    },
+    {
+      "id": "e_risers",
+      "type": "emitter",
+      "layer": "presence",
+      "parameters": {
+        "shape": "box",
+        "size": [
+          7.0,
+          0.8,
+          5.0
+        ],
+        "position": [
+          0.0,
+          0.5,
+          0.0
+        ],
+        "direction": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "spread": 8.0,
+        "velocity": 0.16,
+        "velocity_variance": 0.05,
+        "rate": 0.35,
+        "burst_count": 2,
+        "burst_times": [
+          0.0
+        ],
+        "start_time": 0.0,
+        "duration": 16.0
+      },
+      "inputs": {
+        "particle": "ps_risers"
+      }
+    },
+    {
+      "id": "ps_cluster",
+      "type": "particle_system",
+      "layer": "presence",
+      "parameters": {
+        "max_particles": 24,
+        "lifetime": 4.0,
+        "lifetime_variance": 1.2,
+        "size": 0.07,
+        "size_variance": 0.025,
+        "color": [
+          0.36,
+          0.56,
+          1.0,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              0.66,
+              0.8,
+              1.0,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.36,
+              0.56,
+              1.0,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.26,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.2,
+            1.0
+          ],
+          [
+            0.55,
+            0.7
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 1.7,
+        "drag": 0.5,
+        "render_mode": "billboard",
+        "blend": "additive",
+        "soft_particle_distance": 0.1
+      },
+      "inputs": {
+        "sprite": "tex_mote",
+        "material": "mat_glow",
+        "forces": [
+          "f_curl",
+          "f_rise"
+        ]
+      }
+    },
+    {
+      "id": "e_cluster_1",
+      "type": "emitter",
+      "layer": "presence",
+      "parameters": {
+        "shape": "sphere",
+        "radius": 0.14,
+        "position": [
+          -2.2,
+          1.1,
+          0.8
+        ],
+        "direction": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "velocity": 0.05,
+        "velocity_variance": 0.03,
+        "rate": 0.0,
+        "burst_count": 5,
+        "burst_times": [
+          0.0
+        ],
+        "start_time": 2.5,
+        "duration": 0.05
+      },
+      "inputs": {
+        "particle": "ps_cluster"
+      }
+    },
+    {
+      "id": "e_cluster_2",
+      "type": "emitter",
+      "layer": "presence",
+      "parameters": {
+        "shape": "sphere",
+        "radius": 0.14,
+        "position": [
+          1.9,
+          1.7,
+          -0.6
+        ],
+        "direction": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "velocity": 0.05,
+        "velocity_variance": 0.03,
+        "rate": 0.0,
+        "burst_count": 4,
+        "burst_times": [
+          0.0
+        ],
+        "start_time": 7.8,
+        "duration": 0.05
+      },
+      "inputs": {
+        "particle": "ps_cluster"
+      }
+    },
+    {
+      "id": "e_cluster_3",
+      "type": "emitter",
+      "layer": "presence",
+      "parameters": {
+        "shape": "sphere",
+        "radius": 0.14,
+        "position": [
+          -0.4,
+          0.8,
+          1.5
+        ],
+        "direction": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "velocity": 0.05,
+        "velocity_variance": 0.03,
+        "rate": 0.0,
+        "burst_count": 5,
+        "burst_times": [
+          0.0
+        ],
+        "start_time": 12.6,
+        "duration": 0.05
+      },
+      "inputs": {
+        "particle": "ps_cluster"
+      }
+    },
+    {
+      "id": "wisp_pivot",
+      "type": "mesh",
+      "layer": "presence",
+      "parameters": {
+        "primitive": "sphere",
+        "radius": 0.01,
+        "segments": 4,
+        "visible": false,
+        "position": [
+          1.2,
+          1.25,
+          0.9
+        ],
+        "rotation": {
+          "value": [
+            12.0,
+            0.0,
+            0.0
+          ],
+          "track": [
+            {
+              "time": 4.0,
+              "value": [
+                12.0,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "time": 11.0,
+              "value": [
+                12.0,
+                576.0,
+                0.0
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "wisp",
+      "type": "mesh",
+      "layer": "presence",
+      "parent": "wisp_pivot",
+      "parameters": {
+        "primitive": "sphere",
+        "radius": 0.01,
+        "segments": 4,
+        "visible": false,
+        "position": [
+          0.34,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "id": "ps_wisp",
+      "type": "particle_system",
+      "layer": "presence",
+      "parameters": {
+        "max_particles": 16,
+        "lifetime": 0.05,
+        "size": 0.05,
+        "color": [
+          0.66,
+          0.8,
+          1.0,
+          1.0
+        ],
+        "opacity": 0.5,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.7
+          ],
+          [
+            0.4,
+            1.0
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 2.0,
+        "render_mode": "billboard",
+        "blend": "additive",
+        "soft_particle_distance": 0.05
+      },
+      "inputs": {
+        "sprite": "tex_mote",
+        "material": "mat_glow"
+      }
+    },
+    {
+      "id": "e_wisp",
+      "type": "emitter",
+      "layer": "presence",
+      "parent": "wisp",
+      "parameters": {
+        "shape": "point",
+        "velocity": 0.0,
+        "inherit_velocity": 1.0,
+        "rate": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 4.0,
+              "value": 0.0
+            },
+            {
+              "time": 4.8,
+              "value": 90.0
+            },
+            {
+              "time": 10.2,
+              "value": 90.0
+            },
+            {
+              "time": 11.0,
+              "value": 0.0
+            }
+          ]
+        },
+        "start_time": 4.0,
+        "duration": 7.0
+      },
+      "inputs": {
+        "particle": "ps_wisp"
+      }
+    },
+    {
+      "id": "t_wisp",
+      "type": "trail",
+      "layer": "presence",
+      "parameters": {
+        "lifetime": 1.1,
+        "max_segments": 48,
+        "min_vertex_distance": 0.01,
+        "taper": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            0.5
+          ],
+          [
+            0.5,
+            0.2
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "color": [
+          0.36,
+          0.56,
+          1.0,
+          1.0
+        ],
+        "emissive": 1.2,
+        "blend": "additive",
+        "width": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 4.0,
+              "value": 0.0
+            },
+            {
+              "time": 4.8,
+              "value": 0.018
+            },
+            {
+              "time": 10.2,
+              "value": 0.018
+            },
+            {
+              "time": 11.0,
+              "value": 0.0
+            }
+          ]
+        },
+        "start_time": 4.0,
+        "duration": 8.2
+      },
+      "inputs": {
+        "source": "wisp",
+        "material": "mat_glow"
+      }
+    },
+    {
+      "id": "tex_pool",
+      "type": "texture",
+      "parameters": {
+        "width": 64,
+        "height": 64,
+        "graph": {
+          "nodes": [
+            {
+              "id": "r",
+              "op": "gradient_radial",
+              "params": {
+                "radius": 0.5,
+                "falloff": "smooth"
+              }
+            },
+            {
+              "id": "l",
+              "op": "levels",
+              "params": {
+                "gamma": 1.4
+              },
+              "inputs": {
+                "a": "r"
+              }
+            }
+          ],
+          "output": "l"
+        }
+      }
+    },
+    {
+      "id": "pool_1",
+      "type": "decal",
+      "layer": "presence",
+      "parameters": {
+        "shape": "circle",
+        "position": [
+          -2.4,
+          0.0,
+          -0.8
+        ],
+        "size": [
+          2.0,
+          2.0
+        ],
+        "color": [
+          0.26,
+          0.32,
+          0.96,
+          1.0
+        ],
+        "blend": "additive",
+        "emissive": 1.0,
+        "fade_in": 0.0,
+        "fade_out": 0.0,
+        "opacity": {
+          "value": 0.08,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 0.056
+            },
+            {
+              "time": 2.88,
+              "value": 0.08
+            },
+            {
+              "time": 5.92,
+              "value": 0.0496
+            },
+            {
+              "time": 8.8,
+              "value": 0.076
+            },
+            {
+              "time": 11.84,
+              "value": 0.0528
+            },
+            {
+              "time": 14.4,
+              "value": 0.072
+            },
+            {
+              "time": 16.0,
+              "value": 0.056
+            }
+          ]
+        },
+        "start_time": 0.0,
+        "duration": 16.0
+      },
+      "inputs": {
+        "texture": "tex_pool"
+      }
+    },
+    {
+      "id": "pool_2",
+      "type": "decal",
+      "layer": "presence",
+      "parameters": {
+        "shape": "circle",
+        "position": [
+          2.1,
+          0.0,
+          0.4
+        ],
+        "size": [
+          2.3,
+          2.3
+        ],
+        "color": [
+          0.26,
+          0.32,
+          0.96,
+          1.0
+        ],
+        "blend": "additive",
+        "emissive": 1.0,
+        "fade_in": 0.0,
+        "fade_out": 0.0,
+        "opacity": {
+          "value": 0.08,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 0.076
+            },
+            {
+              "time": 0.48,
+              "value": 0.0528
+            },
+            {
+              "time": 3.04,
+              "value": 0.072
+            },
+            {
+              "time": 4.64,
+              "value": 0.056
+            },
+            {
+              "time": 7.52,
+              "value": 0.08
+            },
+            {
+              "time": 10.56,
+              "value": 0.0496
+            },
+            {
+              "time": 13.44,
+              "value": 0.076
+            },
+            {
+              "time": 16.0,
+              "value": 0.076
+            }
+          ]
+        },
+        "start_time": 0.0,
+        "duration": 16.0
+      },
+      "inputs": {
+        "texture": "tex_pool"
+      }
+    },
+    {
+      "id": "pool_3",
+      "type": "decal",
+      "layer": "presence",
+      "parameters": {
+        "shape": "circle",
+        "position": [
+          0.2,
+          0.0,
+          -1.9
+        ],
+        "size": [
+          2.5999999999999996,
+          2.5999999999999996
+        ],
+        "color": [
+          0.26,
+          0.32,
+          0.96,
+          1.0
+        ],
+        "blend": "additive",
+        "emissive": 1.0,
+        "fade_in": 0.0,
+        "fade_out": 0.0,
+        "opacity": {
+          "value": 0.08,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 0.0496
+            },
+            {
+              "time": 2.08,
+              "value": 0.076
+            },
+            {
+              "time": 5.12,
+              "value": 0.0528
+            },
+            {
+              "time": 7.68,
+              "value": 0.072
+            },
+            {
+              "time": 9.28,
+              "value": 0.056
+            },
+            {
+              "time": 12.16,
+              "value": 0.08
+            },
+            {
+              "time": 15.2,
+              "value": 0.0496
+            },
+            {
+              "time": 16.0,
+              "value": 0.0496
+            }
+          ]
+        },
+        "start_time": 0.0,
+        "duration": 16.0
+      },
+      "inputs": {
+        "texture": "tex_pool"
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "density",
+      "label": "Density",
+      "group": "Particles",
+      "min": 0.0,
+      "max": 4.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "e_motes",
+          "parameter": "rate",
+          "op": "multiply"
+        },
+        {
+          "node": "e_motes",
+          "parameter": "burst_count",
+          "op": "multiply"
+        },
+        {
+          "node": "e_risers",
+          "parameter": "rate",
+          "op": "multiply"
+        },
+        {
+          "node": "e_risers",
+          "parameter": "burst_count",
+          "op": "multiply"
+        },
+        {
+          "node": "e_cluster_1",
+          "parameter": "burst_count",
+          "op": "multiply"
+        },
+        {
+          "node": "e_cluster_2",
+          "parameter": "burst_count",
+          "op": "multiply"
+        },
+        {
+          "node": "e_cluster_3",
+          "parameter": "burst_count",
+          "op": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "brightness",
+      "label": "Brightness",
+      "group": "Global",
+      "min": 0.0,
+      "max": 3.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "ps_motes",
+          "parameter": "emissive",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_risers",
+          "parameter": "emissive",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_cluster",
+          "parameter": "emissive",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_wisp",
+          "parameter": "emissive",
+          "op": "multiply"
+        },
+        {
+          "node": "t_wisp",
+          "parameter": "emissive",
+          "op": "multiply"
+        },
+        {
+          "node": "pool_1",
+          "parameter": "emissive",
+          "op": "multiply"
+        },
+        {
+          "node": "pool_2",
+          "parameter": "emissive",
+          "op": "multiply"
+        },
+        {
+          "node": "pool_3",
+          "parameter": "emissive",
+          "op": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "drift",
+      "label": "Drift speed",
+      "group": "Particles",
+      "min": 0.2,
+      "max": 3.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "e_motes",
+          "parameter": "velocity",
+          "op": "multiply"
+        },
+        {
+          "node": "e_risers",
+          "parameter": "velocity",
+          "op": "multiply"
+        },
+        {
+          "node": "f_curl",
+          "parameter": "strength",
+          "op": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "area",
+      "label": "Area size",
+      "group": "Global",
+      "min": 0.3,
+      "max": 3.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "e_motes",
+          "parameter": "size",
+          "op": "multiply"
+        },
+        {
+          "node": "e_risers",
+          "parameter": "size",
+          "op": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "hue",
+      "label": "Energy hue",
+      "group": "Global",
+      "min": -180.0,
+      "max": 180.0,
+      "default": 0.0,
+      "value": 0.0,
+      "step": 1.0,
+      "unit": "deg",
+      "bindings": [
+        {
+          "node": "mat_glow",
+          "parameter": "emissive_color",
+          "op": "hue_shift"
+        },
+        {
+          "node": "ps_motes",
+          "parameter": "color",
+          "op": "hue_shift"
+        },
+        {
+          "node": "ps_motes",
+          "parameter": "color_over_life",
+          "op": "hue_shift"
+        },
+        {
+          "node": "ps_risers",
+          "parameter": "color",
+          "op": "hue_shift"
+        },
+        {
+          "node": "ps_risers",
+          "parameter": "color_over_life",
+          "op": "hue_shift"
+        },
+        {
+          "node": "ps_cluster",
+          "parameter": "color",
+          "op": "hue_shift"
+        },
+        {
+          "node": "ps_cluster",
+          "parameter": "color_over_life",
+          "op": "hue_shift"
+        },
+        {
+          "node": "ps_wisp",
+          "parameter": "color",
+          "op": "hue_shift"
+        },
+        {
+          "node": "t_wisp",
+          "parameter": "color",
+          "op": "hue_shift"
+        },
+        {
+          "node": "pool_1",
+          "parameter": "color",
+          "op": "hue_shift"
+        },
+        {
+          "node": "pool_2",
+          "parameter": "color",
+          "op": "hue_shift"
+        },
+        {
+          "node": "pool_3",
+          "parameter": "color",
+          "op": "hue_shift"
+        }
+      ]
+    },
+    {
+      "id": "global_speed",
+      "label": "Speed",
+      "group": "Global",
+      "min": 0.25,
+      "max": 3.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "$effect",
+          "parameter": "time_scale",
+          "op": "multiply"
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "generator": "tools/generators/ambient_energy.py",
+    "category": "ambient",
+    "loop": {
+      "start": 0.0,
+      "end": 16.0
+    },
+    "attachment": {
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "area": [
+        7.0,
+        2.6,
+        5.0
+      ],
+      "notes": "Place at ground level in the middle of the space; scale with the area control. It is always on and loops. Use the energy hue for void, nature or holy zones."
+    },
+    "render_settings": {
+      "background": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "ground_albedo": 0.06,
+      "bloom_intensity": 0.35,
+      "bloom_radius": 0.05,
+      "exposure": 1.0,
+      "grid": false
+    },
+    "tags": [
+      "ambient",
+      "environment",
+      "magic",
+      "arcane",
+      "motes",
+      "atmosphere"
+    ]
+  }
+}
