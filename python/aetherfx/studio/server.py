@@ -203,6 +203,42 @@ def _credit(document: JsonDict) -> JsonDict | None:
     return author.to_json() if author else None
 
 
+#: Library categories in display order. Built-in effects are grouped by these; `metadata.category` in a
+#: document picks one explicitly, otherwise `effect_category` derives it from the tags.
+CATEGORIES: tuple[tuple[str, str], ...] = (
+    ("aoe", "Area of Effect"),
+    ("targeted", "Targeted"),
+    ("support", "Support"),
+    ("melee", "Melee"),
+    ("mobility", "Mobility"),
+)
+_CATEGORY_IDS = frozenset(cid for cid, _ in CATEGORIES)
+
+
+def effect_category(document: JsonDict) -> str:
+    """The Library category of an effect document.
+
+    An explicit `metadata.category` wins. Otherwise the tags decide, most specific first: melee hits,
+    then support (heals, buffs), then mobility (teleports, blinks), then area effects; everything else is
+    a targeted attack - bolts, missiles, strikes, chains, drains and curses aimed at one enemy.
+    """
+    metadata = document.get("metadata") if isinstance(document.get("metadata"), dict) else {}
+    explicit = metadata.get("category")
+    if isinstance(explicit, str) and explicit.strip().lower() in _CATEGORY_IDS:
+        return explicit.strip().lower()
+    raw_tags = metadata.get("tags") if isinstance(metadata.get("tags"), list) else []
+    tags = {str(tag).strip().lower() for tag in raw_tags}
+    if "melee" in tags:
+        return "melee"
+    if tags & {"support", "heal", "buff"}:
+        return "support"
+    if tags & {"mobility", "teleport", "blink", "utility"}:
+        return "mobility"
+    if tags & {"aoe", "area"}:
+        return "aoe"
+    return "targeted"
+
+
 def _search_fields(document: JsonDict) -> JsonDict:
     """The extra fields the Library search matches on: tags and a description."""
     try:
@@ -410,6 +446,7 @@ class Studio:
                 "author": None,
                 "tags": [],
                 "description": "",
+                "category": "targeted",
             }
             try:
                 raw = json.loads(path.read_text(encoding="utf-8"))
@@ -423,6 +460,7 @@ class Studio:
                 entry["duration"] = raw.get("duration")
                 entry["author"] = _credit(raw)
                 entry.update(_search_fields(raw))
+                entry["category"] = effect_category(raw)
             try:
                 entry["modified"] = path.stat().st_mtime
             except OSError:
@@ -955,7 +993,8 @@ def create_app(config: StudioConfig | None = None) -> Starlette:
         if working is not None:
             working["source"] = studio.working_source
         return {"examples": examples, "saved": saved, "community": community, "open": open_effects,
-                "library": await studio.library(), "working": working}
+                "library": await studio.library(), "working": working,
+                "categories": [{"id": cid, "label": label} for cid, label in CATEGORIES]}
 
     @endpoint
     async def api_community(request: Request) -> JsonDict:

@@ -815,6 +815,25 @@ label.check, label.field, label.toggle-chip {
 }
 .lib-section .file-list { margin-top: 2px; }
 
+/* -- library categories: one hue each, used by the section dot and the row tag -- */
+
+.cat-aoe      { --cat: 251, 146, 60;  --cat-text: #fdba74; }   /* ember orange */
+.cat-targeted { --cat: 129, 140, 248; --cat-text: #a5b4fc; }   /* indigo */
+.cat-support  { --cat: 52, 211, 153;  --cat-text: #6ee7b7; }   /* green */
+.cat-melee    { --cat: 248, 113, 113; --cat-text: #fca5a5; }   /* red */
+.cat-mobility { --cat: 34, 211, 238;  --cat-text: #67e8f9; }   /* cyan */
+.lib-section > summary .cat-dot {
+  width: 6px; height: 6px; flex: none; border-radius: 50%;
+  background: rgb(var(--cat)); box-shadow: 0 0 6px -1px rgba(var(--cat), .8);
+}
+.file-list li .meta.cat-tag {
+  color: var(--cat-text);
+  background: rgba(var(--cat), .1);
+  border-color: rgba(var(--cat), .3);
+  letter-spacing: .01em;
+}
+.file-list li:hover .meta.cat-tag, .file-list li.active .meta.cat-tag { background: rgba(var(--cat), .16); }
+
 /* -- the one credit line in the studio view ----------------------- */
 
 .column-foot {

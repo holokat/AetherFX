@@ -580,13 +580,45 @@ function wireSearch(inputId, clearId, storageKey, onChange) {
 }
 
 /* ---------------------------------------------------------------------- *
- * the Library: Core and Mine, each collapsible with an "n of m" count
+ * the Library: built-in effects grouped by category, then Mine; every
+ * section collapsible with an "n of m" count
  * ---------------------------------------------------------------------- */
 
 var LIB_SECTIONS = [
-  { id: 'core', list: 'list-core', count: 'count-core', empty: 'no built-in effects' },
   { id: 'mine', list: 'list-mine', count: 'count-mine', empty: 'nothing saved yet - press Save as' }
 ];
+
+/* The server sends the categories (server.py CATEGORIES); this is the same list for an older server. */
+var DEFAULT_CATEGORIES = [
+  { id: 'aoe', label: 'Area of Effect' }, { id: 'targeted', label: 'Targeted' },
+  { id: 'support', label: 'Support' }, { id: 'melee', label: 'Melee' }, { id: 'mobility', label: 'Mobility' }
+];
+var CATEGORY_TAGS = { aoe: 'AoE', targeted: 'Targeted', support: 'Support', melee: 'Melee', mobility: 'Mobility' };
+
+/* One collapsible section per category, created once and in order; it remembers being collapsed. */
+function categorySection(category) {
+  var id = 'sec-cat-' + category.id;
+  var node = $(id);
+  if (node) return node;
+  var chevron = $('sec-mine').querySelector('.chev').cloneNode(true);
+  node = el('details', { class: 'lib-section', id: id },
+    el('summary', {},
+      chevron,
+      el('span', { class: 'cat-dot cat-' + category.id, 'aria-hidden': 'true' }),
+      el('span', { class: 'lib-name', text: category.label }),
+      el('span', { class: 'lib-count', id: 'count-cat-' + category.id, text: '0' })),
+    el('ul', { id: 'list-cat-' + category.id, class: 'file-list' }));
+  node.open = true;
+  try {
+    var saved = window.sessionStorage.getItem('aetherfx.' + id);
+    if (saved !== null) node.open = saved === '1';
+  } catch (err) { /* private mode */ }
+  node.addEventListener('toggle', function () {
+    try { window.sessionStorage.setItem('aetherfx.' + id, node.open ? '1' : '0'); } catch (err) { /* ignore */ }
+  });
+  $('lib-categories').appendChild(node);
+  return node;
+}
 
 function renderLibrary() {
   var lists = S.lists || {};
@@ -594,6 +626,29 @@ function renderLibrary() {
   var items = lists.library || [];
   var terms = searchTerms(S.librarySearch || '');
   var shown = 0;
+
+  var categories = (lists.categories && lists.categories.length) ? lists.categories : DEFAULT_CATEGORIES;
+  var builtIn = items.filter(function (item) { return (item.section || 'core') === 'core'; });
+  categories.forEach(function (category) {
+    var section = categorySection(category);
+    var all = builtIn.filter(function (item) { return (item.category || 'targeted') === category.id; });
+    var visible = all.filter(function (item) { return matchesSearch(item, terms); });
+    shown += visible.length;
+    section.hidden = !visible.length;      /* an empty category, or one with no match, takes no room */
+    $('count-cat-' + category.id).textContent = visible.length === all.length
+      ? String(all.length) : visible.length + ' of ' + all.length;
+    renderFileList($('list-cat-' + category.id), visible, 'no match', function (item) {
+      return {
+        label: item.name,
+        labelNodes: highlightName(item.name, terms),
+        meta: CATEGORY_TAGS[category.id] || category.label,
+        metaClass: 'cat-tag cat-' + category.id,
+        title: category.label + ' - built-in, opens as a copy',
+        active: !!(source && source.path === item.path),
+        onclick: function () { openLibraryItem(item); }
+      };
+    });
+  });
 
   LIB_SECTIONS.forEach(function (section) {
     var all = items.filter(function (item) { return (item.section || 'core') === section.id; });
@@ -775,9 +830,12 @@ function renderFileList(list, items, emptyText, make) {
     (spec.labelNodes || [document.createTextNode(String(spec.label))]).forEach(function (node) {
       label.appendChild(node);
     });
-    var row = el('li', { class: spec.active ? 'active' : '', title: item.path || '', onclick: spec.onclick },
+    var row = el('li', { class: spec.active ? 'active' : '', title: spec.title || item.path || '', onclick: spec.onclick },
       label,
-      spec.meta ? el('span', { class: 'meta' + (spec.meta === 'modified' ? ' badge-dirty' : ''), text: spec.meta }) : null);
+      spec.meta ? el('span', {
+        class: 'meta' + (spec.meta === 'modified' ? ' badge-dirty' : '') + (spec.metaClass ? ' ' + spec.metaClass : ''),
+        text: spec.meta
+      }) : null);
     list.appendChild(row);
   });
 }
@@ -2853,7 +2911,7 @@ function wire() {
   S.communitySearch = readCommunity();
 
   /* Remember which sections the user collapsed. */
-  ['sec-core', 'sec-mine'].forEach(function (id) {
+  ['sec-mine'].forEach(function (id) {       /* the category sections remember themselves */
     var node = $(id);
     if (!node) return;
     try {
