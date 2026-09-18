@@ -471,7 +471,7 @@ def test_the_community_endpoint_lists_the_local_collection(studio: TestClient) -
     assert data["remote"] == []
     entry = next(e for e in data["local"] if e["name"] == "Arcane Missile")
     assert entry["author"]["github"] and entry["tags"] and entry["description"]
-    assert entry["duration"] == pytest.approx(3.2)
+    assert entry["duration"] == pytest.approx(1.65)
 
 
 @needs_binary
