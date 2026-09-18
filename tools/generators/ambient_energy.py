@@ -28,7 +28,7 @@ from typing import Any
 
 NAME = "Ambient Energy"
 SLUG = "ambient_energy"
-DURATION = 16.0
+DURATION = 12.0                            # the library's longest allowed loop
 SEED = 60413
 
 AREA = [7.0, 2.6, 5.0]                     # the volume the motes live in (box extents)
@@ -39,8 +39,8 @@ PALE = [0.66, 0.8, 1.0, 1.0]
 DEEP = [0.26, 0.32, 0.96, 1.0]
 
 # rare events: (time, position) of the clusters, and the wisp's window and orbit centre
-CLUSTERS = [(2.5, [-2.2, 1.1, 0.8]), (7.8, [1.9, 1.7, -0.6]), (12.6, [-0.4, 0.8, 1.5])]
-WISP_START, WISP_END = 4.0, 11.0
+CLUSTERS = [(1.8, [-2.2, 1.1, 0.8]), (5.6, [1.9, 1.7, -0.6]), (9.3, [-0.4, 0.8, 1.5])]
+WISP_START, WISP_END = 3.0, 8.4
 WISP_CENTRE = [1.2, 1.25, 0.9]
 GLOWS = [[-2.4, 0.35, -0.8], [2.1, 0.3, 0.4], [0.2, 0.25, -1.9]]   # where the faint pools breathe
 

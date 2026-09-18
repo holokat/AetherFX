@@ -2,14 +2,14 @@
   "schema_version": "0.1.0",
   "name": "Ambient Energy",
   "description": "A subtle, always-on magical presence: very sparse soft motes drifting and twinkling, a few rising sparks, rare small clusters and a slow wisp, over faint breathing pools of light.",
-  "duration": 16.0,
+  "duration": 12.0,
   "seed": 60413,
   "timeline": {
     "phases": [
       {
         "name": "always_on",
         "start": 0.0,
-        "end": 16.0
+        "end": 12.0
       }
     ]
   },
@@ -233,7 +233,7 @@
           0.0
         ],
         "start_time": 0.0,
-        "duration": 16.0
+        "duration": 12.0
       },
       "inputs": {
         "particle": "ps_motes"
@@ -336,7 +336,7 @@
           0.0
         ],
         "start_time": 0.0,
-        "duration": 16.0
+        "duration": 12.0
       },
       "inputs": {
         "particle": "ps_risers"
@@ -436,7 +436,7 @@
         "burst_times": [
           0.0
         ],
-        "start_time": 2.5,
+        "start_time": 1.8,
         "duration": 0.05
       },
       "inputs": {
@@ -467,7 +467,7 @@
         "burst_times": [
           0.0
         ],
-        "start_time": 7.8,
+        "start_time": 5.6,
         "duration": 0.05
       },
       "inputs": {
@@ -498,7 +498,7 @@
         "burst_times": [
           0.0
         ],
-        "start_time": 12.6,
+        "start_time": 9.3,
         "duration": 0.05
       },
       "inputs": {
@@ -527,7 +527,7 @@
           ],
           "track": [
             {
-              "time": 4.0,
+              "time": 3.0,
               "value": [
                 12.0,
                 0.0,
@@ -535,7 +535,7 @@
               ]
             },
             {
-              "time": 11.0,
+              "time": 8.4,
               "value": [
                 12.0,
                 576.0,
@@ -615,25 +615,25 @@
           "value": 0.0,
           "track": [
             {
-              "time": 4.0,
+              "time": 3.0,
               "value": 0.0
             },
             {
-              "time": 4.8,
+              "time": 3.8,
               "value": 90.0
             },
             {
-              "time": 10.2,
+              "time": 7.6000000000000005,
               "value": 90.0
             },
             {
-              "time": 11.0,
+              "time": 8.4,
               "value": 0.0
             }
           ]
         },
-        "start_time": 4.0,
-        "duration": 7.0
+        "start_time": 3.0,
+        "duration": 5.4
       },
       "inputs": {
         "particle": "ps_wisp"
@@ -683,25 +683,25 @@
           "value": 0.0,
           "track": [
             {
-              "time": 4.0,
+              "time": 3.0,
               "value": 0.0
             },
             {
-              "time": 4.8,
+              "time": 3.8,
               "value": 0.018
             },
             {
-              "time": 10.2,
+              "time": 7.6000000000000005,
               "value": 0.018
             },
             {
-              "time": 11.0,
+              "time": 8.4,
               "value": 0.0
             }
           ]
         },
-        "start_time": 4.0,
-        "duration": 8.2
+        "start_time": 3.0,
+        "duration": 6.6000000000000005
       },
       "inputs": {
         "source": "wisp",
@@ -772,33 +772,33 @@
               "value": 0.056
             },
             {
-              "time": 2.88,
+              "time": 2.16,
               "value": 0.08
             },
             {
-              "time": 5.92,
+              "time": 4.44,
               "value": 0.0496
             },
             {
-              "time": 8.8,
+              "time": 6.6,
               "value": 0.076
             },
             {
-              "time": 11.84,
+              "time": 8.88,
               "value": 0.0528
             },
             {
-              "time": 14.4,
+              "time": 10.8,
               "value": 0.072
             },
             {
-              "time": 16.0,
+              "time": 12.0,
               "value": 0.056
             }
           ]
         },
         "start_time": 0.0,
-        "duration": 16.0
+        "duration": 12.0
       },
       "inputs": {
         "texture": "tex_pool"
@@ -837,37 +837,37 @@
               "value": 0.076
             },
             {
-              "time": 0.48,
+              "time": 0.36,
               "value": 0.0528
             },
             {
-              "time": 3.04,
+              "time": 2.28,
               "value": 0.072
             },
             {
-              "time": 4.64,
+              "time": 3.48,
               "value": 0.056
             },
             {
-              "time": 7.52,
+              "time": 5.64,
               "value": 0.08
             },
             {
-              "time": 10.56,
+              "time": 7.92,
               "value": 0.0496
             },
             {
-              "time": 13.44,
+              "time": 10.08,
               "value": 0.076
             },
             {
-              "time": 16.0,
+              "time": 12.0,
               "value": 0.076
             }
           ]
         },
         "start_time": 0.0,
-        "duration": 16.0
+        "duration": 12.0
       },
       "inputs": {
         "texture": "tex_pool"
@@ -906,37 +906,37 @@
               "value": 0.0496
             },
             {
-              "time": 2.08,
+              "time": 1.56,
               "value": 0.076
             },
             {
-              "time": 5.12,
+              "time": 3.84,
               "value": 0.0528
             },
             {
-              "time": 7.68,
+              "time": 5.76,
               "value": 0.072
             },
             {
-              "time": 9.28,
+              "time": 6.96,
               "value": 0.056
             },
             {
-              "time": 12.16,
+              "time": 9.12,
               "value": 0.08
             },
             {
-              "time": 15.2,
+              "time": 11.4,
               "value": 0.0496
             },
             {
-              "time": 16.0,
+              "time": 12.0,
               "value": 0.0496
             }
           ]
         },
         "start_time": 0.0,
-        "duration": 16.0
+        "duration": 12.0
       },
       "inputs": {
         "texture": "tex_pool"
@@ -1193,7 +1193,7 @@
     "category": "ambient",
     "loop": {
       "start": 0.0,
-      "end": 16.0
+      "end": 12.0
     },
     "attachment": {
       "origin": [
