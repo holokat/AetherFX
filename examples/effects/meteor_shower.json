@@ -66,13 +66,13 @@
    "type": "camera",
    "parameters": {
     "position": [
-     -3.572,
-     6.31,
-     16.207
+     -2.007,
+     7.272,
+     13.793
     ],
     "target": [
-     -0.4,
-     5.0,
+     0.2,
+     6.1,
      0.0
     ],
     "fov": 52
@@ -833,7 +833,7 @@
        "id": "glowl",
        "op": "levels",
        "params": {
-        "out_high": 0.14
+        "out_high": 0.06
        },
        "inputs": {
         "a": "glow"
@@ -982,89 +982,53 @@
        }
       },
       {
-       "id": "s1",
-       "op": "spokes",
-       "params": {
-        "count": 9,
-        "width": 0.014,
-        "softness": 0.008,
-        "inner_radius": 0.03,
-        "outer_radius": 0.46,
-        "rotation": 7.0
-       }
-      },
-      {
-       "id": "s1d",
-       "op": "distort",
-       "params": {
-        "amount": 0.11
-       },
-       "inputs": {
-        "a": "s1",
-        "by": "wv"
-       }
-      },
-      {
-       "id": "s2",
-       "op": "spokes",
-       "params": {
-        "count": 15,
-        "width": 0.007,
-        "softness": 0.005,
-        "inner_radius": 0.1,
-        "outer_radius": 0.48,
-        "rotation": 23.0
-       }
-      },
-      {
-       "id": "s2d",
-       "op": "distort",
-       "params": {
-        "amount": 0.14
-       },
-       "inputs": {
-        "a": "s2",
-        "by": "wv"
-       }
-      },
-      {
-       "id": "s2l",
-       "op": "levels",
-       "params": {
-        "out_high": 0.7
-       },
-       "inputs": {
-        "a": "s2d"
-       }
-      },
-      {
-       "id": "cr",
+       "id": "c1",
        "op": "cracks",
        "params": {
-        "density": 5.0,
-        "width": 0.008,
+        "density": 22.0,
+        "width": 0.0055,
         "seed": 419
        }
       },
       {
-       "id": "crd",
+       "id": "c1d",
        "op": "distort",
        "params": {
-        "amount": 0.04
+        "amount": 0.05
        },
        "inputs": {
-        "a": "cr",
+        "a": "c1",
         "by": "wv"
        }
       },
       {
-       "id": "crl",
-       "op": "levels",
+       "id": "c2",
+       "op": "cracks",
        "params": {
-        "out_high": 0.55
+        "density": 38.0,
+        "width": 0.003,
+        "seed": 733
+       }
+      },
+      {
+       "id": "c2d",
+       "op": "distort",
+       "params": {
+        "amount": 0.065
        },
        "inputs": {
-        "a": "crd"
+        "a": "c2",
+        "by": "wv"
+       }
+      },
+      {
+       "id": "c2l",
+       "op": "levels",
+       "params": {
+        "out_high": 0.58
+       },
+       "inputs": {
+        "a": "c2d"
        }
       },
       {
@@ -1074,28 +1038,60 @@
         "mode": "max"
        },
        "inputs": {
-        "a": "s1d",
-        "b": "s2l"
+        "a": "c1d",
+        "b": "c2l"
        }
       },
       {
-       "id": "u2",
-       "op": "math",
-       "params": {
-        "mode": "max"
-       },
-       "inputs": {
-        "a": "u1",
-        "b": "crl"
-       }
-      },
-      {
-       "id": "fall",
+       "id": "e0",
        "op": "gradient_radial",
        "params": {
         "radius": 0.5,
-        "inner_radius": 0.16,
-        "falloff": "linear"
+        "falloff": "smooth"
+       }
+      },
+      {
+       "id": "en",
+       "op": "fbm",
+       "params": {
+        "frequency": 3.6,
+        "octaves": 5,
+        "seed": 881
+       }
+      },
+      {
+       "id": "enl",
+       "op": "levels",
+       "params": {
+        "in_low": 0.3,
+        "in_high": 0.8,
+        "out_low": 0.4,
+        "out_high": 1.25
+       },
+       "inputs": {
+        "a": "en"
+       }
+      },
+      {
+       "id": "edge0",
+       "op": "math",
+       "params": {
+        "mode": "multiply"
+       },
+       "inputs": {
+        "a": "e0",
+        "b": "enl"
+       }
+      },
+      {
+       "id": "edge",
+       "op": "levels",
+       "params": {
+        "in_high": 0.92,
+        "gamma": 1.25
+       },
+       "inputs": {
+        "a": "edge0"
        }
       },
       {
@@ -1105,57 +1101,51 @@
         "mode": "multiply"
        },
        "inputs": {
-        "a": "u2",
-        "b": "fall"
-       }
-      },
-      {
-       "id": "bed0",
-       "op": "gradient_radial",
-       "params": {
-        "radius": 0.5,
-        "inner_radius": 0.05,
-        "falloff": "smooth"
+        "a": "u1",
+        "b": "edge"
        }
       },
       {
        "id": "bn",
        "op": "fbm",
        "params": {
-        "frequency": 4.5,
+        "frequency": 5.5,
         "octaves": 4,
         "seed": 523
        }
       },
       {
-       "id": "bed1",
+       "id": "bnl",
+       "op": "levels",
+       "params": {
+        "in_low": 0.34,
+        "in_high": 0.82
+       },
+       "inputs": {
+        "a": "bn"
+       }
+      },
+      {
+       "id": "bed0",
        "op": "math",
        "params": {
         "mode": "multiply"
        },
        "inputs": {
-        "a": "bed0",
-        "b": "bn"
+        "a": "edge",
+        "b": "bnl"
        }
       },
       {
        "id": "bed",
        "op": "levels",
        "params": {
-        "in_low": 0.06,
-        "in_high": 0.5,
-        "out_high": 0.3
+        "in_low": 0.04,
+        "in_high": 0.55,
+        "out_high": 0.4
        },
        "inputs": {
-        "a": "bed1"
-       }
-      },
-      {
-       "id": "hot",
-       "op": "gradient_radial",
-       "params": {
-        "radius": 0.13,
-        "falloff": "quadratic"
+        "a": "bed0"
        }
       },
       {
@@ -1170,6 +1160,27 @@
        }
       },
       {
+       "id": "blr",
+       "op": "blur",
+       "params": {
+        "radius": 3.0
+       },
+       "inputs": {
+        "a": "k1"
+       }
+      },
+      {
+       "id": "blrl",
+       "op": "levels",
+       "params": {
+        "in_high": 0.7,
+        "out_high": 0.22
+       },
+       "inputs": {
+        "a": "blr"
+       }
+      },
+      {
        "id": "k2",
        "op": "math",
        "params": {
@@ -1177,7 +1188,19 @@
        },
        "inputs": {
         "a": "k1",
-        "b": "hot"
+        "b": "blrl"
+       }
+      },
+      {
+       "id": "k3",
+       "op": "levels",
+       "params": {
+        "in_low": 0.06,
+        "in_high": 1.0,
+        "gamma": 1.9
+       },
+       "inputs": {
+        "a": "k2"
        }
       },
       {
@@ -1188,52 +1211,52 @@
          [
           0.0,
           [
-           0.05,
+           0.04,
            0.004,
            0.0,
            0.0
           ]
          ],
          [
-          0.22,
+          0.3,
           [
-           0.42,
-           0.03,
-           0.004,
-           0.32
-          ]
-         ],
-         [
-          0.55,
-          [
-           1.0,
-           0.18,
+           0.3,
            0.02,
-           0.72
+           0.003,
+           0.26
           ]
          ],
          [
-          0.82,
+          0.65,
+          [
+           0.85,
+           0.11,
+           0.012,
+           0.6
+          ]
+         ],
+         [
+          0.88,
           [
            1.0,
-           0.48,
-           0.09,
-           0.92
+           0.34,
+           0.06,
+           0.82
           ]
          ],
          [
           1.0,
           [
            1.0,
-           0.88,
-           0.52,
+           0.72,
+           0.34,
            1.0
           ]
          ]
         ]
        },
        "inputs": {
-        "a": "k2"
+        "a": "k3"
        }
       }
      ],
@@ -1551,8 +1574,8 @@
     },
     "color": [
      1.0,
-     0.72,
-     0.5,
+     0.6,
+     0.38,
      1.0
     ],
     "blend": "additive",
@@ -1565,23 +1588,23 @@
       },
       {
        "time": 0.14,
-       "value": 2.6
-      },
-      {
-       "time": 0.4,
-       "value": 1.6
-      },
-      {
-       "time": 0.9,
        "value": 1.0
       },
       {
+       "time": 0.4,
+       "value": 0.62
+      },
+      {
+       "time": 1.0,
+       "value": 0.3
+      },
+      {
        "time": 2.2,
-       "value": 0.8
+       "value": 0.2
       },
       {
        "time": 2.9,
-       "value": 0.55
+       "value": 0.12
       },
       {
        "time": 3.2,
@@ -1598,15 +1621,19 @@
       },
       {
        "time": 0.12,
-       "value": 1.0
+       "value": 0.72
       },
       {
        "time": 0.5,
-       "value": 0.9
+       "value": 0.55
+      },
+      {
+       "time": 1.4,
+       "value": 0.3
       },
       {
        "time": 2.4,
-       "value": 0.6
+       "value": 0.18
       },
       {
        "time": 3.2,
@@ -1653,15 +1680,15 @@
       },
       {
        "time": 0.2,
-       "value": 0.55
+       "value": 0.32
       },
       {
        "time": 0.6,
-       "value": 0.4
+       "value": 0.22
       },
       {
        "time": 2.4,
-       "value": 0.35
+       "value": 0.16
       },
       {
        "time": 3.2,
@@ -1678,11 +1705,15 @@
       },
       {
        "time": 0.24,
-       "value": 0.42
+       "value": 0.3
+      },
+      {
+       "time": 1.2,
+       "value": 0.2
       },
       {
        "time": 2.4,
-       "value": 0.3
+       "value": 0.14
       },
       {
        "time": 3.2,
@@ -1703,99 +1734,105 @@
    "type": "particle_system",
    "layer": "telegraph",
    "parameters": {
-    "max_particles": 6,
-    "lifetime": 3.5,
-    "size": 11.0,
-    "size_variance": 3.0,
+    "max_particles": 8,
+    "lifetime": 3.4,
+    "lifetime_variance": 0.5,
+    "size": 9.5,
+    "size_variance": 2.6,
     "size_over_life": [
      [
       0.0,
-      0.45
+      0.5
      ],
      [
-      0.18,
+      0.2,
       1.0
      ],
      [
       0.75,
-      1.15
+      1.2
      ],
      [
       1.0,
-      1.2
+      1.35
      ]
     ],
     "color": [
      1.0,
-     0.13,
-     0.03,
+     0.11,
+     0.025,
      1.0
     ],
     "color_over_life": [
      [
       0.0,
       [
-       0.8,
-       0.5,
+       0.75,
        0.45,
+       0.4,
        1.0
       ]
      ],
      [
-      0.16,
+      0.18,
       [
        1.0,
-       0.62,
-       0.5,
+       0.56,
+       0.44,
        1.0
       ]
      ],
      [
-      0.5,
+      0.55,
       [
        1.0,
-       0.5,
-       0.42,
+       0.46,
+       0.36,
        1.0
       ]
      ],
      [
       1.0,
       [
-       0.7,
-       0.24,
-       0.22,
+       0.65,
+       0.2,
+       0.18,
        1.0
       ]
      ]
     ],
-    "opacity": 0.16,
+    "opacity": 0.062,
     "opacity_over_life": [
      [
       0.0,
       0.0
      ],
      [
-      0.11,
+      0.13,
       1.0
      ],
      [
-      0.62,
-      0.85
+      0.55,
+      0.8
      ],
      [
       1.0,
       0.0
      ]
     ],
-    "emissive": 0.25,
+    "emissive": 0.14,
     "rotation_variance": 180.0,
-    "angular_velocity_variance": 4.0,
-    "blend": "additive"
+    "angular_velocity_variance": 5.0,
+    "drag": 0.9,
+    "blend": "additive",
+    "sprite_fps": 4.0
    },
    "inputs": {
-    "sprite": "tex_glow",
-    "material": "mat_glow"
+    "sprite": "tex_puff",
+    "material": "mat_glow",
+    "forces": [
+     "f_smoke_turb"
+    ]
    }
   },
   {
@@ -1803,21 +1840,31 @@
    "type": "emitter",
    "layer": "telegraph",
    "parameters": {
-    "shape": "sphere",
-    "radius": 3.4,
+    "shape": "box",
+    "size": [
+     14.0,
+     4.5,
+     6.0
+    ],
     "position": [
-     -5.2,
-     11.4,
-     -4.2
+     -4.0,
+     11.2,
+     -3.6
     ],
     "rate": 0,
-    "burst_count": 3,
+    "burst_count": 5,
     "burst_times": [
      0.0
     ],
-    "velocity": 0.0,
+    "velocity": 0.3,
+    "velocity_variance": 0.25,
+    "direction": [
+     0,
+     0,
+     0
+    ],
     "start_time": 0.05,
-    "duration": 0.2
+    "duration": 0.35
    },
    "inputs": {
     "particle": "ps_skyglow"
@@ -2007,10 +2054,10 @@
    "layer": "meteors",
    "parameters": {
     "max_particles": 420,
-    "lifetime": 0.3,
-    "lifetime_variance": 0.102,
-    "size": 1.25,
-    "size_variance": 0.4,
+    "lifetime": 0.56,
+    "lifetime_variance": 0.1904,
+    "size": 0.88,
+    "size_variance": 0.2816,
     "size_over_life": [
      [
       0.0,
@@ -2022,21 +2069,21 @@
      ],
      [
       0.34,
-      0.88
+      0.86
      ],
      [
       0.72,
-      0.52
+      0.48
      ],
      [
       1.0,
-      0.12
+      0.1
      ]
     ],
     "color": [
      1.0,
-     0.94,
-     0.82,
+     0.62,
+     0.3,
      1.0
     ],
     "color_over_life": [
@@ -2044,40 +2091,40 @@
       0.0,
       [
        1.0,
-       1.0,
-       1.0,
+       0.95,
+       0.82,
        1.0
       ]
      ],
      [
-      0.14,
+      0.12,
       [
        1.0,
-       0.96,
-       0.9,
+       0.78,
+       0.48,
        1.0
       ]
      ],
      [
-      0.45,
+      0.42,
       [
        1.0,
-       0.72,
        0.5,
+       0.17,
        1.0
       ]
      ],
      [
       1.0,
       [
-       0.72,
-       0.26,
-       0.12,
+       0.62,
+       0.13,
+       0.03,
        1.0
       ]
      ]
     ],
-    "opacity": 0.46,
+    "opacity": 0.44,
     "opacity_over_life": [
      [
       0.0,
@@ -2100,11 +2147,11 @@
       0.0
      ]
     ],
-    "emissive": 0.5,
+    "emissive": 0.45,
     "emissive_over_life": [
      [
       0.0,
-      1.5
+      1.4
      ],
      [
       0.18,
@@ -2142,10 +2189,10 @@
    "layer": "meteors",
    "parameters": {
     "max_particles": 420,
-    "lifetime": 0.36,
-    "lifetime_variance": 0.1224,
-    "size": 2.25,
-    "size_variance": 0.72,
+    "lifetime": 0.62,
+    "lifetime_variance": 0.2108,
+    "size": 1.55,
+    "size_variance": 0.496,
     "size_over_life": [
      [
       0.0,
@@ -2157,21 +2204,21 @@
      ],
      [
       0.34,
-      0.88
+      0.86
      ],
      [
       0.72,
-      0.52
+      0.48
      ],
      [
       1.0,
-      0.12
+      0.1
      ]
     ],
     "color": [
      1.0,
-     0.94,
-     0.82,
+     0.62,
+     0.3,
      1.0
     ],
     "color_over_life": [
@@ -2179,40 +2226,40 @@
       0.0,
       [
        1.0,
-       1.0,
-       1.0,
+       0.95,
+       0.82,
        1.0
       ]
      ],
      [
-      0.14,
+      0.12,
       [
        1.0,
-       0.96,
-       0.9,
+       0.78,
+       0.48,
        1.0
       ]
      ],
      [
-      0.45,
+      0.42,
       [
        1.0,
-       0.72,
        0.5,
+       0.17,
        1.0
       ]
      ],
      [
       1.0,
       [
-       0.72,
-       0.26,
-       0.12,
+       0.62,
+       0.13,
+       0.03,
        1.0
       ]
      ]
     ],
-    "opacity": 0.46,
+    "opacity": 0.44,
     "opacity_over_life": [
      [
       0.0,
@@ -2235,11 +2282,11 @@
       0.0
      ]
     ],
-    "emissive": 0.5,
+    "emissive": 0.45,
     "emissive_over_life": [
      [
       0.0,
-      1.5
+      1.4
      ],
      [
       0.18,
@@ -2276,11 +2323,11 @@
    "type": "particle_system",
    "layer": "meteors",
    "parameters": {
-    "max_particles": 260,
-    "lifetime": 1.25,
-    "lifetime_variance": 0.45,
-    "size": 1.5,
-    "size_variance": 0.55,
+    "max_particles": 200,
+    "lifetime": 1.1,
+    "lifetime_variance": 0.4,
+    "size": 1.1,
+    "size_variance": 0.45,
     "size_over_life": [
      [
       0.0,
@@ -2292,16 +2339,16 @@
      ],
      [
       1.0,
-      1.8
+      1.7
      ]
     ],
     "color": [
-     0.72,
-     0.64,
-     0.6,
+     0.4,
+     0.34,
+     0.32,
      1.0
     ],
-    "opacity": 0.42,
+    "opacity": 0.3,
     "opacity_over_life": [
      [
       0.0,
@@ -2313,26 +2360,26 @@
      ],
      [
       0.6,
-      0.65
+      0.6
      ],
      [
       1.0,
       0.0
      ]
     ],
-    "emissive": 1.2,
+    "emissive": 0.55,
     "emissive_over_life": [
      [
       0.0,
-      1.5
+      0.9
      ],
      [
       0.22,
-      0.5
+      0.3
      ],
      [
       0.6,
-      0.12
+      0.06
      ],
      [
       1.0,
@@ -2439,9 +2486,9 @@
     "segments": 6,
     "visible": false,
     "position": [
-     -1.7,
+     -2.1,
      0.0,
-     1.2
+     1.4
     ]
    }
   },
@@ -2452,24 +2499,24 @@
    "parent": "lane_0",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.32,
+    "radius": 0.304,
     "position": {
      "value": [
-      -5.5068,
-      12.6,
-      -1.0704
+      -5.6816,
+      13.0,
+      -1.1044
      ],
      "track": [
       {
-       "time": 0.41,
+       "time": 0.42,
        "value": [
-        -5.5068,
-        12.6,
-        -1.0704
+        -5.6816,
+        13.0,
+        -1.1044
        ]
       },
       {
-       "time": 0.78,
+       "time": 0.82,
        "value": [
         0.0,
         0.0,
@@ -2490,24 +2537,24 @@
      "value": 0.0,
      "track": [
       {
-       "time": 0.41,
+       "time": 0.42,
        "value": 0.0
       },
       {
-       "time": 0.46,
-       "value": 82.8
+       "time": 0.47,
+       "value": 126.3
       },
       {
-       "time": 0.76,
-       "value": 82.8
+       "time": 0.8,
+       "value": 126.3
       },
       {
-       "time": 0.78,
+       "time": 0.82,
        "value": 0.0
       }
      ]
     },
-    "velocity": 3.24,
+    "velocity": 3.188,
     "velocity_variance": 2.0,
     "direction": [
      -0.3993,
@@ -2515,68 +2562,11 @@
      -0.0776
     ],
     "spread": 17,
-    "start_time": 0.41,
-    "duration": 0.37
+    "start_time": 0.42,
+    "duration": 0.4
    },
    "inputs": {
     "particle": "ps_streak"
-   }
-  },
-  {
-   "id": "e_tsmoke_0",
-   "type": "emitter",
-   "layer": "meteors",
-   "parent": "lane_0",
-   "parameters": {
-    "shape": "sphere",
-    "radius": 0.44,
-    "position": {
-     "value": [
-      -5.5068,
-      12.6,
-      -1.0704
-     ],
-     "track": [
-      {
-       "time": 0.41,
-       "value": [
-        -5.5068,
-        12.6,
-        -1.0704
-       ]
-      },
-      {
-       "time": 0.78,
-       "value": [
-        0.0,
-        0.0,
-        0.0
-       ]
-      },
-      {
-       "time": 4.0,
-       "value": [
-        0.0,
-        0.0,
-        0.0
-       ]
-      }
-     ]
-    },
-    "rate": 17.8,
-    "velocity": 1.4,
-    "velocity_variance": 0.9,
-    "direction": [
-     -0.3993,
-     0.9135,
-     -0.0776
-    ],
-    "spread": 40,
-    "start_time": 0.44,
-    "duration": 0.34
-   },
-   "inputs": {
-    "particle": "ps_trail_smoke"
    }
   },
   {
@@ -2586,25 +2576,25 @@
    "parent": "lane_0",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.36,
+    "radius": 0.342,
     "surface_only": true,
     "position": {
      "value": [
-      -5.5068,
-      12.6,
-      -1.0704
+      -5.6816,
+      13.0,
+      -1.1044
      ],
      "track": [
       {
-       "time": 0.41,
+       "time": 0.42,
        "value": [
-        -5.5068,
-        12.6,
-        -1.0704
+        -5.6816,
+        13.0,
+        -1.1044
        ]
       },
       {
-       "time": 0.78,
+       "time": 0.82,
        "value": [
         0.0,
         0.0,
@@ -2621,8 +2611,8 @@
       }
      ]
     },
-    "rate": 82.0,
-    "velocity": 4.2,
+    "rate": 79.4,
+    "velocity": 4.14,
     "velocity_variance": 2.6,
     "direction": [
      -0.3993,
@@ -2630,8 +2620,8 @@
      -0.0776
     ],
     "spread": 55,
-    "start_time": 0.41,
-    "duration": 0.37
+    "start_time": 0.42,
+    "duration": 0.4
    },
    "inputs": {
     "particle": "ps_trail_spark"
@@ -2647,9 +2637,9 @@
     "segments": 6,
     "visible": false,
     "position": [
-     2.4,
+     2.6,
      0.0,
-     -1.8
+     -1.6
     ]
    }
   },
@@ -2660,24 +2650,24 @@
    "parent": "lane_1",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.256,
+    "radius": 0.24,
     "position": {
      "value": [
-      -6.3849,
-      12.6,
-      -0.6711
+      -6.5875,
+      13.0,
+      -0.6924
      ],
      "track": [
       {
-       "time": 0.58,
+       "time": 0.53,
        "value": [
-        -6.3849,
-        12.6,
-        -0.6711
+        -6.5875,
+        13.0,
+        -0.6924
        ]
       },
       {
-       "time": 0.92,
+       "time": 0.97,
        "value": [
         0.0,
         0.0,
@@ -2698,24 +2688,24 @@
      "value": 0.0,
      "track": [
       {
-       "time": 0.58,
+       "time": 0.53,
        "value": 0.0
       },
       {
-       "time": 0.63,
-       "value": 92.4
+       "time": 0.58,
+       "value": 117.8
       },
       {
-       "time": 0.9,
-       "value": 92.4
+       "time": 0.95,
+       "value": 117.8
       },
       {
-       "time": 0.92,
+       "time": 0.97,
        "value": 0.0
       }
      ]
     },
-    "velocity": 3.032,
+    "velocity": 2.98,
     "velocity_variance": 2.0,
     "direction": [
      -0.4515,
@@ -2723,68 +2713,11 @@
      -0.0475
     ],
     "spread": 17,
-    "start_time": 0.58,
-    "duration": 0.34
+    "start_time": 0.53,
+    "duration": 0.44
    },
    "inputs": {
     "particle": "ps_streak"
-   }
-  },
-  {
-   "id": "e_tsmoke_1",
-   "type": "emitter",
-   "layer": "meteors",
-   "parent": "lane_1",
-   "parameters": {
-    "shape": "sphere",
-    "radius": 0.352,
-    "position": {
-     "value": [
-      -6.3849,
-      12.6,
-      -0.6711
-     ],
-     "track": [
-      {
-       "time": 0.58,
-       "value": [
-        -6.3849,
-        12.6,
-        -0.6711
-       ]
-      },
-      {
-       "time": 0.92,
-       "value": [
-        0.0,
-        0.0,
-        0.0
-       ]
-      },
-      {
-       "time": 4.0,
-       "value": [
-        0.0,
-        0.0,
-        0.0
-       ]
-      }
-     ]
-    },
-    "rate": 16.0,
-    "velocity": 1.4,
-    "velocity_variance": 0.9,
-    "direction": [
-     -0.4515,
-     0.891,
-     -0.0475
-    ],
-    "spread": 40,
-    "start_time": 0.61,
-    "duration": 0.31
-   },
-   "inputs": {
-    "particle": "ps_trail_smoke"
    }
   },
   {
@@ -2794,25 +2727,25 @@
    "parent": "lane_1",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.288,
+    "radius": 0.27,
     "surface_only": true,
     "position": {
      "value": [
-      -6.3849,
-      12.6,
-      -0.6711
+      -6.5875,
+      13.0,
+      -0.6924
      ],
      "track": [
       {
-       "time": 0.58,
+       "time": 0.53,
        "value": [
-        -6.3849,
-        12.6,
-        -0.6711
+        -6.5875,
+        13.0,
+        -0.6924
        ]
       },
       {
-       "time": 0.92,
+       "time": 0.97,
        "value": [
         0.0,
         0.0,
@@ -2829,8 +2762,8 @@
       }
      ]
     },
-    "rate": 71.6,
-    "velocity": 3.96,
+    "rate": 69.0,
+    "velocity": 3.9,
     "velocity_variance": 2.6,
     "direction": [
      -0.4515,
@@ -2838,8 +2771,8 @@
      -0.0475
     ],
     "spread": 55,
-    "start_time": 0.58,
-    "duration": 0.34
+    "start_time": 0.53,
+    "duration": 0.44
    },
    "inputs": {
     "particle": "ps_trail_spark"
@@ -2855,9 +2788,9 @@
     "segments": 6,
     "visible": false,
     "position": [
-     -3.2,
+     -3.0,
      0.0,
-     -2.5
+     -2.7
     ]
    }
   },
@@ -2871,21 +2804,21 @@
     "radius": 0.4,
     "position": {
      "value": [
-      -4.8935,
-      12.6,
-      -1.4032
+      -5.0489,
+      13.0,
+      -1.4477
      ],
      "track": [
       {
-       "time": 0.8,
+       "time": 0.63,
        "value": [
-        -4.8935,
-        12.6,
-        -1.4032
+        -5.0489,
+        13.0,
+        -1.4477
        ]
       },
       {
-       "time": 1.19,
+       "time": 1.13,
        "value": [
         0.0,
         0.0,
@@ -2906,19 +2839,19 @@
      "value": 0.0,
      "track": [
       {
-       "time": 0.8,
+       "time": 0.63,
        "value": 0.0
       },
       {
-       "time": 0.85,
-       "value": 43.0
+       "time": 0.68,
+       "value": 56.5
       },
       {
-       "time": 1.17,
-       "value": 43.0
+       "time": 1.11,
+       "value": 56.5
       },
       {
-       "time": 1.19,
+       "time": 1.13,
        "value": 0.0
       }
      ]
@@ -2931,8 +2864,8 @@
      -0.1033
     ],
     "spread": 17,
-    "start_time": 0.8,
-    "duration": 0.39
+    "start_time": 0.63,
+    "duration": 0.5
    },
    "inputs": {
     "particle": "ps_streak_big"
@@ -2948,21 +2881,21 @@
     "radius": 0.55,
     "position": {
      "value": [
-      -4.8935,
-      12.6,
-      -1.4032
+      -5.0489,
+      13.0,
+      -1.4477
      ],
      "track": [
       {
-       "time": 0.8,
+       "time": 0.63,
        "value": [
-        -4.8935,
-        12.6,
-        -1.4032
+        -5.0489,
+        13.0,
+        -1.4477
        ]
       },
       {
-       "time": 1.19,
+       "time": 1.13,
        "value": [
         0.0,
         0.0,
@@ -2979,7 +2912,7 @@
       }
      ]
     },
-    "rate": 20.0,
+    "rate": 22.0,
     "velocity": 1.4,
     "velocity_variance": 0.9,
     "direction": [
@@ -2988,8 +2921,8 @@
      -0.1033
     ],
     "spread": 40,
-    "start_time": 0.83,
-    "duration": 0.36
+    "start_time": 0.66,
+    "duration": 0.47
    },
    "inputs": {
     "particle": "ps_trail_smoke"
@@ -3006,21 +2939,21 @@
     "surface_only": true,
     "position": {
      "value": [
-      -4.8935,
-      12.6,
-      -1.4032
+      -5.0489,
+      13.0,
+      -1.4477
      ],
      "track": [
       {
-       "time": 0.8,
+       "time": 0.63,
        "value": [
-        -4.8935,
-        12.6,
-        -1.4032
+        -5.0489,
+        13.0,
+        -1.4477
        ]
       },
       {
-       "time": 1.19,
+       "time": 1.13,
        "value": [
         0.0,
         0.0,
@@ -3046,8 +2979,8 @@
      -0.1033
     ],
     "spread": 55,
-    "start_time": 0.8,
-    "duration": 0.39
+    "start_time": 0.63,
+    "duration": 0.5
    },
    "inputs": {
     "particle": "ps_trail_spark"
@@ -3063,9 +2996,9 @@
     "segments": 6,
     "visible": false,
     "position": [
-     0.9,
+     0.7,
      0.0,
-     3.3
+     3.4
     ]
    }
   },
@@ -3076,24 +3009,24 @@
    "parent": "lane_3",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.232,
+    "radius": 0.224,
     "position": {
      "value": [
-      -6.0698,
-      12.6,
-      -0.9614
+      -6.2625,
+      13.0,
+      -0.9919
      ],
      "track": [
       {
-       "time": 1.04,
+       "time": 0.76,
        "value": [
-        -6.0698,
-        12.6,
-        -0.9614
+        -6.2625,
+        13.0,
+        -0.9919
        ]
       },
       {
-       "time": 1.36,
+       "time": 1.3,
        "value": [
         0.0,
         0.0,
@@ -3114,24 +3047,24 @@
      "value": 0.0,
      "track": [
       {
-       "time": 1.04,
+       "time": 0.76,
        "value": 0.0
       },
       {
-       "time": 1.09,
-       "value": 97.4
+       "time": 0.81,
+       "value": 95.1
       },
       {
-       "time": 1.34,
-       "value": 97.4
+       "time": 1.28,
+       "value": 95.1
       },
       {
-       "time": 1.36,
+       "time": 1.3,
        "value": 0.0
       }
      ]
     },
-    "velocity": 2.954,
+    "velocity": 2.928,
     "velocity_variance": 2.0,
     "direction": [
      -0.433,
@@ -3139,68 +3072,11 @@
      -0.0686
     ],
     "spread": 17,
-    "start_time": 1.04,
-    "duration": 0.32
+    "start_time": 0.76,
+    "duration": 0.54
    },
    "inputs": {
     "particle": "ps_streak"
-   }
-  },
-  {
-   "id": "e_tsmoke_3",
-   "type": "emitter",
-   "layer": "meteors",
-   "parent": "lane_3",
-   "parameters": {
-    "shape": "sphere",
-    "radius": 0.319,
-    "position": {
-     "value": [
-      -6.0698,
-      12.6,
-      -0.9614
-     ],
-     "track": [
-      {
-       "time": 1.04,
-       "value": [
-        -6.0698,
-        12.6,
-        -0.9614
-       ]
-      },
-      {
-       "time": 1.36,
-       "value": [
-        0.0,
-        0.0,
-        0.0
-       ]
-      },
-      {
-       "time": 4.0,
-       "value": [
-        0.0,
-        0.0,
-        0.0
-       ]
-      }
-     ]
-    },
-    "rate": 15.4,
-    "velocity": 1.4,
-    "velocity_variance": 0.9,
-    "direction": [
-     -0.433,
-     0.8988,
-     -0.0686
-    ],
-    "spread": 40,
-    "start_time": 1.07,
-    "duration": 0.29
-   },
-   "inputs": {
-    "particle": "ps_trail_smoke"
    }
   },
   {
@@ -3210,25 +3086,25 @@
    "parent": "lane_3",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.261,
+    "radius": 0.252,
     "surface_only": true,
     "position": {
      "value": [
-      -6.0698,
-      12.6,
-      -0.9614
+      -6.2625,
+      13.0,
+      -0.9919
      ],
      "track": [
       {
-       "time": 1.04,
+       "time": 0.76,
        "value": [
-        -6.0698,
-        12.6,
-        -0.9614
+        -6.2625,
+        13.0,
+        -0.9919
        ]
       },
       {
-       "time": 1.36,
+       "time": 1.3,
        "value": [
         0.0,
         0.0,
@@ -3245,8 +3121,8 @@
       }
      ]
     },
-    "rate": 67.7,
-    "velocity": 3.87,
+    "rate": 66.4,
+    "velocity": 3.84,
     "velocity_variance": 2.6,
     "direction": [
      -0.433,
@@ -3254,8 +3130,8 @@
      -0.0686
     ],
     "spread": 55,
-    "start_time": 1.04,
-    "duration": 0.32
+    "start_time": 0.76,
+    "duration": 0.54
    },
    "inputs": {
     "particle": "ps_trail_spark"
@@ -3271,9 +3147,9 @@
     "segments": 6,
     "visible": false,
     "position": [
-     3.9,
+     4.1,
      0.0,
-     1.4
+     1.2
     ]
    }
   },
@@ -3284,24 +3160,24 @@
    "parent": "lane_4",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.352,
+    "radius": 0.336,
     "position": {
      "value": [
-      -5.1895,
-      12.6,
-      -1.2939
+      -5.3543,
+      13.0,
+      -1.335
      ],
      "track": [
       {
-       "time": 1.25,
+       "time": 0.87,
        "value": [
-        -5.1895,
-        12.6,
-        -1.2939
+        -5.3543,
+        13.0,
+        -1.335
        ]
       },
       {
-       "time": 1.61,
+       "time": 1.45,
        "value": [
         0.0,
         0.0,
@@ -3322,24 +3198,24 @@
      "value": 0.0,
      "track": [
       {
-       "time": 1.25,
+       "time": 0.87,
        "value": 0.0
       },
       {
-       "time": 1.3,
-       "value": 84.5
+       "time": 0.92,
+       "value": 86.5
       },
       {
-       "time": 1.59,
-       "value": 84.5
+       "time": 1.43,
+       "value": 86.5
       },
       {
-       "time": 1.61,
+       "time": 1.45,
        "value": 0.0
       }
      ]
     },
-    "velocity": 3.344,
+    "velocity": 3.292,
     "velocity_variance": 2.0,
     "direction": [
      -0.3791,
@@ -3347,68 +3223,11 @@
      -0.0945
     ],
     "spread": 17,
-    "start_time": 1.25,
-    "duration": 0.36
+    "start_time": 0.87,
+    "duration": 0.58
    },
    "inputs": {
     "particle": "ps_streak"
-   }
-  },
-  {
-   "id": "e_tsmoke_4",
-   "type": "emitter",
-   "layer": "meteors",
-   "parent": "lane_4",
-   "parameters": {
-    "shape": "sphere",
-    "radius": 0.484,
-    "position": {
-     "value": [
-      -5.1895,
-      12.6,
-      -1.2939
-     ],
-     "track": [
-      {
-       "time": 1.25,
-       "value": [
-        -5.1895,
-        12.6,
-        -1.2939
-       ]
-      },
-      {
-       "time": 1.61,
-       "value": [
-        0.0,
-        0.0,
-        0.0
-       ]
-      },
-      {
-       "time": 4.0,
-       "value": [
-        0.0,
-        0.0,
-        0.0
-       ]
-      }
-     ]
-    },
-    "rate": 18.7,
-    "velocity": 1.4,
-    "velocity_variance": 0.9,
-    "direction": [
-     -0.3791,
-     0.9205,
-     -0.0945
-    ],
-    "spread": 40,
-    "start_time": 1.28,
-    "duration": 0.33
-   },
-   "inputs": {
-    "particle": "ps_trail_smoke"
    }
   },
   {
@@ -3418,25 +3237,25 @@
    "parent": "lane_4",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.396,
+    "radius": 0.378,
     "surface_only": true,
     "position": {
      "value": [
-      -5.1895,
-      12.6,
-      -1.2939
+      -5.3543,
+      13.0,
+      -1.335
      ],
      "track": [
       {
-       "time": 1.25,
+       "time": 0.87,
        "value": [
-        -5.1895,
-        12.6,
-        -1.2939
+        -5.3543,
+        13.0,
+        -1.335
        ]
       },
       {
-       "time": 1.61,
+       "time": 1.45,
        "value": [
         0.0,
         0.0,
@@ -3453,8 +3272,8 @@
       }
      ]
     },
-    "rate": 87.2,
-    "velocity": 4.32,
+    "rate": 84.6,
+    "velocity": 4.26,
     "velocity_variance": 2.6,
     "direction": [
      -0.3791,
@@ -3462,8 +3281,8 @@
      -0.0945
     ],
     "spread": 55,
-    "start_time": 1.25,
-    "duration": 0.36
+    "start_time": 0.87,
+    "duration": 0.58
    },
    "inputs": {
     "particle": "ps_trail_spark"
@@ -3479,9 +3298,9 @@
     "segments": 6,
     "visible": false,
     "position": [
-     -2.3,
+     -1.2,
      0.0,
-     -0.5
+     -0.6
     ]
    }
   },
@@ -3492,24 +3311,24 @@
    "parent": "lane_5",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.28,
+    "radius": 0.272,
     "position": {
      "value": [
-      -6.6496,
-      12.6,
-      -0.8165
+      -6.8607,
+      13.0,
+      -0.8424
      ],
      "track": [
       {
-       "time": 1.42,
+       "time": 1.05,
        "value": [
-        -6.6496,
-        12.6,
-        -0.8165
+        -6.8607,
+        13.0,
+        -0.8424
        ]
       },
       {
-       "time": 1.75,
+       "time": 1.61,
        "value": [
         0.0,
         0.0,
@@ -3530,24 +3349,24 @@
      "value": 0.0,
      "track": [
       {
-       "time": 1.42,
+       "time": 1.05,
        "value": 0.0
       },
       {
-       "time": 1.47,
-       "value": 96.1
+       "time": 1.1,
+       "value": 93.4
       },
       {
-       "time": 1.73,
-       "value": 96.1
+       "time": 1.59,
+       "value": 93.4
       },
       {
-       "time": 1.75,
+       "time": 1.61,
        "value": 0.0
       }
      ]
     },
-    "velocity": 3.11,
+    "velocity": 3.084,
     "velocity_variance": 2.0,
     "direction": [
      -0.466,
@@ -3555,68 +3374,11 @@
      -0.0572
     ],
     "spread": 17,
-    "start_time": 1.42,
-    "duration": 0.33
+    "start_time": 1.05,
+    "duration": 0.56
    },
    "inputs": {
     "particle": "ps_streak"
-   }
-  },
-  {
-   "id": "e_tsmoke_5",
-   "type": "emitter",
-   "layer": "meteors",
-   "parent": "lane_5",
-   "parameters": {
-    "shape": "sphere",
-    "radius": 0.385,
-    "position": {
-     "value": [
-      -6.6496,
-      12.6,
-      -0.8165
-     ],
-     "track": [
-      {
-       "time": 1.42,
-       "value": [
-        -6.6496,
-        12.6,
-        -0.8165
-       ]
-      },
-      {
-       "time": 1.75,
-       "value": [
-        0.0,
-        0.0,
-        0.0
-       ]
-      },
-      {
-       "time": 4.0,
-       "value": [
-        0.0,
-        0.0,
-        0.0
-       ]
-      }
-     ]
-    },
-    "rate": 16.7,
-    "velocity": 1.4,
-    "velocity_variance": 0.9,
-    "direction": [
-     -0.466,
-     0.8829,
-     -0.0572
-    ],
-    "spread": 40,
-    "start_time": 1.45,
-    "duration": 0.3
-   },
-   "inputs": {
-    "particle": "ps_trail_smoke"
    }
   },
   {
@@ -3626,25 +3388,25 @@
    "parent": "lane_5",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.315,
+    "radius": 0.306,
     "surface_only": true,
     "position": {
      "value": [
-      -6.6496,
-      12.6,
-      -0.8165
+      -6.8607,
+      13.0,
+      -0.8424
      ],
      "track": [
       {
-       "time": 1.42,
+       "time": 1.05,
        "value": [
-        -6.6496,
-        12.6,
-        -0.8165
+        -6.8607,
+        13.0,
+        -0.8424
        ]
       },
       {
-       "time": 1.75,
+       "time": 1.61,
        "value": [
         0.0,
         0.0,
@@ -3661,8 +3423,8 @@
       }
      ]
     },
-    "rate": 75.5,
-    "velocity": 4.05,
+    "rate": 74.2,
+    "velocity": 4.02,
     "velocity_variance": 2.6,
     "direction": [
      -0.466,
@@ -3670,8 +3432,8 @@
      -0.0572
     ],
     "spread": 55,
-    "start_time": 1.42,
-    "duration": 0.33
+    "start_time": 1.05,
+    "duration": 0.56
    },
    "inputs": {
     "particle": "ps_trail_spark"
@@ -3687,9 +3449,9 @@
     "segments": 6,
     "visible": false,
     "position": [
-     1.3,
+     1.5,
      0.0,
-     -5.3
+     -5.4
     ]
    }
   },
@@ -3700,24 +3462,24 @@
    "parent": "lane_6",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.424,
+    "radius": 0.416,
     "position": {
      "value": [
-      -5.3353,
-      12.6,
-      -1.7335
+      -5.5047,
+      13.0,
+      -1.7886
      ],
      "track": [
       {
-       "time": 1.62,
+       "time": 1.12,
        "value": [
-        -5.3353,
-        12.6,
-        -1.7335
+        -5.5047,
+        13.0,
+        -1.7886
        ]
       },
       {
-       "time": 2.02,
+       "time": 1.76,
        "value": [
         0.0,
         0.0,
@@ -3738,24 +3500,24 @@
      "value": 0.0,
      "track": [
       {
-       "time": 1.62,
+       "time": 1.12,
        "value": 0.0
       },
       {
-       "time": 1.67,
-       "value": 42.6
+       "time": 1.17,
+       "value": 44.8
       },
       {
-       "time": 2.0,
-       "value": 42.6
+       "time": 1.74,
+       "value": 44.8
       },
       {
-       "time": 2.02,
+       "time": 1.76,
        "value": 0.0
       }
      ]
     },
-    "velocity": 3.578,
+    "velocity": 3.552,
     "velocity_variance": 2.0,
     "direction": [
      -0.3868,
@@ -3763,8 +3525,8 @@
      -0.1257
     ],
     "spread": 17,
-    "start_time": 1.62,
-    "duration": 0.4
+    "start_time": 1.12,
+    "duration": 0.64
    },
    "inputs": {
     "particle": "ps_streak_big"
@@ -3777,24 +3539,24 @@
    "parent": "lane_6",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.583,
+    "radius": 0.572,
     "position": {
      "value": [
-      -5.3353,
-      12.6,
-      -1.7335
+      -5.5047,
+      13.0,
+      -1.7886
      ],
      "track": [
       {
-       "time": 1.62,
+       "time": 1.12,
        "value": [
-        -5.3353,
-        12.6,
-        -1.7335
+        -5.5047,
+        13.0,
+        -1.7886
        ]
       },
       {
-       "time": 2.02,
+       "time": 1.76,
        "value": [
         0.0,
         0.0,
@@ -3811,7 +3573,7 @@
       }
      ]
     },
-    "rate": 20.7,
+    "rate": 22.5,
     "velocity": 1.4,
     "velocity_variance": 0.9,
     "direction": [
@@ -3820,8 +3582,8 @@
      -0.1257
     ],
     "spread": 40,
-    "start_time": 1.65,
-    "duration": 0.37
+    "start_time": 1.15,
+    "duration": 0.61
    },
    "inputs": {
     "particle": "ps_trail_smoke"
@@ -3834,25 +3596,25 @@
    "parent": "lane_6",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.477,
+    "radius": 0.468,
     "surface_only": true,
     "position": {
      "value": [
-      -5.3353,
-      12.6,
-      -1.7335
+      -5.5047,
+      13.0,
+      -1.7886
      ],
      "track": [
       {
-       "time": 1.62,
+       "time": 1.12,
        "value": [
-        -5.3353,
-        12.6,
-        -1.7335
+        -5.5047,
+        13.0,
+        -1.7886
        ]
       },
       {
-       "time": 2.02,
+       "time": 1.76,
        "value": [
         0.0,
         0.0,
@@ -3869,8 +3631,8 @@
       }
      ]
     },
-    "rate": 98.9,
-    "velocity": 4.59,
+    "rate": 97.6,
+    "velocity": 4.56,
     "velocity_variance": 2.6,
     "direction": [
      -0.3868,
@@ -3878,8 +3640,8 @@
      -0.1257
     ],
     "spread": 55,
-    "start_time": 1.62,
-    "duration": 0.4
+    "start_time": 1.12,
+    "duration": 0.64
    },
    "inputs": {
     "particle": "ps_trail_spark"
@@ -3895,9 +3657,9 @@
     "segments": 6,
     "visible": false,
     "position": [
-     -4.4,
+     -3.8,
      0.0,
-     2.1
+     2.3
     ]
    }
   },
@@ -3911,21 +3673,21 @@
     "radius": 0.248,
     "position": {
      "value": [
-      -5.7471,
-      12.6,
-      -1.2216
+      -5.9295,
+      13.0,
+      -1.2604
      ],
      "track": [
       {
-       "time": 1.85,
+       "time": 1.36,
        "value": [
-        -5.7471,
-        12.6,
-        -1.2216
+        -5.9295,
+        13.0,
+        -1.2604
        ]
       },
       {
-       "time": 2.16,
+       "time": 1.9,
        "value": [
         0.0,
         0.0,
@@ -3946,19 +3708,19 @@
      "value": 0.0,
      "track": [
       {
-       "time": 1.85,
+       "time": 1.36,
        "value": 0.0
       },
       {
+       "time": 1.41,
+       "value": 94.3
+      },
+      {
+       "time": 1.88,
+       "value": 94.3
+      },
+      {
        "time": 1.9,
-       "value": 99.7
-      },
-      {
-       "time": 2.14,
-       "value": 99.7
-      },
-      {
-       "time": 2.16,
        "value": 0.0
       }
      ]
@@ -3971,68 +3733,11 @@
      -0.0879
     ],
     "spread": 17,
-    "start_time": 1.85,
-    "duration": 0.31
+    "start_time": 1.36,
+    "duration": 0.54
    },
    "inputs": {
     "particle": "ps_streak"
-   }
-  },
-  {
-   "id": "e_tsmoke_7",
-   "type": "emitter",
-   "layer": "meteors",
-   "parent": "lane_7",
-   "parameters": {
-    "shape": "sphere",
-    "radius": 0.341,
-    "position": {
-     "value": [
-      -5.7471,
-      12.6,
-      -1.2216
-     ],
-     "track": [
-      {
-       "time": 1.85,
-       "value": [
-        -5.7471,
-        12.6,
-        -1.2216
-       ]
-      },
-      {
-       "time": 2.16,
-       "value": [
-        0.0,
-        0.0,
-        0.0
-       ]
-      },
-      {
-       "time": 4.0,
-       "value": [
-        0.0,
-        0.0,
-        0.0
-       ]
-      }
-     ]
-    },
-    "rate": 15.8,
-    "velocity": 1.4,
-    "velocity_variance": 0.9,
-    "direction": [
-     -0.4134,
-     0.9063,
-     -0.0879
-    ],
-    "spread": 40,
-    "start_time": 1.88,
-    "duration": 0.28
-   },
-   "inputs": {
-    "particle": "ps_trail_smoke"
    }
   },
   {
@@ -4046,21 +3751,21 @@
     "surface_only": true,
     "position": {
      "value": [
-      -5.7471,
-      12.6,
-      -1.2216
+      -5.9295,
+      13.0,
+      -1.2604
      ],
      "track": [
       {
-       "time": 1.85,
+       "time": 1.36,
        "value": [
-        -5.7471,
-        12.6,
-        -1.2216
+        -5.9295,
+        13.0,
+        -1.2604
        ]
       },
       {
-       "time": 2.16,
+       "time": 1.9,
        "value": [
         0.0,
         0.0,
@@ -4086,8 +3791,8 @@
      -0.0879
     ],
     "spread": 55,
-    "start_time": 1.85,
-    "duration": 0.31
+    "start_time": 1.36,
+    "duration": 0.54
    },
    "inputs": {
     "particle": "ps_trail_spark"
@@ -4103,9 +3808,9 @@
     "segments": 6,
     "visible": false,
     "position": [
-     2.8,
+     3.0,
      0.0,
-     2.9
+     3.1
     ]
    }
   },
@@ -4116,24 +3821,24 @@
    "parent": "lane_8",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.328,
+    "radius": 0.32,
     "position": {
      "value": [
-      -4.8183,
-      12.6,
-      -0.4215
+      -4.9712,
+      13.0,
+      -0.4349
      ],
      "track": [
       {
-       "time": 1.98,
+       "time": 1.45,
        "value": [
-        -4.8183,
-        12.6,
-        -0.4215
+        -4.9712,
+        13.0,
+        -0.4349
        ]
       },
       {
-       "time": 2.33,
+       "time": 2.05,
        "value": [
         0.0,
         0.0,
@@ -4154,24 +3859,24 @@
      "value": 0.0,
      "track": [
       {
-       "time": 1.98,
+       "time": 1.45,
        "value": 0.0
       },
       {
+       "time": 1.5,
+       "value": 82.4
+      },
+      {
        "time": 2.03,
-       "value": 85.7
+       "value": 82.4
       },
       {
-       "time": 2.31,
-       "value": 85.7
-      },
-      {
-       "time": 2.33,
+       "time": 2.05,
        "value": 0.0
       }
      ]
     },
-    "velocity": 3.266,
+    "velocity": 3.24,
     "velocity_variance": 2.0,
     "direction": [
      -0.357,
@@ -4179,68 +3884,11 @@
      -0.0312
     ],
     "spread": 17,
-    "start_time": 1.98,
-    "duration": 0.35
+    "start_time": 1.45,
+    "duration": 0.6
    },
    "inputs": {
     "particle": "ps_streak"
-   }
-  },
-  {
-   "id": "e_tsmoke_8",
-   "type": "emitter",
-   "layer": "meteors",
-   "parent": "lane_8",
-   "parameters": {
-    "shape": "sphere",
-    "radius": 0.451,
-    "position": {
-     "value": [
-      -4.8183,
-      12.6,
-      -0.4215
-     ],
-     "track": [
-      {
-       "time": 1.98,
-       "value": [
-        -4.8183,
-        12.6,
-        -0.4215
-       ]
-      },
-      {
-       "time": 2.33,
-       "value": [
-        0.0,
-        0.0,
-        0.0
-       ]
-      },
-      {
-       "time": 4.0,
-       "value": [
-        0.0,
-        0.0,
-        0.0
-       ]
-      }
-     ]
-    },
-    "rate": 18.0,
-    "velocity": 1.4,
-    "velocity_variance": 0.9,
-    "direction": [
-     -0.357,
-     0.9336,
-     -0.0312
-    ],
-    "spread": 40,
-    "start_time": 2.01,
-    "duration": 0.32
-   },
-   "inputs": {
-    "particle": "ps_trail_smoke"
    }
   },
   {
@@ -4250,25 +3898,25 @@
    "parent": "lane_8",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.369,
+    "radius": 0.36,
     "surface_only": true,
     "position": {
      "value": [
-      -4.8183,
-      12.6,
-      -0.4215
+      -4.9712,
+      13.0,
+      -0.4349
      ],
      "track": [
       {
-       "time": 1.98,
+       "time": 1.45,
        "value": [
-        -4.8183,
-        12.6,
-        -0.4215
+        -4.9712,
+        13.0,
+        -0.4349
        ]
       },
       {
-       "time": 2.33,
+       "time": 2.05,
        "value": [
         0.0,
         0.0,
@@ -4285,8 +3933,8 @@
       }
      ]
     },
-    "rate": 83.3,
-    "velocity": 4.23,
+    "rate": 82.0,
+    "velocity": 4.2,
     "velocity_variance": 2.6,
     "direction": [
      -0.357,
@@ -4294,8 +3942,8 @@
      -0.0312
     ],
     "spread": 55,
-    "start_time": 1.98,
-    "duration": 0.35
+    "start_time": 1.45,
+    "duration": 0.6
    },
    "inputs": {
     "particle": "ps_trail_spark"
@@ -4311,9 +3959,9 @@
     "segments": 6,
     "visible": false,
     "position": [
-     -0.8,
+     -0.9,
      0.0,
-     -3.0
+     -3.2
     ]
    }
   },
@@ -4324,24 +3972,24 @@
    "parent": "lane_9",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.376,
+    "radius": 0.368,
     "position": {
      "value": [
-      -6.2013,
-      12.6,
-      -1.6616
+      -6.3981,
+      13.0,
+      -1.7144
      ],
      "track": [
       {
-       "time": 2.2,
+       "time": 1.57,
        "value": [
-        -6.2013,
-        12.6,
-        -1.6616
+        -6.3981,
+        13.0,
+        -1.7144
        ]
       },
       {
-       "time": 2.58,
+       "time": 2.19,
        "value": [
         0.0,
         0.0,
@@ -4362,24 +4010,24 @@
      "value": 0.0,
      "track": [
       {
-       "time": 2.2,
+       "time": 1.57,
        "value": 0.0
       },
       {
-       "time": 2.25,
-       "value": 45.9
+       "time": 1.62,
+       "value": 47.4
       },
       {
-       "time": 2.56,
-       "value": 45.9
+       "time": 2.17,
+       "value": 47.4
       },
       {
-       "time": 2.58,
+       "time": 2.19,
        "value": 0.0
       }
      ]
     },
-    "velocity": 3.422,
+    "velocity": 3.396,
     "velocity_variance": 2.0,
     "direction": [
      -0.4385,
@@ -4387,8 +4035,8 @@
      -0.1175
     ],
     "spread": 17,
-    "start_time": 2.2,
-    "duration": 0.38
+    "start_time": 1.57,
+    "duration": 0.62
    },
    "inputs": {
     "particle": "ps_streak_big"
@@ -4401,24 +4049,24 @@
    "parent": "lane_9",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.517,
+    "radius": 0.506,
     "position": {
      "value": [
-      -6.2013,
-      12.6,
-      -1.6616
+      -6.3981,
+      13.0,
+      -1.7144
      ],
      "track": [
       {
-       "time": 2.2,
+       "time": 1.57,
        "value": [
-        -6.2013,
-        12.6,
-        -1.6616
+        -6.3981,
+        13.0,
+        -1.7144
        ]
       },
       {
-       "time": 2.58,
+       "time": 2.19,
        "value": [
         0.0,
         0.0,
@@ -4435,7 +4083,7 @@
       }
      ]
     },
-    "rate": 19.3,
+    "rate": 21.0,
     "velocity": 1.4,
     "velocity_variance": 0.9,
     "direction": [
@@ -4444,8 +4092,8 @@
      -0.1175
     ],
     "spread": 40,
-    "start_time": 2.23,
-    "duration": 0.35
+    "start_time": 1.6,
+    "duration": 0.59
    },
    "inputs": {
     "particle": "ps_trail_smoke"
@@ -4458,25 +4106,25 @@
    "parent": "lane_9",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.423,
+    "radius": 0.414,
     "surface_only": true,
     "position": {
      "value": [
-      -6.2013,
-      12.6,
-      -1.6616
+      -6.3981,
+      13.0,
+      -1.7144
      ],
      "track": [
       {
-       "time": 2.2,
+       "time": 1.57,
        "value": [
-        -6.2013,
-        12.6,
-        -1.6616
+        -6.3981,
+        13.0,
+        -1.7144
        ]
       },
       {
-       "time": 2.58,
+       "time": 2.19,
        "value": [
         0.0,
         0.0,
@@ -4493,8 +4141,8 @@
       }
      ]
     },
-    "rate": 91.1,
-    "velocity": 4.41,
+    "rate": 89.8,
+    "velocity": 4.38,
     "velocity_variance": 2.6,
     "direction": [
      -0.4385,
@@ -4502,8 +4150,8 @@
      -0.1175
     ],
     "spread": 55,
-    "start_time": 2.2,
-    "duration": 0.38
+    "start_time": 1.57,
+    "duration": 0.62
    },
    "inputs": {
     "particle": "ps_trail_spark"
@@ -4519,9 +4167,9 @@
     "segments": 6,
     "visible": false,
     "position": [
-     5.6,
+     5.7,
      0.0,
-     -0.9
+     -0.7
     ]
    }
   },
@@ -4535,21 +4183,21 @@
     "radius": 0.264,
     "position": {
      "value": [
-      -5.2825,
-      12.6,
-      -0.8367
+      -5.4502,
+      13.0,
+      -0.8632
      ],
      "track": [
       {
-       "time": 2.39,
+       "time": 1.77,
        "value": [
-        -5.2825,
-        12.6,
-        -0.8367
+        -5.4502,
+        13.0,
+        -0.8632
        ]
       },
       {
-       "time": 2.71,
+       "time": 2.33,
        "value": [
         0.0,
         0.0,
@@ -4570,19 +4218,19 @@
      "value": 0.0,
      "track": [
       {
-       "time": 2.39,
+       "time": 1.77,
        "value": 0.0
       },
       {
-       "time": 2.44,
-       "value": 95.1
+       "time": 1.82,
+       "value": 89.6
       },
       {
-       "time": 2.69,
-       "value": 95.1
+       "time": 2.31,
+       "value": 89.6
       },
       {
-       "time": 2.71,
+       "time": 2.33,
        "value": 0.0
       }
      ]
@@ -4595,68 +4243,11 @@
      -0.0611
     ],
     "spread": 17,
-    "start_time": 2.39,
-    "duration": 0.32
+    "start_time": 1.77,
+    "duration": 0.56
    },
    "inputs": {
     "particle": "ps_streak"
-   }
-  },
-  {
-   "id": "e_tsmoke_10",
-   "type": "emitter",
-   "layer": "meteors",
-   "parent": "lane_10",
-   "parameters": {
-    "shape": "sphere",
-    "radius": 0.363,
-    "position": {
-     "value": [
-      -5.2825,
-      12.6,
-      -0.8367
-     ],
-     "track": [
-      {
-       "time": 2.39,
-       "value": [
-        -5.2825,
-        12.6,
-        -0.8367
-       ]
-      },
-      {
-       "time": 2.71,
-       "value": [
-        0.0,
-        0.0,
-        0.0
-       ]
-      },
-      {
-       "time": 4.0,
-       "value": [
-        0.0,
-        0.0,
-        0.0
-       ]
-      }
-     ]
-    },
-    "rate": 16.3,
-    "velocity": 1.4,
-    "velocity_variance": 0.9,
-    "direction": [
-     -0.3859,
-     0.9205,
-     -0.0611
-    ],
-    "spread": 40,
-    "start_time": 2.42,
-    "duration": 0.29
-   },
-   "inputs": {
-    "particle": "ps_trail_smoke"
    }
   },
   {
@@ -4670,21 +4261,21 @@
     "surface_only": true,
     "position": {
      "value": [
-      -5.2825,
-      12.6,
-      -0.8367
+      -5.4502,
+      13.0,
+      -0.8632
      ],
      "track": [
       {
-       "time": 2.39,
+       "time": 1.77,
        "value": [
-        -5.2825,
-        12.6,
-        -0.8367
+        -5.4502,
+        13.0,
+        -0.8632
        ]
       },
       {
-       "time": 2.71,
+       "time": 2.33,
        "value": [
         0.0,
         0.0,
@@ -4710,8 +4301,8 @@
      -0.0611
     ],
     "spread": 55,
-    "start_time": 2.39,
-    "duration": 0.32
+    "start_time": 1.77,
+    "duration": 0.56
    },
    "inputs": {
     "particle": "ps_trail_spark"
@@ -4727,9 +4318,9 @@
     "segments": 6,
     "visible": false,
     "position": [
-     -2.0,
+     -2.6,
      0.0,
-     4.0
+     0.4
     ]
    }
   },
@@ -4740,24 +4331,24 @@
    "parent": "lane_11",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.48,
+    "radius": 0.288,
     "position": {
      "value": [
-      -4.9603,
-      12.6,
-      -1.1452
+      -6.2442,
+      13.0,
+      -1.101
      ],
      "track": [
       {
-       "time": 2.48,
+       "time": 1.86,
        "value": [
-        -4.9603,
-        12.6,
-        -1.1452
+        -6.2442,
+        13.0,
+        -1.101
        ]
       },
       {
-       "time": 2.9,
+       "time": 2.46,
        "value": [
         0.0,
         0.0,
@@ -4778,93 +4369,36 @@
      "value": 0.0,
      "track": [
       {
-       "time": 2.48,
+       "time": 1.86,
        "value": 0.0
       },
       {
-       "time": 2.53,
-       "value": 39.9
+       "time": 1.91,
+       "value": 85.6
       },
       {
-       "time": 2.88,
-       "value": 39.9
+       "time": 2.44,
+       "value": 85.6
       },
       {
-       "time": 2.9,
+       "time": 2.46,
        "value": 0.0
       }
      ]
     },
-    "velocity": 3.76,
+    "velocity": 3.136,
     "velocity_variance": 2.0,
     "direction": [
-     -0.365,
-     0.9272,
-     -0.0843
+     -0.4317,
+     0.8988,
+     -0.0761
     ],
     "spread": 17,
-    "start_time": 2.48,
-    "duration": 0.42
+    "start_time": 1.86,
+    "duration": 0.6
    },
    "inputs": {
-    "particle": "ps_streak_big"
-   }
-  },
-  {
-   "id": "e_tsmoke_11",
-   "type": "emitter",
-   "layer": "meteors",
-   "parent": "lane_11",
-   "parameters": {
-    "shape": "sphere",
-    "radius": 0.66,
-    "position": {
-     "value": [
-      -4.9603,
-      12.6,
-      -1.1452
-     ],
-     "track": [
-      {
-       "time": 2.48,
-       "value": [
-        -4.9603,
-        12.6,
-        -1.1452
-       ]
-      },
-      {
-       "time": 2.9,
-       "value": [
-        0.0,
-        0.0,
-        0.0
-       ]
-      },
-      {
-       "time": 4.0,
-       "value": [
-        0.0,
-        0.0,
-        0.0
-       ]
-      }
-     ]
-    },
-    "rate": 22.2,
-    "velocity": 1.4,
-    "velocity_variance": 0.9,
-    "direction": [
-     -0.365,
-     0.9272,
-     -0.0843
-    ],
-    "spread": 40,
-    "start_time": 2.51,
-    "duration": 0.39
-   },
-   "inputs": {
-    "particle": "ps_trail_smoke"
+    "particle": "ps_streak"
    }
   },
   {
@@ -4874,25 +4408,25 @@
    "parent": "lane_11",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.54,
+    "radius": 0.324,
     "surface_only": true,
     "position": {
      "value": [
-      -4.9603,
-      12.6,
-      -1.1452
+      -6.2442,
+      13.0,
+      -1.101
      ],
      "track": [
       {
-       "time": 2.48,
+       "time": 1.86,
        "value": [
-        -4.9603,
-        12.6,
-        -1.1452
+        -6.2442,
+        13.0,
+        -1.101
        ]
       },
       {
-       "time": 2.9,
+       "time": 2.46,
        "value": [
         0.0,
         0.0,
@@ -4909,17 +4443,17 @@
       }
      ]
     },
-    "rate": 108.0,
-    "velocity": 4.8,
+    "rate": 76.8,
+    "velocity": 4.08,
     "velocity_variance": 2.6,
     "direction": [
-     -0.365,
-     0.9272,
-     -0.0843
+     -0.4317,
+     0.8988,
+     -0.0761
     ],
     "spread": 55,
-    "start_time": 2.48,
-    "duration": 0.42
+    "start_time": 1.86,
+    "duration": 0.6
    },
    "inputs": {
     "particle": "ps_trail_spark"
@@ -4935,9 +4469,9 @@
     "segments": 6,
     "visible": false,
     "position": [
-     1.1,
+     1.9,
      0.0,
-     0.3
+     1.9
     ]
    }
   },
@@ -4948,24 +4482,24 @@
    "parent": "lane_12",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.56,
+    "radius": 0.232,
     "position": {
      "value": [
-      -5.8183,
-      12.6,
-      -0.8177
+      -5.7448,
+      13.0,
+      -0.7054
      ],
      "track": [
       {
-       "time": 2.65,
+       "time": 2.06,
        "value": [
-        -5.8183,
-        12.6,
-        -0.8177
+        -5.7448,
+        13.0,
+        -0.7054
        ]
       },
       {
-       "time": 3.1,
+       "time": 2.6,
        "value": [
         0.0,
         0.0,
@@ -4986,93 +4520,36 @@
      "value": 0.0,
      "track": [
       {
-       "time": 2.65,
+       "time": 2.06,
        "value": 0.0
       },
       {
-       "time": 2.7,
-       "value": 38.1
+       "time": 2.11,
+       "value": 93.6
       },
       {
-       "time": 3.08,
-       "value": 38.1
+       "time": 2.58,
+       "value": 93.6
       },
       {
-       "time": 3.1,
+       "time": 2.6,
        "value": 0.0
       }
      ]
     },
-    "velocity": 4.02,
+    "velocity": 2.954,
     "velocity_variance": 2.0,
     "direction": [
-     -0.4185,
-     0.9063,
-     -0.0588
+     -0.4037,
+     0.9135,
+     -0.0496
     ],
     "spread": 17,
-    "start_time": 2.65,
-    "duration": 0.45
+    "start_time": 2.06,
+    "duration": 0.54
    },
    "inputs": {
-    "particle": "ps_streak_big"
-   }
-  },
-  {
-   "id": "e_tsmoke_12",
-   "type": "emitter",
-   "layer": "meteors",
-   "parent": "lane_12",
-   "parameters": {
-    "shape": "sphere",
-    "radius": 0.77,
-    "position": {
-     "value": [
-      -5.8183,
-      12.6,
-      -0.8177
-     ],
-     "track": [
-      {
-       "time": 2.65,
-       "value": [
-        -5.8183,
-        12.6,
-        -0.8177
-       ]
-      },
-      {
-       "time": 3.1,
-       "value": [
-        0.0,
-        0.0,
-        0.0
-       ]
-      },
-      {
-       "time": 4.0,
-       "value": [
-        0.0,
-        0.0,
-        0.0
-       ]
-      }
-     ]
-    },
-    "rate": 24.4,
-    "velocity": 1.4,
-    "velocity_variance": 0.9,
-    "direction": [
-     -0.4185,
-     0.9063,
-     -0.0588
-    ],
-    "spread": 40,
-    "start_time": 2.68,
-    "duration": 0.42
-   },
-   "inputs": {
-    "particle": "ps_trail_smoke"
+    "particle": "ps_streak"
    }
   },
   {
@@ -5082,25 +4559,25 @@
    "parent": "lane_12",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.63,
+    "radius": 0.261,
     "surface_only": true,
     "position": {
      "value": [
-      -5.8183,
-      12.6,
-      -0.8177
+      -5.7448,
+      13.0,
+      -0.7054
      ],
      "track": [
       {
-       "time": 2.65,
+       "time": 2.06,
        "value": [
-        -5.8183,
-        12.6,
-        -0.8177
+        -5.7448,
+        13.0,
+        -0.7054
        ]
       },
       {
-       "time": 3.1,
+       "time": 2.6,
        "value": [
         0.0,
         0.0,
@@ -5117,8 +4594,991 @@
       }
      ]
     },
-    "rate": 121.0,
-    "velocity": 5.1,
+    "rate": 67.7,
+    "velocity": 3.87,
+    "velocity_variance": 2.6,
+    "direction": [
+     -0.4037,
+     0.9135,
+     -0.0496
+    ],
+    "spread": 55,
+    "start_time": 2.06,
+    "duration": 0.54
+   },
+   "inputs": {
+    "particle": "ps_trail_spark"
+   }
+  },
+  {
+   "id": "lane_13",
+   "type": "mesh",
+   "layer": "meteors",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.02,
+    "segments": 6,
+    "visible": false,
+    "position": [
+     -4.5,
+     0.0,
+     -1.1
+    ]
+   }
+  },
+  {
+   "id": "e_streak_13",
+   "type": "emitter",
+   "layer": "meteors",
+   "parent": "lane_13",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.28,
+    "position": {
+     "value": [
+      -5.9066,
+      13.0,
+      -1.3637
+     ],
+     "track": [
+      {
+       "time": 2.15,
+       "value": [
+        -5.9066,
+        13.0,
+        -1.3637
+       ]
+      },
+      {
+       "time": 2.73,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      }
+     ]
+    },
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 2.15,
+       "value": 0.0
+      },
+      {
+       "time": 2.2,
+       "value": 87.8
+      },
+      {
+       "time": 2.71,
+       "value": 87.8
+      },
+      {
+       "time": 2.73,
+       "value": 0.0
+      }
+     ]
+    },
+    "velocity": 3.11,
+    "velocity_variance": 2.0,
+    "direction": [
+     -0.4118,
+     0.9063,
+     -0.0951
+    ],
+    "spread": 17,
+    "start_time": 2.15,
+    "duration": 0.58
+   },
+   "inputs": {
+    "particle": "ps_streak"
+   }
+  },
+  {
+   "id": "e_tspark_13",
+   "type": "emitter",
+   "layer": "meteors",
+   "parent": "lane_13",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.315,
+    "surface_only": true,
+    "position": {
+     "value": [
+      -5.9066,
+      13.0,
+      -1.3637
+     ],
+     "track": [
+      {
+       "time": 2.15,
+       "value": [
+        -5.9066,
+        13.0,
+        -1.3637
+       ]
+      },
+      {
+       "time": 2.73,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      }
+     ]
+    },
+    "rate": 75.5,
+    "velocity": 4.05,
+    "velocity_variance": 2.6,
+    "direction": [
+     -0.4118,
+     0.9063,
+     -0.0951
+    ],
+    "spread": 55,
+    "start_time": 2.15,
+    "duration": 0.58
+   },
+   "inputs": {
+    "particle": "ps_trail_spark"
+   }
+  },
+  {
+   "id": "lane_14",
+   "type": "mesh",
+   "layer": "meteors",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.02,
+    "segments": 6,
+    "visible": false,
+    "position": [
+     2.2,
+     0.0,
+     -3.6
+    ]
+   }
+  },
+  {
+   "id": "e_streak_14",
+   "type": "emitter",
+   "layer": "meteors",
+   "parent": "lane_14",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.352,
+    "position": {
+     "value": [
+      -5.7971,
+      13.0,
+      -1.7724
+     ],
+     "track": [
+      {
+       "time": 2.24,
+       "value": [
+        -5.7971,
+        13.0,
+        -1.7724
+       ]
+      },
+      {
+       "time": 2.86,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      }
+     ]
+    },
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 2.24,
+       "value": 0.0
+      },
+      {
+       "time": 2.29,
+       "value": 46.6
+      },
+      {
+       "time": 2.84,
+       "value": 46.6
+      },
+      {
+       "time": 2.86,
+       "value": 0.0
+      }
+     ]
+    },
+    "velocity": 3.344,
+    "velocity_variance": 2.0,
+    "direction": [
+     -0.4042,
+     0.9063,
+     -0.1236
+    ],
+    "spread": 17,
+    "start_time": 2.24,
+    "duration": 0.62
+   },
+   "inputs": {
+    "particle": "ps_streak_big"
+   }
+  },
+  {
+   "id": "e_tsmoke_14",
+   "type": "emitter",
+   "layer": "meteors",
+   "parent": "lane_14",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.484,
+    "position": {
+     "value": [
+      -5.7971,
+      13.0,
+      -1.7724
+     ],
+     "track": [
+      {
+       "time": 2.24,
+       "value": [
+        -5.7971,
+        13.0,
+        -1.7724
+       ]
+      },
+      {
+       "time": 2.86,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      }
+     ]
+    },
+    "rate": 20.6,
+    "velocity": 1.4,
+    "velocity_variance": 0.9,
+    "direction": [
+     -0.4042,
+     0.9063,
+     -0.1236
+    ],
+    "spread": 40,
+    "start_time": 2.27,
+    "duration": 0.59
+   },
+   "inputs": {
+    "particle": "ps_trail_smoke"
+   }
+  },
+  {
+   "id": "e_tspark_14",
+   "type": "emitter",
+   "layer": "meteors",
+   "parent": "lane_14",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.396,
+    "surface_only": true,
+    "position": {
+     "value": [
+      -5.7971,
+      13.0,
+      -1.7724
+     ],
+     "track": [
+      {
+       "time": 2.24,
+       "value": [
+        -5.7971,
+        13.0,
+        -1.7724
+       ]
+      },
+      {
+       "time": 2.86,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      }
+     ]
+    },
+    "rate": 87.2,
+    "velocity": 4.32,
+    "velocity_variance": 2.6,
+    "direction": [
+     -0.4042,
+     0.9063,
+     -0.1236
+    ],
+    "spread": 55,
+    "start_time": 2.24,
+    "duration": 0.62
+   },
+   "inputs": {
+    "particle": "ps_trail_spark"
+   }
+  },
+  {
+   "id": "lane_15",
+   "type": "mesh",
+   "layer": "meteors",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.02,
+    "segments": 6,
+    "visible": false,
+    "position": [
+     -1.6,
+     0.0,
+     4.2
+    ]
+   }
+  },
+  {
+   "id": "e_streak_15",
+   "type": "emitter",
+   "layer": "meteors",
+   "parent": "lane_15",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.464,
+    "position": {
+     "value": [
+      -5.1177,
+      13.0,
+      -1.1815
+     ],
+     "track": [
+      {
+       "time": 2.28,
+       "value": [
+        -5.1177,
+        13.0,
+        -1.1815
+       ]
+      },
+      {
+       "time": 2.96,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      }
+     ]
+    },
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 2.28,
+       "value": 0.0
+      },
+      {
+       "time": 2.33,
+       "value": 41.6
+      },
+      {
+       "time": 2.94,
+       "value": 41.6
+      },
+      {
+       "time": 2.96,
+       "value": 0.0
+      }
+     ]
+    },
+    "velocity": 3.708,
+    "velocity_variance": 2.0,
+    "direction": [
+     -0.365,
+     0.9272,
+     -0.0843
+    ],
+    "spread": 17,
+    "start_time": 2.28,
+    "duration": 0.68
+   },
+   "inputs": {
+    "particle": "ps_streak_big"
+   }
+  },
+  {
+   "id": "e_tsmoke_15",
+   "type": "emitter",
+   "layer": "meteors",
+   "parent": "lane_15",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.638,
+    "position": {
+     "value": [
+      -5.1177,
+      13.0,
+      -1.1815
+     ],
+     "track": [
+      {
+       "time": 2.28,
+       "value": [
+        -5.1177,
+        13.0,
+        -1.1815
+       ]
+      },
+      {
+       "time": 2.96,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      }
+     ]
+    },
+    "rate": 23.9,
+    "velocity": 1.4,
+    "velocity_variance": 0.9,
+    "direction": [
+     -0.365,
+     0.9272,
+     -0.0843
+    ],
+    "spread": 40,
+    "start_time": 2.31,
+    "duration": 0.65
+   },
+   "inputs": {
+    "particle": "ps_trail_smoke"
+   }
+  },
+  {
+   "id": "e_tspark_15",
+   "type": "emitter",
+   "layer": "meteors",
+   "parent": "lane_15",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.522,
+    "surface_only": true,
+    "position": {
+     "value": [
+      -5.1177,
+      13.0,
+      -1.1815
+     ],
+     "track": [
+      {
+       "time": 2.28,
+       "value": [
+        -5.1177,
+        13.0,
+        -1.1815
+       ]
+      },
+      {
+       "time": 2.96,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      }
+     ]
+    },
+    "rate": 105.4,
+    "velocity": 4.74,
+    "velocity_variance": 2.6,
+    "direction": [
+     -0.365,
+     0.9272,
+     -0.0843
+    ],
+    "spread": 55,
+    "start_time": 2.28,
+    "duration": 0.68
+   },
+   "inputs": {
+    "particle": "ps_trail_spark"
+   }
+  },
+  {
+   "id": "lane_16",
+   "type": "mesh",
+   "layer": "meteors",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.02,
+    "segments": 6,
+    "visible": false,
+    "position": [
+     3.6,
+     0.0,
+     0.2
+    ]
+   }
+  },
+  {
+   "id": "e_streak_16",
+   "type": "emitter",
+   "layer": "meteors",
+   "parent": "lane_16",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.416,
+    "position": {
+     "value": [
+      -5.7,
+      13.0,
+      -1.0051
+     ],
+     "track": [
+      {
+       "time": 2.42,
+       "value": [
+        -5.7,
+        13.0,
+        -1.0051
+       ]
+      },
+      {
+       "time": 3.06,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      }
+     ]
+    },
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 2.42,
+       "value": 0.0
+      },
+      {
+       "time": 2.47,
+       "value": 44.8
+      },
+      {
+       "time": 3.04,
+       "value": 44.8
+      },
+      {
+       "time": 3.06,
+       "value": 0.0
+      }
+     ]
+    },
+    "velocity": 3.552,
+    "velocity_variance": 2.0,
+    "direction": [
+     -0.4006,
+     0.9135,
+     -0.0706
+    ],
+    "spread": 17,
+    "start_time": 2.42,
+    "duration": 0.64
+   },
+   "inputs": {
+    "particle": "ps_streak_big"
+   }
+  },
+  {
+   "id": "e_tsmoke_16",
+   "type": "emitter",
+   "layer": "meteors",
+   "parent": "lane_16",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.572,
+    "position": {
+     "value": [
+      -5.7,
+      13.0,
+      -1.0051
+     ],
+     "track": [
+      {
+       "time": 2.42,
+       "value": [
+        -5.7,
+        13.0,
+        -1.0051
+       ]
+      },
+      {
+       "time": 3.06,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      }
+     ]
+    },
+    "rate": 22.5,
+    "velocity": 1.4,
+    "velocity_variance": 0.9,
+    "direction": [
+     -0.4006,
+     0.9135,
+     -0.0706
+    ],
+    "spread": 40,
+    "start_time": 2.45,
+    "duration": 0.61
+   },
+   "inputs": {
+    "particle": "ps_trail_smoke"
+   }
+  },
+  {
+   "id": "e_tspark_16",
+   "type": "emitter",
+   "layer": "meteors",
+   "parent": "lane_16",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.468,
+    "surface_only": true,
+    "position": {
+     "value": [
+      -5.7,
+      13.0,
+      -1.0051
+     ],
+     "track": [
+      {
+       "time": 2.42,
+       "value": [
+        -5.7,
+        13.0,
+        -1.0051
+       ]
+      },
+      {
+       "time": 3.06,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      }
+     ]
+    },
+    "rate": 97.6,
+    "velocity": 4.56,
+    "velocity_variance": 2.6,
+    "direction": [
+     -0.4006,
+     0.9135,
+     -0.0706
+    ],
+    "spread": 55,
+    "start_time": 2.42,
+    "duration": 0.64
+   },
+   "inputs": {
+    "particle": "ps_trail_spark"
+   }
+  },
+  {
+   "id": "lane_17",
+   "type": "mesh",
+   "layer": "meteors",
+   "parameters": {
+    "primitive": "sphere",
+    "radius": 0.02,
+    "segments": 6,
+    "visible": false,
+    "position": [
+     0.4,
+     0.0,
+     -0.2
+    ]
+   }
+  },
+  {
+   "id": "e_streak_17",
+   "type": "emitter",
+   "layer": "meteors",
+   "parent": "lane_17",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.576,
+    "position": {
+     "value": [
+      -6.003,
+      13.0,
+      -0.8437
+     ],
+     "track": [
+      {
+       "time": 2.43,
+       "value": [
+        -6.003,
+        13.0,
+        -0.8437
+       ]
+      },
+      {
+       "time": 3.17,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      }
+     ]
+    },
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 2.43,
+       "value": 0.0
+      },
+      {
+       "time": 2.48,
+       "value": 39.1
+      },
+      {
+       "time": 3.15,
+       "value": 39.1
+      },
+      {
+       "time": 3.17,
+       "value": 0.0
+      }
+     ]
+    },
+    "velocity": 4.072,
+    "velocity_variance": 2.0,
+    "direction": [
+     -0.4185,
+     0.9063,
+     -0.0588
+    ],
+    "spread": 17,
+    "start_time": 2.43,
+    "duration": 0.74
+   },
+   "inputs": {
+    "particle": "ps_streak_big"
+   }
+  },
+  {
+   "id": "e_tsmoke_17",
+   "type": "emitter",
+   "layer": "meteors",
+   "parent": "lane_17",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.792,
+    "position": {
+     "value": [
+      -6.003,
+      13.0,
+      -0.8437
+     ],
+     "track": [
+      {
+       "time": 2.43,
+       "value": [
+        -6.003,
+        13.0,
+        -0.8437
+       ]
+      },
+      {
+       "time": 3.17,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      }
+     ]
+    },
+    "rate": 27.3,
+    "velocity": 1.4,
+    "velocity_variance": 0.9,
+    "direction": [
+     -0.4185,
+     0.9063,
+     -0.0588
+    ],
+    "spread": 40,
+    "start_time": 2.46,
+    "duration": 0.71
+   },
+   "inputs": {
+    "particle": "ps_trail_smoke"
+   }
+  },
+  {
+   "id": "e_tspark_17",
+   "type": "emitter",
+   "layer": "meteors",
+   "parent": "lane_17",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.648,
+    "surface_only": true,
+    "position": {
+     "value": [
+      -6.003,
+      13.0,
+      -0.8437
+     ],
+     "track": [
+      {
+       "time": 2.43,
+       "value": [
+        -6.003,
+        13.0,
+        -0.8437
+       ]
+      },
+      {
+       "time": 3.17,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      }
+     ]
+    },
+    "rate": 123.6,
+    "velocity": 5.16,
     "velocity_variance": 2.6,
     "direction": [
      -0.4185,
@@ -5126,8 +5586,8 @@
      -0.0588
     ],
     "spread": 55,
-    "start_time": 2.65,
-    "duration": 0.45
+    "start_time": 2.43,
+    "duration": 0.74
    },
    "inputs": {
     "particle": "ps_trail_spark"
@@ -5159,8 +5619,8 @@
     ],
     "color": [
      1.0,
-     0.92,
-     0.78,
+     0.66,
+     0.34,
      1.0
     ],
     "color_over_life": [
@@ -5168,31 +5628,31 @@
       0.0,
       [
        1.0,
-       1.0,
-       1.0,
+       0.94,
+       0.8,
        1.0
       ]
      ],
      [
-      0.32,
+      0.3,
       [
        1.0,
-       0.94,
-       0.84,
+       0.7,
+       0.38,
        1.0
       ]
      ],
      [
       1.0,
       [
-       0.86,
-       0.5,
-       0.34,
+       0.8,
+       0.28,
+       0.1,
        1.0
       ]
      ]
     ],
-    "opacity": 0.4,
+    "opacity": 0.33,
     "opacity_over_life": [
      [
       0.0,
@@ -5215,7 +5675,7 @@
       0.0
      ]
     ],
-    "emissive": 0.42,
+    "emissive": 0.35,
     "drag": 3.2,
     "blend": "additive",
     "soft_particle_distance": 0.6,
@@ -5239,10 +5699,10 @@
    "layer": "impacts",
    "parameters": {
     "max_particles": 260,
-    "lifetime": 0.62,
-    "lifetime_variance": 0.217,
-    "size": 2.7,
-    "size_variance": 0.918,
+    "lifetime": 0.6,
+    "lifetime_variance": 0.21,
+    "size": 2.45,
+    "size_variance": 0.833,
     "size_over_life": [
      [
       0.0,
@@ -5259,8 +5719,8 @@
     ],
     "color": [
      1.0,
-     0.92,
-     0.78,
+     0.66,
+     0.34,
      1.0
     ],
     "color_over_life": [
@@ -5268,31 +5728,31 @@
       0.0,
       [
        1.0,
-       1.0,
-       1.0,
+       0.94,
+       0.8,
        1.0
       ]
      ],
      [
-      0.32,
+      0.3,
       [
        1.0,
-       0.94,
-       0.84,
+       0.7,
+       0.38,
        1.0
       ]
      ],
      [
       1.0,
       [
-       0.86,
-       0.5,
-       0.34,
+       0.8,
+       0.28,
+       0.1,
        1.0
       ]
      ]
     ],
-    "opacity": 0.4,
+    "opacity": 0.33,
     "opacity_over_life": [
      [
       0.0,
@@ -5315,7 +5775,7 @@
       0.0
      ]
     ],
-    "emissive": 0.42,
+    "emissive": 0.35,
     "drag": 3.2,
     "blend": "additive",
     "soft_particle_distance": 0.6,
@@ -5342,134 +5802,179 @@
     "radius": 0.55,
     "position": {
      "value": [
-      -1.7,
+      -2.1,
       0.0,
-      1.2
+      1.4
      ],
      "track": [
       {
        "time": 0.0,
        "value": [
-        -1.7,
-        0.0,
-        1.2
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 0.72,
-       "value": [
-        -1.7,
-        0.0,
-        1.2
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 0.86,
-       "value": [
-        2.4,
-        0.0,
-        -1.8
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 1.13,
-       "value": [
-        -3.2,
-        0.0,
-        -2.5
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 1.3,
-       "value": [
-        0.9,
-        0.0,
-        3.3
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 1.55,
-       "value": [
-        3.9,
+        -2.1,
         0.0,
         1.4
        ],
        "interp": "step"
       },
       {
-       "time": 1.69,
+       "time": 0.76,
        "value": [
-        -2.3,
+        -2.1,
         0.0,
-        -0.5
+        1.4
        ],
        "interp": "step"
       },
       {
-       "time": 1.96,
+       "time": 0.91,
        "value": [
-        1.3,
+        2.6,
         0.0,
-        -5.3
+        -1.6
        ],
        "interp": "step"
       },
       {
-       "time": 2.1,
+       "time": 1.07,
        "value": [
-        -4.4,
+        -3.0,
         0.0,
-        2.1
+        -2.7
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.24,
+       "value": [
+        0.7,
+        0.0,
+        3.4
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.39,
+       "value": [
+        4.1,
+        0.0,
+        1.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.55,
+       "value": [
+        -1.2,
+        0.0,
+        -0.6
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.7,
+       "value": [
+        1.5,
+        0.0,
+        -5.4
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.84,
+       "value": [
+        -3.8,
+        0.0,
+        2.3
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.99,
+       "value": [
+        3.0,
+        0.0,
+        3.1
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 2.13,
+       "value": [
+        -0.9,
+        0.0,
+        -3.2
        ],
        "interp": "step"
       },
       {
        "time": 2.27,
        "value": [
-        2.8,
+        5.7,
         0.0,
-        2.9
+        -0.7
        ],
        "interp": "step"
       },
       {
-       "time": 2.52,
+       "time": 2.4,
        "value": [
-        -0.8,
+        -2.6,
         0.0,
-        -3.0
+        0.4
        ],
        "interp": "step"
       },
       {
-       "time": 2.65,
+       "time": 2.54,
        "value": [
-        5.6,
+        1.9,
         0.0,
-        -0.9
+        1.9
        ],
        "interp": "step"
       },
       {
-       "time": 2.84,
+       "time": 2.67,
        "value": [
-        -2.0,
+        -4.5,
         0.0,
-        4.0
+        -1.1
        ],
        "interp": "step"
       },
       {
-       "time": 3.04,
+       "time": 2.8,
        "value": [
-        1.1,
+        2.2,
         0.0,
-        0.3
+        -3.6
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 2.9,
+       "value": [
+        -1.6,
+        0.0,
+        4.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 3.0,
+       "value": [
+        3.6,
+        0.0,
+        0.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 3.11,
+       "value": [
+        0.4,
+        0.0,
+        -0.2
        ],
        "interp": "step"
       }
@@ -5478,19 +5983,24 @@
     "rate": 0,
     "burst_count": 13,
     "burst_times": [
-     0.78,
-     0.92,
-     1.19,
-     1.36,
+     0.82,
+     0.97,
+     1.13,
+     1.3,
+     1.45,
      1.61,
-     1.75,
-     2.02,
-     2.16,
+     1.76,
+     1.9,
+     2.05,
+     2.19,
      2.33,
-     2.58,
-     2.71,
-     2.9,
-     3.1
+     2.46,
+     2.6,
+     2.73,
+     2.86,
+     2.96,
+     3.06,
+     3.17
     ],
     "velocity": 6.5,
     "velocity_variance": 3.0,
@@ -5515,62 +6025,80 @@
     "inner_radius": 0.35,
     "position": {
      "value": [
-      -3.2,
+      -3.0,
       0.0,
-      -2.5
+      -2.7
      ],
      "track": [
       {
        "time": 0.0,
        "value": [
-        -3.2,
+        -3.0,
         0.0,
-        -2.5
+        -2.7
        ],
        "interp": "step"
       },
       {
-       "time": 1.13,
+       "time": 1.07,
        "value": [
-        -3.2,
+        -3.0,
         0.0,
-        -2.5
+        -2.7
        ],
        "interp": "step"
       },
       {
-       "time": 1.96,
+       "time": 1.7,
        "value": [
-        1.3,
+        1.5,
         0.0,
-        -5.3
+        -5.4
        ],
        "interp": "step"
       },
       {
-       "time": 2.52,
+       "time": 2.13,
        "value": [
-        -0.8,
+        -0.9,
         0.0,
-        -3.0
+        -3.2
        ],
        "interp": "step"
       },
       {
-       "time": 2.84,
+       "time": 2.8,
        "value": [
-        -2.0,
+        2.2,
         0.0,
-        4.0
+        -3.6
        ],
        "interp": "step"
       },
       {
-       "time": 3.04,
+       "time": 2.9,
        "value": [
-        1.1,
+        -1.6,
         0.0,
-        0.3
+        4.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 3.0,
+       "value": [
+        3.6,
+        0.0,
+        0.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 3.11,
+       "value": [
+        0.4,
+        0.0,
+        -0.2
        ],
        "interp": "step"
       }
@@ -5579,11 +6107,13 @@
     "rate": 0,
     "burst_count": 12,
     "burst_times": [
-     1.19,
-     2.02,
-     2.58,
-     2.9,
-     3.1
+     1.13,
+     1.76,
+     2.19,
+     2.86,
+     2.96,
+     3.06,
+     3.17
     ],
     "velocity": 2.4,
     "velocity_variance": 1.4,
@@ -5608,55 +6138,55 @@
     "radius": 1.0,
     "position": {
      "value": [
-      1.3,
+      1.5,
       0.0,
-      -5.3
+      -5.4
      ],
      "track": [
       {
        "time": 0.0,
        "value": [
-        1.3,
+        1.5,
         0.0,
-        -5.3
+        -5.4
        ],
        "interp": "step"
       },
       {
-       "time": 1.96,
+       "time": 1.7,
        "value": [
-        1.3,
+        1.5,
         0.0,
-        -5.3
+        -5.4
        ],
        "interp": "step"
       },
       {
-       "time": 2.84,
+       "time": 2.9,
        "value": [
-        -2.0,
+        -1.6,
         0.0,
-        4.0
+        4.2
        ],
        "interp": "step"
       },
       {
-       "time": 3.04,
+       "time": 3.11,
        "value": [
-        1.1,
+        0.4,
         0.0,
-        0.3
+        -0.2
        ],
        "interp": "step"
       }
      ]
     },
     "rate": 0,
-    "burst_count": 24,
+    "burst_count": 19,
     "burst_times": [
-     2.02,
-     2.9,
-     3.1
+     1.76,
+     2.96,
+     3.17
     ],
     "velocity": 8.5,
     "velocity_variance": 4.0,
@@ -5679,7 +6209,7 @@
     "max_particles": 40,
     "lifetime": 0.22,
     "lifetime_variance": 0.05,
-    "size": 2.6,
+    "size": 2.4,
     "size_variance": 0.7,
     "size_over_life": [
      [
@@ -5697,8 +6227,8 @@
     ],
     "color": [
      1.0,
-     0.72,
-     0.42,
+     0.6,
+     0.3,
      1.0
     ],
     "color_over_life": [
@@ -5706,17 +6236,17 @@
       0.0,
       [
        1.0,
-       1.0,
-       1.0,
+       0.98,
+       0.9,
        1.0
       ]
      ],
      [
-      0.3,
+      0.28,
       [
        1.0,
-       0.86,
-       0.66,
+       0.78,
+       0.5,
        1.0
       ]
      ],
@@ -5724,13 +6254,13 @@
       1.0,
       [
        1.0,
-       0.5,
-       0.26,
+       0.4,
+       0.16,
        1.0
       ]
      ]
     ],
-    "opacity": 0.8,
+    "opacity": 0.6,
     "opacity_over_life": [
      [
       0.0,
@@ -5745,7 +6275,7 @@
       0.0
      ]
     ],
-    "emissive": 1.3,
+    "emissive": 0.9,
     "rotation_variance": 180.0,
     "angular_velocity_variance": 40.0,
     "blend": "additive"
@@ -5763,134 +6293,179 @@
     "shape": "point",
     "position": {
      "value": [
-      -1.7,
+      -2.1,
       0.75,
-      1.2
+      1.4
      ],
      "track": [
       {
        "time": 0.0,
        "value": [
-        -1.7,
-        0.75,
-        1.2
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 0.72,
-       "value": [
-        -1.7,
-        0.75,
-        1.2
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 0.86,
-       "value": [
-        2.4,
-        0.75,
-        -1.8
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 1.13,
-       "value": [
-        -3.2,
-        0.75,
-        -2.5
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 1.3,
-       "value": [
-        0.9,
-        0.75,
-        3.3
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 1.55,
-       "value": [
-        3.9,
+        -2.1,
         0.75,
         1.4
        ],
        "interp": "step"
       },
       {
-       "time": 1.69,
+       "time": 0.76,
        "value": [
-        -2.3,
+        -2.1,
         0.75,
-        -0.5
+        1.4
        ],
        "interp": "step"
       },
       {
-       "time": 1.96,
+       "time": 0.91,
        "value": [
-        1.3,
+        2.6,
         0.75,
-        -5.3
+        -1.6
        ],
        "interp": "step"
       },
       {
-       "time": 2.1,
+       "time": 1.07,
        "value": [
-        -4.4,
+        -3.0,
         0.75,
-        2.1
+        -2.7
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.24,
+       "value": [
+        0.7,
+        0.75,
+        3.4
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.39,
+       "value": [
+        4.1,
+        0.75,
+        1.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.55,
+       "value": [
+        -1.2,
+        0.75,
+        -0.6
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.7,
+       "value": [
+        1.5,
+        0.75,
+        -5.4
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.84,
+       "value": [
+        -3.8,
+        0.75,
+        2.3
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.99,
+       "value": [
+        3.0,
+        0.75,
+        3.1
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 2.13,
+       "value": [
+        -0.9,
+        0.75,
+        -3.2
        ],
        "interp": "step"
       },
       {
        "time": 2.27,
        "value": [
-        2.8,
+        5.7,
         0.75,
-        2.9
+        -0.7
        ],
        "interp": "step"
       },
       {
-       "time": 2.52,
+       "time": 2.4,
        "value": [
-        -0.8,
+        -2.6,
         0.75,
-        -3.0
+        0.4
        ],
        "interp": "step"
       },
       {
-       "time": 2.65,
+       "time": 2.54,
        "value": [
-        5.6,
+        1.9,
         0.75,
-        -0.9
+        1.9
        ],
        "interp": "step"
       },
       {
-       "time": 2.84,
+       "time": 2.67,
        "value": [
-        -2.0,
+        -4.5,
         0.75,
-        4.0
+        -1.1
        ],
        "interp": "step"
       },
       {
-       "time": 3.04,
+       "time": 2.8,
        "value": [
-        1.1,
+        2.2,
         0.75,
-        0.3
+        -3.6
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 2.9,
+       "value": [
+        -1.6,
+        0.75,
+        4.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 3.0,
+       "value": [
+        3.6,
+        0.75,
+        0.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 3.11,
+       "value": [
+        0.4,
+        0.75,
+        -0.2
        ],
        "interp": "step"
       }
@@ -5899,19 +6474,24 @@
     "rate": 0,
     "burst_count": 1,
     "burst_times": [
-     0.78,
-     0.92,
-     1.19,
-     1.36,
+     0.82,
+     0.97,
+     1.13,
+     1.3,
+     1.45,
      1.61,
-     1.75,
-     2.02,
-     2.16,
+     1.76,
+     1.9,
+     2.05,
+     2.19,
      2.33,
-     2.58,
-     2.71,
-     2.9,
-     3.1
+     2.46,
+     2.6,
+     2.73,
+     2.86,
+     2.96,
+     3.06,
+     3.17
     ],
     "velocity": 0.0
    },
@@ -5928,62 +6508,80 @@
     "radius": 0.5,
     "position": {
      "value": [
-      -3.2,
+      -3.0,
       1.1,
-      -2.5
+      -2.7
      ],
      "track": [
       {
        "time": 0.0,
        "value": [
-        -3.2,
+        -3.0,
         1.1,
-        -2.5
+        -2.7
        ],
        "interp": "step"
       },
       {
-       "time": 1.13,
+       "time": 1.07,
        "value": [
-        -3.2,
+        -3.0,
         1.1,
-        -2.5
+        -2.7
        ],
        "interp": "step"
       },
       {
-       "time": 1.96,
+       "time": 1.7,
        "value": [
-        1.3,
+        1.5,
         1.1,
-        -5.3
+        -5.4
        ],
        "interp": "step"
       },
       {
-       "time": 2.52,
+       "time": 2.13,
        "value": [
-        -0.8,
+        -0.9,
         1.1,
-        -3.0
+        -3.2
        ],
        "interp": "step"
       },
       {
-       "time": 2.84,
+       "time": 2.8,
        "value": [
-        -2.0,
+        2.2,
         1.1,
-        4.0
+        -3.6
        ],
        "interp": "step"
       },
       {
-       "time": 3.04,
+       "time": 2.9,
        "value": [
+        -1.6,
         1.1,
+        4.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 3.0,
+       "value": [
+        3.6,
         1.1,
-        0.3
+        0.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 3.11,
+       "value": [
+        0.4,
+        1.1,
+        -0.2
        ],
        "interp": "step"
       }
@@ -5992,11 +6590,13 @@
     "rate": 0,
     "burst_count": 2,
     "burst_times": [
-     1.19,
-     2.02,
-     2.58,
-     2.9,
-     3.1
+     1.13,
+     1.76,
+     2.19,
+     2.86,
+     2.96,
+     3.06,
+     3.17
     ],
     "velocity": 0.0
    },
@@ -6105,134 +6705,179 @@
     "radius": 0.5,
     "position": {
      "value": [
-      -1.7,
+      -2.1,
       0.0,
-      1.2
+      1.4
      ],
      "track": [
       {
        "time": 0.0,
        "value": [
-        -1.7,
-        0.0,
-        1.2
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 0.72,
-       "value": [
-        -1.7,
-        0.0,
-        1.2
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 0.86,
-       "value": [
-        2.4,
-        0.0,
-        -1.8
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 1.13,
-       "value": [
-        -3.2,
-        0.0,
-        -2.5
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 1.3,
-       "value": [
-        0.9,
-        0.0,
-        3.3
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 1.55,
-       "value": [
-        3.9,
+        -2.1,
         0.0,
         1.4
        ],
        "interp": "step"
       },
       {
-       "time": 1.69,
+       "time": 0.76,
        "value": [
-        -2.3,
+        -2.1,
         0.0,
-        -0.5
+        1.4
        ],
        "interp": "step"
       },
       {
-       "time": 1.96,
+       "time": 0.91,
        "value": [
-        1.3,
+        2.6,
         0.0,
-        -5.3
+        -1.6
        ],
        "interp": "step"
       },
       {
-       "time": 2.1,
+       "time": 1.07,
        "value": [
-        -4.4,
+        -3.0,
         0.0,
-        2.1
+        -2.7
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.24,
+       "value": [
+        0.7,
+        0.0,
+        3.4
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.39,
+       "value": [
+        4.1,
+        0.0,
+        1.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.55,
+       "value": [
+        -1.2,
+        0.0,
+        -0.6
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.7,
+       "value": [
+        1.5,
+        0.0,
+        -5.4
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.84,
+       "value": [
+        -3.8,
+        0.0,
+        2.3
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.99,
+       "value": [
+        3.0,
+        0.0,
+        3.1
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 2.13,
+       "value": [
+        -0.9,
+        0.0,
+        -3.2
        ],
        "interp": "step"
       },
       {
        "time": 2.27,
        "value": [
-        2.8,
+        5.7,
         0.0,
-        2.9
+        -0.7
        ],
        "interp": "step"
       },
       {
-       "time": 2.52,
+       "time": 2.4,
        "value": [
-        -0.8,
+        -2.6,
         0.0,
-        -3.0
+        0.4
        ],
        "interp": "step"
       },
       {
-       "time": 2.65,
+       "time": 2.54,
        "value": [
-        5.6,
+        1.9,
         0.0,
-        -0.9
+        1.9
        ],
        "interp": "step"
       },
       {
-       "time": 2.84,
+       "time": 2.67,
        "value": [
-        -2.0,
+        -4.5,
         0.0,
-        4.0
+        -1.1
        ],
        "interp": "step"
       },
       {
-       "time": 3.04,
+       "time": 2.8,
        "value": [
-        1.1,
+        2.2,
         0.0,
-        0.3
+        -3.6
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 2.9,
+       "value": [
+        -1.6,
+        0.0,
+        4.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 3.0,
+       "value": [
+        3.6,
+        0.0,
+        0.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 3.11,
+       "value": [
+        0.4,
+        0.0,
+        -0.2
        ],
        "interp": "step"
       }
@@ -6241,19 +6886,24 @@
     "rate": 0,
     "burst_count": 30,
     "burst_times": [
-     0.78,
-     0.92,
-     1.19,
-     1.36,
+     0.82,
+     0.97,
+     1.13,
+     1.3,
+     1.45,
      1.61,
-     1.75,
-     2.02,
-     2.16,
+     1.76,
+     1.9,
+     2.05,
+     2.19,
      2.33,
-     2.58,
-     2.71,
-     2.9,
-     3.1
+     2.46,
+     2.6,
+     2.73,
+     2.86,
+     2.96,
+     3.06,
+     3.17
     ],
     "velocity": 8.5,
     "velocity_variance": 5.0,
@@ -6277,62 +6927,80 @@
     "radius": 0.8,
     "position": {
      "value": [
-      -3.2,
+      -3.0,
       0.0,
-      -2.5
+      -2.7
      ],
      "track": [
       {
        "time": 0.0,
        "value": [
-        -3.2,
+        -3.0,
         0.0,
-        -2.5
+        -2.7
        ],
        "interp": "step"
       },
       {
-       "time": 1.13,
+       "time": 1.07,
        "value": [
-        -3.2,
+        -3.0,
         0.0,
-        -2.5
+        -2.7
        ],
        "interp": "step"
       },
       {
-       "time": 1.96,
+       "time": 1.7,
        "value": [
-        1.3,
+        1.5,
         0.0,
-        -5.3
+        -5.4
        ],
        "interp": "step"
       },
       {
-       "time": 2.52,
+       "time": 2.13,
        "value": [
-        -0.8,
+        -0.9,
         0.0,
-        -3.0
+        -3.2
        ],
        "interp": "step"
       },
       {
-       "time": 2.84,
+       "time": 2.8,
        "value": [
-        -2.0,
+        2.2,
         0.0,
-        4.0
+        -3.6
        ],
        "interp": "step"
       },
       {
-       "time": 3.04,
+       "time": 2.9,
        "value": [
-        1.1,
+        -1.6,
         0.0,
-        0.3
+        4.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 3.0,
+       "value": [
+        3.6,
+        0.0,
+        0.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 3.11,
+       "value": [
+        0.4,
+        0.0,
+        -0.2
        ],
        "interp": "step"
       }
@@ -6341,11 +7009,13 @@
     "rate": 0,
     "burst_count": 40,
     "burst_times": [
-     1.19,
-     2.02,
-     2.58,
-     2.9,
-     3.1
+     1.13,
+     1.76,
+     2.19,
+     2.86,
+     2.96,
+     3.06,
+     3.17
     ],
     "velocity": 12.0,
     "velocity_variance": 7.0,
@@ -6365,11 +7035,11 @@
    "type": "particle_system",
    "layer": "impacts",
    "parameters": {
-    "max_particles": 300,
-    "lifetime": 0.95,
+    "max_particles": 220,
+    "lifetime": 0.9,
     "lifetime_variance": 0.25,
-    "size": 1.25,
-    "size_variance": 0.45,
+    "size": 1.1,
+    "size_variance": 0.4,
     "size_over_life": [
      [
       0.0,
@@ -6377,11 +7047,11 @@
      ],
      [
       0.5,
-      1.3
+      1.2
      ],
      [
       1.0,
-      1.85
+      1.6
      ]
     ],
     "color": [
@@ -6390,7 +7060,7 @@
      0.67,
      1.0
     ],
-    "opacity": 0.42,
+    "opacity": 0.34,
     "opacity_over_life": [
      [
       0.0,
@@ -6409,15 +7079,15 @@
       0.0
      ]
     ],
-    "emissive": 0.5,
+    "emissive": 0.34,
     "emissive_over_life": [
      [
       0.0,
-      1.4
+      1.0
      ],
      [
       0.3,
-      0.45
+      0.35
      ],
      [
       1.0,
@@ -6449,134 +7119,179 @@
     "inner_radius": 0.25,
     "position": {
      "value": [
-      -1.7,
+      -2.1,
       0.3,
-      1.2
+      1.4
      ],
      "track": [
       {
        "time": 0.0,
        "value": [
-        -1.7,
-        0.3,
-        1.2
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 0.72,
-       "value": [
-        -1.7,
-        0.3,
-        1.2
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 0.86,
-       "value": [
-        2.4,
-        0.3,
-        -1.8
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 1.13,
-       "value": [
-        -3.2,
-        0.3,
-        -2.5
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 1.3,
-       "value": [
-        0.9,
-        0.3,
-        3.3
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 1.55,
-       "value": [
-        3.9,
+        -2.1,
         0.3,
         1.4
        ],
        "interp": "step"
       },
       {
-       "time": 1.69,
+       "time": 0.76,
        "value": [
-        -2.3,
+        -2.1,
         0.3,
-        -0.5
+        1.4
        ],
        "interp": "step"
       },
       {
-       "time": 1.96,
+       "time": 0.91,
        "value": [
-        1.3,
+        2.6,
         0.3,
-        -5.3
+        -1.6
        ],
        "interp": "step"
       },
       {
-       "time": 2.1,
+       "time": 1.07,
        "value": [
-        -4.4,
+        -3.0,
         0.3,
-        2.1
+        -2.7
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.24,
+       "value": [
+        0.7,
+        0.3,
+        3.4
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.39,
+       "value": [
+        4.1,
+        0.3,
+        1.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.55,
+       "value": [
+        -1.2,
+        0.3,
+        -0.6
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.7,
+       "value": [
+        1.5,
+        0.3,
+        -5.4
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.84,
+       "value": [
+        -3.8,
+        0.3,
+        2.3
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.99,
+       "value": [
+        3.0,
+        0.3,
+        3.1
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 2.13,
+       "value": [
+        -0.9,
+        0.3,
+        -3.2
        ],
        "interp": "step"
       },
       {
        "time": 2.27,
        "value": [
-        2.8,
+        5.7,
         0.3,
-        2.9
+        -0.7
        ],
        "interp": "step"
       },
       {
-       "time": 2.52,
+       "time": 2.4,
        "value": [
-        -0.8,
+        -2.6,
         0.3,
-        -3.0
+        0.4
        ],
        "interp": "step"
       },
       {
-       "time": 2.65,
+       "time": 2.54,
        "value": [
-        5.6,
+        1.9,
         0.3,
-        -0.9
+        1.9
        ],
        "interp": "step"
       },
       {
-       "time": 2.84,
+       "time": 2.67,
        "value": [
-        -2.0,
+        -4.5,
         0.3,
-        4.0
+        -1.1
        ],
        "interp": "step"
       },
       {
-       "time": 3.04,
+       "time": 2.8,
        "value": [
-        1.1,
+        2.2,
         0.3,
-        0.3
+        -3.6
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 2.9,
+       "value": [
+        -1.6,
+        0.3,
+        4.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 3.0,
+       "value": [
+        3.6,
+        0.3,
+        0.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 3.11,
+       "value": [
+        0.4,
+        0.3,
+        -0.2
        ],
        "interp": "step"
       }
@@ -6585,19 +7300,24 @@
     "rate": 0,
     "burst_count": 7,
     "burst_times": [
-     0.78,
-     0.92,
-     1.19,
-     1.36,
+     0.82,
+     0.97,
+     1.13,
+     1.3,
+     1.45,
      1.61,
-     1.75,
-     2.02,
-     2.16,
+     1.76,
+     1.9,
+     2.05,
+     2.19,
      2.33,
-     2.58,
-     2.71,
-     2.9,
-     3.1
+     2.46,
+     2.6,
+     2.73,
+     2.86,
+     2.96,
+     3.06,
+     3.17
     ],
     "velocity": 0.7,
     "velocity_variance": 0.5,
@@ -6623,62 +7343,80 @@
     "inner_radius": 0.4,
     "position": {
      "value": [
-      -3.2,
+      -3.0,
       0.35,
-      -2.5
+      -2.7
      ],
      "track": [
       {
        "time": 0.0,
        "value": [
-        -3.2,
+        -3.0,
         0.35,
-        -2.5
+        -2.7
        ],
        "interp": "step"
       },
       {
-       "time": 1.13,
+       "time": 1.07,
        "value": [
-        -3.2,
+        -3.0,
         0.35,
-        -2.5
+        -2.7
        ],
        "interp": "step"
       },
       {
-       "time": 1.96,
+       "time": 1.7,
        "value": [
-        1.3,
+        1.5,
         0.35,
-        -5.3
+        -5.4
        ],
        "interp": "step"
       },
       {
-       "time": 2.52,
+       "time": 2.13,
        "value": [
-        -0.8,
+        -0.9,
         0.35,
-        -3.0
+        -3.2
        ],
        "interp": "step"
       },
       {
-       "time": 2.84,
+       "time": 2.8,
        "value": [
-        -2.0,
+        2.2,
         0.35,
-        4.0
+        -3.6
        ],
        "interp": "step"
       },
       {
-       "time": 3.04,
+       "time": 2.9,
        "value": [
-        1.1,
+        -1.6,
         0.35,
-        0.3
+        4.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 3.0,
+       "value": [
+        3.6,
+        0.35,
+        0.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 3.11,
+       "value": [
+        0.4,
+        0.35,
+        -0.2
        ],
        "interp": "step"
       }
@@ -6687,11 +7425,13 @@
     "rate": 0,
     "burst_count": 9,
     "burst_times": [
-     1.19,
-     2.02,
-     2.58,
-     2.9,
-     3.1
+     1.13,
+     1.76,
+     2.19,
+     2.86,
+     2.96,
+     3.06,
+     3.17
     ],
     "velocity": 0.9,
     "velocity_variance": 0.6,
@@ -6775,134 +7515,179 @@
     "radius": 0.4,
     "position": {
      "value": [
-      -1.7,
+      -2.1,
       0.2,
-      1.2
+      1.4
      ],
      "track": [
       {
        "time": 0.0,
        "value": [
-        -1.7,
-        0.2,
-        1.2
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 0.72,
-       "value": [
-        -1.7,
-        0.2,
-        1.2
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 0.86,
-       "value": [
-        2.4,
-        0.2,
-        -1.8
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 1.13,
-       "value": [
-        -3.2,
-        0.2,
-        -2.5
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 1.3,
-       "value": [
-        0.9,
-        0.2,
-        3.3
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 1.55,
-       "value": [
-        3.9,
+        -2.1,
         0.2,
         1.4
        ],
        "interp": "step"
       },
       {
-       "time": 1.69,
+       "time": 0.76,
        "value": [
-        -2.3,
+        -2.1,
         0.2,
-        -0.5
+        1.4
        ],
        "interp": "step"
       },
       {
-       "time": 1.96,
+       "time": 0.91,
        "value": [
-        1.3,
+        2.6,
         0.2,
-        -5.3
+        -1.6
        ],
        "interp": "step"
       },
       {
-       "time": 2.1,
+       "time": 1.07,
        "value": [
-        -4.4,
+        -3.0,
         0.2,
-        2.1
+        -2.7
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.24,
+       "value": [
+        0.7,
+        0.2,
+        3.4
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.39,
+       "value": [
+        4.1,
+        0.2,
+        1.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.55,
+       "value": [
+        -1.2,
+        0.2,
+        -0.6
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.7,
+       "value": [
+        1.5,
+        0.2,
+        -5.4
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.84,
+       "value": [
+        -3.8,
+        0.2,
+        2.3
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.99,
+       "value": [
+        3.0,
+        0.2,
+        3.1
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 2.13,
+       "value": [
+        -0.9,
+        0.2,
+        -3.2
        ],
        "interp": "step"
       },
       {
        "time": 2.27,
        "value": [
-        2.8,
+        5.7,
         0.2,
-        2.9
+        -0.7
        ],
        "interp": "step"
       },
       {
-       "time": 2.52,
+       "time": 2.4,
        "value": [
-        -0.8,
+        -2.6,
         0.2,
-        -3.0
+        0.4
        ],
        "interp": "step"
       },
       {
-       "time": 2.65,
+       "time": 2.54,
        "value": [
-        5.6,
+        1.9,
         0.2,
-        -0.9
+        1.9
        ],
        "interp": "step"
       },
       {
-       "time": 2.84,
+       "time": 2.67,
        "value": [
-        -2.0,
+        -4.5,
         0.2,
-        4.0
+        -1.1
        ],
        "interp": "step"
       },
       {
-       "time": 3.04,
+       "time": 2.8,
        "value": [
-        1.1,
+        2.2,
         0.2,
-        0.3
+        -3.6
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 2.9,
+       "value": [
+        -1.6,
+        0.2,
+        4.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 3.0,
+       "value": [
+        3.6,
+        0.2,
+        0.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 3.11,
+       "value": [
+        0.4,
+        0.2,
+        -0.2
        ],
        "interp": "step"
       }
@@ -6911,19 +7696,24 @@
     "rate": 0,
     "burst_count": 6,
     "burst_times": [
-     0.78,
-     0.92,
-     1.19,
-     1.36,
+     0.82,
+     0.97,
+     1.13,
+     1.3,
+     1.45,
      1.61,
-     1.75,
-     2.02,
-     2.16,
+     1.76,
+     1.9,
+     2.05,
+     2.19,
      2.33,
-     2.58,
-     2.71,
-     2.9,
-     3.1
+     2.46,
+     2.6,
+     2.73,
+     2.86,
+     2.96,
+     3.06,
+     3.17
     ],
     "velocity": 8.0,
     "velocity_variance": 4.0,
@@ -6948,62 +7738,80 @@
     "radius": 0.7,
     "position": {
      "value": [
-      -3.2,
+      -3.0,
       0.25,
-      -2.5
+      -2.7
      ],
      "track": [
       {
        "time": 0.0,
        "value": [
-        -3.2,
+        -3.0,
         0.25,
-        -2.5
+        -2.7
        ],
        "interp": "step"
       },
       {
-       "time": 1.13,
+       "time": 1.07,
        "value": [
-        -3.2,
+        -3.0,
         0.25,
-        -2.5
+        -2.7
        ],
        "interp": "step"
       },
       {
-       "time": 1.96,
+       "time": 1.7,
        "value": [
-        1.3,
+        1.5,
         0.25,
-        -5.3
+        -5.4
        ],
        "interp": "step"
       },
       {
-       "time": 2.52,
+       "time": 2.13,
        "value": [
-        -0.8,
+        -0.9,
         0.25,
-        -3.0
+        -3.2
        ],
        "interp": "step"
       },
       {
-       "time": 2.84,
+       "time": 2.8,
        "value": [
-        -2.0,
+        2.2,
         0.25,
-        4.0
+        -3.6
        ],
        "interp": "step"
       },
       {
-       "time": 3.04,
+       "time": 2.9,
        "value": [
-        1.1,
+        -1.6,
         0.25,
-        0.3
+        4.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 3.0,
+       "value": [
+        3.6,
+        0.25,
+        0.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 3.11,
+       "value": [
+        0.4,
+        0.25,
+        -0.2
        ],
        "interp": "step"
       }
@@ -7012,11 +7820,13 @@
     "rate": 0,
     "burst_count": 8,
     "burst_times": [
-     1.19,
-     2.02,
-     2.58,
-     2.9,
-     3.1
+     1.13,
+     1.76,
+     2.19,
+     2.86,
+     2.96,
+     3.06,
+     3.17
     ],
     "velocity": 11.0,
     "velocity_variance": 5.5,
@@ -7040,80 +7850,98 @@
     "light_type": "point",
     "position": {
      "value": [
-      -1.7,
+      -2.1,
       1.3,
-      1.2
+      1.4
      ],
      "track": [
       {
        "time": 0.0,
        "value": [
-        -1.7,
-        1.3,
-        1.2
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 0.72,
-       "value": [
-        -1.7,
-        1.3,
-        1.2
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 1.13,
-       "value": [
-        -3.2,
-        1.3,
-        -2.5
-       ],
-       "interp": "step"
-      },
-      {
-       "time": 1.55,
-       "value": [
-        3.9,
+        -2.1,
         1.3,
         1.4
        ],
        "interp": "step"
       },
       {
-       "time": 1.96,
+       "time": 0.76,
        "value": [
+        -2.1,
         1.3,
+        1.4
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.07,
+       "value": [
+        -3.0,
         1.3,
-        -5.3
+        -2.7
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.39,
+       "value": [
+        4.1,
+        1.3,
+        1.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.7,
+       "value": [
+        1.5,
+        1.3,
+        -5.4
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 1.99,
+       "value": [
+        3.0,
+        1.3,
+        3.1
        ],
        "interp": "step"
       },
       {
        "time": 2.27,
        "value": [
-        2.8,
+        5.7,
         1.3,
-        2.9
+        -0.7
        ],
        "interp": "step"
       },
       {
-       "time": 2.65,
+       "time": 2.54,
        "value": [
-        5.6,
+        1.9,
         1.3,
-        -0.9
+        1.9
        ],
        "interp": "step"
       },
       {
-       "time": 3.04,
+       "time": 2.8,
        "value": [
-        1.1,
+        2.2,
         1.3,
-        0.3
+        -3.6
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 3.0,
+       "value": [
+        3.6,
+        1.3,
+        0.2
        ],
        "interp": "step"
       }
@@ -7134,111 +7962,103 @@
        "value": 0.0
       },
       {
-       "time": 0.75,
+       "time": 0.79,
        "value": 0.0
       },
       {
-       "time": 0.805,
-       "value": 15.0
+       "time": 0.845,
+       "value": 11.0
       },
       {
-       "time": 0.91,
-       "value": 4.5
+       "time": 0.95,
+       "value": 3.3
       },
       {
-       "time": 1.08,
+       "time": 1.12,
        "value": 0.0
       },
       {
-       "time": 1.16,
+       "time": 1.155,
+       "value": 17.0
+      },
+      {
+       "time": 1.26,
+       "value": 5.1
+      },
+      {
+       "time": 1.43,
        "value": 0.0
       },
       {
-       "time": 1.215,
-       "value": 22.0
-      },
-      {
-       "time": 1.32,
-       "value": 6.6
-      },
-      {
-       "time": 1.49,
-       "value": 0.0
+       "time": 1.475,
+       "value": 11.0
       },
       {
        "time": 1.58,
+       "value": 3.3
+      },
+      {
+       "time": 1.75,
        "value": 0.0
       },
       {
-       "time": 1.635,
-       "value": 15.0
+       "time": 1.785,
+       "value": 24.0
       },
       {
-       "time": 1.74,
-       "value": 4.5
+       "time": 1.89,
+       "value": 7.2
       },
       {
-       "time": 1.91,
+       "time": 2.06,
        "value": 0.0
       },
       {
-       "time": 1.99,
-       "value": 0.0
+       "time": 2.075,
+       "value": 11.0
       },
       {
-       "time": 2.045,
-       "value": 34.0
+       "time": 2.18,
+       "value": 3.3
       },
       {
-       "time": 2.15,
-       "value": 10.2
-      },
-      {
-       "time": 2.32,
+       "time": 2.35,
        "value": 0.0
       },
       {
        "time": 2.355,
-       "value": 15.0
+       "value": 11.0
       },
       {
        "time": 2.46,
-       "value": 4.5
+       "value": 3.3
       },
       {
        "time": 2.63,
        "value": 0.0
       },
       {
-       "time": 2.68,
+       "time": 2.73,
+       "value": 3.3
+      },
+      {
+       "time": 2.9,
        "value": 0.0
       },
       {
-       "time": 2.735,
-       "value": 15.0
+       "time": 2.99,
+       "value": 5.1
       },
       {
-       "time": 2.84,
-       "value": 4.5
-      },
-      {
-       "time": 3.01,
+       "time": 3.16,
        "value": 0.0
       },
       {
-       "time": 3.07,
-       "value": 0.0
+       "time": 3.19,
+       "value": 5.1
       },
       {
-       "time": 3.125,
-       "value": 34.0
-      },
-      {
-       "time": 3.23,
-       "value": 10.2
-      },
-      {
-       "time": 3.4,
+       "time": 3.36,
        "value": 0.0
       }
      ]
@@ -7255,71 +8075,98 @@
     "light_type": "point",
     "position": {
      "value": [
-      2.4,
+      2.6,
       1.3,
-      -1.8
+      -1.6
      ],
      "track": [
       {
        "time": 0.0,
        "value": [
-        2.4,
+        2.6,
         1.3,
-        -1.8
+        -1.6
        ],
        "interp": "step"
       },
       {
-       "time": 0.86,
+       "time": 0.91,
        "value": [
-        2.4,
+        2.6,
         1.3,
-        -1.8
+        -1.6
        ],
        "interp": "step"
       },
       {
-       "time": 1.3,
+       "time": 1.24,
        "value": [
-        0.9,
+        0.7,
         1.3,
-        3.3
+        3.4
        ],
        "interp": "step"
       },
       {
-       "time": 1.69,
+       "time": 1.55,
        "value": [
-        -2.3,
+        -1.2,
         1.3,
-        -0.5
+        -0.6
        ],
        "interp": "step"
       },
       {
-       "time": 2.1,
+       "time": 1.84,
        "value": [
-        -4.4,
+        -3.8,
         1.3,
-        2.1
+        2.3
        ],
        "interp": "step"
       },
       {
-       "time": 2.52,
+       "time": 2.13,
        "value": [
-        -0.8,
+        -0.9,
         1.3,
-        -3.0
+        -3.2
        ],
        "interp": "step"
       },
       {
-       "time": 2.84,
+       "time": 2.4,
        "value": [
-        -2.0,
+        -2.6,
         1.3,
-        4.0
+        0.4
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 2.67,
+       "value": [
+        -4.5,
+        1.3,
+        -1.1
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 2.9,
+       "value": [
+        -1.6,
+        1.3,
+        4.2
+       ],
+       "interp": "step"
+      },
+      {
+       "time": 3.11,
+       "value": [
+        0.4,
+        1.3,
+        -0.2
        ],
        "interp": "step"
       }
@@ -7340,95 +8187,99 @@
        "value": 0.0
       },
       {
-       "time": 0.89,
+       "time": 0.94,
        "value": 0.0
       },
       {
-       "time": 0.945,
-       "value": 15.0
+       "time": 0.995,
+       "value": 11.0
       },
       {
-       "time": 1.05,
-       "value": 4.5
+       "time": 1.1,
+       "value": 3.3
       },
       {
-       "time": 1.22,
+       "time": 1.27,
        "value": 0.0
       },
       {
-       "time": 1.33,
+       "time": 1.325,
+       "value": 11.0
+      },
+      {
+       "time": 1.43,
+       "value": 3.3
+      },
+      {
+       "time": 1.6,
        "value": 0.0
       },
       {
-       "time": 1.385,
-       "value": 15.0
+       "time": 1.635,
+       "value": 11.0
       },
       {
-       "time": 1.49,
-       "value": 4.5
+       "time": 1.74,
+       "value": 3.3
       },
       {
-       "time": 1.66,
+       "time": 1.91,
        "value": 0.0
       },
       {
-       "time": 1.72,
+       "time": 1.925,
+       "value": 11.0
+      },
+      {
+       "time": 2.03,
+       "value": 3.3
+      },
+      {
+       "time": 2.2,
        "value": 0.0
       },
       {
-       "time": 1.775,
-       "value": 15.0
+       "time": 2.215,
+       "value": 17.0
       },
       {
-       "time": 1.88,
-       "value": 4.5
+       "time": 2.32,
+       "value": 5.1
       },
       {
-       "time": 2.05,
+       "time": 2.49,
        "value": 0.0
       },
       {
-       "time": 2.13,
+       "time": 2.59,
+       "value": 3.3
+      },
+      {
+       "time": 2.76,
        "value": 0.0
       },
       {
-       "time": 2.185,
-       "value": 15.0
-      },
-      {
-       "time": 2.29,
-       "value": 4.5
-      },
-      {
-       "time": 2.46,
-       "value": 0.0
-      },
-      {
-       "time": 2.55,
-       "value": 0.0
-      },
-      {
-       "time": 2.605,
-       "value": 22.0
-      },
-      {
-       "time": 2.71,
-       "value": 6.6
-      },
-      {
-       "time": 2.88,
-       "value": 0.0
-      },
-      {
-       "time": 2.925,
-       "value": 34.0
+       "time": 2.86,
+       "value": 3.3
       },
       {
        "time": 3.03,
-       "value": 10.2
+       "value": 0.0
       },
       {
-       "time": 3.2,
+       "time": 3.09,
+       "value": 7.2
+      },
+      {
+       "time": 3.26,
+       "value": 0.0
+      },
+      {
+       "time": 3.3,
+       "value": 7.2
+      },
+      {
+       "time": 3.47,
        "value": 0.0
       }
      ]
@@ -7444,160 +8295,9 @@
    "parameters": {
     "shape": "circle",
     "position": [
-     -1.7,
+     -2.1,
      0.006,
-     1.2
-    ],
-    "rotation": [
-     0.0,
-     207.7,
-     0.0
-    ],
-    "size": {
-     "value": [
-      0.952,
-      0.952
-     ],
-     "track": [
-      {
-       "time": 0.78,
-       "value": [
-        0.952,
-        0.952
-       ]
-      },
-      {
-       "time": 0.9,
-       "value": [
-        2.38,
-        2.38
-       ]
-      },
-      {
-       "time": 4.0,
-       "value": [
-        2.5228,
-        2.5228
-       ]
-      }
-     ]
-    },
-    "color": {
-     "value": [
-      1.0,
-      0.95,
-      0.72,
-      1.0
-     ],
-     "track": [
-      {
-       "time": 0.78,
-       "value": [
-        1.0,
-        0.95,
-        0.72,
-        1.0
-       ]
-      },
-      {
-       "time": 1.08,
-       "value": [
-        1.0,
-        0.62,
-        0.22,
-        1.0
-       ]
-      },
-      {
-       "time": 1.68,
-       "value": [
-        1.0,
-        0.3,
-        0.06,
-        1.0
-       ]
-      },
-      {
-       "time": 4.0,
-       "value": [
-        0.8,
-        0.1,
-        0.015,
-        1.0
-       ]
-      }
-     ]
-    },
-    "blend": "additive",
-    "emissive": {
-     "value": 0.0,
-     "track": [
-      {
-       "time": 0.78,
-       "value": 0.0
-      },
-      {
-       "time": 0.83,
-       "value": 3.4
-      },
-      {
-       "time": 1.13,
-       "value": 1.9
-      },
-      {
-       "time": 3.5,
-       "value": 1.2
-      },
-      {
-       "time": 3.8,
-       "value": 0.6
-      },
-      {
-       "time": 4.0,
-       "value": 0.0
-      }
-     ]
-    },
-    "opacity": {
-     "value": 0.0,
-     "track": [
-      {
-       "time": 0.78,
-       "value": 0.0
-      },
-      {
-       "time": 0.83,
-       "value": 1.0
-      },
-      {
-       "time": 3.6,
-       "value": 1.0
-      },
-      {
-       "time": 4.0,
-       "value": 0.0
-      }
-     ]
-    },
-    "fade_in": 0.0,
-    "fade_out": 0.0,
-    "start_time": 0.78,
-    "duration": 3.22
-   },
-   "inputs": {
-    "texture": "tex_scorch"
-   }
-  },
-  {
-   "id": "scorch_1",
-   "type": "decal",
-   "layer": "aftermath",
-   "parameters": {
-    "shape": "circle",
-    "position": [
-     2.4,
-     0.007,
-     -1.8
+     1.4
     ],
     "rotation": [
      0.0,
@@ -7606,29 +8306,29 @@
     ],
     "size": {
      "value": [
-      0.8656,
-      0.8656
+      1.0864,
+      1.1458
      ],
      "track": [
       {
-       "time": 0.92,
+       "time": 0.82,
        "value": [
-        0.8656,
-        0.8656
+        1.0864,
+        1.1458
        ]
       },
       {
-       "time": 1.04,
+       "time": 0.94,
        "value": [
-        2.164,
-        2.164
+        2.716,
+        2.8646
        ]
       },
       {
        "time": 4.0,
        "value": [
-        2.2938,
-        2.2938
+        2.879,
+        3.0365
        ]
       }
      ]
@@ -7642,7 +8342,7 @@
      ],
      "track": [
       {
-       "time": 0.92,
+       "time": 0.82,
        "value": [
         1.0,
         0.95,
@@ -7651,7 +8351,7 @@
        ]
       },
       {
-       "time": 1.22,
+       "time": 1.12,
        "value": [
         1.0,
         0.62,
@@ -7660,7 +8360,7 @@
        ]
       },
       {
-       "time": 1.82,
+       "time": 1.72,
        "value": [
         1.0,
         0.3,
@@ -7684,24 +8384,24 @@
      "value": 0.0,
      "track": [
       {
-       "time": 0.92,
+       "time": 0.82,
        "value": 0.0
       },
       {
-       "time": 0.97,
-       "value": 3.4
+       "time": 0.87,
+       "value": 1.35
       },
       {
-       "time": 1.27,
-       "value": 1.9
+       "time": 1.17,
+       "value": 0.8
       },
       {
-       "time": 3.5,
-       "value": 1.2
+       "time": 3.4,
+       "value": 0.55
       },
       {
-       "time": 3.8,
-       "value": 0.6
+       "time": 3.75,
+       "value": 0.25
       },
       {
        "time": 4.0,
@@ -7713,16 +8413,16 @@
      "value": 0.0,
      "track": [
       {
-       "time": 0.92,
+       "time": 0.82,
        "value": 0.0
       },
       {
-       "time": 0.97,
-       "value": 1.0
+       "time": 0.87,
+       "value": 0.85
       },
       {
-       "time": 3.6,
-       "value": 1.0
+       "time": 3.4,
+       "value": 0.78
       },
       {
        "time": 4.0,
@@ -7732,8 +8432,8 @@
     },
     "fade_in": 0.0,
     "fade_out": 0.0,
-    "start_time": 0.92,
-    "duration": 3.08
+    "start_time": 0.82,
+    "duration": 3.18
    },
    "inputs": {
     "texture": "tex_scorch"
@@ -7746,160 +8446,9 @@
    "parameters": {
     "shape": "circle",
     "position": [
-     -3.2,
+     -3.0,
      0.008,
-     -2.5
-    ],
-    "rotation": [
-     0.0,
-     86.2,
-     0.0
-    ],
-    "size": {
-     "value": [
-      1.06,
-      1.06
-     ],
-     "track": [
-      {
-       "time": 1.19,
-       "value": [
-        1.06,
-        1.06
-       ]
-      },
-      {
-       "time": 1.31,
-       "value": [
-        2.65,
-        2.65
-       ]
-      },
-      {
-       "time": 4.0,
-       "value": [
-        2.809,
-        2.809
-       ]
-      }
-     ]
-    },
-    "color": {
-     "value": [
-      1.0,
-      0.95,
-      0.72,
-      1.0
-     ],
-     "track": [
-      {
-       "time": 1.19,
-       "value": [
-        1.0,
-        0.95,
-        0.72,
-        1.0
-       ]
-      },
-      {
-       "time": 1.49,
-       "value": [
-        1.0,
-        0.62,
-        0.22,
-        1.0
-       ]
-      },
-      {
-       "time": 2.09,
-       "value": [
-        1.0,
-        0.3,
-        0.06,
-        1.0
-       ]
-      },
-      {
-       "time": 4.0,
-       "value": [
-        0.8,
-        0.1,
-        0.015,
-        1.0
-       ]
-      }
-     ]
-    },
-    "blend": "additive",
-    "emissive": {
-     "value": 0.0,
-     "track": [
-      {
-       "time": 1.19,
-       "value": 0.0
-      },
-      {
-       "time": 1.24,
-       "value": 3.4
-      },
-      {
-       "time": 1.54,
-       "value": 1.9
-      },
-      {
-       "time": 3.5,
-       "value": 1.2
-      },
-      {
-       "time": 3.8,
-       "value": 0.6
-      },
-      {
-       "time": 4.0,
-       "value": 0.0
-      }
-     ]
-    },
-    "opacity": {
-     "value": 0.0,
-     "track": [
-      {
-       "time": 1.19,
-       "value": 0.0
-      },
-      {
-       "time": 1.24,
-       "value": 1.0
-      },
-      {
-       "time": 3.6,
-       "value": 1.0
-      },
-      {
-       "time": 4.0,
-       "value": 0.0
-      }
-     ]
-    },
-    "fade_in": 0.0,
-    "fade_out": 0.0,
-    "start_time": 1.19,
-    "duration": 2.81
-   },
-   "inputs": {
-    "texture": "tex_scorch"
-   }
-  },
-  {
-   "id": "scorch_3",
-   "type": "decal",
-   "layer": "aftermath",
-   "parameters": {
-    "shape": "circle",
-    "position": [
-     0.9,
-     0.009,
-     3.3
+     -2.7
     ],
     "rotation": [
      0.0,
@@ -7908,29 +8457,29 @@
     ],
     "size": {
      "value": [
-      0.8332,
-      0.8332
+      1.24,
+      1.0651
      ],
      "track": [
       {
-       "time": 1.36,
+       "time": 1.13,
        "value": [
-        0.8332,
-        0.8332
+        1.24,
+        1.0651
        ]
       },
       {
-       "time": 1.48,
+       "time": 1.25,
        "value": [
-        2.083,
-        2.083
+        3.1,
+        2.6627
        ]
       },
       {
        "time": 4.0,
        "value": [
-        2.208,
-        2.208
+        3.286,
+        2.8225
        ]
       }
      ]
@@ -7944,7 +8493,7 @@
      ],
      "track": [
       {
-       "time": 1.36,
+       "time": 1.13,
        "value": [
         1.0,
         0.95,
@@ -7953,7 +8502,7 @@
        ]
       },
       {
-       "time": 1.66,
+       "time": 1.43,
        "value": [
         1.0,
         0.62,
@@ -7962,7 +8511,7 @@
        ]
       },
       {
-       "time": 2.26,
+       "time": 2.03,
        "value": [
         1.0,
         0.3,
@@ -7986,24 +8535,24 @@
      "value": 0.0,
      "track": [
       {
-       "time": 1.36,
+       "time": 1.13,
        "value": 0.0
       },
       {
-       "time": 1.41,
-       "value": 3.4
+       "time": 1.18,
+       "value": 1.35
       },
       {
-       "time": 1.71,
-       "value": 1.9
+       "time": 1.48,
+       "value": 0.8
       },
       {
-       "time": 3.5,
-       "value": 1.2
+       "time": 3.4,
+       "value": 0.55
       },
       {
-       "time": 3.8,
-       "value": 0.6
+       "time": 3.75,
+       "value": 0.25
       },
       {
        "time": 4.0,
@@ -8015,16 +8564,16 @@
      "value": 0.0,
      "track": [
       {
-       "time": 1.36,
+       "time": 1.13,
        "value": 0.0
       },
       {
-       "time": 1.41,
-       "value": 1.0
+       "time": 1.18,
+       "value": 0.85
       },
       {
-       "time": 3.6,
-       "value": 1.0
+       "time": 3.4,
+       "value": 0.78
       },
       {
        "time": 4.0,
@@ -8034,8 +8583,8 @@
     },
     "fade_in": 0.0,
     "fade_out": 0.0,
-    "start_time": 1.36,
-    "duration": 2.64
+    "start_time": 1.13,
+    "duration": 2.87
    },
    "inputs": {
     "texture": "tex_scorch"
@@ -8048,40 +8597,191 @@
    "parameters": {
     "shape": "circle",
     "position": [
-     3.9,
+     4.1,
      0.01,
-     1.4
+     1.2
     ],
     "rotation": [
      0.0,
-     156.1,
+     116.0,
      0.0
     ],
     "size": {
      "value": [
-      0.9952,
-      0.9952
+      1.1376,
+      1.1051
      ],
      "track": [
       {
-       "time": 1.61,
+       "time": 1.45,
        "value": [
-        0.9952,
-        0.9952
+        1.1376,
+        1.1051
        ]
       },
       {
-       "time": 1.73,
+       "time": 1.57,
        "value": [
-        2.488,
-        2.488
+        2.844,
+        2.7627
        ]
       },
       {
        "time": 4.0,
        "value": [
-        2.6373,
-        2.6373
+        3.0146,
+        2.9285
+       ]
+      }
+     ]
+    },
+    "color": {
+     "value": [
+      1.0,
+      0.95,
+      0.72,
+      1.0
+     ],
+     "track": [
+      {
+       "time": 1.45,
+       "value": [
+        1.0,
+        0.95,
+        0.72,
+        1.0
+       ]
+      },
+      {
+       "time": 1.75,
+       "value": [
+        1.0,
+        0.62,
+        0.22,
+        1.0
+       ]
+      },
+      {
+       "time": 2.35,
+       "value": [
+        1.0,
+        0.3,
+        0.06,
+        1.0
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        0.8,
+        0.1,
+        0.015,
+        1.0
+       ]
+      }
+     ]
+    },
+    "blend": "additive",
+    "emissive": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 1.45,
+       "value": 0.0
+      },
+      {
+       "time": 1.5,
+       "value": 1.35
+      },
+      {
+       "time": 1.8,
+       "value": 0.8
+      },
+      {
+       "time": 3.4,
+       "value": 0.55
+      },
+      {
+       "time": 3.75,
+       "value": 0.25
+      },
+      {
+       "time": 4.0,
+       "value": 0.0
+      }
+     ]
+    },
+    "opacity": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 1.45,
+       "value": 0.0
+      },
+      {
+       "time": 1.5,
+       "value": 0.85
+      },
+      {
+       "time": 3.4,
+       "value": 0.78
+      },
+      {
+       "time": 4.0,
+       "value": 0.0
+      }
+     ]
+    },
+    "fade_in": 0.0,
+    "fade_out": 0.0,
+    "start_time": 1.45,
+    "duration": 2.55
+   },
+   "inputs": {
+    "texture": "tex_scorch"
+   }
+  },
+  {
+   "id": "scorch_5",
+   "type": "decal",
+   "layer": "aftermath",
+   "parameters": {
+    "shape": "circle",
+    "position": [
+     -1.2,
+     0.011,
+     -0.6
+    ],
+    "rotation": [
+     0.0,
+     105.4,
+     0.0
+    ],
+    "size": {
+     "value": [
+      1.0352,
+      1.2197
+     ],
+     "track": [
+      {
+       "time": 1.61,
+       "value": [
+        1.0352,
+        1.2197
+       ]
+      },
+      {
+       "time": 1.73,
+       "value": [
+        2.588,
+        3.0492
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        2.7433,
+        3.2322
        ]
       }
      ]
@@ -8142,19 +8842,19 @@
       },
       {
        "time": 1.66,
-       "value": 3.4
+       "value": 1.35
       },
       {
        "time": 1.96,
-       "value": 1.9
+       "value": 0.8
       },
       {
-       "time": 3.5,
-       "value": 1.2
+       "time": 3.4,
+       "value": 0.55
       },
       {
-       "time": 3.8,
-       "value": 0.6
+       "time": 3.75,
+       "value": 0.25
       },
       {
        "time": 4.0,
@@ -8171,11 +8871,11 @@
       },
       {
        "time": 1.66,
-       "value": 1.0
+       "value": 0.85
       },
       {
-       "time": 3.6,
-       "value": 1.0
+       "time": 3.4,
+       "value": 0.78
       },
       {
        "time": 4.0,
@@ -8193,197 +8893,46 @@
    }
   },
   {
-   "id": "scorch_5",
-   "type": "decal",
-   "layer": "aftermath",
-   "parameters": {
-    "shape": "circle",
-    "position": [
-     -2.3,
-     0.011,
-     -0.5
-    ],
-    "rotation": [
-     0.0,
-     116.0,
-     0.0
-    ],
-    "size": {
-     "value": [
-      0.898,
-      0.898
-     ],
-     "track": [
-      {
-       "time": 1.75,
-       "value": [
-        0.898,
-        0.898
-       ]
-      },
-      {
-       "time": 1.87,
-       "value": [
-        2.245,
-        2.245
-       ]
-      },
-      {
-       "time": 4.0,
-       "value": [
-        2.3797,
-        2.3797
-       ]
-      }
-     ]
-    },
-    "color": {
-     "value": [
-      1.0,
-      0.95,
-      0.72,
-      1.0
-     ],
-     "track": [
-      {
-       "time": 1.75,
-       "value": [
-        1.0,
-        0.95,
-        0.72,
-        1.0
-       ]
-      },
-      {
-       "time": 2.05,
-       "value": [
-        1.0,
-        0.62,
-        0.22,
-        1.0
-       ]
-      },
-      {
-       "time": 2.65,
-       "value": [
-        1.0,
-        0.3,
-        0.06,
-        1.0
-       ]
-      },
-      {
-       "time": 4.0,
-       "value": [
-        0.8,
-        0.1,
-        0.015,
-        1.0
-       ]
-      }
-     ]
-    },
-    "blend": "additive",
-    "emissive": {
-     "value": 0.0,
-     "track": [
-      {
-       "time": 1.75,
-       "value": 0.0
-      },
-      {
-       "time": 1.8,
-       "value": 3.4
-      },
-      {
-       "time": 2.1,
-       "value": 1.9
-      },
-      {
-       "time": 3.5,
-       "value": 1.2
-      },
-      {
-       "time": 3.8,
-       "value": 0.6
-      },
-      {
-       "time": 4.0,
-       "value": 0.0
-      }
-     ]
-    },
-    "opacity": {
-     "value": 0.0,
-     "track": [
-      {
-       "time": 1.75,
-       "value": 0.0
-      },
-      {
-       "time": 1.8,
-       "value": 1.0
-      },
-      {
-       "time": 3.6,
-       "value": 1.0
-      },
-      {
-       "time": 4.0,
-       "value": 0.0
-      }
-     ]
-    },
-    "fade_in": 0.0,
-    "fade_out": 0.0,
-    "start_time": 1.75,
-    "duration": 2.25
-   },
-   "inputs": {
-    "texture": "tex_scorch"
-   }
-  },
-  {
    "id": "scorch_6",
    "type": "decal",
    "layer": "aftermath",
    "parameters": {
     "shape": "circle",
     "position": [
-     1.3,
+     1.5,
      0.012,
-     -5.3
+     -5.4
     ],
     "rotation": [
      0.0,
-     284.4,
+     337.6,
      0.0
     ],
     "size": {
      "value": [
-      1.0924,
-      1.0924
+      1.2656,
+      1.3658
      ],
      "track": [
       {
-       "time": 2.02,
+       "time": 1.76,
        "value": [
-        1.0924,
-        1.0924
+        1.2656,
+        1.3658
        ]
       },
       {
-       "time": 2.14,
+       "time": 1.88,
        "value": [
-        2.731,
-        2.731
+        3.164,
+        3.4146
        ]
       },
       {
        "time": 4.0,
        "value": [
-        2.8949,
-        2.8949
+        3.3538,
+        3.6195
        ]
       }
      ]
@@ -8397,7 +8946,7 @@
      ],
      "track": [
       {
-       "time": 2.02,
+       "time": 1.76,
        "value": [
         1.0,
         0.95,
@@ -8406,7 +8955,7 @@
        ]
       },
       {
-       "time": 2.32,
+       "time": 2.06,
        "value": [
         1.0,
         0.62,
@@ -8415,7 +8964,7 @@
        ]
       },
       {
-       "time": 2.92,
+       "time": 2.66,
        "value": [
         1.0,
         0.3,
@@ -8439,24 +8988,24 @@
      "value": 0.0,
      "track": [
       {
-       "time": 2.02,
+       "time": 1.76,
        "value": 0.0
       },
       {
-       "time": 2.07,
-       "value": 3.4
+       "time": 1.81,
+       "value": 1.35
       },
       {
-       "time": 2.37,
-       "value": 1.9
+       "time": 2.11,
+       "value": 0.8
       },
       {
-       "time": 3.5,
-       "value": 1.2
+       "time": 3.4,
+       "value": 0.55
       },
       {
-       "time": 3.8,
-       "value": 0.6
+       "time": 3.75,
+       "value": 0.25
       },
       {
        "time": 4.0,
@@ -8468,16 +9017,16 @@
      "value": 0.0,
      "track": [
       {
-       "time": 2.02,
+       "time": 1.76,
        "value": 0.0
       },
       {
-       "time": 2.07,
-       "value": 1.0
+       "time": 1.81,
+       "value": 0.85
       },
       {
-       "time": 3.6,
-       "value": 1.0
+       "time": 3.4,
+       "value": 0.78
       },
       {
        "time": 4.0,
@@ -8487,159 +9036,8 @@
     },
     "fade_in": 0.0,
     "fade_out": 0.0,
-    "start_time": 2.02,
-    "duration": 1.98
-   },
-   "inputs": {
-    "texture": "tex_scorch"
-   }
-  },
-  {
-   "id": "scorch_7",
-   "type": "decal",
-   "layer": "aftermath",
-   "parameters": {
-    "shape": "circle",
-    "position": [
-     -4.4,
-     0.013,
-     2.1
-    ],
-    "rotation": [
-     0.0,
-     105.4,
-     0.0
-    ],
-    "size": {
-     "value": [
-      0.8548,
-      0.8548
-     ],
-     "track": [
-      {
-       "time": 2.16,
-       "value": [
-        0.8548,
-        0.8548
-       ]
-      },
-      {
-       "time": 2.28,
-       "value": [
-        2.137,
-        2.137
-       ]
-      },
-      {
-       "time": 4.0,
-       "value": [
-        2.2652,
-        2.2652
-       ]
-      }
-     ]
-    },
-    "color": {
-     "value": [
-      1.0,
-      0.95,
-      0.72,
-      1.0
-     ],
-     "track": [
-      {
-       "time": 2.16,
-       "value": [
-        1.0,
-        0.95,
-        0.72,
-        1.0
-       ]
-      },
-      {
-       "time": 2.46,
-       "value": [
-        1.0,
-        0.62,
-        0.22,
-        1.0
-       ]
-      },
-      {
-       "time": 3.06,
-       "value": [
-        1.0,
-        0.3,
-        0.06,
-        1.0
-       ]
-      },
-      {
-       "time": 4.0,
-       "value": [
-        0.8,
-        0.1,
-        0.015,
-        1.0
-       ]
-      }
-     ]
-    },
-    "blend": "additive",
-    "emissive": {
-     "value": 0.0,
-     "track": [
-      {
-       "time": 2.16,
-       "value": 0.0
-      },
-      {
-       "time": 2.21,
-       "value": 3.4
-      },
-      {
-       "time": 2.51,
-       "value": 1.9
-      },
-      {
-       "time": 3.5,
-       "value": 1.2
-      },
-      {
-       "time": 3.8,
-       "value": 0.6
-      },
-      {
-       "time": 4.0,
-       "value": 0.0
-      }
-     ]
-    },
-    "opacity": {
-     "value": 0.0,
-     "track": [
-      {
-       "time": 2.16,
-       "value": 0.0
-      },
-      {
-       "time": 2.21,
-       "value": 1.0
-      },
-      {
-       "time": 3.6,
-       "value": 1.0
-      },
-      {
-       "time": 4.0,
-       "value": 0.0
-      }
-     ]
-    },
-    "fade_in": 0.0,
-    "fade_out": 0.0,
-    "start_time": 2.16,
-    "duration": 1.84
+    "start_time": 1.76,
+    "duration": 2.24
    },
    "inputs": {
     "texture": "tex_scorch"
@@ -8652,40 +9050,342 @@
    "parameters": {
     "shape": "circle",
     "position": [
-     2.8,
+     3.0,
      0.014,
-     2.9
+     3.1
     ],
     "rotation": [
      0.0,
-     222.9,
+     67.8,
      0.0
     ],
     "size": {
      "value": [
-      0.9628,
-      0.9628
+      1.112,
+      1.2239
      ],
      "track": [
       {
-       "time": 2.33,
+       "time": 2.05,
        "value": [
-        0.9628,
-        0.9628
+        1.112,
+        1.2239
        ]
       },
       {
-       "time": 2.45,
+       "time": 2.17,
        "value": [
-        2.407,
-        2.407
+        2.78,
+        3.0598
        ]
       },
       {
        "time": 4.0,
        "value": [
-        2.5514,
-        2.5514
+        2.9468,
+        3.2434
+       ]
+      }
+     ]
+    },
+    "color": {
+     "value": [
+      1.0,
+      0.95,
+      0.72,
+      1.0
+     ],
+     "track": [
+      {
+       "time": 2.05,
+       "value": [
+        1.0,
+        0.95,
+        0.72,
+        1.0
+       ]
+      },
+      {
+       "time": 2.35,
+       "value": [
+        1.0,
+        0.62,
+        0.22,
+        1.0
+       ]
+      },
+      {
+       "time": 2.95,
+       "value": [
+        1.0,
+        0.3,
+        0.06,
+        1.0
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        0.8,
+        0.1,
+        0.015,
+        1.0
+       ]
+      }
+     ]
+    },
+    "blend": "additive",
+    "emissive": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 2.05,
+       "value": 0.0
+      },
+      {
+       "time": 2.1,
+       "value": 1.35
+      },
+      {
+       "time": 2.4,
+       "value": 0.8
+      },
+      {
+       "time": 3.4,
+       "value": 0.55
+      },
+      {
+       "time": 3.75,
+       "value": 0.25
+      },
+      {
+       "time": 4.0,
+       "value": 0.0
+      }
+     ]
+    },
+    "opacity": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 2.05,
+       "value": 0.0
+      },
+      {
+       "time": 2.1,
+       "value": 0.85
+      },
+      {
+       "time": 3.4,
+       "value": 0.78
+      },
+      {
+       "time": 4.0,
+       "value": 0.0
+      }
+     ]
+    },
+    "fade_in": 0.0,
+    "fade_out": 0.0,
+    "start_time": 2.05,
+    "duration": 1.95
+   },
+   "inputs": {
+    "texture": "tex_scorch"
+   }
+  },
+  {
+   "id": "scorch_9",
+   "type": "decal",
+   "layer": "aftermath",
+   "parameters": {
+    "shape": "circle",
+    "position": [
+     -0.9,
+     0.015,
+     -3.2
+    ],
+    "rotation": [
+     0.0,
+     97.9,
+     0.0
+    ],
+    "size": {
+     "value": [
+      1.1888,
+      1.3678
+     ],
+     "track": [
+      {
+       "time": 2.19,
+       "value": [
+        1.1888,
+        1.3678
+       ]
+      },
+      {
+       "time": 2.31,
+       "value": [
+        2.972,
+        3.4194
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        3.1503,
+        3.6246
+       ]
+      }
+     ]
+    },
+    "color": {
+     "value": [
+      1.0,
+      0.95,
+      0.72,
+      1.0
+     ],
+     "track": [
+      {
+       "time": 2.19,
+       "value": [
+        1.0,
+        0.95,
+        0.72,
+        1.0
+       ]
+      },
+      {
+       "time": 2.49,
+       "value": [
+        1.0,
+        0.62,
+        0.22,
+        1.0
+       ]
+      },
+      {
+       "time": 3.09,
+       "value": [
+        1.0,
+        0.3,
+        0.06,
+        1.0
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        0.8,
+        0.1,
+        0.015,
+        1.0
+       ]
+      }
+     ]
+    },
+    "blend": "additive",
+    "emissive": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 2.19,
+       "value": 0.0
+      },
+      {
+       "time": 2.24,
+       "value": 1.35
+      },
+      {
+       "time": 2.54,
+       "value": 0.8
+      },
+      {
+       "time": 3.4,
+       "value": 0.55
+      },
+      {
+       "time": 3.75,
+       "value": 0.25
+      },
+      {
+       "time": 4.0,
+       "value": 0.0
+      }
+     ]
+    },
+    "opacity": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 2.19,
+       "value": 0.0
+      },
+      {
+       "time": 2.24,
+       "value": 0.85
+      },
+      {
+       "time": 3.4,
+       "value": 0.78
+      },
+      {
+       "time": 4.0,
+       "value": 0.0
+      }
+     ]
+    },
+    "fade_in": 0.0,
+    "fade_out": 0.0,
+    "start_time": 2.19,
+    "duration": 1.81
+   },
+   "inputs": {
+    "texture": "tex_scorch"
+   }
+  },
+  {
+   "id": "scorch_10",
+   "type": "decal",
+   "layer": "aftermath",
+   "parameters": {
+    "shape": "circle",
+    "position": [
+     5.7,
+     0.016,
+     -0.7
+    ],
+    "rotation": [
+     0.0,
+     327.9,
+     0.0
+    ],
+    "size": {
+     "value": [
+      1.0224,
+      1.102
+     ],
+     "track": [
+      {
+       "time": 2.33,
+       "value": [
+        1.0224,
+        1.102
+       ]
+      },
+      {
+       "time": 2.45,
+       "value": [
+        2.556,
+        2.755
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        2.7094,
+        2.9203
        ]
       }
      ]
@@ -8746,19 +9446,19 @@
       },
       {
        "time": 2.38,
-       "value": 3.4
+       "value": 1.35
       },
       {
        "time": 2.68,
-       "value": 1.9
+       "value": 0.8
       },
       {
-       "time": 3.5,
-       "value": 1.2
+       "time": 3.4,
+       "value": 0.55
       },
       {
-       "time": 3.8,
-       "value": 0.6
+       "time": 3.75,
+       "value": 0.25
       },
       {
        "time": 4.0,
@@ -8775,11 +9475,11 @@
       },
       {
        "time": 2.38,
-       "value": 1.0
+       "value": 0.85
       },
       {
-       "time": 3.6,
-       "value": 1.0
+       "time": 3.4,
+       "value": 0.78
       },
       {
        "time": 4.0,
@@ -8797,348 +9497,46 @@
    }
   },
   {
-   "id": "scorch_9",
-   "type": "decal",
-   "layer": "aftermath",
-   "parameters": {
-    "shape": "circle",
-    "position": [
-     -0.8,
-     0.015,
-     -3.0
-    ],
-    "rotation": [
-     0.0,
-     337.6,
-     0.0
-    ],
-    "size": {
-     "value": [
-      1.0276,
-      1.0276
-     ],
-     "track": [
-      {
-       "time": 2.58,
-       "value": [
-        1.0276,
-        1.0276
-       ]
-      },
-      {
-       "time": 2.7,
-       "value": [
-        2.569,
-        2.569
-       ]
-      },
-      {
-       "time": 4.0,
-       "value": [
-        2.7231,
-        2.7231
-       ]
-      }
-     ]
-    },
-    "color": {
-     "value": [
-      1.0,
-      0.95,
-      0.72,
-      1.0
-     ],
-     "track": [
-      {
-       "time": 2.58,
-       "value": [
-        1.0,
-        0.95,
-        0.72,
-        1.0
-       ]
-      },
-      {
-       "time": 2.88,
-       "value": [
-        1.0,
-        0.62,
-        0.22,
-        1.0
-       ]
-      },
-      {
-       "time": 3.48,
-       "value": [
-        1.0,
-        0.3,
-        0.06,
-        1.0
-       ]
-      },
-      {
-       "time": 4.0,
-       "value": [
-        0.8,
-        0.1,
-        0.015,
-        1.0
-       ]
-      }
-     ]
-    },
-    "blend": "additive",
-    "emissive": {
-     "value": 0.0,
-     "track": [
-      {
-       "time": 2.58,
-       "value": 0.0
-      },
-      {
-       "time": 2.63,
-       "value": 3.4
-      },
-      {
-       "time": 2.93,
-       "value": 1.9
-      },
-      {
-       "time": 3.5,
-       "value": 1.2
-      },
-      {
-       "time": 3.8,
-       "value": 0.6
-      },
-      {
-       "time": 4.0,
-       "value": 0.0
-      }
-     ]
-    },
-    "opacity": {
-     "value": 0.0,
-     "track": [
-      {
-       "time": 2.58,
-       "value": 0.0
-      },
-      {
-       "time": 2.63,
-       "value": 1.0
-      },
-      {
-       "time": 3.6,
-       "value": 1.0
-      },
-      {
-       "time": 4.0,
-       "value": 0.0
-      }
-     ]
-    },
-    "fade_in": 0.0,
-    "fade_out": 0.0,
-    "start_time": 2.58,
-    "duration": 1.42
-   },
-   "inputs": {
-    "texture": "tex_scorch"
-   }
-  },
-  {
-   "id": "scorch_10",
-   "type": "decal",
-   "layer": "aftermath",
-   "parameters": {
-    "shape": "circle",
-    "position": [
-     5.6,
-     0.016,
-     -0.9
-    ],
-    "rotation": [
-     0.0,
-     236.3,
-     0.0
-    ],
-    "size": {
-     "value": [
-      0.8764,
-      0.8764
-     ],
-     "track": [
-      {
-       "time": 2.71,
-       "value": [
-        0.8764,
-        0.8764
-       ]
-      },
-      {
-       "time": 2.83,
-       "value": [
-        2.191,
-        2.191
-       ]
-      },
-      {
-       "time": 4.0,
-       "value": [
-        2.3225,
-        2.3225
-       ]
-      }
-     ]
-    },
-    "color": {
-     "value": [
-      1.0,
-      0.95,
-      0.72,
-      1.0
-     ],
-     "track": [
-      {
-       "time": 2.71,
-       "value": [
-        1.0,
-        0.95,
-        0.72,
-        1.0
-       ]
-      },
-      {
-       "time": 3.01,
-       "value": [
-        1.0,
-        0.62,
-        0.22,
-        1.0
-       ]
-      },
-      {
-       "time": 3.6,
-       "value": [
-        1.0,
-        0.3,
-        0.06,
-        1.0
-       ]
-      },
-      {
-       "time": 4.0,
-       "value": [
-        0.8,
-        0.1,
-        0.015,
-        1.0
-       ]
-      }
-     ]
-    },
-    "blend": "additive",
-    "emissive": {
-     "value": 0.0,
-     "track": [
-      {
-       "time": 2.71,
-       "value": 0.0
-      },
-      {
-       "time": 2.76,
-       "value": 3.4
-      },
-      {
-       "time": 3.06,
-       "value": 1.9
-      },
-      {
-       "time": 3.5,
-       "value": 1.2
-      },
-      {
-       "time": 3.8,
-       "value": 0.6
-      },
-      {
-       "time": 4.0,
-       "value": 0.0
-      }
-     ]
-    },
-    "opacity": {
-     "value": 0.0,
-     "track": [
-      {
-       "time": 2.71,
-       "value": 0.0
-      },
-      {
-       "time": 2.76,
-       "value": 1.0
-      },
-      {
-       "time": 3.6,
-       "value": 1.0
-      },
-      {
-       "time": 4.0,
-       "value": 0.0
-      }
-     ]
-    },
-    "fade_in": 0.0,
-    "fade_out": 0.0,
-    "start_time": 2.71,
-    "duration": 1.29
-   },
-   "inputs": {
-    "texture": "tex_scorch"
-   }
-  },
-  {
    "id": "scorch_11",
    "type": "decal",
    "layer": "aftermath",
    "parameters": {
     "shape": "circle",
     "position": [
-     -2.0,
+     -2.6,
      0.017,
-     4.0
+     0.4
     ],
     "rotation": [
      0.0,
-     67.8,
+     194.1,
      0.0
     ],
     "size": {
      "value": [
-      1.168,
-      1.168
+      1.0608,
+      1.2222
      ],
      "track": [
       {
-       "time": 2.9,
+       "time": 2.46,
        "value": [
-        1.168,
-        1.168
+        1.0608,
+        1.2222
        ]
       },
       {
-       "time": 3.02,
+       "time": 2.58,
        "value": [
-        2.92,
-        2.92
+        2.652,
+        3.0555
        ]
       },
       {
        "time": 4.0,
        "value": [
-        3.0952,
-        3.0952
+        2.8111,
+        3.2388
        ]
       }
      ]
@@ -9152,7 +9550,7 @@
      ],
      "track": [
       {
-       "time": 2.9,
+       "time": 2.46,
        "value": [
         1.0,
         0.95,
@@ -9161,7 +9559,7 @@
        ]
       },
       {
-       "time": 3.2,
+       "time": 2.76,
        "value": [
         1.0,
         0.62,
@@ -9170,7 +9568,7 @@
        ]
       },
       {
-       "time": 3.6,
+       "time": 3.36,
        "value": [
         1.0,
         0.3,
@@ -9194,24 +9592,24 @@
      "value": 0.0,
      "track": [
       {
-       "time": 2.9,
+       "time": 2.46,
        "value": 0.0
       },
       {
-       "time": 2.95,
-       "value": 3.4
+       "time": 2.51,
+       "value": 1.35
       },
       {
-       "time": 3.25,
-       "value": 1.9
+       "time": 2.81,
+       "value": 0.8
       },
       {
-       "time": 3.5,
-       "value": 1.2
+       "time": 3.4,
+       "value": 0.55
       },
       {
-       "time": 3.8,
-       "value": 0.6
+       "time": 3.75,
+       "value": 0.25
       },
       {
        "time": 4.0,
@@ -9223,16 +9621,16 @@
      "value": 0.0,
      "track": [
       {
-       "time": 2.9,
+       "time": 2.46,
        "value": 0.0
       },
       {
-       "time": 2.95,
-       "value": 1.0
+       "time": 2.51,
+       "value": 0.85
       },
       {
-       "time": 3.6,
-       "value": 1.0
+       "time": 3.4,
+       "value": 0.78
       },
       {
        "time": 4.0,
@@ -9242,54 +9640,54 @@
     },
     "fade_in": 0.0,
     "fade_out": 0.0,
-    "start_time": 2.9,
-    "duration": 1.1
+    "start_time": 2.46,
+    "duration": 1.54
    },
    "inputs": {
     "texture": "tex_scorch"
    }
   },
   {
-   "id": "scorch_12",
+   "id": "scorch_13",
    "type": "decal",
    "layer": "aftermath",
    "parameters": {
     "shape": "circle",
     "position": [
-     1.1,
-     0.018,
-     0.3
+     -4.5,
+     0.019,
+     -1.1
     ],
     "rotation": [
      0.0,
-     267.2,
+     203.1,
      0.0
     ],
     "size": {
      "value": [
-      1.276,
-      1.276
+      1.048,
+      0.7838
      ],
      "track": [
       {
-       "time": 3.1,
+       "time": 2.73,
        "value": [
-        1.276,
-        1.276
+        1.048,
+        0.7838
        ]
       },
       {
-       "time": 3.22,
+       "time": 2.85,
        "value": [
-        3.19,
-        3.19
+        2.62,
+        1.9595
        ]
       },
       {
        "time": 4.0,
        "value": [
-        3.3814,
-        3.3814
+        2.7772,
+        2.0771
        ]
       }
      ]
@@ -9303,7 +9701,7 @@
      ],
      "track": [
       {
-       "time": 3.1,
+       "time": 2.73,
        "value": [
         1.0,
         0.95,
@@ -9312,7 +9710,7 @@
        ]
       },
       {
-       "time": 3.4,
+       "time": 3.03,
        "value": [
         1.0,
         0.62,
@@ -9345,24 +9743,24 @@
      "value": 0.0,
      "track": [
       {
-       "time": 3.1,
+       "time": 2.73,
        "value": 0.0
       },
       {
-       "time": 3.15,
-       "value": 3.4
+       "time": 2.78,
+       "value": 1.35
       },
       {
-       "time": 3.45,
-       "value": 1.9
+       "time": 3.08,
+       "value": 0.8
       },
       {
-       "time": 3.5,
-       "value": 1.2
+       "time": 3.4,
+       "value": 0.55
       },
       {
-       "time": 3.8,
-       "value": 0.6
+       "time": 3.75,
+       "value": 0.25
       },
       {
        "time": 4.0,
@@ -9374,16 +9772,16 @@
      "value": 0.0,
      "track": [
       {
-       "time": 3.1,
+       "time": 2.73,
        "value": 0.0
       },
       {
-       "time": 3.15,
-       "value": 1.0
+       "time": 2.78,
+       "value": 0.85
       },
       {
-       "time": 3.6,
-       "value": 1.0
+       "time": 3.4,
+       "value": 0.78
       },
       {
        "time": 4.0,
@@ -9393,8 +9791,604 @@
     },
     "fade_in": 0.0,
     "fade_out": 0.0,
-    "start_time": 3.1,
-    "duration": 0.9
+    "start_time": 2.73,
+    "duration": 1.27
+   },
+   "inputs": {
+    "texture": "tex_scorch"
+   }
+  },
+  {
+   "id": "scorch_14",
+   "type": "decal",
+   "layer": "aftermath",
+   "parameters": {
+    "shape": "circle",
+    "position": [
+     2.2,
+     0.02,
+     -3.6
+    ],
+    "rotation": [
+     0.0,
+     261.2,
+     0.0
+    ],
+    "size": {
+     "value": [
+      1.1632,
+      1.3652
+     ],
+     "track": [
+      {
+       "time": 2.86,
+       "value": [
+        1.1632,
+        1.3652
+       ]
+      },
+      {
+       "time": 2.98,
+       "value": [
+        2.908,
+        3.4129
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        3.0825,
+        3.6177
+       ]
+      }
+     ]
+    },
+    "color": {
+     "value": [
+      1.0,
+      0.95,
+      0.72,
+      1.0
+     ],
+     "track": [
+      {
+       "time": 2.86,
+       "value": [
+        1.0,
+        0.95,
+        0.72,
+        1.0
+       ]
+      },
+      {
+       "time": 3.16,
+       "value": [
+        1.0,
+        0.62,
+        0.22,
+        1.0
+       ]
+      },
+      {
+       "time": 3.6,
+       "value": [
+        1.0,
+        0.3,
+        0.06,
+        1.0
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        0.8,
+        0.1,
+        0.015,
+        1.0
+       ]
+      }
+     ]
+    },
+    "blend": "additive",
+    "emissive": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 2.86,
+       "value": 0.0
+      },
+      {
+       "time": 2.91,
+       "value": 1.35
+      },
+      {
+       "time": 3.21,
+       "value": 0.8
+      },
+      {
+       "time": 3.4,
+       "value": 0.55
+      },
+      {
+       "time": 3.75,
+       "value": 0.25
+      },
+      {
+       "time": 4.0,
+       "value": 0.0
+      }
+     ]
+    },
+    "opacity": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 2.86,
+       "value": 0.0
+      },
+      {
+       "time": 2.91,
+       "value": 0.85
+      },
+      {
+       "time": 3.4,
+       "value": 0.78
+      },
+      {
+       "time": 4.0,
+       "value": 0.0
+      }
+     ]
+    },
+    "fade_in": 0.0,
+    "fade_out": 0.0,
+    "start_time": 2.86,
+    "duration": 1.14
+   },
+   "inputs": {
+    "texture": "tex_scorch"
+   }
+  },
+  {
+   "id": "scorch_15",
+   "type": "decal",
+   "layer": "aftermath",
+   "parameters": {
+    "shape": "circle",
+    "position": [
+     -1.6,
+     0.021,
+     4.2
+    ],
+    "rotation": [
+     0.0,
+     213.0,
+     0.0
+    ],
+    "size": {
+     "value": [
+      1.3424,
+      1.577
+     ],
+     "track": [
+      {
+       "time": 2.96,
+       "value": [
+        1.3424,
+        1.577
+       ]
+      },
+      {
+       "time": 3.08,
+       "value": [
+        3.356,
+        3.9425
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        3.5574,
+        4.1791
+       ]
+      }
+     ]
+    },
+    "color": {
+     "value": [
+      1.0,
+      0.95,
+      0.72,
+      1.0
+     ],
+     "track": [
+      {
+       "time": 2.96,
+       "value": [
+        1.0,
+        0.95,
+        0.72,
+        1.0
+       ]
+      },
+      {
+       "time": 3.26,
+       "value": [
+        1.0,
+        0.62,
+        0.22,
+        1.0
+       ]
+      },
+      {
+       "time": 3.6,
+       "value": [
+        1.0,
+        0.3,
+        0.06,
+        1.0
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        0.8,
+        0.1,
+        0.015,
+        1.0
+       ]
+      }
+     ]
+    },
+    "blend": "additive",
+    "emissive": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 2.96,
+       "value": 0.0
+      },
+      {
+       "time": 3.01,
+       "value": 1.35
+      },
+      {
+       "time": 3.31,
+       "value": 0.8
+      },
+      {
+       "time": 3.4,
+       "value": 0.55
+      },
+      {
+       "time": 3.75,
+       "value": 0.25
+      },
+      {
+       "time": 4.0,
+       "value": 0.0
+      }
+     ]
+    },
+    "opacity": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 2.96,
+       "value": 0.0
+      },
+      {
+       "time": 3.01,
+       "value": 0.85
+      },
+      {
+       "time": 3.4,
+       "value": 0.78
+      },
+      {
+       "time": 4.0,
+       "value": 0.0
+      }
+     ]
+    },
+    "fade_in": 0.0,
+    "fade_out": 0.0,
+    "start_time": 2.96,
+    "duration": 1.04
+   },
+   "inputs": {
+    "texture": "tex_scorch"
+   }
+  },
+  {
+   "id": "scorch_16",
+   "type": "decal",
+   "layer": "aftermath",
+   "parameters": {
+    "shape": "circle",
+    "position": [
+     3.6,
+     0.022,
+     0.2
+    ],
+    "rotation": [
+     0.0,
+     80.8,
+     0.0
+    ],
+    "size": {
+     "value": [
+      1.2656,
+      1.1536
+     ],
+     "track": [
+      {
+       "time": 3.06,
+       "value": [
+        1.2656,
+        1.1536
+       ]
+      },
+      {
+       "time": 3.18,
+       "value": [
+        3.164,
+        2.8841
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        3.3538,
+        3.0571
+       ]
+      }
+     ]
+    },
+    "color": {
+     "value": [
+      1.0,
+      0.95,
+      0.72,
+      1.0
+     ],
+     "track": [
+      {
+       "time": 3.06,
+       "value": [
+        1.0,
+        0.95,
+        0.72,
+        1.0
+       ]
+      },
+      {
+       "time": 3.36,
+       "value": [
+        1.0,
+        0.62,
+        0.22,
+        1.0
+       ]
+      },
+      {
+       "time": 3.6,
+       "value": [
+        1.0,
+        0.3,
+        0.06,
+        1.0
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        0.8,
+        0.1,
+        0.015,
+        1.0
+       ]
+      }
+     ]
+    },
+    "blend": "additive",
+    "emissive": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 3.06,
+       "value": 0.0
+      },
+      {
+       "time": 3.11,
+       "value": 1.35
+      },
+      {
+       "time": 3.41,
+       "value": 0.8
+      },
+      {
+       "time": 3.75,
+       "value": 0.25
+      },
+      {
+       "time": 4.0,
+       "value": 0.0
+      }
+     ]
+    },
+    "opacity": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 3.06,
+       "value": 0.0
+      },
+      {
+       "time": 3.11,
+       "value": 0.85
+      },
+      {
+       "time": 3.4,
+       "value": 0.78
+      },
+      {
+       "time": 4.0,
+       "value": 0.0
+      }
+     ]
+    },
+    "fade_in": 0.0,
+    "fade_out": 0.0,
+    "start_time": 3.06,
+    "duration": 0.94
+   },
+   "inputs": {
+    "texture": "tex_scorch"
+   }
+  },
+  {
+   "id": "scorch_17",
+   "type": "decal",
+   "layer": "aftermath",
+   "parameters": {
+    "shape": "circle",
+    "position": [
+     0.4,
+     0.023,
+     -0.2
+    ],
+    "rotation": [
+     0.0,
+     71.8,
+     0.0
+    ],
+    "size": {
+     "value": [
+      1.5216,
+      1.8395
+     ],
+     "track": [
+      {
+       "time": 3.17,
+       "value": [
+        1.5216,
+        1.8395
+       ]
+      },
+      {
+       "time": 3.29,
+       "value": [
+        3.804,
+        4.5988
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        4.0322,
+        4.8747
+       ]
+      }
+     ]
+    },
+    "color": {
+     "value": [
+      1.0,
+      0.95,
+      0.72,
+      1.0
+     ],
+     "track": [
+      {
+       "time": 3.17,
+       "value": [
+        1.0,
+        0.95,
+        0.72,
+        1.0
+       ]
+      },
+      {
+       "time": 3.47,
+       "value": [
+        1.0,
+        0.62,
+        0.22,
+        1.0
+       ]
+      },
+      {
+       "time": 3.6,
+       "value": [
+        1.0,
+        0.3,
+        0.06,
+        1.0
+       ]
+      },
+      {
+       "time": 4.0,
+       "value": [
+        0.8,
+        0.1,
+        0.015,
+        1.0
+       ]
+      }
+     ]
+    },
+    "blend": "additive",
+    "emissive": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 3.17,
+       "value": 0.0
+      },
+      {
+       "time": 3.22,
+       "value": 1.35
+      },
+      {
+       "time": 3.52,
+       "value": 0.8
+      },
+      {
+       "time": 3.75,
+       "value": 0.25
+      },
+      {
+       "time": 4.0,
+       "value": 0.0
+      }
+     ]
+    },
+    "opacity": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 3.17,
+       "value": 0.0
+      },
+      {
+       "time": 3.22,
+       "value": 0.85
+      },
+      {
+       "time": 3.4,
+       "value": 0.78
+      },
+      {
+       "time": 4.0,
+       "value": 0.0
+      }
+     ]
+    },
+    "fade_in": 0.0,
+    "fade_out": 0.0,
+    "start_time": 3.17,
+    "duration": 0.83
    },
    "inputs": {
     "texture": "tex_scorch"
@@ -9506,29 +10500,29 @@
    "layer": "aftermath",
    "parameters": {
     "shape": "disc",
-    "radius": 0.8,
+    "radius": 0.95,
     "position": [
-     -3.2,
-     0.35,
-     -2.5
+     -3.0,
+     0.3,
+     -2.7
     ],
     "rate": {
      "value": 0.0,
      "track": [
       {
-       "time": 1.19,
+       "time": 1.13,
        "value": 0.0
       },
       {
-       "time": 1.31,
-       "value": 26.0
+       "time": 1.25,
+       "value": 33.0
       },
       {
-       "time": 3.45,
-       "value": 22.1
+       "time": 3.35,
+       "value": 28.1
       },
       {
-       "time": 3.75,
+       "time": 3.74,
        "value": 0.0
       }
      ]
@@ -9541,8 +10535,8 @@
      0
     ],
     "spread": 18,
-    "start_time": 1.19,
-    "duration": 2.59
+    "start_time": 1.13,
+    "duration": 2.65
    },
    "inputs": {
     "particle": "ps_groundfire"
@@ -9554,34 +10548,34 @@
    "layer": "aftermath",
    "parameters": {
     "shape": "disc",
-    "radius": 0.827,
+    "radius": 0.972,
     "position": [
-     1.3,
-     0.35,
-     -5.3
+     1.5,
+     0.3,
+     -5.4
     ],
     "rate": {
      "value": 0.0,
      "track": [
       {
-       "time": 2.02,
+       "time": 1.76,
        "value": 0.0
       },
       {
-       "time": 2.14,
-       "value": 26.9
+       "time": 1.88,
+       "value": 33.8
       },
       {
-       "time": 3.45,
-       "value": 22.9
+       "time": 3.35,
+       "value": 28.7
       },
       {
-       "time": 3.75,
+       "time": 3.74,
        "value": 0.0
       }
      ]
     },
-    "velocity": 2.242,
+    "velocity": 2.228,
     "velocity_variance": 0.8,
     "direction": [
      0,
@@ -9589,8 +10583,8 @@
      0
     ],
     "spread": 18,
-    "start_time": 2.02,
-    "duration": 1.76
+    "start_time": 1.76,
+    "duration": 2.02
    },
    "inputs": {
     "particle": "ps_groundfire"
@@ -9602,34 +10596,34 @@
    "layer": "aftermath",
    "parameters": {
     "shape": "disc",
-    "radius": 0.773,
+    "radius": 0.906,
     "position": [
-     -0.8,
-     0.35,
-     -3.0
+     -0.9,
+     0.3,
+     -3.2
     ],
     "rate": {
      "value": 0.0,
      "track": [
       {
-       "time": 2.58,
+       "time": 2.19,
        "value": 0.0
       },
       {
-       "time": 2.7,
-       "value": 25.1
+       "time": 2.31,
+       "value": 31.5
       },
       {
-       "time": 3.45,
-       "value": 21.3
+       "time": 3.35,
+       "value": 26.8
       },
       {
-       "time": 3.75,
+       "time": 3.74,
        "value": 0.0
       }
      ]
     },
-    "velocity": 2.158,
+    "velocity": 2.144,
     "velocity_variance": 0.8,
     "direction": [
      0,
@@ -9637,47 +10631,47 @@
      0
     ],
     "spread": 18,
-    "start_time": 2.58,
-    "duration": 1.2
+    "start_time": 2.19,
+    "duration": 1.59
    },
    "inputs": {
     "particle": "ps_groundfire"
    }
   },
   {
-   "id": "e_gfire_11",
+   "id": "e_gfire_14",
    "type": "emitter",
    "layer": "aftermath",
    "parameters": {
     "shape": "disc",
-    "radius": 0.89,
+    "radius": 0.884,
     "position": [
-     -2.0,
-     0.35,
-     4.0
+     2.2,
+     0.3,
+     -3.6
     ],
     "rate": {
      "value": 0.0,
      "track": [
       {
-       "time": 2.9,
+       "time": 2.86,
        "value": 0.0
       },
       {
-       "time": 3.02,
-       "value": 29.0
+       "time": 2.98,
+       "value": 30.7
       },
       {
-       "time": 3.45,
-       "value": 24.6
+       "time": 3.35,
+       "value": 26.1
       },
       {
-       "time": 3.75,
+       "time": 3.74,
        "value": 0.0
       }
      ]
     },
-    "velocity": 2.34,
+    "velocity": 2.116,
     "velocity_variance": 0.8,
     "direction": [
      0,
@@ -9685,47 +10679,47 @@
      0
     ],
     "spread": 18,
-    "start_time": 2.9,
-    "duration": 0.88
+    "start_time": 2.86,
+    "duration": 0.92
    },
    "inputs": {
     "particle": "ps_groundfire"
    }
   },
   {
-   "id": "e_gfire_12",
+   "id": "e_gfire_15",
    "type": "emitter",
    "layer": "aftermath",
    "parameters": {
     "shape": "disc",
-    "radius": 0.98,
+    "radius": 1.038,
     "position": [
-     1.1,
-     0.35,
-     0.3
+     -1.6,
+     0.3,
+     4.2
     ],
     "rate": {
      "value": 0.0,
      "track": [
       {
-       "time": 3.1,
+       "time": 2.96,
        "value": 0.0
       },
       {
-       "time": 3.22,
-       "value": 32.0
+       "time": 3.08,
+       "value": 36.0
       },
       {
-       "time": 3.45,
-       "value": 27.2
+       "time": 3.35,
+       "value": 30.6
       },
       {
-       "time": 3.75,
+       "time": 3.74,
        "value": 0.0
       }
      ]
     },
-    "velocity": 2.48,
+    "velocity": 2.312,
     "velocity_variance": 0.8,
     "direction": [
      0,
@@ -9733,8 +10727,160 @@
      0
     ],
     "spread": 18,
-    "start_time": 3.1,
-    "duration": 0.68
+    "start_time": 2.96,
+    "duration": 0.82
+   },
+   "inputs": {
+    "particle": "ps_groundfire"
+   }
+  },
+  {
+   "id": "e_gfire_16",
+   "type": "emitter",
+   "layer": "aftermath",
+   "parameters": {
+    "shape": "disc",
+    "radius": 0.972,
+    "position": [
+     3.6,
+     0.3,
+     0.2
+    ],
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 3.06,
+       "value": 0.0
+      },
+      {
+       "time": 3.18,
+       "value": 33.8
+      },
+      {
+       "time": 3.35,
+       "value": 28.7
+      },
+      {
+       "time": 3.74,
+       "value": 0.0
+      }
+     ]
+    },
+    "velocity": 2.228,
+    "velocity_variance": 0.8,
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "spread": 18,
+    "start_time": 3.06,
+    "duration": 0.72
+   },
+   "inputs": {
+    "particle": "ps_groundfire"
+   }
+  },
+  {
+   "id": "e_gfire_17",
+   "type": "emitter",
+   "layer": "aftermath",
+   "parameters": {
+    "shape": "disc",
+    "radius": 1.192,
+    "position": [
+     0.4,
+     0.3,
+     -0.2
+    ],
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 3.17,
+       "value": 0.0
+      },
+      {
+       "time": 3.29,
+       "value": 41.4
+      },
+      {
+       "time": 3.35,
+       "value": 35.2
+      },
+      {
+       "time": 3.74,
+       "value": 0.0
+      }
+     ]
+    },
+    "velocity": 2.508,
+    "velocity_variance": 0.8,
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "spread": 18,
+    "start_time": 3.17,
+    "duration": 0.61
+   },
+   "inputs": {
+    "particle": "ps_groundfire"
+   }
+  },
+  {
+   "id": "e_gfire_area",
+   "type": "emitter",
+   "layer": "aftermath",
+   "parameters": {
+    "shape": "disc",
+    "radius": 4.4,
+    "position": [
+     0.0,
+     0.25,
+     0.0
+    ],
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 1.4,
+       "value": 0.0
+      },
+      {
+       "time": 1.9,
+       "value": 16.0
+      },
+      {
+       "time": 2.6,
+       "value": 34.0
+      },
+      {
+       "time": 3.15,
+       "value": 52.0
+      },
+      {
+       "time": 3.45,
+       "value": 38.0
+      },
+      {
+       "time": 3.74,
+       "value": 0.0
+      }
+     ]
+    },
+    "velocity": 1.7,
+    "velocity_variance": 0.9,
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "spread": 22,
+    "start_time": 1.4,
+    "duration": 2.38
    },
    "inputs": {
     "particle": "ps_groundfire"
@@ -9745,11 +10891,11 @@
    "type": "particle_system",
    "layer": "aftermath",
    "parameters": {
-    "max_particles": 220,
-    "lifetime": 1.6,
-    "lifetime_variance": 0.4,
-    "size": 2.1,
-    "size_variance": 0.8,
+    "max_particles": 140,
+    "lifetime": 1.45,
+    "lifetime_variance": 0.35,
+    "size": 1.8,
+    "size_variance": 0.65,
     "size_over_life": [
      [
       0.0,
@@ -9757,20 +10903,20 @@
      ],
      [
       0.4,
-      1.15
+      1.05
      ],
      [
       1.0,
-      1.8
+      1.4
      ]
     ],
     "color": [
-     0.7,
-     0.63,
-     0.6,
+     0.82,
+     0.72,
+     0.66,
      1.0
     ],
-    "opacity": 0.42,
+    "opacity": 0.5,
     "opacity_over_life": [
      [
       0.0,
@@ -9789,19 +10935,19 @@
       0.0
      ]
     ],
-    "emissive": 1.1,
+    "emissive": 1.6,
     "emissive_over_life": [
      [
       0.0,
-      1.3
+      1.5
      ],
      [
       0.3,
-      0.45
+      0.8
      ],
      [
       0.7,
-      0.1
+      0.3
      ],
      [
       1.0,
@@ -9845,22 +10991,22 @@
       },
       {
        "time": 1.6,
-       "value": 22.0
+       "value": 30.0
       },
       {
        "time": 2.4,
-       "value": 42.0
+       "value": 55.0
       },
       {
-       "time": 3.1,
-       "value": 58.0
+       "time": 3.05,
+       "value": 75.0
       },
       {
-       "time": 3.5,
-       "value": 26.0
+       "time": 3.35,
+       "value": 40.0
       },
       {
-       "time": 3.9,
+       "time": 3.6,
        "value": 0.0
       }
      ]
@@ -9874,7 +11020,7 @@
     ],
     "spread": 34,
     "start_time": 1.0,
-    "duration": 2.95
+    "duration": 2.65
    },
    "inputs": {
     "particle": "ps_smoke"
@@ -9901,22 +11047,22 @@
       },
       {
        "time": 1.6,
-       "value": 60.0
+       "value": 80.0
       },
       {
        "time": 2.6,
-       "value": 130.0
+       "value": 170.0
       },
       {
-       "time": 3.2,
-       "value": 150.0
+       "time": 3.15,
+       "value": 200.0
       },
       {
-       "time": 3.6,
-       "value": 60.0
+       "time": 3.5,
+       "value": 90.0
       },
       {
-       "time": 3.9,
+       "time": 3.7,
        "value": 0.0
       }
      ]
@@ -9930,7 +11076,7 @@
     ],
     "spread": 48,
     "start_time": 1.1,
-    "duration": 2.85
+    "duration": 2.62
    },
    "inputs": {
     "particle": "ps_mote"
@@ -10108,22 +11254,37 @@
      "op": "multiply"
     },
     {
+     "node": "lane_13",
+     "parameter": "position",
+     "op": "multiply"
+    },
+    {
+     "node": "lane_14",
+     "parameter": "position",
+     "op": "multiply"
+    },
+    {
+     "node": "lane_15",
+     "parameter": "position",
+     "op": "multiply"
+    },
+    {
+     "node": "lane_16",
+     "parameter": "position",
+     "op": "multiply"
+    },
+    {
+     "node": "lane_17",
+     "parameter": "position",
+     "op": "multiply"
+    },
+    {
      "node": "scorch_0",
      "parameter": "position",
      "op": "multiply"
     },
     {
-     "node": "scorch_1",
-     "parameter": "position",
-     "op": "multiply"
-    },
-    {
      "node": "scorch_2",
-     "parameter": "position",
-     "op": "multiply"
-    },
-    {
-     "node": "scorch_3",
      "parameter": "position",
      "op": "multiply"
     },
@@ -10139,11 +11300,6 @@
     },
     {
      "node": "scorch_6",
-     "parameter": "position",
-     "op": "multiply"
-    },
-    {
-     "node": "scorch_7",
      "parameter": "position",
      "op": "multiply"
     },
@@ -10168,7 +11324,27 @@
      "op": "multiply"
     },
     {
-     "node": "scorch_12",
+     "node": "scorch_13",
+     "parameter": "position",
+     "op": "multiply"
+    },
+    {
+     "node": "scorch_14",
+     "parameter": "position",
+     "op": "multiply"
+    },
+    {
+     "node": "scorch_15",
+     "parameter": "position",
+     "op": "multiply"
+    },
+    {
+     "node": "scorch_16",
+     "parameter": "position",
+     "op": "multiply"
+    },
+    {
+     "node": "scorch_17",
      "parameter": "position",
      "op": "multiply"
     },
@@ -10253,12 +11429,22 @@
      "op": "multiply"
     },
     {
-     "node": "e_gfire_11",
+     "node": "e_gfire_14",
      "parameter": "position",
      "op": "multiply"
     },
     {
-     "node": "e_gfire_12",
+     "node": "e_gfire_15",
+     "parameter": "position",
+     "op": "multiply"
+    },
+    {
+     "node": "e_gfire_16",
+     "parameter": "position",
+     "op": "multiply"
+    },
+    {
+     "node": "e_gfire_17",
      "parameter": "position",
      "op": "multiply"
     },
@@ -10289,6 +11475,11 @@
     },
     {
      "node": "e_ember",
+     "parameter": "radius",
+     "op": "multiply"
+    },
+    {
+     "node": "e_gfire_area",
      "parameter": "radius",
      "op": "multiply"
     }
@@ -10391,12 +11582,27 @@
      "op": "multiply"
     },
     {
-     "node": "e_tsmoke_0",
+     "node": "e_streak_13",
      "parameter": "radius",
      "op": "multiply"
     },
     {
-     "node": "e_tsmoke_1",
+     "node": "e_streak_14",
+     "parameter": "radius",
+     "op": "multiply"
+    },
+    {
+     "node": "e_streak_15",
+     "parameter": "radius",
+     "op": "multiply"
+    },
+    {
+     "node": "e_streak_16",
+     "parameter": "radius",
+     "op": "multiply"
+    },
+    {
+     "node": "e_streak_17",
      "parameter": "radius",
      "op": "multiply"
     },
@@ -10406,32 +11612,7 @@
      "op": "multiply"
     },
     {
-     "node": "e_tsmoke_3",
-     "parameter": "radius",
-     "op": "multiply"
-    },
-    {
-     "node": "e_tsmoke_4",
-     "parameter": "radius",
-     "op": "multiply"
-    },
-    {
-     "node": "e_tsmoke_5",
-     "parameter": "radius",
-     "op": "multiply"
-    },
-    {
      "node": "e_tsmoke_6",
-     "parameter": "radius",
-     "op": "multiply"
-    },
-    {
-     "node": "e_tsmoke_7",
-     "parameter": "radius",
-     "op": "multiply"
-    },
-    {
-     "node": "e_tsmoke_8",
      "parameter": "radius",
      "op": "multiply"
     },
@@ -10441,17 +11622,22 @@
      "op": "multiply"
     },
     {
-     "node": "e_tsmoke_10",
+     "node": "e_tsmoke_14",
      "parameter": "radius",
      "op": "multiply"
     },
     {
-     "node": "e_tsmoke_11",
+     "node": "e_tsmoke_15",
      "parameter": "radius",
      "op": "multiply"
     },
     {
-     "node": "e_tsmoke_12",
+     "node": "e_tsmoke_16",
+     "parameter": "radius",
+     "op": "multiply"
+    },
+    {
+     "node": "e_tsmoke_17",
      "parameter": "radius",
      "op": "multiply"
     },
@@ -10517,6 +11703,31 @@
     },
     {
      "node": "e_tspark_12",
+     "parameter": "radius",
+     "op": "multiply"
+    },
+    {
+     "node": "e_tspark_13",
+     "parameter": "radius",
+     "op": "multiply"
+    },
+    {
+     "node": "e_tspark_14",
+     "parameter": "radius",
+     "op": "multiply"
+    },
+    {
+     "node": "e_tspark_15",
+     "parameter": "radius",
+     "op": "multiply"
+    },
+    {
+     "node": "e_tspark_16",
+     "parameter": "radius",
+     "op": "multiply"
+    },
+    {
+     "node": "e_tspark_17",
      "parameter": "radius",
      "op": "multiply"
     }
@@ -10745,17 +11956,7 @@
      "op": "multiply"
     },
     {
-     "node": "scorch_1",
-     "parameter": "emissive",
-     "op": "multiply"
-    },
-    {
      "node": "scorch_2",
-     "parameter": "emissive",
-     "op": "multiply"
-    },
-    {
-     "node": "scorch_3",
      "parameter": "emissive",
      "op": "multiply"
     },
@@ -10771,11 +11972,6 @@
     },
     {
      "node": "scorch_6",
-     "parameter": "emissive",
-     "op": "multiply"
-    },
-    {
-     "node": "scorch_7",
      "parameter": "emissive",
      "op": "multiply"
     },
@@ -10800,7 +11996,27 @@
      "op": "multiply"
     },
     {
-     "node": "scorch_12",
+     "node": "scorch_13",
+     "parameter": "emissive",
+     "op": "multiply"
+    },
+    {
+     "node": "scorch_14",
+     "parameter": "emissive",
+     "op": "multiply"
+    },
+    {
+     "node": "scorch_15",
+     "parameter": "emissive",
+     "op": "multiply"
+    },
+    {
+     "node": "scorch_16",
+     "parameter": "emissive",
+     "op": "multiply"
+    },
+    {
+     "node": "scorch_17",
      "parameter": "emissive",
      "op": "multiply"
     },
@@ -10810,17 +12026,7 @@
      "op": "multiply"
     },
     {
-     "node": "scorch_1",
-     "parameter": "opacity",
-     "op": "multiply"
-    },
-    {
      "node": "scorch_2",
-     "parameter": "opacity",
-     "op": "multiply"
-    },
-    {
-     "node": "scorch_3",
      "parameter": "opacity",
      "op": "multiply"
     },
@@ -10836,11 +12042,6 @@
     },
     {
      "node": "scorch_6",
-     "parameter": "opacity",
-     "op": "multiply"
-    },
-    {
-     "node": "scorch_7",
      "parameter": "opacity",
      "op": "multiply"
     },
@@ -10865,7 +12066,27 @@
      "op": "multiply"
     },
     {
-     "node": "scorch_12",
+     "node": "scorch_13",
+     "parameter": "opacity",
+     "op": "multiply"
+    },
+    {
+     "node": "scorch_14",
+     "parameter": "opacity",
+     "op": "multiply"
+    },
+    {
+     "node": "scorch_15",
+     "parameter": "opacity",
+     "op": "multiply"
+    },
+    {
+     "node": "scorch_16",
+     "parameter": "opacity",
+     "op": "multiply"
+    },
+    {
+     "node": "scorch_17",
      "parameter": "opacity",
      "op": "multiply"
     },
@@ -10885,12 +12106,27 @@
      "op": "multiply"
     },
     {
-     "node": "e_gfire_11",
+     "node": "e_gfire_14",
      "parameter": "rate",
      "op": "multiply"
     },
     {
-     "node": "e_gfire_12",
+     "node": "e_gfire_15",
+     "parameter": "rate",
+     "op": "multiply"
+    },
+    {
+     "node": "e_gfire_16",
+     "parameter": "rate",
+     "op": "multiply"
+    },
+    {
+     "node": "e_gfire_17",
+     "parameter": "rate",
+     "op": "multiply"
+    },
+    {
+     "node": "e_gfire_area",
      "parameter": "rate",
      "op": "multiply"
     },
@@ -11113,17 +12349,7 @@
      "op": "hue_shift"
     },
     {
-     "node": "scorch_1",
-     "parameter": "color",
-     "op": "hue_shift"
-    },
-    {
      "node": "scorch_2",
-     "parameter": "color",
-     "op": "hue_shift"
-    },
-    {
-     "node": "scorch_3",
      "parameter": "color",
      "op": "hue_shift"
     },
@@ -11139,11 +12365,6 @@
     },
     {
      "node": "scorch_6",
-     "parameter": "color",
-     "op": "hue_shift"
-    },
-    {
-     "node": "scorch_7",
      "parameter": "color",
      "op": "hue_shift"
     },
@@ -11168,7 +12389,27 @@
      "op": "hue_shift"
     },
     {
-     "node": "scorch_12",
+     "node": "scorch_13",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "scorch_14",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "scorch_15",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "scorch_16",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "scorch_17",
      "parameter": "color",
      "op": "hue_shift"
     }
@@ -11212,8 +12453,8 @@
   },
   "layout": {
    "area_radius": 5.0,
-   "entry_height": 12.6,
-   "meteor_count": 13
+   "entry_height": 13.0,
+   "meteor_count": 18
   },
   "tags": [
    "fire",

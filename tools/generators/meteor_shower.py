@@ -64,29 +64,39 @@ DESCRIPTION = ("A barrage of flaming meteors streaks in on a steep diagonal and 
 DUR = 4.0
 SEED = 730941
 AREA = 5.0            # target-disc radius
-ENTRY_H = 12.6        # every meteor enters at this height
+ENTRY_H = 13.0        # every meteor enters at this height
 
 # phase boundaries from the sheet
 T_TELE, T_APPEAR, T_BARRAGE, T_CONT, T_FINAL, T_AFTER = 0.0, 0.4, 0.7, 1.5, 2.8, 3.2
 
-# landing x, landing z, rock size (m), impact time, flight time, tilt from vertical, azimuth
+# landing x, landing z, rock size (m), impact time, flight time, tilt from vertical, azimuth.
+# Flights lengthen through the barrage (0.40 s for the first, 0.72 s for the last) so that four
+# to five streaks are in the air at once during the peak while the first pair still enters
+# inside the sheet's 0.4-0.7 s "meteors appear" window.
 METEORS: tuple[tuple[float, float, float, float, float, float, float], ...] = (
-    (-1.7, 1.2, 0.40, 0.78, 0.37, 24.0, 11.0),
-    (2.4, -1.8, 0.32, 0.92, 0.34, 27.0, 6.0),
-    (-3.2, -2.5, 0.50, 1.19, 0.39, 22.0, 16.0),
-    (0.9, 3.3, 0.29, 1.36, 0.32, 26.0, 9.0),
-    (3.9, 1.4, 0.44, 1.61, 0.36, 23.0, 14.0),
-    (-2.3, -0.5, 0.35, 1.75, 0.33, 28.0, 7.0),
-    (1.3, -5.3, 0.53, 2.02, 0.40, 24.0, 18.0),
-    (-4.4, 2.1, 0.31, 2.16, 0.31, 25.0, 12.0),
-    (2.8, 2.9, 0.41, 2.33, 0.35, 21.0, 5.0),
-    (-0.8, -3.0, 0.47, 2.58, 0.38, 27.0, 15.0),
-    (5.6, -0.9, 0.33, 2.71, 0.32, 23.0, 9.0),
-    (-2.0, 4.0, 0.60, 2.90, 0.42, 22.0, 13.0),
-    (1.1, 0.3, 0.70, 3.10, 0.45, 25.0, 8.0),
+    (-2.1, 1.4, 0.38, 0.82, 0.40, 24.0, 11.0),
+    (2.6, -1.6, 0.30, 0.97, 0.44, 27.0, 6.0),
+    (-3.0, -2.7, 0.50, 1.13, 0.50, 22.0, 16.0),
+    (0.7, 3.4, 0.28, 1.30, 0.54, 26.0, 9.0),
+    (4.1, 1.2, 0.42, 1.45, 0.58, 23.0, 14.0),
+    (-1.2, -0.6, 0.34, 1.61, 0.56, 28.0, 7.0),
+    (1.5, -5.4, 0.52, 1.76, 0.64, 24.0, 18.0),
+    (-3.8, 2.3, 0.31, 1.90, 0.54, 25.0, 12.0),
+    (3.0, 3.1, 0.40, 2.05, 0.60, 21.0, 5.0),
+    (-0.9, -3.2, 0.46, 2.19, 0.62, 27.0, 15.0),
+    (5.7, -0.7, 0.33, 2.33, 0.56, 23.0, 9.0),
+    (-2.6, 0.4, 0.36, 2.46, 0.60, 26.0, 10.0),
+    (1.9, 1.9, 0.29, 2.60, 0.54, 24.0, 7.0),
+    (-4.5, -1.1, 0.35, 2.73, 0.58, 25.0, 13.0),
+    (2.2, -3.6, 0.44, 2.86, 0.62, 25.0, 17.0),
+    (-1.6, 4.2, 0.58, 2.96, 0.68, 22.0, 13.0),
+    (3.6, 0.2, 0.52, 3.06, 0.64, 24.0, 10.0),
+    (0.4, -0.2, 0.72, 3.17, 0.74, 25.0, 8.0),
 )
-BIG = {2, 6, 9, 11, 12}        # heavier rocks: the bigger streak system, a second fireball burst
-HEAVY = {6, 11, 12}            # the three that get the large fireball system
+BIG = {2, 6, 9, 14, 15, 16, 17}   # heavier rocks: bigger streak system, a second fireball burst
+HEAVY = {6, 15, 17}               # the three that get the large fireball system
+# the four smallest leave no crater decal - they only feed the embers and the ground fire
+SCORCH = tuple(i for i, m in enumerate(METEORS) if m[2] > 0.31)
 
 rng = random.Random(8812)
 nodes: list[dict[str, Any]] = []
@@ -176,8 +186,8 @@ FIRE_RAMP = [
 # camera: low-ish wide three-quarter, the disc low and the entry band high
 # =========================================================================
 def build_camera() -> None:
-    eye = (-5.0, 6.9, 23.5)
-    target = (-0.4, 5.0, 0.0)
+    eye = (-3.0, 7.8, 20.0)
+    target = (0.2, 6.1, 0.0)
     pos = tuple(target[i] + (eye[i] - target[i]) / 1.45 for i in range(3))
     node("cam", "camera", {"position": vec(pos, 3), "target": vec(target, 3), "fov": 52})
 
@@ -283,7 +293,7 @@ def build_textures() -> None:
         g("hb", "blur", {"radius": 5.0}, {"a": "lines"}),
         g("hbl", "levels", {"in_high": 0.6, "out_high": 0.32}, {"a": "hb"}),
         g("glow", "gradient_radial", {"radius": 0.475, "falloff": "smooth"}),
-        g("glowl", "levels", {"out_high": 0.14}, {"a": "glow"}),
+        g("glowl", "levels", {"out_high": 0.06}, {"a": "glow"}),
         g("k1", "math", {"mode": "max"}, {"a": "lines", "b": "hbl"}),
         g("k2", "math", {"mode": "max"}, {"a": "k1", "b": "glowl"}),
         g("col", "colorize", {"gradient": [
@@ -295,41 +305,49 @@ def build_textures() -> None:
         ]}, {"a": "k2"}),
     ], "output": "col"}})
 
-    # burning ground left by one impact: a scorched patch webbed with glowing cooling cracks
+    # burning ground left by one impact: a scorched patch webbed with glowing cooling cracks.
+    # Two warped `cracks` generations and a noisy embered bed inside a ragged, non-circular
+    # edge - deliberately NO radial spokes, which read as a star from above.
     node("tex_scorch", "texture", {"width": 256, "height": 256, "graph": {"nodes": [
         g("w1", "fbm", {"frequency": 2.3, "octaves": 4, "seed": 211}),
         g("w1l", "levels", {"in_low": 0.36, "in_high": 0.64}, {"a": "w1"}),
         g("w2", "fbm", {"frequency": 2.3, "octaves": 4, "seed": 307}),
         g("w2l", "levels", {"in_low": 0.36, "in_high": 0.64}, {"a": "w2"}),
         g("wv", "channel_pack", {"channel": "luminance"}, {"r": "w1l", "g": "w2l"}),
-        g("s1", "spokes", {"count": 9, "width": 0.014, "softness": 0.008,
-                           "inner_radius": 0.03, "outer_radius": 0.46, "rotation": 7.0}),
-        g("s1d", "distort", {"amount": 0.11}, {"a": "s1", "by": "wv"}),
-        g("s2", "spokes", {"count": 15, "width": 0.007, "softness": 0.005,
-                           "inner_radius": 0.10, "outer_radius": 0.48, "rotation": 23.0}),
-        g("s2d", "distort", {"amount": 0.14}, {"a": "s2", "by": "wv"}),
-        g("s2l", "levels", {"out_high": 0.7}, {"a": "s2d"}),
-        g("cr", "cracks", {"density": 5.0, "width": 0.008, "seed": 419}),
-        g("crd", "distort", {"amount": 0.04}, {"a": "cr", "by": "wv"}),
-        g("crl", "levels", {"out_high": 0.55}, {"a": "crd"}),
-        g("u1", "math", {"mode": "max"}, {"a": "s1d", "b": "s2l"}),
-        g("u2", "math", {"mode": "max"}, {"a": "u1", "b": "crl"}),
-        g("fall", "gradient_radial", {"radius": 0.5, "inner_radius": 0.16, "falloff": "linear"}),
-        g("web", "math", {"mode": "multiply"}, {"a": "u2", "b": "fall"}),
-        g("bed0", "gradient_radial", {"radius": 0.5, "inner_radius": 0.05, "falloff": "smooth"}),
-        g("bn", "fbm", {"frequency": 4.5, "octaves": 4, "seed": 523}),
-        g("bed1", "math", {"mode": "multiply"}, {"a": "bed0", "b": "bn"}),
-        g("bed", "levels", {"in_low": 0.06, "in_high": 0.5, "out_high": 0.30}, {"a": "bed1"}),
-        g("hot", "gradient_radial", {"radius": 0.13, "falloff": "quadratic"}),
+        # many small cells, not five big ones: a low crack density over a round mask makes a
+        # rosette, which reads as a star motif from above
+        g("c1", "cracks", {"density": 22.0, "width": 0.0055, "seed": 419}),
+        g("c1d", "distort", {"amount": 0.05}, {"a": "c1", "by": "wv"}),
+        g("c2", "cracks", {"density": 38.0, "width": 0.003, "seed": 733}),
+        g("c2d", "distort", {"amount": 0.065}, {"a": "c2", "by": "wv"}),
+        g("c2l", "levels", {"out_high": 0.58}, {"a": "c2d"}),
+        g("u1", "math", {"mode": "max"}, {"a": "c1d", "b": "c2l"}),
+        # ragged patch edge: a SOFT radial falloff chewed by noise.  A hard boundary turns every
+        # crater into a stamp you can count; this one dies away so overlapping patches merge.
+        g("e0", "gradient_radial", {"radius": 0.5, "falloff": "smooth"}),
+        g("en", "fbm", {"frequency": 3.6, "octaves": 5, "seed": 881}),
+        g("enl", "levels", {"in_low": 0.3, "in_high": 0.8, "out_low": 0.4, "out_high": 1.25}, {"a": "en"}),
+        g("edge0", "math", {"mode": "multiply"}, {"a": "e0", "b": "enl"}),
+        g("edge", "levels", {"in_high": 0.92, "gamma": 1.25}, {"a": "edge0"}),
+        g("web", "math", {"mode": "multiply"}, {"a": "u1", "b": "edge"}),
+        # the embered bed the cracks sit in: mottled, never a clean disc
+        g("bn", "fbm", {"frequency": 5.5, "octaves": 4, "seed": 523}),
+        g("bnl", "levels", {"in_low": 0.34, "in_high": 0.82}, {"a": "bn"}),
+        g("bed0", "math", {"mode": "multiply"}, {"a": "edge", "b": "bnl"}),
+        g("bed", "levels", {"in_low": 0.04, "in_high": 0.55, "out_high": 0.40}, {"a": "bed0"}),
         g("k1", "math", {"mode": "max"}, {"a": "web", "b": "bed"}),
-        g("k2", "math", {"mode": "max"}, {"a": "k1", "b": "hot"}),
+        g("blr", "blur", {"radius": 3.0}, {"a": "k1"}),
+        g("blrl", "levels", {"in_high": 0.7, "out_high": 0.22}, {"a": "blr"}),
+        g("k2", "math", {"mode": "max"}, {"a": "k1", "b": "blrl"}),
+        # crush the midtones: only the junctions of the web stay hot, the rest is a dull ember
+        g("k3", "levels", {"in_low": 0.06, "in_high": 1.0, "gamma": 1.9}, {"a": "k2"}),
         g("col", "colorize", {"gradient": [
-            [0.0, [0.05, 0.004, 0.0, 0.0]],
-            [0.22, [0.42, 0.03, 0.004, 0.32]],
-            [0.55, [1.0, 0.18, 0.02, 0.72]],
-            [0.82, [1.0, 0.48, 0.09, 0.92]],
-            [1.0, [1.0, 0.88, 0.52, 1.0]],
-        ]}, {"a": "k2"}),
+            [0.0, [0.04, 0.004, 0.0, 0.0]],
+            [0.30, [0.30, 0.02, 0.003, 0.26]],
+            [0.65, [0.85, 0.11, 0.012, 0.6]],
+            [0.88, [1.0, 0.34, 0.06, 0.82]],
+            [1.0, [1.0, 0.72, 0.34, 1.0]],
+        ]}, {"a": "k3"}),
     ], "output": "col"}})
 
 
@@ -384,36 +402,41 @@ def build_telegraph() -> None:
     node("tele_rings", "decal", {
         "shape": "circle", "position": [0.0, 0.02, 0.0], "size": [r(AREA * 2.1), r(AREA * 2.1)],
         "rotation": track([(0.0, [0.0, 0.0, 0.0]), (DUR, [0.0, 26.0, 0.0])]),
-        "color": [1.0, 0.72, 0.5, 1.0], "blend": "additive",
-        "emissive": track([(0.0, 0.0), (0.14, 2.6), (0.4, 1.6), (0.9, 1.0), (2.2, 0.8),
-                           (2.9, 0.55), (T_AFTER, 0.0)]),
-        "opacity": track([(0.0, 0.0), (0.12, 1.0), (0.5, 0.9), (2.4, 0.6), (T_AFTER, 0.0)]),
+        "color": [1.0, 0.6, 0.38, 1.0], "blend": "additive",
+        "emissive": track([(0.0, 0.0), (0.14, 1.0), (0.4, 0.62), (1.0, 0.3), (2.2, 0.2),
+                           (2.9, 0.12), (T_AFTER, 0.0)]),
+        "opacity": track([(0.0, 0.0), (0.12, 0.72), (0.5, 0.55), (1.4, 0.3), (2.4, 0.18),
+                          (T_AFTER, 0.0)]),
         "fade_in": 0.0, "fade_out": 0.0, "duration": r(T_AFTER + 0.02),
     }, {"texture": "tex_rune"}, layer="telegraph")
 
     node("tele_glow", "decal", {
         "shape": "circle", "position": [0.0, 0.012, 0.0], "size": [r(AREA * 2.5), r(AREA * 2.5)],
         "color": [1.0, 0.15, 0.03, 1.0], "blend": "additive",
-        "emissive": track([(0.0, 0.0), (0.2, 0.55), (0.6, 0.4), (2.4, 0.35), (T_AFTER, 0.0)]),
-        "opacity": track([(0.0, 0.0), (0.24, 0.42), (2.4, 0.3), (T_AFTER, 0.0)]),
+        "emissive": track([(0.0, 0.0), (0.2, 0.32), (0.6, 0.22), (2.4, 0.16), (T_AFTER, 0.0)]),
+        "opacity": track([(0.0, 0.0), (0.24, 0.3), (1.2, 0.2), (2.4, 0.14), (T_AFTER, 0.0)]),
         "fade_in": 0.0, "fade_out": 0.0, "duration": r(T_AFTER + 0.02),
     }, {"texture": "tex_glow"}, layer="telegraph")
 
-    # the red glow building in the sky, up the incoming path
+    # the red glow building in the sky, up the incoming path: overlapping noisy puffs, not
+    # discs - a soft dirty ember bank the meteors come out of
     node("ps_skyglow", "particle_system", {
-        "max_particles": 6, "lifetime": 3.5, "size": 11.0, "size_variance": 3.0,
-        "size_over_life": [[0.0, 0.45], [0.18, 1.0], [0.75, 1.15], [1.0, 1.2]],
-        "color": [1.0, 0.13, 0.03, 1.0],
-        "color_over_life": [[0.0, [0.8, 0.5, 0.45, 1.0]], [0.16, [1.0, 0.62, 0.5, 1.0]],
-                            [0.5, [1.0, 0.5, 0.42, 1.0]], [1.0, [0.7, 0.24, 0.22, 1.0]]],
-        "opacity": 0.16, "opacity_over_life": [[0.0, 0.0], [0.11, 1.0], [0.62, 0.85], [1.0, 0.0]],
-        "emissive": 0.25, "rotation_variance": 180.0, "angular_velocity_variance": 4.0,
-        "blend": "additive",
-    }, {"sprite": "tex_glow", "material": "mat_glow"}, layer="telegraph")
+        "max_particles": 8, "lifetime": 3.4, "lifetime_variance": 0.5,
+        "size": 9.5, "size_variance": 2.6,
+        "size_over_life": [[0.0, 0.5], [0.2, 1.0], [0.75, 1.2], [1.0, 1.35]],
+        "color": [1.0, 0.11, 0.025, 1.0],
+        "color_over_life": [[0.0, [0.75, 0.45, 0.4, 1.0]], [0.18, [1.0, 0.56, 0.44, 1.0]],
+                            [0.55, [1.0, 0.46, 0.36, 1.0]], [1.0, [0.65, 0.2, 0.18, 1.0]]],
+        "opacity": 0.062, "opacity_over_life": [[0.0, 0.0], [0.13, 1.0], [0.55, 0.8], [1.0, 0.0]],
+        "emissive": 0.14, "rotation_variance": 180.0, "angular_velocity_variance": 5.0,
+        "drag": 0.9, "blend": "additive", "sprite_fps": 4.0,
+    }, {"sprite": "tex_puff", "material": "mat_glow",
+        "forces": ["f_smoke_turb"]}, layer="telegraph")
     node("e_skyglow", "emitter", {
-        "shape": "sphere", "radius": 3.4, "position": [-5.2, 11.4, -4.2],
-        "rate": 0, "burst_count": 3, "burst_times": [0.0],
-        "velocity": 0.0, "start_time": 0.05, "duration": 0.2,
+        "shape": "box", "size": [14.0, 4.5, 6.0], "position": [-4.0, 11.2, -3.6],
+        "rate": 0, "burst_count": 5, "burst_times": [0.0],
+        "velocity": 0.3, "velocity_variance": 0.25, "direction": [0, 0, 0],
+        "start_time": 0.05, "duration": 0.35,
     }, {"particle": "ps_skyglow"}, layer="telegraph")
 
     # motes drifting off the marked ground; the aftermath re-uses this system for embers
@@ -452,12 +475,12 @@ def streak_system(nid: str, size: float, life: float) -> None:
     node(nid, "particle_system", {
         "max_particles": 420, "lifetime": life, "lifetime_variance": r(life * 0.34),
         "size": size, "size_variance": r(size * 0.32),
-        "size_over_life": [[0.0, 0.62], [0.09, 1.0], [0.34, 0.88], [0.72, 0.52], [1.0, 0.12]],
-        "color": [1.0, 0.94, 0.82, 1.0],
-        "color_over_life": [[0.0, [1.0, 1.0, 1.0, 1.0]], [0.14, [1.0, 0.96, 0.9, 1.0]],
-                            [0.45, [1.0, 0.72, 0.5, 1.0]], [1.0, [0.72, 0.26, 0.12, 1.0]]],
-        "opacity": 0.46, "opacity_over_life": [[0.0, 0.0], [0.07, 1.0], [0.42, 0.74], [0.8, 0.3], [1.0, 0.0]],
-        "emissive": 0.5, "emissive_over_life": [[0.0, 1.5], [0.18, 1.0], [0.6, 0.6], [1.0, 0.3]],
+        "size_over_life": [[0.0, 0.62], [0.09, 1.0], [0.34, 0.86], [0.72, 0.48], [1.0, 0.1]],
+        "color": [1.0, 0.62, 0.3, 1.0],
+        "color_over_life": [[0.0, [1.0, 0.95, 0.82, 1.0]], [0.12, [1.0, 0.78, 0.48, 1.0]],
+                            [0.42, [1.0, 0.5, 0.17, 1.0]], [1.0, [0.62, 0.13, 0.03, 1.0]]],
+        "opacity": 0.44, "opacity_over_life": [[0.0, 0.0], [0.07, 1.0], [0.42, 0.74], [0.8, 0.3], [1.0, 0.0]],
+        "emissive": 0.45, "emissive_over_life": [[0.0, 1.4], [0.18, 1.0], [0.6, 0.6], [1.0, 0.3]],
         "drag": 1.4, "blend": "additive", "soft_particle_distance": 0.5,
         "rotation_variance": 180.0,
         "render_mode": "stretched_billboard", "velocity_stretch": 0.16, "sprite_fps": 22.0,
@@ -466,15 +489,16 @@ def streak_system(nid: str, size: float, life: float) -> None:
 
 
 def build_streaks() -> None:
-    streak_system("ps_streak", 1.25, 0.30)
-    streak_system("ps_streak_big", 2.25, 0.36)
+    streak_system("ps_streak", 0.88, 0.56)
+    streak_system("ps_streak_big", 1.55, 0.62)
 
+    # only the heavier rocks smoke, and darkly: a pale plume reads as a jet contrail
     node("ps_trail_smoke", "particle_system", {
-        "max_particles": 260, "lifetime": 1.25, "lifetime_variance": 0.45,
-        "size": 1.5, "size_variance": 0.55, "size_over_life": [[0.0, 0.3], [0.4, 1.1], [1.0, 1.8]],
-        "color": [0.72, 0.64, 0.6, 1.0],
-        "opacity": 0.42, "opacity_over_life": [[0.0, 0.0], [0.2, 1.0], [0.6, 0.65], [1.0, 0.0]],
-        "emissive": 1.2, "emissive_over_life": [[0.0, 1.5], [0.22, 0.5], [0.6, 0.12], [1.0, 0.0]],
+        "max_particles": 200, "lifetime": 1.1, "lifetime_variance": 0.4,
+        "size": 1.1, "size_variance": 0.45, "size_over_life": [[0.0, 0.3], [0.4, 1.1], [1.0, 1.7]],
+        "color": [0.4, 0.34, 0.32, 1.0],
+        "opacity": 0.3, "opacity_over_life": [[0.0, 0.0], [0.2, 1.0], [0.6, 0.6], [1.0, 0.0]],
+        "emissive": 0.55, "emissive_over_life": [[0.0, 0.9], [0.22, 0.3], [0.6, 0.06], [1.0, 0.0]],
         "rotation_variance": 180.0, "angular_velocity_variance": 26.0,
         "drag": 1.3, "blend": "alpha", "sort": True, "sprite_fps": 8.0,
     }, {"sprite": "tex_puff", "material": "mat_smoke",
@@ -506,9 +530,9 @@ def build_streaks() -> None:
         flight_track = track([(t_in, vec(off)), (r(t_hit), [0.0, 0.0, 0.0]),
                               (DUR, [0.0, 0.0, 0.0])])
         speed = math.sqrt(sum(c * c for c in off)) / flight
-        # one sprite every ~0.35 of a sprite width, so the train is a continuous body
-        pitch = (2.25 if big else 1.25) * 0.36
-        rate = r(min(190.0, speed / pitch), 1)
+        # one sprite every ~0.32 of a sprite width, so the train is a continuous body
+        pitch = (1.55 if big else 0.88) * 0.32
+        rate = r(min(210.0, speed / pitch), 1)
         node(f"e_streak_{i}", "emitter", {
             "shape": "sphere", "radius": r(size * 0.8), "position": flight_track,
             "rate": track([(t_in, 0.0), (r(t_in + 0.05), rate), (r(t_hit - 0.02), rate),
@@ -519,12 +543,13 @@ def build_streaks() -> None:
         }, {"particle": "ps_streak_big" if big else "ps_streak"}, layer="meteors",
              parent=f"lane_{i}")
 
-        node(f"e_tsmoke_{i}", "emitter", {
-            "shape": "sphere", "radius": r(size * 1.1),
-            "position": flight_track, "rate": r(9.0 + 22.0 * size, 1),
-            "velocity": 1.4, "velocity_variance": 0.9, "direction": vec(back), "spread": 40,
-            "start_time": r(t_in + 0.03), "duration": r(flight - 0.03),
-        }, {"particle": "ps_trail_smoke"}, layer="meteors", parent=f"lane_{i}")
+        if big:
+            node(f"e_tsmoke_{i}", "emitter", {
+                "shape": "sphere", "radius": r(size * 1.1),
+                "position": flight_track, "rate": r(10.0 + 24.0 * size, 1),
+                "velocity": 1.4, "velocity_variance": 0.9, "direction": vec(back), "spread": 40,
+                "start_time": r(t_in + 0.03), "duration": r(flight - 0.03),
+            }, {"particle": "ps_trail_smoke"}, layer="meteors", parent=f"lane_{i}")
 
         node(f"e_tspark_{i}", "emitter", {
             "shape": "sphere", "radius": r(size * 0.9), "surface_only": True,
@@ -555,18 +580,18 @@ def build_impacts() -> None:
             "max_particles": 260, "lifetime": life, "lifetime_variance": r(life * 0.35),
             "size": size, "size_variance": r(size * 0.34),
             "size_over_life": [[0.0, 0.32], [0.28, 1.0], [1.0, 1.12]],
-            "color": [1.0, 0.92, 0.78, 1.0],
-            "color_over_life": [[0.0, [1.0, 1.0, 1.0, 1.0]], [0.32, [1.0, 0.94, 0.84, 1.0]],
-                                [1.0, [0.86, 0.5, 0.34, 1.0]]],
-            "opacity": 0.40, "opacity_over_life": [[0.0, 0.0], [0.1, 1.0], [0.5, 0.72], [0.9, 0.0], [1.0, 0.0]],
-            "emissive": 0.42, "drag": 3.2, "blend": "additive", "soft_particle_distance": 0.6,
+            "color": [1.0, 0.66, 0.34, 1.0],
+            "color_over_life": [[0.0, [1.0, 0.94, 0.8, 1.0]], [0.3, [1.0, 0.7, 0.38, 1.0]],
+                                [1.0, [0.8, 0.28, 0.1, 1.0]]],
+            "opacity": 0.33, "opacity_over_life": [[0.0, 0.0], [0.1, 1.0], [0.5, 0.72], [0.9, 0.0], [1.0, 0.0]],
+            "emissive": 0.35, "drag": 3.2, "blend": "additive", "soft_particle_distance": 0.6,
             "rotation_variance": 180.0,
             "render_mode": "stretched_billboard", "velocity_stretch": 0.08, "sprite_fps": 20.0,
         }, {"sprite": "tex_fire", "material": "mat_fire",
             "forces": ["f_fire_curl", "f_fire_lift"]}, layer="impacts")
 
     fireball("ps_fireball", 1.55, 0.5)
-    fireball("ps_fireball_big", 2.7, 0.62)
+    fireball("ps_fireball_big", 2.45, 0.6)
 
     node("e_fireball", "emitter", {
         "shape": "hemisphere", "radius": 0.55, "position": stepped(all_t, all_p),
@@ -581,19 +606,19 @@ def build_impacts() -> None:
     }, {"particle": "ps_fireball"}, layer="impacts")
     node("e_fireball_big", "emitter", {
         "shape": "hemisphere", "radius": 1.0, "position": stepped(heavy_t, heavy_p),
-        "rate": 0, "burst_count": 24, "burst_times": heavy_t,
+        "rate": 0, "burst_count": 19, "burst_times": heavy_t,
         "velocity": 8.5, "velocity_variance": 4.0, "direction": [0, 0, 0], "spread": 16,
     }, {"particle": "ps_fireball_big"}, layer="impacts")
 
     node("ps_flash", "particle_system", {
         "max_particles": 40, "lifetime": 0.22, "lifetime_variance": 0.05,
-        "size": 2.6, "size_variance": 0.7,
+        "size": 2.4, "size_variance": 0.7,
         "size_over_life": [[0.0, 0.3], [0.22, 1.0], [1.0, 1.25]],
-        "color": [1.0, 0.72, 0.42, 1.0],
-        "color_over_life": [[0.0, [1.0, 1.0, 1.0, 1.0]], [0.3, [1.0, 0.86, 0.66, 1.0]],
-                            [1.0, [1.0, 0.5, 0.26, 1.0]]],
-        "opacity": 0.8, "opacity_over_life": [[0.0, 0.85], [0.18, 1.0], [1.0, 0.0]],
-        "emissive": 1.3, "rotation_variance": 180.0, "angular_velocity_variance": 40.0,
+        "color": [1.0, 0.6, 0.3, 1.0],
+        "color_over_life": [[0.0, [1.0, 0.98, 0.9, 1.0]], [0.28, [1.0, 0.78, 0.5, 1.0]],
+                            [1.0, [1.0, 0.4, 0.16, 1.0]]],
+        "opacity": 0.6, "opacity_over_life": [[0.0, 0.85], [0.18, 1.0], [1.0, 0.0]],
+        "emissive": 0.9, "rotation_variance": 180.0, "angular_velocity_variance": 40.0,
         "blend": "additive",
     }, {"sprite": "tex_flare", "material": "mat_glow"}, layer="impacts")
     node("e_flash", "emitter", {
@@ -630,11 +655,11 @@ def build_impacts() -> None:
     }, {"particle": "ps_ispark"}, layer="impacts")
 
     node("ps_dust", "particle_system", {
-        "max_particles": 300, "lifetime": 0.95, "lifetime_variance": 0.25,
-        "size": 1.25, "size_variance": 0.45, "size_over_life": [[0.0, 0.35], [0.5, 1.3], [1.0, 1.85]],
+        "max_particles": 220, "lifetime": 0.9, "lifetime_variance": 0.25,
+        "size": 1.1, "size_variance": 0.4, "size_over_life": [[0.0, 0.35], [0.5, 1.2], [1.0, 1.6]],
         "color": [0.8, 0.73, 0.67, 1.0],
-        "opacity": 0.42, "opacity_over_life": [[0.0, 0.0], [0.15, 1.0], [0.6, 0.65], [1.0, 0.0]],
-        "emissive": 0.5, "emissive_over_life": [[0.0, 1.4], [0.3, 0.45], [1.0, 0.0]],
+        "opacity": 0.34, "opacity_over_life": [[0.0, 0.0], [0.15, 1.0], [0.6, 0.65], [1.0, 0.0]],
+        "emissive": 0.34, "emissive_over_life": [[0.0, 1.0], [0.3, 0.35], [1.0, 0.0]],
         "rotation_variance": 180.0, "angular_velocity_variance": 30.0,
         "drag": 2.6, "blend": "alpha", "sort": True, "sprite_fps": 8.0,
     }, {"sprite": "tex_puff", "material": "mat_dust", "forces": ["f_smoke_turb"]}, layer="impacts")
@@ -690,7 +715,7 @@ def build_impact_lights() -> None:
         keys: list[tuple] = [(0.0, 0.0)]
         for i, t in zip(picked, times):
             heavy = i in HEAVY
-            peak = 34.0 if heavy else (22.0 if i in BIG else 15.0)
+            peak = 24.0 if heavy else (17.0 if i in BIG else 11.0)
             keys += [(r(t - 0.03), 0.0), (r(t + 0.025), peak), (r(t + 0.13), r(peak * 0.3)),
                      (r(t + 0.3), 0.0)]
         node(name, "light", {
@@ -706,22 +731,26 @@ def build_impact_lights() -> None:
 # LAYER aftermath: burning ground
 # =========================================================================
 def build_aftermath() -> None:
-    for i, (lx, lz, size, t_hit, _flight, _tilt, _az) in enumerate(METEORS):
-        span = r(1.3 + 2.7 * size)
+    for i in SCORCH:
+        lx, lz, size, t_hit = METEORS[i][0], METEORS[i][1], METEORS[i][2], METEORS[i][3]
+        # elliptical and randomly turned: thirteen identical circles read as stamps
+        span = r(1.5 + 3.2 * size)
+        squash = rng.uniform(0.72, 1.3)
+        wide, deep = span, r(span * squash)
         node(f"scorch_{i}", "decal", {
             "shape": "circle", "position": [r(lx), r(0.006 + 0.001 * i), r(lz)],
             "rotation": [0.0, r(rng.uniform(0.0, 360.0), 1), 0.0],
-            "size": track([(r(t_hit), [r(span * 0.4), r(span * 0.4)]),
-                           (r(t_hit + 0.12), [span, span]),
-                           (DUR, [r(span * 1.06), r(span * 1.06)])]),
+            "size": track([(r(t_hit), [r(wide * 0.4), r(deep * 0.4)]),
+                           (r(t_hit + 0.12), [wide, deep]),
+                           (DUR, [r(wide * 1.06), r(deep * 1.06)])]),
             "color": track([(r(t_hit), [1.0, 0.95, 0.72, 1.0]),
                             (r(t_hit + 0.3), [1.0, 0.62, 0.22, 1.0]),
                             (r(min(DUR - 0.4, t_hit + 0.9)), [1.0, 0.3, 0.06, 1.0]),
                             (DUR, [0.8, 0.1, 0.015, 1.0])]),
             "blend": "additive",
-            "emissive": track([(r(t_hit), 0.0), (r(t_hit + 0.05), 3.4), (r(t_hit + 0.35), 1.9),
-                               (3.5, 1.2), (3.8, 0.6), (DUR, 0.0)]),
-            "opacity": track([(r(t_hit), 0.0), (r(t_hit + 0.05), 1.0), (3.6, 1.0), (DUR, 0.0)]),
+            "emissive": track([(r(t_hit), 0.0), (r(t_hit + 0.05), 1.35), (r(t_hit + 0.35), 0.8),
+                               (3.4, 0.55), (3.75, 0.25), (DUR, 0.0)]),
+            "opacity": track([(r(t_hit), 0.0), (r(t_hit + 0.05), 0.85), (3.4, 0.78), (DUR, 0.0)]),
             "fade_in": 0.0, "fade_out": 0.0,
             "start_time": r(t_hit), "duration": r(DUR - t_hit),
         }, {"texture": "tex_scorch"}, layer="aftermath")
@@ -743,38 +772,47 @@ def build_aftermath() -> None:
     # a patch of fire lights up at each of the bigger craters, from the moment it is made
     for i in sorted(BIG):
         lx, lz, size, t_hit = METEORS[i][0], METEORS[i][1], METEORS[i][2], METEORS[i][3]
-        peak = r(11.0 + 30.0 * size, 1)
+        peak = r(14.0 + 38.0 * size, 1)
         node(f"e_gfire_{i}", "emitter", {
-            "shape": "disc", "radius": r(0.35 + 0.9 * size), "position": [r(lx), 0.35, r(lz)],
-            "rate": track([(r(t_hit), 0.0), (r(t_hit + 0.12), peak), (3.45, r(peak * 0.85, 1)),
-                           (3.75, 0.0)]),
+            "shape": "disc", "radius": r(0.4 + 1.1 * size), "position": [r(lx), 0.3, r(lz)],
+            "rate": track([(r(t_hit), 0.0), (r(t_hit + 0.12), peak), (3.35, r(peak * 0.85, 1)),
+                           (3.74, 0.0)]),
             "velocity": r(1.5 + 1.4 * size), "velocity_variance": 0.8,
             "direction": [0, 1, 0], "spread": 18,
             "start_time": r(t_hit), "duration": r(3.78 - t_hit),
         }, {"particle": "ps_groundfire"}, layer="aftermath")
 
+    # and the whole area catches: scattered licks over the disc that build as the barrage lands
+    node("e_gfire_area", "emitter", {
+        "shape": "disc", "radius": r(AREA * 0.88), "position": [0.0, 0.25, 0.0],
+        "rate": track([(1.4, 0.0), (1.9, 16.0), (2.6, 34.0), (3.15, 52.0), (3.45, 38.0),
+                       (3.74, 0.0)]),
+        "velocity": 1.7, "velocity_variance": 0.9, "direction": [0, 1, 0], "spread": 22,
+        "start_time": 1.4, "duration": 2.38,
+    }, {"particle": "ps_groundfire"}, layer="aftermath")
+
     node("ps_smoke", "particle_system", {
-        "max_particles": 220, "lifetime": 1.6, "lifetime_variance": 0.4,
-        "size": 2.1, "size_variance": 0.8, "size_over_life": [[0.0, 0.4], [0.4, 1.15], [1.0, 1.8]],
-        "color": [0.7, 0.63, 0.6, 1.0],
-        "opacity": 0.42, "opacity_over_life": [[0.0, 0.0], [0.22, 1.0], [0.62, 0.7], [1.0, 0.0]],
-        "emissive": 1.1, "emissive_over_life": [[0.0, 1.3], [0.3, 0.45], [0.7, 0.1], [1.0, 0.0]],
+        "max_particles": 140, "lifetime": 1.45, "lifetime_variance": 0.35,
+        "size": 1.8, "size_variance": 0.65, "size_over_life": [[0.0, 0.4], [0.4, 1.05], [1.0, 1.4]],
+        "color": [0.82, 0.72, 0.66, 1.0],
+        "opacity": 0.5, "opacity_over_life": [[0.0, 0.0], [0.22, 1.0], [0.62, 0.7], [1.0, 0.0]],
+        "emissive": 1.6, "emissive_over_life": [[0.0, 1.5], [0.3, 0.8], [0.7, 0.3], [1.0, 0.0]],
         "rotation_variance": 180.0, "angular_velocity_variance": 22.0,
         "drag": 1.5, "blend": "alpha", "sort": True, "sprite_fps": 7.0,
     }, {"sprite": "tex_puff", "material": "mat_smoke",
         "forces": ["f_smoke_lift", "f_smoke_turb"]}, layer="aftermath")
     node("e_smoke", "emitter", {
         "shape": "disc", "radius": r(AREA * 0.92), "position": [0.0, 0.45, 0.0],
-        "rate": track([(1.0, 0.0), (1.6, 22.0), (2.4, 42.0), (3.1, 58.0), (3.5, 26.0), (3.9, 0.0)]),
+        "rate": track([(1.0, 0.0), (1.6, 30.0), (2.4, 55.0), (3.05, 75.0), (3.35, 40.0), (3.6, 0.0)]),
         "velocity": 1.5, "velocity_variance": 0.9, "direction": [0, 1, 0], "spread": 34,
-        "start_time": 1.0, "duration": 2.95,
+        "start_time": 1.0, "duration": 2.65,
     }, {"particle": "ps_smoke"}, layer="aftermath")
 
     node("e_ember", "emitter", {
         "shape": "disc", "radius": r(AREA * 0.95), "position": [0.0, 0.25, 0.0],
-        "rate": track([(1.1, 0.0), (1.6, 60.0), (2.6, 130.0), (3.2, 150.0), (3.6, 60.0), (3.9, 0.0)]),
+        "rate": track([(1.1, 0.0), (1.6, 80.0), (2.6, 170.0), (3.15, 200.0), (3.5, 90.0), (3.7, 0.0)]),
         "velocity": 2.1, "velocity_variance": 1.4, "direction": [0, 1, 0], "spread": 48,
-        "start_time": 1.1, "duration": 2.85,
+        "start_time": 1.1, "duration": 2.62,
     }, {"particle": "ps_mote"}, layer="aftermath")
 
     node("l_after", "light", {
@@ -815,7 +853,7 @@ IMPACT_EMITTERS = ("e_fireball", "e_fireball_mid", "e_fireball_big", "e_flash", 
 
 def build_controls() -> list[dict[str, Any]]:
     lanes = [f"lane_{i}" for i in range(len(METEORS))]
-    scorches = [f"scorch_{i}" for i in range(len(METEORS))]
+    scorches = [f"scorch_{i}" for i in SCORCH]
     gfires = [f"e_gfire_{i}" for i in sorted(BIG)]
 
     area = [bind(n, "position") for n in lanes + scorches + list(IMPACT_EMITTERS)
@@ -823,12 +861,13 @@ def build_controls() -> list[dict[str, Any]]:
     area += [bind(n, "position") for n in gfires]
     area += [bind("tele_rings", "size"), bind("tele_glow", "size"),
              bind("e_mote", "radius"), bind("e_mote", "inner_radius"),
-             bind("e_smoke", "radius"), bind("e_ember", "radius")]
+             bind("e_smoke", "radius"), bind("e_ember", "radius"),
+             bind("e_gfire_area", "radius")]
 
     size = [bind("ps_streak", "size"), bind("ps_streak_big", "size"),
             bind("ps_trail_smoke", "size"), bind("ps_debris", "size")]
     size += [bind(f"e_streak_{i}", "radius") for i in range(len(METEORS))]
-    size += [bind(f"e_tsmoke_{i}", "radius") for i in range(len(METEORS))]
+    size += [bind(f"e_tsmoke_{i}", "radius") for i in sorted(BIG)]
     size += [bind(f"e_tspark_{i}", "radius") for i in range(len(METEORS))]
 
     fire = [bind(ps, "color") for ps in FIRE_PS] + [bind(ps, "emissive") for ps in FIRE_PS]
@@ -843,7 +882,7 @@ def build_controls() -> list[dict[str, Any]]:
               bind("l_flash_a", "intensity"), bind("l_flash_b", "intensity")]
 
     after = [bind(n, "emissive") for n in scorches] + [bind(n, "opacity") for n in scorches]
-    after += [bind(n, "rate") for n in gfires]
+    after += [bind(n, "rate") for n in [*gfires, "e_gfire_area"]]
     after += [bind("e_smoke", "rate"), bind("e_ember", "rate"), bind("l_after", "intensity"),
               bind("haze", "intensity")]
 
