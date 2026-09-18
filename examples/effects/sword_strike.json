@@ -1,0 +1,766 @@
+{
+  "schema_version": "0.1.0",
+  "name": "Sword Strike",
+  "description": "A subtle contact spark for heavy two-handed or critical melee hits: a short warm spray, a brief soft flash and a few falling flecks, gone in a third of a second.",
+  "duration": 0.5,
+  "seed": 26041,
+  "timeline": {
+    "phases": [
+      {
+        "name": "impact",
+        "start": 0.0,
+        "end": 0.1
+      },
+      {
+        "name": "follow_through",
+        "start": 0.1,
+        "end": 0.3
+      },
+      {
+        "name": "settle",
+        "start": 0.3,
+        "end": 0.5
+      }
+    ]
+  },
+  "layers": [
+    {
+      "id": "impact",
+      "name": "Contact spark",
+      "role": "impact"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "cam",
+      "type": "camera",
+      "parameters": {
+        "position": [
+          0.95,
+          1.5,
+          2.45
+        ],
+        "target": [
+          -0.3,
+          1.25,
+          0.0
+        ],
+        "fov": 36.0
+      }
+    },
+    {
+      "id": "tex_spark",
+      "type": "texture",
+      "parameters": {
+        "width": 32,
+        "height": 32,
+        "graph": {
+          "nodes": [
+            {
+              "id": "r",
+              "op": "gradient_radial",
+              "params": {
+                "radius": 0.5,
+                "falloff": "quadratic"
+              }
+            },
+            {
+              "id": "l",
+              "op": "levels",
+              "params": {
+                "gamma": 0.7
+              },
+              "inputs": {
+                "a": "r"
+              }
+            }
+          ],
+          "output": "l"
+        }
+      }
+    },
+    {
+      "id": "tex_glow",
+      "type": "texture",
+      "parameters": {
+        "width": 64,
+        "height": 64,
+        "graph": {
+          "nodes": [
+            {
+              "id": "r",
+              "op": "gradient_radial",
+              "params": {
+                "radius": 0.5,
+                "falloff": "smooth"
+              }
+            },
+            {
+              "id": "l",
+              "op": "levels",
+              "params": {
+                "gamma": 0.85
+              },
+              "inputs": {
+                "a": "r"
+              }
+            }
+          ],
+          "output": "l"
+        }
+      }
+    },
+    {
+      "id": "mat_spark",
+      "type": "material",
+      "parameters": {
+        "blend": "additive",
+        "shading": "unlit",
+        "emissive_color": [
+          1.0,
+          0.7,
+          0.28,
+          1.0
+        ],
+        "emissive_intensity": 0.0,
+        "soft_particle": true,
+        "depth_fade": 0.05
+      }
+    },
+    {
+      "id": "f_gravity",
+      "type": "force",
+      "parameters": {
+        "force_type": "gravity",
+        "strength": 9.81
+      }
+    },
+    {
+      "id": "ps_sparks",
+      "type": "particle_system",
+      "layer": "impact",
+      "parameters": {
+        "max_particles": 48,
+        "lifetime": 0.15,
+        "lifetime_variance": 0.05,
+        "size": 0.022,
+        "size_variance": 0.009,
+        "size_over_life": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            1.0,
+            0.45
+          ]
+        ],
+        "color": [
+          1.0,
+          0.82,
+          0.48,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              0.94,
+              0.82,
+              1.0
+            ]
+          ],
+          [
+            0.25,
+            [
+              1.0,
+              0.82,
+              0.48,
+              1.0
+            ]
+          ],
+          [
+            0.7,
+            [
+              1.0,
+              0.7,
+              0.28,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.92,
+              0.34,
+              0.08,
+              1.0
+            ]
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            0.6,
+            0.85
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 2.6,
+        "emissive_over_life": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            1.0,
+            0.35
+          ]
+        ],
+        "drag": 2.5,
+        "render_mode": "stretched_billboard",
+        "velocity_stretch": 0.95,
+        "blend": "additive",
+        "soft_particle_distance": 0.02
+      },
+      "inputs": {
+        "sprite": "tex_spark",
+        "material": "mat_spark",
+        "forces": [
+          "f_gravity"
+        ]
+      }
+    },
+    {
+      "id": "e_sparks",
+      "type": "emitter",
+      "layer": "impact",
+      "parameters": {
+        "shape": "sphere",
+        "radius": 0.02,
+        "position": [
+          0.0,
+          1.25,
+          0.0
+        ],
+        "direction": [
+          -0.9387,
+          0.3004,
+          0.169
+        ],
+        "spread": 34.0,
+        "velocity": 5.5,
+        "velocity_variance": 2.5,
+        "rate": 0.0,
+        "burst_count": 12,
+        "burst_times": [
+          0.0
+        ],
+        "start_time": 0.0,
+        "duration": 0.05
+      },
+      "inputs": {
+        "particle": "ps_sparks"
+      }
+    },
+    {
+      "id": "ps_flecks",
+      "type": "particle_system",
+      "layer": "impact",
+      "parameters": {
+        "max_particles": 24,
+        "lifetime": 0.26,
+        "lifetime_variance": 0.08,
+        "size": 0.02,
+        "size_variance": 0.008,
+        "color": [
+          1.0,
+          0.7,
+          0.28,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              0.82,
+              0.48,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              1.0,
+              0.7,
+              0.28,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.92,
+              0.34,
+              0.08,
+              1.0
+            ]
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            0.5,
+            0.7
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 1.7,
+        "drag": 1.5,
+        "render_mode": "stretched_billboard",
+        "velocity_stretch": 0.3,
+        "blend": "additive",
+        "soft_particle_distance": 0.02
+      },
+      "inputs": {
+        "sprite": "tex_spark",
+        "material": "mat_spark",
+        "forces": [
+          "f_gravity"
+        ]
+      }
+    },
+    {
+      "id": "e_flecks",
+      "type": "emitter",
+      "layer": "impact",
+      "parameters": {
+        "shape": "sphere",
+        "radius": 0.02,
+        "position": [
+          0.0,
+          1.25,
+          0.0
+        ],
+        "direction": [
+          -0.8216,
+          0.5505,
+          0.1479
+        ],
+        "spread": 58.0,
+        "velocity": 2.2,
+        "velocity_variance": 1.0,
+        "rate": 0.0,
+        "burst_count": 6,
+        "burst_times": [
+          0.0
+        ],
+        "start_time": 0.0,
+        "duration": 0.05
+      },
+      "inputs": {
+        "particle": "ps_flecks"
+      }
+    },
+    {
+      "id": "ps_flash",
+      "type": "particle_system",
+      "layer": "impact",
+      "parameters": {
+        "max_particles": 2,
+        "lifetime": 0.055,
+        "size": 0.24,
+        "size_over_life": [
+          [
+            0.0,
+            0.55
+          ],
+          [
+            0.3,
+            1.0
+          ],
+          [
+            1.0,
+            0.85
+          ]
+        ],
+        "color": [
+          1.0,
+          0.82,
+          0.48,
+          1.0
+        ],
+        "opacity": 0.5,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.6
+          ],
+          [
+            0.12,
+            1.0
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 1.5,
+        "render_mode": "billboard",
+        "blend": "additive",
+        "soft_particle_distance": 0.05
+      },
+      "inputs": {
+        "sprite": "tex_glow",
+        "material": "mat_spark"
+      }
+    },
+    {
+      "id": "e_flash",
+      "type": "emitter",
+      "layer": "impact",
+      "parameters": {
+        "shape": "sphere",
+        "radius": 0.02,
+        "position": [
+          0.0,
+          1.25,
+          0.0
+        ],
+        "direction": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "spread": 0.0,
+        "velocity": 0.0,
+        "velocity_variance": 0.0,
+        "rate": 0.0,
+        "burst_count": 1,
+        "burst_times": [
+          0.0
+        ],
+        "start_time": 0.0,
+        "duration": 0.05
+      },
+      "inputs": {
+        "particle": "ps_flash"
+      }
+    },
+    {
+      "id": "ps_flash_core",
+      "type": "particle_system",
+      "layer": "impact",
+      "parameters": {
+        "max_particles": 2,
+        "lifetime": 0.045,
+        "size": 0.075,
+        "size_over_life": [
+          [
+            0.0,
+            0.6
+          ],
+          [
+            0.3,
+            1.0
+          ],
+          [
+            1.0,
+            0.7
+          ]
+        ],
+        "color": [
+          1.0,
+          0.94,
+          0.82,
+          1.0
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            0.7
+          ],
+          [
+            0.15,
+            1.0
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 2.4,
+        "render_mode": "billboard",
+        "blend": "additive",
+        "soft_particle_distance": 0.02
+      },
+      "inputs": {
+        "sprite": "tex_glow",
+        "material": "mat_spark"
+      }
+    },
+    {
+      "id": "e_flash_core",
+      "type": "emitter",
+      "layer": "impact",
+      "parameters": {
+        "shape": "sphere",
+        "radius": 0.02,
+        "position": [
+          0.0,
+          1.25,
+          0.0
+        ],
+        "direction": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "spread": 0.0,
+        "velocity": 0.0,
+        "velocity_variance": 0.0,
+        "rate": 0.0,
+        "burst_count": 1,
+        "burst_times": [
+          0.0
+        ],
+        "start_time": 0.0,
+        "duration": 0.05
+      },
+      "inputs": {
+        "particle": "ps_flash_core"
+      }
+    },
+    {
+      "id": "l_hit",
+      "type": "light",
+      "layer": "impact",
+      "parameters": {
+        "light_type": "point",
+        "position": [
+          -0.15,
+          1.3,
+          0.1
+        ],
+        "color": [
+          1.0,
+          0.7,
+          0.28,
+          1.0
+        ],
+        "radius": 2.2,
+        "intensity": {
+          "value": 0.0,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 0.0
+            },
+            {
+              "time": 0.015,
+              "value": 3.0
+            },
+            {
+              "time": 0.1,
+              "value": 0.0
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "spark_amount",
+      "label": "Spark amount",
+      "group": "Sparks",
+      "min": 0.0,
+      "max": 3.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "e_sparks",
+          "parameter": "burst_count",
+          "op": "multiply"
+        },
+        {
+          "node": "e_flecks",
+          "parameter": "burst_count",
+          "op": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "spark_speed",
+      "label": "Spark speed",
+      "group": "Sparks",
+      "min": 0.4,
+      "max": 2.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "e_sparks",
+          "parameter": "velocity",
+          "op": "multiply"
+        },
+        {
+          "node": "e_flecks",
+          "parameter": "velocity",
+          "op": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "flash",
+      "label": "Flash",
+      "group": "Flash",
+      "min": 0.0,
+      "max": 2.5,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "ps_flash",
+          "parameter": "size",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_flash_core",
+          "parameter": "size",
+          "op": "multiply"
+        },
+        {
+          "node": "l_hit",
+          "parameter": "intensity",
+          "op": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "hue",
+      "label": "Element hue",
+      "group": "Global",
+      "min": -180.0,
+      "max": 180.0,
+      "default": 0.0,
+      "value": 0.0,
+      "step": 1.0,
+      "unit": "deg",
+      "bindings": [
+        {
+          "node": "mat_spark",
+          "parameter": "emissive_color",
+          "op": "hue_shift"
+        },
+        {
+          "node": "ps_sparks",
+          "parameter": "color",
+          "op": "hue_shift"
+        },
+        {
+          "node": "ps_sparks",
+          "parameter": "color_over_life",
+          "op": "hue_shift"
+        },
+        {
+          "node": "ps_flecks",
+          "parameter": "color",
+          "op": "hue_shift"
+        },
+        {
+          "node": "ps_flecks",
+          "parameter": "color_over_life",
+          "op": "hue_shift"
+        },
+        {
+          "node": "ps_flash",
+          "parameter": "color",
+          "op": "hue_shift"
+        },
+        {
+          "node": "ps_flash_core",
+          "parameter": "color",
+          "op": "hue_shift"
+        },
+        {
+          "node": "l_hit",
+          "parameter": "color",
+          "op": "hue_shift"
+        }
+      ]
+    },
+    {
+      "id": "global_speed",
+      "label": "Speed",
+      "group": "Global",
+      "min": 0.25,
+      "max": 3.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "$effect",
+          "parameter": "time_scale",
+          "op": "multiply"
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "generator": "tools/generators/sword_strike.py",
+    "attachment": {
+      "origin": [
+        0.0,
+        1.25,
+        0.0
+      ],
+      "normal": "+x",
+      "notes": "Spawn at the weapon's contact point on the hit event, rotated so +X points back along the hit normal; t = 0 is the contact. Use the hue control for fire, frost, holy or shadow weapons."
+    },
+    "render_settings": {
+      "background": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "ground_albedo": 0.05,
+      "bloom_intensity": 0.24,
+      "bloom_radius": 0.03,
+      "exposure": 1.0,
+      "grid": false
+    },
+    "tags": [
+      "melee",
+      "impact",
+      "spark",
+      "sword",
+      "hit",
+      "critical"
+    ]
+  }
+}
