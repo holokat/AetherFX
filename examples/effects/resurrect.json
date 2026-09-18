@@ -1,7 +1,7 @@
 {
  "schema_version": "0.1.0",
  "name": "Resurrect",
- "description": "A graceful holy revive on a fallen ally in pearly ivory and white-gold: halo rings form high above, a soft beam descends onto the body, a pearly soul rises out of it, hovers and returns, then a gentle warm burst, a ground halo and a flight of feathers restore the body. 3.0 s plus drifting feathers; origin on the ground at the body's centre, body lying along X.",
+ "description": "A graceful holy revive on a fallen ally in pearly ivory and white-gold: halo rings form high above, a soft beam descends onto the body, a translucent human soul rises out of it, hovers and returns, then a gentle warm burst, a ground halo and a flight of feathers restore the body. 3.0 s plus drifting feathers; origin on the ground at the body's centre, body lying along X.",
  "duration": 3.5,
  "seed": 30317,
  "timeline": {
@@ -624,6 +624,619 @@
       }
      ],
      "output": "lv"
+    }
+   }
+  },
+  {
+   "id": "tex_soul_figure",
+   "type": "texture",
+   "parameters": {
+    "width": 256,
+    "height": 256,
+    "graph": {
+     "nodes": [
+      {
+       "id": "head",
+       "op": "shape",
+       "params": {
+        "shape": "circle",
+        "radius": 0.052,
+        "aspect": 0.84,
+        "center": [
+         0.5,
+         0.105
+        ],
+        "rotation": 0.0,
+        "softness": 0.006
+       }
+      },
+      {
+       "id": "neck",
+       "op": "shape",
+       "params": {
+        "shape": "rounded_box",
+        "radius": 0.04,
+        "aspect": 0.55,
+        "center": [
+         0.5,
+         0.165
+        ],
+        "corner_radius": 0.015,
+        "softness": 0.006
+       }
+      },
+      {
+       "id": "chest",
+       "op": "shape",
+       "params": {
+        "shape": "circle",
+        "radius": 0.118,
+        "aspect": 0.8,
+        "center": [
+         0.5,
+         0.272
+        ],
+        "rotation": 0.0,
+        "softness": 0.006
+       }
+      },
+      {
+       "id": "waist",
+       "op": "shape",
+       "params": {
+        "shape": "circle",
+        "radius": 0.105,
+        "aspect": 0.66,
+        "center": [
+         0.5,
+         0.4
+        ],
+        "rotation": 0.0,
+        "softness": 0.006
+       }
+      },
+      {
+       "id": "hips",
+       "op": "shape",
+       "params": {
+        "shape": "circle",
+        "radius": 0.07,
+        "aspect": 1.0,
+        "center": [
+         0.5,
+         0.465
+        ],
+        "rotation": 0.0,
+        "softness": 0.006
+       }
+      },
+      {
+       "id": "yoke",
+       "op": "shape",
+       "params": {
+        "shape": "rounded_box",
+        "radius": 0.028,
+        "aspect": 3.3,
+        "center": [
+         0.5,
+         0.205
+        ],
+        "corner_radius": 0.026,
+        "softness": 0.006
+       }
+      },
+      {
+       "id": "uar",
+       "op": "shape",
+       "params": {
+        "shape": "rounded_box",
+        "radius": 0.092,
+        "aspect": 0.27,
+        "center": [
+         0.606,
+         0.2848
+        ],
+        "rotation": 21.0,
+        "corner_radius": 0.018,
+        "softness": 0.006
+       }
+      },
+      {
+       "id": "far",
+       "op": "shape",
+       "params": {
+        "shape": "rounded_box",
+        "radius": 0.08399999999999999,
+        "aspect": 0.23,
+        "center": [
+         0.6688,
+         0.4206
+        ],
+        "rotation": 29.0,
+        "corner_radius": 0.015,
+        "softness": 0.006
+       }
+      },
+      {
+       "id": "lgr",
+       "op": "shape",
+       "params": {
+        "shape": "circle",
+        "radius": 0.25,
+        "aspect": 0.14,
+        "center": [
+         0.534,
+         0.7
+        ],
+        "rotation": -2.0,
+        "softness": 0.006
+       }
+      },
+      {
+       "id": "ual",
+       "op": "shape",
+       "params": {
+        "shape": "rounded_box",
+        "radius": 0.092,
+        "aspect": 0.27,
+        "center": [
+         0.394,
+         0.2848
+        ],
+        "rotation": -21.0,
+        "corner_radius": 0.018,
+        "softness": 0.006
+       }
+      },
+      {
+       "id": "fal",
+       "op": "shape",
+       "params": {
+        "shape": "rounded_box",
+        "radius": 0.08399999999999999,
+        "aspect": 0.23,
+        "center": [
+         0.3312,
+         0.4206
+        ],
+        "rotation": -29.0,
+        "corner_radius": 0.015,
+        "softness": 0.006
+       }
+      },
+      {
+       "id": "lgl",
+       "op": "shape",
+       "params": {
+        "shape": "circle",
+        "radius": 0.25,
+        "aspect": 0.14,
+        "center": [
+         0.46599999999999997,
+         0.7
+        ],
+        "rotation": 2.0,
+        "softness": 0.006
+       }
+      },
+      {
+       "id": "u0",
+       "op": "math",
+       "params": {
+        "mode": "max"
+       },
+       "inputs": {
+        "a": "head",
+        "b": "neck"
+       }
+      },
+      {
+       "id": "u1",
+       "op": "math",
+       "params": {
+        "mode": "max"
+       },
+       "inputs": {
+        "a": "u0",
+        "b": "chest"
+       }
+      },
+      {
+       "id": "u2",
+       "op": "math",
+       "params": {
+        "mode": "max"
+       },
+       "inputs": {
+        "a": "u1",
+        "b": "waist"
+       }
+      },
+      {
+       "id": "u3",
+       "op": "math",
+       "params": {
+        "mode": "max"
+       },
+       "inputs": {
+        "a": "u2",
+        "b": "hips"
+       }
+      },
+      {
+       "id": "u4",
+       "op": "math",
+       "params": {
+        "mode": "max"
+       },
+       "inputs": {
+        "a": "u3",
+        "b": "yoke"
+       }
+      },
+      {
+       "id": "u5",
+       "op": "math",
+       "params": {
+        "mode": "max"
+       },
+       "inputs": {
+        "a": "u4",
+        "b": "uar"
+       }
+      },
+      {
+       "id": "u6",
+       "op": "math",
+       "params": {
+        "mode": "max"
+       },
+       "inputs": {
+        "a": "u5",
+        "b": "far"
+       }
+      },
+      {
+       "id": "u7",
+       "op": "math",
+       "params": {
+        "mode": "max"
+       },
+       "inputs": {
+        "a": "u6",
+        "b": "lgr"
+       }
+      },
+      {
+       "id": "u8",
+       "op": "math",
+       "params": {
+        "mode": "max"
+       },
+       "inputs": {
+        "a": "u7",
+        "b": "ual"
+       }
+      },
+      {
+       "id": "u9",
+       "op": "math",
+       "params": {
+        "mode": "max"
+       },
+       "inputs": {
+        "a": "u8",
+        "b": "fal"
+       }
+      },
+      {
+       "id": "u10",
+       "op": "math",
+       "params": {
+        "mode": "max"
+       },
+       "inputs": {
+        "a": "u9",
+        "b": "lgl"
+       }
+      },
+      {
+       "id": "bl",
+       "op": "blur",
+       "params": {
+        "radius": 3.0
+       },
+       "inputs": {
+        "a": "u10"
+       }
+      },
+      {
+       "id": "bli",
+       "op": "invert",
+       "inputs": {
+        "a": "bl"
+       }
+      },
+      {
+       "id": "rim0",
+       "op": "math",
+       "params": {
+        "mode": "multiply"
+       },
+       "inputs": {
+        "a": "u10",
+        "b": "bli"
+       }
+      },
+      {
+       "id": "rim",
+       "op": "levels",
+       "params": {
+        "in_low": 0.0,
+        "in_high": 0.5,
+        "gamma": 0.9
+       },
+       "inputs": {
+        "a": "rim0"
+       }
+      },
+      {
+       "id": "wide",
+       "op": "blur",
+       "params": {
+        "radius": 8.0
+       },
+       "inputs": {
+        "a": "u10"
+       }
+      },
+      {
+       "id": "widei",
+       "op": "invert",
+       "inputs": {
+        "a": "wide"
+       }
+      },
+      {
+       "id": "inner0",
+       "op": "math",
+       "params": {
+        "mode": "multiply"
+       },
+       "inputs": {
+        "a": "u10",
+        "b": "widei"
+       }
+      },
+      {
+       "id": "inner",
+       "op": "levels",
+       "params": {
+        "out_high": 0.55
+       },
+       "inputs": {
+        "a": "inner0"
+       }
+      },
+      {
+       "id": "milk",
+       "op": "levels",
+       "params": {
+        "out_high": 0.2
+       },
+       "inputs": {
+        "a": "u10"
+       }
+      },
+      {
+       "id": "heart",
+       "op": "gradient_radial",
+       "params": {
+        "center": [
+         0.5,
+         0.28
+        ],
+        "radius": 0.14,
+        "falloff": "smooth"
+       }
+      },
+      {
+       "id": "heartm",
+       "op": "math",
+       "params": {
+        "mode": "multiply"
+       },
+       "inputs": {
+        "a": "heart",
+        "b": "u10"
+       }
+      },
+      {
+       "id": "heartd",
+       "op": "levels",
+       "params": {
+        "out_high": 0.35
+       },
+       "inputs": {
+        "a": "heartm"
+       }
+      },
+      {
+       "id": "hd",
+       "op": "gradient_radial",
+       "params": {
+        "center": [
+         0.5,
+         0.105
+        ],
+        "radius": 0.07,
+        "falloff": "smooth"
+       }
+      },
+      {
+       "id": "hdm",
+       "op": "math",
+       "params": {
+        "mode": "multiply"
+       },
+       "inputs": {
+        "a": "hd",
+        "b": "u10"
+       }
+      },
+      {
+       "id": "hdd",
+       "op": "levels",
+       "params": {
+        "out_high": 0.3
+       },
+       "inputs": {
+        "a": "hdm"
+       }
+      },
+      {
+       "id": "s0",
+       "op": "math",
+       "params": {
+        "mode": "add"
+       },
+       "inputs": {
+        "a": "rim",
+        "b": "inner"
+       }
+      },
+      {
+       "id": "s1",
+       "op": "math",
+       "params": {
+        "mode": "add"
+       },
+       "inputs": {
+        "a": "s0",
+        "b": "milk"
+       }
+      },
+      {
+       "id": "s2",
+       "op": "math",
+       "params": {
+        "mode": "add"
+       },
+       "inputs": {
+        "a": "s1",
+        "b": "heartd"
+       }
+      },
+      {
+       "id": "s3",
+       "op": "math",
+       "params": {
+        "mode": "add"
+       },
+       "inputs": {
+        "a": "s2",
+        "b": "hdd"
+       }
+      },
+      {
+       "id": "g",
+       "op": "gradient_linear",
+       "params": {
+        "angle": 90.0,
+        "start": 0.0,
+        "end": 1.0
+       }
+      },
+      {
+       "id": "gl",
+       "op": "levels",
+       "params": {
+        "in_low": 0.58,
+        "in_high": 0.93,
+        "out_low": 1.0,
+        "out_high": 0.0
+       },
+       "inputs": {
+        "a": "g"
+       }
+      },
+      {
+       "id": "n",
+       "op": "fbm",
+       "params": {
+        "frequency": 6.0,
+        "octaves": 3,
+        "seed": 31
+       }
+      },
+      {
+       "id": "nl",
+       "op": "levels",
+       "params": {
+        "in_low": 0.25,
+        "in_high": 0.75,
+        "out_low": 0.6,
+        "out_high": 1.0
+       },
+       "inputs": {
+        "a": "n"
+       }
+      },
+      {
+       "id": "fade0",
+       "op": "math",
+       "params": {
+        "mode": "multiply"
+       },
+       "inputs": {
+        "a": "gl",
+        "b": "nl"
+       }
+      },
+      {
+       "id": "fade",
+       "op": "levels",
+       "params": {
+        "gamma": 1.0
+       },
+       "inputs": {
+        "a": "fade0"
+       }
+      },
+      {
+       "id": "s4",
+       "op": "math",
+       "params": {
+        "mode": "multiply"
+       },
+       "inputs": {
+        "a": "s3",
+        "b": "fade"
+       }
+      },
+      {
+       "id": "soft",
+       "op": "blur",
+       "params": {
+        "radius": 1.0
+       },
+       "inputs": {
+        "a": "s4"
+       }
+      },
+      {
+       "id": "out",
+       "op": "levels",
+       "params": {
+        "in_low": 0.01,
+        "in_high": 1.0
+       },
+       "inputs": {
+        "a": "soft"
+       }
+      }
+     ],
+     "output": "out"
     }
    }
   },
@@ -2731,129 +3344,6 @@
    }
   },
   {
-   "id": "core_halo_c0",
-   "type": "trail",
-   "layer": "halos",
-   "parameters": {
-    "lifetime": 1.1,
-    "max_segments": 160,
-    "min_vertex_distance": 0.02,
-    "taper": [
-     [
-      0.0,
-      0.0
-     ],
-     [
-      0.1,
-      0.9
-     ],
-     [
-      0.3,
-      1.0
-     ],
-     [
-      0.65,
-      0.6
-     ],
-     [
-      1.0,
-      0.0
-     ]
-    ],
-    "opacity_over_life": [
-     [
-      0.0,
-      1.0
-     ],
-     [
-      0.4,
-      0.9
-     ],
-     [
-      1.0,
-      0.0
-     ]
-    ],
-    "color": [
-     1.0,
-     0.95,
-     0.86,
-     1.0
-    ],
-    "blend": "additive",
-    "width": {
-     "value": 0.0,
-     "track": [
-      {
-       "time": 0.0,
-       "value": 0.0
-      },
-      {
-       "time": 0.12,
-       "value": 0.0
-      },
-      {
-       "time": 0.55,
-       "value": 0.014
-      },
-      {
-       "time": 1.5,
-       "value": 0.014
-      },
-      {
-       "time": 1.72,
-       "value": 0.0042
-      },
-      {
-       "time": 1.85,
-       "value": 0.0
-      },
-      {
-       "time": 3.5,
-       "value": 0.0
-      }
-     ]
-    },
-    "emissive": {
-     "value": 0.0,
-     "track": [
-      {
-       "time": 0.0,
-       "value": 0.0
-      },
-      {
-       "time": 0.12,
-       "value": 0.0
-      },
-      {
-       "time": 0.55,
-       "value": 1.28
-      },
-      {
-       "time": 1.5,
-       "value": 1.28
-      },
-      {
-       "time": 1.72,
-       "value": 0.384
-      },
-      {
-       "time": 1.85,
-       "value": 0.0
-      },
-      {
-       "time": 3.5,
-       "value": 0.0
-      }
-     ]
-    }
-   },
-   "inputs": {
-    "source": "bead_halo_c0",
-    "material": "mat_ribbon_core"
-   }
-  },
-  {
    "id": "bead_halo_c1",
    "type": "mesh",
    "layer": "halos",
@@ -3086,129 +3576,6 @@
    }
   },
   {
-   "id": "core_halo_c1",
-   "type": "trail",
-   "layer": "halos",
-   "parameters": {
-    "lifetime": 1.1,
-    "max_segments": 160,
-    "min_vertex_distance": 0.02,
-    "taper": [
-     [
-      0.0,
-      0.0
-     ],
-     [
-      0.1,
-      0.9
-     ],
-     [
-      0.3,
-      1.0
-     ],
-     [
-      0.65,
-      0.6
-     ],
-     [
-      1.0,
-      0.0
-     ]
-    ],
-    "opacity_over_life": [
-     [
-      0.0,
-      1.0
-     ],
-     [
-      0.4,
-      0.9
-     ],
-     [
-      1.0,
-      0.0
-     ]
-    ],
-    "color": [
-     1.0,
-     0.95,
-     0.86,
-     1.0
-    ],
-    "blend": "additive",
-    "width": {
-     "value": 0.0,
-     "track": [
-      {
-       "time": 0.0,
-       "value": 0.0
-      },
-      {
-       "time": 0.12,
-       "value": 0.0
-      },
-      {
-       "time": 0.55,
-       "value": 0.014
-      },
-      {
-       "time": 1.5,
-       "value": 0.014
-      },
-      {
-       "time": 1.72,
-       "value": 0.0042
-      },
-      {
-       "time": 1.85,
-       "value": 0.0
-      },
-      {
-       "time": 3.5,
-       "value": 0.0
-      }
-     ]
-    },
-    "emissive": {
-     "value": 0.0,
-     "track": [
-      {
-       "time": 0.0,
-       "value": 0.0
-      },
-      {
-       "time": 0.12,
-       "value": 0.0
-      },
-      {
-       "time": 0.55,
-       "value": 1.28
-      },
-      {
-       "time": 1.5,
-       "value": 1.28
-      },
-      {
-       "time": 1.72,
-       "value": 0.384
-      },
-      {
-       "time": 1.85,
-       "value": 0.0
-      },
-      {
-       "time": 3.5,
-       "value": 0.0
-      }
-     ]
-    }
-   },
-   "inputs": {
-    "source": "bead_halo_c1",
-    "material": "mat_ribbon_core"
-   }
-  },
-  {
    "id": "bead_halo_c2",
    "type": "mesh",
    "layer": "halos",
@@ -3438,129 +3805,6 @@
    "inputs": {
     "source": "bead_halo_c2",
     "material": "mat_ribbon_glow"
-   }
-  },
-  {
-   "id": "core_halo_c2",
-   "type": "trail",
-   "layer": "halos",
-   "parameters": {
-    "lifetime": 1.1,
-    "max_segments": 160,
-    "min_vertex_distance": 0.02,
-    "taper": [
-     [
-      0.0,
-      0.0
-     ],
-     [
-      0.1,
-      0.9
-     ],
-     [
-      0.3,
-      1.0
-     ],
-     [
-      0.65,
-      0.6
-     ],
-     [
-      1.0,
-      0.0
-     ]
-    ],
-    "opacity_over_life": [
-     [
-      0.0,
-      1.0
-     ],
-     [
-      0.4,
-      0.9
-     ],
-     [
-      1.0,
-      0.0
-     ]
-    ],
-    "color": [
-     1.0,
-     0.95,
-     0.86,
-     1.0
-    ],
-    "blend": "additive",
-    "width": {
-     "value": 0.0,
-     "track": [
-      {
-       "time": 0.0,
-       "value": 0.0
-      },
-      {
-       "time": 0.12,
-       "value": 0.0
-      },
-      {
-       "time": 0.55,
-       "value": 0.014
-      },
-      {
-       "time": 1.5,
-       "value": 0.014
-      },
-      {
-       "time": 1.72,
-       "value": 0.0042
-      },
-      {
-       "time": 1.85,
-       "value": 0.0
-      },
-      {
-       "time": 3.5,
-       "value": 0.0
-      }
-     ]
-    },
-    "emissive": {
-     "value": 0.0,
-     "track": [
-      {
-       "time": 0.0,
-       "value": 0.0
-      },
-      {
-       "time": 0.12,
-       "value": 0.0
-      },
-      {
-       "time": 0.55,
-       "value": 1.28
-      },
-      {
-       "time": 1.5,
-       "value": 1.28
-      },
-      {
-       "time": 1.72,
-       "value": 0.384
-      },
-      {
-       "time": 1.85,
-       "value": 0.0
-      },
-      {
-       "time": 3.5,
-       "value": 0.0
-      }
-     ]
-    }
-   },
-   "inputs": {
-    "source": "bead_halo_c2",
-    "material": "mat_ribbon_core"
    }
   },
   {
@@ -5178,344 +5422,336 @@
     "visible": false,
     "position": {
      "value": [
-      0.0,
-      0.16,
+      -0.0,
+      0.22,
       0.0
      ],
      "track": [
       {
        "time": 0.7,
        "value": [
-        0.0,
-        0.16,
+        -0.0,
+        0.22,
         0.0
        ]
       },
       {
-       "time": 0.7395,
+       "time": 0.74,
+       "value": [
+        -0.0,
+        0.2491,
+        0.0
+       ]
+      },
+      {
+       "time": 0.78,
+       "value": [
+        -0.0,
+        0.3186,
+        0.0
+       ]
+      },
+      {
+       "time": 0.82,
+       "value": [
+        -0.0,
+        0.4014,
+        0.0
+       ]
+      },
+      {
+       "time": 0.86,
+       "value": [
+        -0.0,
+        0.4709,
+        0.0
+       ]
+      },
+      {
+       "time": 0.9,
+       "value": [
+        -0.0,
+        0.5,
+        0.0
+       ]
+      },
+      {
+       "time": 0.94,
        "value": [
         0.0,
-        0.18948,
+        0.5468,
         0.0
        ]
       },
       {
-       "time": 0.779,
+       "time": 0.98,
        "value": [
         0.0,
-        0.26005,
+        0.6584,
         0.0
        ]
       },
       {
-       "time": 0.8185,
-       "value": [
-        0.00011,
-        0.34486,
-        0.0
-       ]
-      },
-      {
-       "time": 0.858,
-       "value": [
-        0.00128,
-        0.41707,
-        0.0
-       ]
-      },
-      {
-       "time": 0.8976,
-       "value": [
-        0.00399,
-        0.44987,
-        0.0
-       ]
-      },
-      {
-       "time": 0.9371,
-       "value": [
-        0.00822,
-        0.49511,
-        0.0
-       ]
-      },
-      {
-       "time": 0.9766,
-       "value": [
-        0.01354,
-        0.60762,
-        0.0
-       ]
-      },
-      {
-       "time": 1.0161,
-       "value": [
-        0.01929,
-        0.73199,
-        0.0
-       ]
-      },
-      {
-       "time": 1.0556,
-       "value": [
-        0.02461,
-        0.8125,
-        0.0
-       ]
-      },
-      {
-       "time": 1.0951,
-       "value": [
-        0.02864,
-        0.82726,
-        0.0
-       ]
-      },
-      {
-       "time": 1.1346,
-       "value": [
-        0.03063,
-        0.86403,
-        0.0
-       ]
-      },
-      {
-       "time": 1.1741,
-       "value": [
-        0.0301,
-        0.92381,
-        0.0
-       ]
-      },
-      {
-       "time": 1.2137,
-       "value": [
-        0.02703,
-        0.99756,
-        0.0
-       ]
-      },
-      {
-       "time": 1.2532,
-       "value": [
-        0.02278,
-        1.07619,
-        0.0
-       ]
-      },
-      {
-       "time": 1.2927,
-       "value": [
-        0.01784,
-        1.15067,
-        0.0
-       ]
-      },
-      {
-       "time": 1.3322,
-       "value": [
-        0.01236,
-        1.21191,
-        0.0
-       ]
-      },
-      {
-       "time": 1.3717,
-       "value": [
-        0.00652,
-        1.25085,
-        0.0
-       ]
-      },
-      {
-       "time": 1.4112,
-       "value": [
-        0.00047,
-        1.2603,
-        0.0
-       ]
-      },
-      {
-       "time": 1.4507,
-       "value": [
-        -0.00559,
-        1.2654,
-        0.0
-       ]
-      },
-      {
-       "time": 1.4902,
-       "value": [
-        -0.01148,
-        1.27467,
-        0.0
-       ]
-      },
-      {
-       "time": 1.5298,
-       "value": [
-        -0.01702,
-        1.28533,
-        0.0
-       ]
-      },
-      {
-       "time": 1.5693,
-       "value": [
-        -0.02205,
-        1.2946,
-        0.0
-       ]
-      },
-      {
-       "time": 1.6088,
-       "value": [
-        -0.02642,
-        1.2997,
-        0.0
-       ]
-      },
-      {
-       "time": 1.6483,
-       "value": [
-        -0.02999,
-        1.2873,
-        0.0
-       ]
-      },
-      {
-       "time": 1.6878,
-       "value": [
-        -0.03266,
-        1.2366,
-        0.0
-       ]
-      },
-      {
-       "time": 1.7273,
-       "value": [
-        -0.03434,
-        1.16512,
-        0.0
-       ]
-      },
-      {
-       "time": 1.7668,
-       "value": [
-        -0.03499,
-        1.09232,
-        0.0
-       ]
-      },
-      {
-       "time": 1.8063,
-       "value": [
-        -0.03459,
-        1.03766,
-        0.0
-       ]
-      },
-      {
-       "time": 1.8459,
-       "value": [
-        -0.03314,
-        1.01863,
-        0.0
-       ]
-      },
-      {
-       "time": 1.8854,
-       "value": [
-        -0.02952,
-        0.95024,
-        0.0
-       ]
-      },
-      {
-       "time": 1.9249,
-       "value": [
-        -0.02307,
-        0.81876,
-        0.0
-       ]
-      },
-      {
-       "time": 1.9644,
-       "value": [
-        -0.01561,
-        0.68004,
-        0.0
-       ]
-      },
-      {
-       "time": 2.0039,
-       "value": [
-        -0.00877,
-        0.58993,
-        0.0
-       ]
-      },
-      {
-       "time": 2.0434,
-       "value": [
-        -0.0037,
-        0.55839,
-        0.0
-       ]
-      },
-      {
-       "time": 2.0829,
-       "value": [
-        -0.00089,
-        0.4545,
-        0.0
-       ]
-      },
-      {
-       "time": 2.1224,
-       "value": [
-        -2e-05,
-        0.32849,
-        0.0
-       ]
-      },
-      {
-       "time": 2.162,
+       "time": 1.02,
        "value": [
         0.0,
-        0.25275,
+        0.7916,
         0.0
        ]
       },
       {
-       "time": 2.2015,
+       "time": 1.06,
        "value": [
         0.0,
-        0.23379,
+        0.9032,
         0.0
        ]
       },
       {
-       "time": 2.241,
+       "time": 1.1,
        "value": [
         0.0,
-        0.18744,
+        0.95,
         0.0
        ]
       },
       {
-       "time": 2.2805,
+       "time": 1.14,
        "value": [
-        0.0,
-        0.14669,
+        0.0006,
+        0.9765,
         0.0
        ]
       },
       {
-       "time": 2.32,
+       "time": 1.18,
+       "value": [
+        0.0026,
+        1.0439,
+        0.0
+       ]
+      },
+      {
+       "time": 1.22,
+       "value": [
+        0.0059,
+        1.134,
+        0.0
+       ]
+      },
+      {
+       "time": 1.26,
+       "value": [
+        0.0103,
+        1.2279,
+        0.0
+       ]
+      },
+      {
+       "time": 1.3,
+       "value": [
+        0.0154,
+        1.3066,
+        0.0
+       ]
+      },
+      {
+       "time": 1.34,
+       "value": [
+        0.0205,
+        1.3506,
+        0.0
+       ]
+      },
+      {
+       "time": 1.38,
+       "value": [
+        0.0251,
+        1.3615,
+        0.0
+       ]
+      },
+      {
+       "time": 1.42,
+       "value": [
+        0.0284,
+        1.3789,
+        0.0
+       ]
+      },
+      {
+       "time": 1.46,
+       "value": [
+        0.0296,
+        1.4002,
+        0.0
+       ]
+      },
+      {
+       "time": 1.5,
+       "value": [
+        0.0299,
+        1.422,
+        0.0
+       ]
+      },
+      {
+       "time": 1.54,
+       "value": [
+        0.03,
+        1.4407,
+        0.0
+       ]
+      },
+      {
+       "time": 1.58,
+       "value": [
+        0.0297,
+        1.4524,
+        0.0
+       ]
+      },
+      {
+       "time": 1.62,
+       "value": [
+        0.0291,
+        1.4508,
+        0.0
+       ]
+      },
+      {
+       "time": 1.66,
+       "value": [
+        0.0283,
+        1.4248,
+        0.0
+       ]
+      },
+      {
+       "time": 1.7,
+       "value": [
+        0.0271,
+        1.3846,
+        0.0
+       ]
+      },
+      {
+       "time": 1.74,
+       "value": [
+        0.024,
+        1.3414,
+        0.0
+       ]
+      },
+      {
+       "time": 1.78,
+       "value": [
+        0.0182,
+        1.308,
+        0.0
+       ]
+      },
+      {
+       "time": 1.82,
+       "value": [
+        0.0117,
+        1.2805,
+        0.0
+       ]
+      },
+      {
+       "time": 1.86,
+       "value": [
+        0.0059,
+        1.1738,
+        0.0
+       ]
+      },
+      {
+       "time": 1.9,
+       "value": [
+        0.0018,
+        1.0259,
+        0.0
+       ]
+      },
+      {
+       "time": 1.94,
+       "value": [
+        0.0001,
+        0.8956,
+        0.0
+       ]
+      },
+      {
+       "time": 1.98,
        "value": [
         0.0,
-        0.14,
+        0.84,
+        0.0
+       ]
+      },
+      {
+       "time": 2.02,
+       "value": [
+        0.0,
+        0.7567,
+        0.0
+       ]
+      },
+      {
+       "time": 2.06,
+       "value": [
+        0.0,
+        0.5853,
+        0.0
+       ]
+      },
+      {
+       "time": 2.1,
+       "value": [
+        0.0,
+        0.4433,
+        0.0
+       ]
+      },
+      {
+       "time": 2.14,
+       "value": [
+        0.0,
+        0.4073,
+        0.0
+       ]
+      },
+      {
+       "time": 2.18,
+       "value": [
+        -0.0,
+        0.3315,
+        0.0
+       ]
+      },
+      {
+       "time": 2.22,
+       "value": [
+        -0.0,
+        0.247,
+        0.0
+       ]
+      },
+      {
+       "time": 2.26,
+       "value": [
+        -0.0,
+        0.22,
+        0.0
+       ]
+      },
+      {
+       "time": 2.3,
+       "value": [
+        -0.0,
+        0.22,
         0.0
        ]
       }
@@ -5537,327 +5773,319 @@
        ]
       },
       {
-       "time": 0.7395,
+       "time": 0.74,
        "value": [
         0.0,
         0.0,
-        84.307
+        87.088
        ]
       },
       {
-       "time": 0.779,
+       "time": 0.78,
        "value": [
         0.0,
         0.0,
-        70.681
+        80.144
        ]
       },
       {
-       "time": 0.8185,
+       "time": 0.82,
        "value": [
         0.0,
         0.0,
-        54.304
+        71.856
        ]
       },
       {
-       "time": 0.858,
+       "time": 0.86,
        "value": [
         0.0,
         0.0,
-        40.358
+        64.912
        ]
       },
       {
-       "time": 0.8976,
+       "time": 0.9,
        "value": [
         0.0,
         0.0,
-        34.025
+        62.0
        ]
       },
       {
-       "time": 0.9371,
+       "time": 0.94,
        "value": [
         0.0,
         0.0,
-        30.586
+        57.632
        ]
       },
       {
-       "time": 0.9766,
+       "time": 0.98,
        "value": [
         0.0,
         0.0,
-        22.072
+        47.216
        ]
       },
       {
-       "time": 1.0161,
+       "time": 1.02,
        "value": [
         0.0,
         0.0,
-        12.66
+        34.784
        ]
       },
       {
-       "time": 1.0556,
+       "time": 1.06,
        "value": [
         0.0,
         0.0,
-        6.568
+        24.368
        ]
       },
       {
-       "time": 1.0951,
+       "time": 1.1,
        "value": [
         0.0,
         0.0,
-        5.901
+        20.0
        ]
       },
       {
-       "time": 1.1346,
+       "time": 1.14,
        "value": [
         0.0,
         0.0,
-        5.4
+        18.774
        ]
       },
       {
-       "time": 1.1741,
+       "time": 1.18,
        "value": [
         0.0,
         0.0,
-        4.584
+        15.716
        ]
       },
       {
-       "time": 1.2137,
+       "time": 1.22,
        "value": [
         0.0,
         0.0,
-        3.579
+        11.742
        ]
       },
       {
-       "time": 1.2532,
+       "time": 1.26,
        "value": [
         0.0,
         0.0,
-        2.506
+        7.745
        ]
       },
       {
-       "time": 1.2927,
+       "time": 1.3,
        "value": [
         0.0,
         0.0,
-        1.491
+        4.602
        ]
       },
       {
-       "time": 1.3322,
+       "time": 1.34,
        "value": [
         0.0,
         0.0,
-        0.656
+        3.17
        ]
       },
       {
-       "time": 1.3717,
+       "time": 1.38,
        "value": [
         0.0,
         0.0,
-        0.125
+        3.37
        ]
       },
       {
-       "time": 1.4112,
+       "time": 1.42,
        "value": [
         0.0,
         0.0,
-        0.0
+        3.381
        ]
       },
       {
-       "time": 1.4507,
+       "time": 1.46,
        "value": [
         0.0,
         0.0,
-        0.0
+        3.145
        ]
       },
       {
-       "time": 1.4902,
+       "time": 1.5,
        "value": [
         0.0,
         0.0,
-        0.0
+        2.815
        ]
       },
       {
-       "time": 1.5298,
+       "time": 1.54,
        "value": [
         0.0,
         0.0,
-        0.0
+        2.525
        ]
       },
       {
-       "time": 1.5693,
+       "time": 1.58,
        "value": [
         0.0,
         0.0,
-        0.0
+        2.372
        ]
       },
       {
-       "time": 1.6088,
+       "time": 1.62,
        "value": [
         0.0,
         0.0,
-        0.0
+        2.497
        ]
       },
       {
-       "time": 1.6483,
+       "time": 1.66,
        "value": [
         0.0,
         0.0,
-        0.136
+        3.115
        ]
       },
       {
-       "time": 1.6878,
+       "time": 1.7,
        "value": [
         0.0,
         0.0,
-        0.679
+        3.995
        ]
       },
       {
-       "time": 1.7273,
+       "time": 1.74,
        "value": [
         0.0,
         0.0,
-        1.445
+        4.679
        ]
       },
       {
-       "time": 1.7668,
+       "time": 1.78,
        "value": [
         0.0,
         0.0,
-        2.225
+        4.794
        ]
       },
       {
-       "time": 1.8063,
+       "time": 1.82,
        "value": [
         0.0,
         0.0,
-        2.811
+        5.008
        ]
       },
       {
-       "time": 1.8459,
+       "time": 1.86,
        "value": [
         0.0,
         0.0,
-        3.059
+        9.141
        ]
       },
       {
-       "time": 1.8854,
+       "time": 1.9,
        "value": [
         0.0,
         0.0,
-        6.012
+        15.478
        ]
       },
       {
-       "time": 1.9249,
+       "time": 1.94,
        "value": [
         0.0,
         0.0,
-        11.69
+        21.36
        ]
       },
       {
-       "time": 1.9644,
+       "time": 1.98,
        "value": [
         0.0,
         0.0,
-        17.68
+        24.0
        ]
       },
       {
-       "time": 2.0039,
+       "time": 2.02,
        "value": [
         0.0,
         0.0,
-        21.571
+        32.723
        ]
       },
       {
-       "time": 2.0434,
+       "time": 2.06,
        "value": [
         0.0,
         0.0,
-        25.275
+        50.682
        ]
       },
       {
-       "time": 2.0829,
+       "time": 2.1,
        "value": [
         0.0,
         0.0,
-        41.016
+        65.563
        ]
       },
       {
-       "time": 2.1224,
+       "time": 2.14,
        "value": [
         0.0,
         0.0,
-        60.107
+        69.402
        ]
       },
       {
-       "time": 2.162,
+       "time": 2.18,
        "value": [
         0.0,
         0.0,
-        71.584
+        77.733
        ]
       },
       {
-       "time": 2.2015,
+       "time": 2.22,
        "value": [
         0.0,
         0.0,
-        74.653
+        87.026
        ]
       },
       {
-       "time": 2.241,
+       "time": 2.26,
        "value": [
         0.0,
         0.0,
-        82.238
+        90.0
        ]
       },
       {
-       "time": 2.2805,
-       "value": [
-        0.0,
-        0.0,
-        88.905
-       ]
-      },
-      {
-       "time": 2.32,
+       "time": 2.3,
        "value": [
         0.0,
         0.0,
@@ -5869,37 +6097,100 @@
    }
   },
   {
-   "id": "soul_head",
-   "type": "mesh",
-   "layer": "soul",
-   "parent": "soul",
+   "id": "ps_soul_figure",
+   "type": "particle_system",
    "parameters": {
-    "primitive": "sphere",
-    "radius": 0.01,
-    "segments": 4,
-    "visible": false,
-    "position": [
-     0.0,
-     0.6,
-     0.0
-    ]
+    "max_particles": 16,
+    "lifetime": 0.025,
+    "size": 1.95,
+    "color": [
+     1.0,
+     0.932,
+     0.8168,
+     1.0
+    ],
+    "opacity": 0.3,
+    "opacity_over_life": [
+     [
+      0.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0
+     ]
+    ],
+    "emissive": 1.2,
+    "render_mode": "stretched_billboard",
+    "velocity_stretch": 0.0,
+    "blend": "additive",
+    "soft_particle_distance": 0.05
+   },
+   "inputs": {
+    "sprite": "tex_soul_figure",
+    "material": "mat_glow"
    }
   },
   {
-   "id": "soul_chest",
-   "type": "mesh",
+   "id": "e_soul_figure",
+   "type": "emitter",
    "layer": "soul",
    "parent": "soul",
    "parameters": {
-    "primitive": "sphere",
-    "radius": 0.01,
-    "segments": 4,
-    "visible": false,
+    "shape": "point",
     "position": [
      0.0,
-     0.22,
+     -0.04,
+     0.02
+    ],
+    "direction": [
+     0.0,
+     1.0,
      0.0
-    ]
+    ],
+    "velocity": 0.12,
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.0,
+       "value": 0.0
+      },
+      {
+       "time": 0.7,
+       "value": 0.0
+      },
+      {
+       "time": 0.82,
+       "value": 67.5
+      },
+      {
+       "time": 1.0,
+       "value": 150.0
+      },
+      {
+       "time": 1.9,
+       "value": 150.0
+      },
+      {
+       "time": 2.08,
+       "value": 82.5
+      },
+      {
+       "time": 2.22,
+       "value": 0.0
+      },
+      {
+       "time": 3.5,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.7,
+    "duration": 1.55
+   },
+   "inputs": {
+    "particle": "ps_soul_figure"
    }
   },
   {
@@ -5911,8 +6202,13 @@
     "mode": "procedural",
     "volume_type": "magic",
     "shape": "nebula",
-    "radius": 0.37,
-    "height": 2.0,
+    "position": [
+     0.0,
+     -0.02,
+     0.0
+    ],
+    "radius": 0.34,
+    "height": 1.95,
     "density": {
      "value": 0.0,
      "track": [
@@ -5925,23 +6221,23 @@
        "value": 0.0
       },
       {
-       "time": 0.85,
-       "value": 0.95
+       "time": 0.82,
+       "value": 0.2475
       },
       {
-       "time": 1.05,
-       "value": 1.9
+       "time": 1.0,
+       "value": 0.55
       },
       {
-       "time": 1.85,
-       "value": 1.9
+       "time": 1.9,
+       "value": 0.55
       },
       {
-       "time": 2.05,
-       "value": 1.33
+       "time": 2.08,
+       "value": 0.3025
       },
       {
-       "time": 2.2,
+       "time": 2.22,
        "value": 0.0
       },
       {
@@ -5950,11 +6246,11 @@
       }
      ]
     },
-    "emission": 1.5,
+    "emission": 0.75,
     "color": [
-     0.976,
-     0.86,
-     0.704,
+     0.978,
+     0.855,
+     0.687,
      1.0
     ],
     "color_hot": [
@@ -5965,24 +6261,24 @@
     ],
     "filament_scale": 3.2,
     "strands": 0.5,
-    "carve": 0.32,
-    "softness": 0.9,
+    "carve": 0.38,
+    "softness": 0.95,
     "twist": 1.2,
     "spin": 0.18,
     "climb": 0.7,
     "scatter": 0.15,
-    "march_steps": 20,
+    "march_steps": 16,
     "start_time": 0.7,
     "duration": 1.55
    }
   },
   {
-   "id": "ps_soul_head",
+   "id": "ps_soul_glow",
    "type": "particle_system",
    "parameters": {
-    "max_particles": 20,
+    "max_particles": 30,
     "lifetime": 0.1,
-    "size": 0.62,
+    "size": 0.48,
     "color": [
      0.96,
      0.9,
@@ -6009,7 +6305,7 @@
       ]
      ]
     ],
-    "opacity": 0.14,
+    "opacity": 0.08,
     "opacity_over_life": [
      [
       0.0,
@@ -6035,12 +6331,17 @@
    }
   },
   {
-   "id": "e_soul_head",
+   "id": "e_soul_head_glow",
    "type": "emitter",
    "layer": "soul",
-   "parent": "soul_head",
+   "parent": "soul",
    "parameters": {
     "shape": "point",
+    "position": [
+     0.0,
+     0.76,
+     0.02
+    ],
     "direction": [
      0.0,
      1.0,
@@ -6059,23 +6360,23 @@
        "value": 0.0
       },
       {
-       "time": 0.85,
-       "value": 20.0
+       "time": 0.82,
+       "value": 20.25
       },
       {
-       "time": 1.05,
-       "value": 40.0
+       "time": 1.0,
+       "value": 45.0
       },
       {
-       "time": 1.85,
-       "value": 40.0
+       "time": 1.9,
+       "value": 45.0
       },
       {
-       "time": 2.05,
-       "value": 28.0
+       "time": 2.08,
+       "value": 24.75
       },
       {
-       "time": 2.2,
+       "time": 2.22,
        "value": 0.0
       },
       {
@@ -6088,16 +6389,182 @@
     "duration": 1.55
    },
    "inputs": {
-    "particle": "ps_soul_head"
+    "particle": "ps_soul_glow"
    }
   },
   {
-   "id": "ps_soul_chest",
+   "id": "e_soul_heart_glow",
+   "type": "emitter",
+   "layer": "soul",
+   "parent": "soul",
+   "parameters": {
+    "shape": "point",
+    "position": [
+     0.0,
+     0.36,
+     0.06
+    ],
+    "direction": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "velocity": 0.0,
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.0,
+       "value": 0.0
+      },
+      {
+       "time": 0.7,
+       "value": 0.0
+      },
+      {
+       "time": 0.82,
+       "value": 13.5
+      },
+      {
+       "time": 1.0,
+       "value": 30.0
+      },
+      {
+       "time": 1.9,
+       "value": 30.0
+      },
+      {
+       "time": 2.08,
+       "value": 16.5
+      },
+      {
+       "time": 2.22,
+       "value": 0.0
+      },
+      {
+       "time": 3.5,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.7,
+    "duration": 1.55
+   },
+   "inputs": {
+    "particle": "ps_soul_glow"
+   }
+  },
+  {
+   "id": "ps_shed_motes",
    "type": "particle_system",
    "parameters": {
-    "max_particles": 20,
-    "lifetime": 0.1,
-    "size": 0.9,
+    "max_particles": 120,
+    "lifetime": 0.9,
+    "lifetime_variance": 0.25,
+    "size": 0.026,
+    "size_variance": 0.01,
+    "size_over_life": [
+     [
+      0.0,
+      0.5
+     ],
+     [
+      0.2,
+      1.0
+     ],
+     [
+      1.0,
+      0.3
+     ]
+    ],
+    "color": [
+     1.0,
+     0.95,
+     0.86,
+     1.0
+    ],
+    "color_over_life": [
+     [
+      0.0,
+      [
+       1.0,
+       0.95,
+       0.86,
+       1.0
+      ]
+     ],
+     [
+      0.6,
+      [
+       1.0,
+       0.875,
+       0.68,
+       1.0
+      ]
+     ],
+     [
+      1.0,
+      [
+       1.0,
+       0.8,
+       0.5,
+       1.0
+      ]
+     ]
+    ],
+    "opacity": 0.85,
+    "opacity_over_life": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.2,
+      1.0
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 1.5,
+    "drag": 1.4,
+    "render_mode": "billboard",
+    "blend": "additive",
+    "soft_particle_distance": 0.03
+   },
+   "inputs": {
+    "sprite": "tex_mote",
+    "material": "mat_mote",
+    "forces": [
+     "f_lift",
+     "f_curl"
+    ]
+   }
+  },
+  {
+   "id": "ps_shed_wisps",
+   "type": "particle_system",
+   "parameters": {
+    "max_particles": 120,
+    "lifetime": 0.6,
+    "lifetime_variance": 0.15,
+    "size": 0.05,
+    "size_variance": 0.015,
+    "size_over_life": [
+     [
+      0.0,
+      0.4
+     ],
+     [
+      0.3,
+      1.0
+     ],
+     [
+      1.0,
+      0.6
+     ]
+    ],
     "color": [
      0.96,
      0.9,
@@ -6115,23 +6582,32 @@
       ]
      ],
      [
+      0.6,
+      [
+       0.98,
+       0.85,
+       0.67,
+       1.0
+      ]
+     ],
+     [
       1.0,
       [
-       0.976,
-       0.86,
-       0.704,
+       1.0,
+       0.8,
+       0.5,
        1.0
       ]
      ]
     ],
-    "opacity": 0.05,
+    "opacity": 0.3,
     "opacity_over_life": [
      [
       0.0,
       0.0
      ],
      [
-      0.3,
+      0.25,
       1.0
      ],
      [
@@ -6139,29 +6615,53 @@
       0.0
      ]
     ],
-    "emissive": 1.0,
-    "render_mode": "billboard",
+    "emissive": 1.1,
+    "drag": 1.2,
+    "render_mode": "stretched_billboard",
+    "velocity_stretch": 2.4,
     "blend": "additive",
-    "soft_particle_distance": 0.1
+    "soft_particle_distance": 0.05
    },
    "inputs": {
-    "sprite": "tex_glow",
-    "material": "mat_glow"
+    "sprite": "tex_streak",
+    "material": "mat_streak",
+    "forces": [
+     "f_lift",
+     "f_curl"
+    ]
    }
   },
   {
-   "id": "e_soul_chest",
+   "id": "e_shed_motes_chest",
    "type": "emitter",
    "layer": "soul",
-   "parent": "soul_chest",
+   "parent": "soul",
    "parameters": {
-    "shape": "point",
-    "direction": [
+    "shape": "sphere",
+    "radius": 0.15,
+    "surface_only": true,
+    "position": [
      0.0,
-     1.0,
+     0.36,
      0.0
     ],
-    "velocity": 0.0,
+    "rotation": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "scale": [
+     1.1,
+     1.5,
+     0.6
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "velocity": 0.12,
+    "velocity_variance": 0.06,
     "rate": {
      "value": 0.0,
      "track": [
@@ -6174,23 +6674,23 @@
        "value": 0.0
       },
       {
-       "time": 0.85,
-       "value": 20.0
+       "time": 0.82,
+       "value": 11.7
       },
       {
-       "time": 1.05,
-       "value": 40.0
+       "time": 1.0,
+       "value": 26.0
       },
       {
-       "time": 1.85,
-       "value": 40.0
+       "time": 1.9,
+       "value": 26.0
       },
       {
-       "time": 2.05,
-       "value": 28.0
+       "time": 2.08,
+       "value": 14.3
       },
       {
-       "time": 2.2,
+       "time": 2.22,
        "value": 0.0
       },
       {
@@ -6203,7 +6703,821 @@
     "duration": 1.55
    },
    "inputs": {
-    "particle": "ps_soul_chest"
+    "particle": "ps_shed_motes"
+   }
+  },
+  {
+   "id": "e_shed_wisps_chest",
+   "type": "emitter",
+   "layer": "soul",
+   "parent": "soul",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.15,
+    "surface_only": true,
+    "position": [
+     0.0,
+     0.36,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "scale": [
+     1.1,
+     1.5,
+     0.6
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "velocity": 0.12,
+    "velocity_variance": 0.06,
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.0,
+       "value": 0.0
+      },
+      {
+       "time": 0.7,
+       "value": 0.0
+      },
+      {
+       "time": 0.82,
+       "value": 13.5
+      },
+      {
+       "time": 1.0,
+       "value": 30.0
+      },
+      {
+       "time": 1.9,
+       "value": 30.0
+      },
+      {
+       "time": 2.08,
+       "value": 16.5
+      },
+      {
+       "time": 2.22,
+       "value": 0.0
+      },
+      {
+       "time": 3.5,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.7,
+    "duration": 1.55
+   },
+   "inputs": {
+    "particle": "ps_shed_wisps"
+   }
+  },
+  {
+   "id": "e_shed_motes_head",
+   "type": "emitter",
+   "layer": "soul",
+   "parent": "soul",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.1,
+    "surface_only": true,
+    "position": [
+     0.0,
+     0.76,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "scale": [
+     1.0,
+     1.15,
+     1.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "velocity": 0.12,
+    "velocity_variance": 0.06,
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.0,
+       "value": 0.0
+      },
+      {
+       "time": 0.7,
+       "value": 0.0
+      },
+      {
+       "time": 0.82,
+       "value": 4.5
+      },
+      {
+       "time": 1.0,
+       "value": 10.0
+      },
+      {
+       "time": 1.9,
+       "value": 10.0
+      },
+      {
+       "time": 2.08,
+       "value": 5.5
+      },
+      {
+       "time": 2.22,
+       "value": 0.0
+      },
+      {
+       "time": 3.5,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.7,
+    "duration": 1.55
+   },
+   "inputs": {
+    "particle": "ps_shed_motes"
+   }
+  },
+  {
+   "id": "e_shed_wisps_head",
+   "type": "emitter",
+   "layer": "soul",
+   "parent": "soul",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.1,
+    "surface_only": true,
+    "position": [
+     0.0,
+     0.76,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "scale": [
+     1.0,
+     1.15,
+     1.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "velocity": 0.12,
+    "velocity_variance": 0.06,
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.0,
+       "value": 0.0
+      },
+      {
+       "time": 0.7,
+       "value": 0.0
+      },
+      {
+       "time": 0.82,
+       "value": 4.5
+      },
+      {
+       "time": 1.0,
+       "value": 10.0
+      },
+      {
+       "time": 1.9,
+       "value": 10.0
+      },
+      {
+       "time": 2.08,
+       "value": 5.5
+      },
+      {
+       "time": 2.22,
+       "value": 0.0
+      },
+      {
+       "time": 3.5,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.7,
+    "duration": 1.55
+   },
+   "inputs": {
+    "particle": "ps_shed_wisps"
+   }
+  },
+  {
+   "id": "e_shed_motes_waist",
+   "type": "emitter",
+   "layer": "soul",
+   "parent": "soul",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.12,
+    "surface_only": true,
+    "position": [
+     0.0,
+     0.05,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "scale": [
+     1.0,
+     1.5,
+     0.7
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "velocity": 0.12,
+    "velocity_variance": 0.06,
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.0,
+       "value": 0.0
+      },
+      {
+       "time": 0.7,
+       "value": 0.0
+      },
+      {
+       "time": 0.82,
+       "value": 4.5
+      },
+      {
+       "time": 1.0,
+       "value": 10.0
+      },
+      {
+       "time": 1.9,
+       "value": 10.0
+      },
+      {
+       "time": 2.08,
+       "value": 5.5
+      },
+      {
+       "time": 2.22,
+       "value": 0.0
+      },
+      {
+       "time": 3.5,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.7,
+    "duration": 1.55
+   },
+   "inputs": {
+    "particle": "ps_shed_motes"
+   }
+  },
+  {
+   "id": "e_shed_wisps_waist",
+   "type": "emitter",
+   "layer": "soul",
+   "parent": "soul",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.12,
+    "surface_only": true,
+    "position": [
+     0.0,
+     0.05,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "scale": [
+     1.0,
+     1.5,
+     0.7
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "velocity": 0.12,
+    "velocity_variance": 0.06,
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.0,
+       "value": 0.0
+      },
+      {
+       "time": 0.7,
+       "value": 0.0
+      },
+      {
+       "time": 0.82,
+       "value": 5.4
+      },
+      {
+       "time": 1.0,
+       "value": 12.0
+      },
+      {
+       "time": 1.9,
+       "value": 12.0
+      },
+      {
+       "time": 2.08,
+       "value": 6.6
+      },
+      {
+       "time": 2.22,
+       "value": 0.0
+      },
+      {
+       "time": 3.5,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.7,
+    "duration": 1.55
+   },
+   "inputs": {
+    "particle": "ps_shed_wisps"
+   }
+  },
+  {
+   "id": "e_shed_motes_arm_r",
+   "type": "emitter",
+   "layer": "soul",
+   "parent": "soul",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.04,
+    "surface_only": true,
+    "position": [
+     0.25,
+     0.26,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     25.0
+    ],
+    "scale": [
+     1.0,
+     6.5,
+     1.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "velocity": 0.12,
+    "velocity_variance": 0.06,
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.0,
+       "value": 0.0
+      },
+      {
+       "time": 0.7,
+       "value": 0.0
+      },
+      {
+       "time": 0.82,
+       "value": 5.4
+      },
+      {
+       "time": 1.0,
+       "value": 12.0
+      },
+      {
+       "time": 1.9,
+       "value": 12.0
+      },
+      {
+       "time": 2.08,
+       "value": 6.6
+      },
+      {
+       "time": 2.22,
+       "value": 0.0
+      },
+      {
+       "time": 3.5,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.7,
+    "duration": 1.55
+   },
+   "inputs": {
+    "particle": "ps_shed_motes"
+   }
+  },
+  {
+   "id": "e_shed_wisps_arm_r",
+   "type": "emitter",
+   "layer": "soul",
+   "parent": "soul",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.04,
+    "surface_only": true,
+    "position": [
+     0.25,
+     0.26,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     25.0
+    ],
+    "scale": [
+     1.0,
+     6.5,
+     1.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "velocity": 0.12,
+    "velocity_variance": 0.06,
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.0,
+       "value": 0.0
+      },
+      {
+       "time": 0.7,
+       "value": 0.0
+      },
+      {
+       "time": 0.82,
+       "value": 5.4
+      },
+      {
+       "time": 1.0,
+       "value": 12.0
+      },
+      {
+       "time": 1.9,
+       "value": 12.0
+      },
+      {
+       "time": 2.08,
+       "value": 6.6
+      },
+      {
+       "time": 2.22,
+       "value": 0.0
+      },
+      {
+       "time": 3.5,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.7,
+    "duration": 1.55
+   },
+   "inputs": {
+    "particle": "ps_shed_wisps"
+   }
+  },
+  {
+   "id": "e_shed_motes_arm_l",
+   "type": "emitter",
+   "layer": "soul",
+   "parent": "soul",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.04,
+    "surface_only": true,
+    "position": [
+     -0.25,
+     0.26,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     -25.0
+    ],
+    "scale": [
+     1.0,
+     6.5,
+     1.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "velocity": 0.12,
+    "velocity_variance": 0.06,
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.0,
+       "value": 0.0
+      },
+      {
+       "time": 0.7,
+       "value": 0.0
+      },
+      {
+       "time": 0.82,
+       "value": 5.4
+      },
+      {
+       "time": 1.0,
+       "value": 12.0
+      },
+      {
+       "time": 1.9,
+       "value": 12.0
+      },
+      {
+       "time": 2.08,
+       "value": 6.6
+      },
+      {
+       "time": 2.22,
+       "value": 0.0
+      },
+      {
+       "time": 3.5,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.7,
+    "duration": 1.55
+   },
+   "inputs": {
+    "particle": "ps_shed_motes"
+   }
+  },
+  {
+   "id": "e_shed_wisps_arm_l",
+   "type": "emitter",
+   "layer": "soul",
+   "parent": "soul",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.04,
+    "surface_only": true,
+    "position": [
+     -0.25,
+     0.26,
+     0.0
+    ],
+    "rotation": [
+     0.0,
+     0.0,
+     -25.0
+    ],
+    "scale": [
+     1.0,
+     6.5,
+     1.0
+    ],
+    "direction": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "velocity": 0.12,
+    "velocity_variance": 0.06,
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.0,
+       "value": 0.0
+      },
+      {
+       "time": 0.7,
+       "value": 0.0
+      },
+      {
+       "time": 0.82,
+       "value": 5.4
+      },
+      {
+       "time": 1.0,
+       "value": 12.0
+      },
+      {
+       "time": 1.9,
+       "value": 12.0
+      },
+      {
+       "time": 2.08,
+       "value": 6.6
+      },
+      {
+       "time": 2.22,
+       "value": 0.0
+      },
+      {
+       "time": 3.5,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.7,
+    "duration": 1.55
+   },
+   "inputs": {
+    "particle": "ps_shed_wisps"
+   }
+  },
+  {
+   "id": "ps_tether",
+   "type": "particle_system",
+   "parameters": {
+    "max_particles": 60,
+    "lifetime": 0.5,
+    "lifetime_variance": 0.1,
+    "size": 0.11,
+    "size_variance": 0.03,
+    "size_over_life": [
+     [
+      0.0,
+      0.6
+     ],
+     [
+      0.3,
+      1.0
+     ],
+     [
+      1.0,
+      1.4
+     ]
+    ],
+    "color": [
+     0.96,
+     0.9,
+     0.84,
+     1.0
+    ],
+    "color_over_life": [
+     [
+      0.0,
+      [
+       0.972,
+       0.87,
+       0.738,
+       1.0
+      ]
+     ],
+     [
+      1.0,
+      [
+       1.0,
+       0.8,
+       0.5,
+       1.0
+      ]
+     ]
+    ],
+    "opacity": 0.2,
+    "opacity_over_life": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.2,
+      1.0
+     ],
+     [
+      1.0,
+      0.0
+     ]
+    ],
+    "emissive": 1.0,
+    "drag": 0.6,
+    "render_mode": "stretched_billboard",
+    "velocity_stretch": 2.0,
+    "blend": "additive",
+    "soft_particle_distance": 0.15
+   },
+   "inputs": {
+    "sprite": "tex_streak",
+    "material": "mat_streak",
+    "forces": [
+     "f_curl"
+    ],
+    "colliders": [
+     "ground"
+    ]
+   }
+  },
+  {
+   "id": "e_tether",
+   "type": "emitter",
+   "layer": "soul",
+   "parent": "soul",
+   "parameters": {
+    "shape": "sphere",
+    "radius": 0.08,
+    "position": [
+     0.0,
+     -0.82,
+     0.0
+    ],
+    "direction": [
+     0.0,
+     -1.0,
+     0.0
+    ],
+    "spread": 12.0,
+    "velocity": 1.1,
+    "velocity_variance": 0.3,
+    "rate": {
+     "value": 0.0,
+     "track": [
+      {
+       "time": 0.0,
+       "value": 0.0
+      },
+      {
+       "time": 0.7,
+       "value": 0.0
+      },
+      {
+       "time": 0.95,
+       "value": 60.0
+      },
+      {
+       "time": 1.85,
+       "value": 60.0
+      },
+      {
+       "time": 2.05,
+       "value": 0.0
+      },
+      {
+       "time": 3.5,
+       "value": 0.0
+      }
+     ]
+    },
+    "start_time": 0.7,
+    "duration": 1.55
+   },
+   "inputs": {
+    "particle": "ps_tether"
    }
   },
   {
@@ -6213,8 +7527,8 @@
     "max_particles": 80,
     "lifetime": 0.5,
     "lifetime_variance": 0.12,
-    "size": 0.16,
-    "size_variance": 0.05,
+    "size": 0.13,
+    "size_variance": 0.04,
     "size_over_life": [
      [
       0.0,
@@ -6264,7 +7578,7 @@
       ]
      ]
     ],
-    "opacity": 0.14,
+    "opacity": 0.12,
     "opacity_over_life": [
      [
       0.0,
@@ -6301,15 +7615,15 @@
    "parent": "soul",
    "parameters": {
     "shape": "sphere",
-    "radius": 0.2,
+    "radius": 0.14,
     "scale": [
-     1.0,
-     2.2,
+     1.2,
+     2.6,
      1.0
     ],
     "position": [
      0.0,
-     -0.35,
+     -0.6,
      0.0
     ],
     "direction": [
@@ -6332,23 +7646,23 @@
        "value": 0.0
       },
       {
-       "time": 0.85,
-       "value": 40.0
+       "time": 0.82,
+       "value": 27.0
       },
       {
-       "time": 1.05,
-       "value": 80.0
+       "time": 1.0,
+       "value": 60.0
       },
       {
-       "time": 1.85,
-       "value": 80.0
+       "time": 1.9,
+       "value": 60.0
       },
       {
-       "time": 2.05,
-       "value": 56.0
+       "time": 2.08,
+       "value": 33.0
       },
       {
-       "time": 2.2,
+       "time": 2.22,
        "value": 0.0
       },
       {
@@ -6365,150 +7679,6 @@
    }
   },
   {
-   "id": "ps_soul_motes",
-   "type": "particle_system",
-   "parameters": {
-    "max_particles": 60,
-    "lifetime": 0.8,
-    "lifetime_variance": 0.2,
-    "size": 0.03,
-    "size_variance": 0.01,
-    "size_over_life": [
-     [
-      0.0,
-      0.5
-     ],
-     [
-      0.2,
-      1.0
-     ],
-     [
-      1.0,
-      0.3
-     ]
-    ],
-    "color": [
-     1.0,
-     0.95,
-     0.86,
-     1.0
-    ],
-    "color_over_life": [
-     [
-      0.0,
-      [
-       1.0,
-       0.95,
-       0.86,
-       1.0
-      ]
-     ],
-     [
-      1.0,
-      [
-       1.0,
-       0.8,
-       0.5,
-       1.0
-      ]
-     ]
-    ],
-    "opacity": 0.8,
-    "opacity_over_life": [
-     [
-      0.0,
-      0.0
-     ],
-     [
-      0.2,
-      1.0
-     ],
-     [
-      1.0,
-      0.0
-     ]
-    ],
-    "emissive": 1.6,
-    "drag": 1.0,
-    "render_mode": "billboard",
-    "blend": "additive",
-    "soft_particle_distance": 0.03
-   },
-   "inputs": {
-    "sprite": "tex_mote",
-    "material": "mat_mote",
-    "forces": [
-     "f_lift",
-     "f_curl"
-    ]
-   }
-  },
-  {
-   "id": "e_soul_motes",
-   "type": "emitter",
-   "layer": "soul",
-   "parent": "soul",
-   "parameters": {
-    "shape": "sphere",
-    "radius": 0.3,
-    "surface_only": true,
-    "scale": [
-     1.0,
-     2.6,
-     1.0
-    ],
-    "direction": [
-     0.0,
-     0.0,
-     0.0
-    ],
-    "velocity": 0.25,
-    "velocity_variance": 0.1,
-    "rate": {
-     "value": 0.0,
-     "track": [
-      {
-       "time": 0.0,
-       "value": 0.0
-      },
-      {
-       "time": 0.7,
-       "value": 0.0
-      },
-      {
-       "time": 0.85,
-       "value": 22.5
-      },
-      {
-       "time": 1.05,
-       "value": 45.0
-      },
-      {
-       "time": 1.85,
-       "value": 45.0
-      },
-      {
-       "time": 2.05,
-       "value": 31.5
-      },
-      {
-       "time": 2.2,
-       "value": 0.0
-      },
-      {
-       "time": 3.5,
-       "value": 0.0
-      }
-     ]
-    },
-    "start_time": 0.7,
-    "duration": 1.55
-   },
-   "inputs": {
-    "particle": "ps_soul_motes"
-   }
-  },
-  {
    "id": "rib_rig_a",
    "type": "mesh",
    "layer": "soul_ribbons",
@@ -6521,207 +7691,207 @@
     "position": {
      "value": [
       0.0,
-      0.4324,
+      0.5,
       0.0
      ],
      "track": [
       {
-       "time": 0.87,
+       "time": 0.9,
        "value": [
         0.0,
-        0.4324,
+        0.5,
         0.0
        ]
       },
       {
-       "time": 0.91,
+       "time": 0.9396,
        "value": [
         0.0,
-        0.4537,
+        0.5459,
         0.0
        ]
       },
       {
-       "time": 0.95,
+       "time": 0.9792,
        "value": [
         0.0,
-        0.5272,
+        0.6557,
         0.0
        ]
       },
       {
-       "time": 0.99,
+       "time": 1.0187,
        "value": [
         0.0,
-        0.6513,
+        0.7875,
         0.0
        ]
       },
       {
-       "time": 1.03,
+       "time": 1.0583,
        "value": [
         0.0,
-        0.7682,
+        0.8995,
         0.0
        ]
       },
       {
-       "time": 1.07,
+       "time": 1.0979,
        "value": [
         0.0,
-        0.82,
+        0.9499,
         0.0
        ]
       },
       {
-       "time": 1.11,
+       "time": 1.1375,
        "value": [
         0.0,
-        0.8378,
+        0.9735,
         0.0
        ]
       },
       {
-       "time": 1.15,
+       "time": 1.1771,
        "value": [
         0.0,
-        0.885,
+        1.038,
         0.0
        ]
       },
       {
-       "time": 1.19,
+       "time": 1.2167,
        "value": [
         0.0,
-        0.9522,
+        1.1261,
         0.0
        ]
       },
       {
-       "time": 1.23,
+       "time": 1.2562,
        "value": [
         0.0,
-        1.03,
+        1.2194,
         0.0
        ]
       },
       {
-       "time": 1.27,
+       "time": 1.2958,
        "value": [
         0.0,
-        1.109,
+        1.2997,
         0.0
        ]
       },
       {
-       "time": 1.31,
+       "time": 1.3354,
        "value": [
         0.0,
-        1.1797,
+        1.348,
         0.0
        ]
       },
       {
-       "time": 1.35,
+       "time": 1.375,
        "value": [
         0.0,
-        1.2328,
+        1.3598,
         0.0
        ]
       },
       {
-       "time": 1.39,
+       "time": 1.4146,
        "value": [
         0.0,
-        1.2588,
+        1.3762,
         0.0
        ]
       },
       {
-       "time": 1.43,
+       "time": 1.4542,
        "value": [
         0.0,
-        1.262,
+        1.397,
         0.0
        ]
       },
       {
-       "time": 1.47,
+       "time": 1.4937,
        "value": [
         0.0,
-        1.2696,
+        1.4187,
         0.0
        ]
       },
       {
-       "time": 1.51,
+       "time": 1.5333,
        "value": [
         0.0,
-        1.28,
+        1.4379,
         0.0
        ]
       },
       {
-       "time": 1.55,
+       "time": 1.5729,
        "value": [
         0.0,
-        1.2904,
+        1.451,
         0.0
        ]
       },
       {
-       "time": 1.59,
+       "time": 1.6125,
        "value": [
         0.0,
-        1.298,
+        1.4531,
         0.0
        ]
       },
       {
-       "time": 1.63,
+       "time": 1.6521,
        "value": [
         0.0,
-        1.2983,
+        1.4315,
         0.0
        ]
       },
       {
-       "time": 1.67,
+       "time": 1.6917,
        "value": [
         0.0,
-        1.2632,
+        1.3934,
         0.0
        ]
       },
       {
-       "time": 1.71,
+       "time": 1.7313,
        "value": [
         0.0,
-        1.1978,
+        1.3506,
         0.0
        ]
       },
       {
-       "time": 1.75,
+       "time": 1.7708,
        "value": [
         0.0,
-        1.1222,
+        1.314,
         0.0
        ]
       },
       {
-       "time": 1.79,
+       "time": 1.8104,
        "value": [
         0.0,
-        1.0568,
+        1.2934,
         0.0
        ]
       },
       {
-       "time": 1.83,
+       "time": 1.85,
        "value": [
         0.0,
-        1.0217,
+        1.2066,
         0.0
        ]
       }
@@ -6742,95 +7912,95 @@
     "rotation": {
      "value": [
       0.0,
-      -3.4,
+      -1.6,
       0.0
      ],
      "track": [
       {
-       "time": 0.87,
+       "time": 0.9,
        "value": [
         0.0,
-        -3.4,
+        -1.6,
         0.0
        ]
       },
       {
-       "time": 0.966,
+       "time": 0.995,
        "value": [
         0.0,
-        41.528,
+        39.44,
         0.0
        ]
       },
       {
-       "time": 1.062,
+       "time": 1.09,
        "value": [
         0.0,
-        86.456,
+        80.48,
         0.0
        ]
       },
       {
-       "time": 1.158,
+       "time": 1.185,
        "value": [
         0.0,
-        131.384,
+        121.52,
         0.0
        ]
       },
       {
-       "time": 1.254,
+       "time": 1.28,
        "value": [
         0.0,
-        176.312,
+        162.56,
         0.0
        ]
       },
       {
-       "time": 1.35,
+       "time": 1.375,
        "value": [
         0.0,
-        221.24,
+        203.6,
         0.0
        ]
       },
       {
-       "time": 1.446,
+       "time": 1.47,
        "value": [
         0.0,
-        266.168,
+        244.64,
         0.0
        ]
       },
       {
-       "time": 1.542,
+       "time": 1.565,
        "value": [
         0.0,
-        311.096,
+        285.68,
         0.0
        ]
       },
       {
-       "time": 1.638,
+       "time": 1.66,
        "value": [
         0.0,
-        356.024,
+        326.72,
         0.0
        ]
       },
       {
-       "time": 1.734,
+       "time": 1.755,
        "value": [
         0.0,
-        400.952,
+        367.76,
         0.0
        ]
       },
       {
-       "time": 1.83,
+       "time": 1.85,
        "value": [
         0.0,
-        445.88,
+        408.8,
         0.0
        ]
       }
@@ -6850,208 +8020,208 @@
     "visible": false,
     "position": {
      "value": [
-      0.44,
-      -0.15,
+      0.48,
+      -0.45,
       0.0
      ],
      "track": [
       {
-       "time": 0.87,
+       "time": 0.9,
        "value": [
-        0.44,
-        -0.15,
+        0.48,
+        -0.45,
         0.0
        ]
       },
       {
-       "time": 0.91,
+       "time": 0.9396,
        "value": [
-        0.44,
-        -0.15,
+        0.48,
+        -0.45,
         0.0
        ]
       },
       {
-       "time": 0.95,
+       "time": 0.9792,
        "value": [
-        0.4412,
-        -0.1468,
+        0.4813,
+        -0.4457,
         0.0
        ]
       },
       {
-       "time": 0.99,
+       "time": 1.0187,
        "value": [
-        0.4465,
-        -0.1331,
+        0.487,
+        -0.4268,
         0.0
        ]
       },
       {
-       "time": 1.03,
+       "time": 1.0583,
        "value": [
-        0.4555,
-        -0.1096,
+        0.4968,
+        -0.3943,
         0.0
        ]
       },
       {
-       "time": 1.07,
+       "time": 1.0979,
        "value": [
-        0.4676,
-        -0.0774,
+        0.51,
+        -0.3496,
         0.0
        ]
       },
       {
-       "time": 1.11,
+       "time": 1.1375,
        "value": [
-        0.4821,
-        -0.0376,
+        0.5258,
+        -0.2944,
         0.0
        ]
       },
       {
-       "time": 1.15,
+       "time": 1.1771,
        "value": [
-        0.4979,
-        0.0087,
+        0.543,
+        -0.23,
         0.0
        ]
       },
       {
-       "time": 1.19,
+       "time": 1.2167,
        "value": [
-        0.5137,
-        0.0604,
+        0.5603,
+        -0.1581,
         0.0
        ]
       },
       {
-       "time": 1.23,
+       "time": 1.2562,
        "value": [
-        0.5282,
-        0.1165,
+        0.5762,
+        -0.0801,
         0.0
        ]
       },
       {
-       "time": 1.27,
+       "time": 1.2958,
        "value": [
-        0.5398,
-        0.1759,
+        0.5889,
+        0.0024,
         0.0
        ]
       },
       {
-       "time": 1.31,
+       "time": 1.3354,
        "value": [
-        0.5474,
-        0.2374,
+        0.5971,
+        0.0879,
         0.0
        ]
       },
       {
-       "time": 1.35,
+       "time": 1.375,
        "value": [
-        0.55,
-        0.3,
+        0.6,
+        0.175,
         0.0
        ]
       },
       {
-       "time": 1.39,
+       "time": 1.4146,
        "value": [
-        0.5474,
-        0.3626,
+        0.5971,
+        0.2621,
         0.0
        ]
       },
       {
-       "time": 1.43,
+       "time": 1.4542,
        "value": [
-        0.5398,
-        0.4241,
+        0.5889,
+        0.3476,
         0.0
        ]
       },
       {
-       "time": 1.47,
+       "time": 1.4937,
        "value": [
-        0.5282,
-        0.4835,
+        0.5762,
+        0.4301,
         0.0
        ]
       },
       {
-       "time": 1.51,
+       "time": 1.5333,
        "value": [
-        0.5137,
-        0.5396,
+        0.5603,
+        0.5081,
         0.0
        ]
       },
       {
-       "time": 1.55,
+       "time": 1.5729,
        "value": [
-        0.4979,
-        0.5913,
+        0.543,
+        0.58,
         0.0
        ]
       },
       {
-       "time": 1.59,
+       "time": 1.6125,
        "value": [
-        0.4821,
-        0.6376,
+        0.5258,
+        0.6444,
         0.0
        ]
       },
       {
-       "time": 1.63,
+       "time": 1.6521,
        "value": [
-        0.4676,
-        0.6774,
+        0.51,
+        0.6996,
         0.0
        ]
       },
       {
-       "time": 1.67,
+       "time": 1.6917,
        "value": [
-        0.4555,
-        0.7096,
+        0.4968,
+        0.7443,
         0.0
        ]
       },
       {
-       "time": 1.71,
+       "time": 1.7313,
        "value": [
-        0.4465,
-        0.7331,
+        0.487,
+        0.7768,
         0.0
        ]
       },
       {
-       "time": 1.75,
+       "time": 1.7708,
        "value": [
-        0.4412,
-        0.7468,
+        0.4813,
+        0.7957,
         0.0
        ]
       },
       {
-       "time": 1.79,
+       "time": 1.8104,
        "value": [
-        0.44,
-        0.75,
+        0.48,
+        0.8,
         0.0
        ]
       },
       {
-       "time": 1.83,
+       "time": 1.85,
        "value": [
-        0.44,
-        0.75,
+        0.48,
+        0.8,
         0.0
        ]
       }
@@ -7118,19 +8288,19 @@
        "value": 0.0
       },
       {
-       "time": 0.92,
+       "time": 0.95,
        "value": 0.0
       },
       {
-       "time": 1.12,
+       "time": 1.15,
        "value": 0.3
       },
       {
-       "time": 1.5,
+       "time": 1.52,
        "value": 0.3
       },
       {
-       "time": 1.78,
+       "time": 1.8,
        "value": 0.0
       },
       {
@@ -7147,19 +8317,19 @@
        "value": 0.0
       },
       {
-       "time": 0.92,
+       "time": 0.95,
        "value": 0.0
       },
       {
-       "time": 1.12,
+       "time": 1.15,
        "value": 0.5
       },
       {
-       "time": 1.5,
+       "time": 1.52,
        "value": 0.5
       },
       {
-       "time": 1.78,
+       "time": 1.8,
        "value": 0.0
       },
       {
@@ -7233,19 +8403,19 @@
        "value": 0.0
       },
       {
-       "time": 0.92,
+       "time": 0.95,
        "value": 0.0
       },
       {
-       "time": 1.12,
+       "time": 1.15,
        "value": 0.012
       },
       {
-       "time": 1.5,
+       "time": 1.52,
        "value": 0.012
       },
       {
-       "time": 1.78,
+       "time": 1.8,
        "value": 0.0
       },
       {
@@ -7262,19 +8432,19 @@
        "value": 0.0
       },
       {
-       "time": 0.92,
+       "time": 0.95,
        "value": 0.0
       },
       {
-       "time": 1.12,
+       "time": 1.15,
        "value": 0.35
       },
       {
-       "time": 1.5,
+       "time": 1.52,
        "value": 0.35
       },
       {
-       "time": 1.78,
+       "time": 1.8,
        "value": 0.0
       },
       {
@@ -7302,183 +8472,167 @@
     "position": {
      "value": [
       0.0,
-      1.2653,
+      1.422,
       0.0
      ],
      "track": [
       {
-       "time": 1.45,
+       "time": 1.5,
        "value": [
         0.0,
-        1.2653,
+        1.422,
         0.0
        ]
       },
       {
-       "time": 1.489,
+       "time": 1.5395,
        "value": [
         0.0,
-        1.2744,
+        1.4405,
         0.0
        ]
       },
       {
-       "time": 1.5281,
+       "time": 1.5789,
        "value": [
         0.0,
-        1.2849,
+        1.4522,
         0.0
        ]
       },
       {
-       "time": 1.5671,
+       "time": 1.6184,
        "value": [
         0.0,
-        1.2942,
+        1.4514,
         0.0
        ]
       },
       {
-       "time": 1.6062,
+       "time": 1.6579,
        "value": [
         0.0,
-        1.2995,
+        1.4266,
         0.0
        ]
       },
       {
-       "time": 1.6452,
+       "time": 1.6974,
        "value": [
         0.0,
-        1.2898,
+        1.3874,
         0.0
        ]
       },
       {
-       "time": 1.6843,
+       "time": 1.7368,
        "value": [
         0.0,
-        1.2422,
+        1.3447,
         0.0
        ]
       },
       {
-       "time": 1.7233,
+       "time": 1.7763,
        "value": [
         0.0,
-        1.1727,
+        1.3103,
         0.0
        ]
       },
       {
-       "time": 1.7624,
+       "time": 1.8158,
        "value": [
         0.0,
-        1.1,
+        1.2869,
         0.0
        ]
       },
       {
-       "time": 1.8014,
+       "time": 1.8553,
        "value": [
         0.0,
-        1.0428,
+        1.1897,
         0.0
        ]
       },
       {
-       "time": 1.8405,
+       "time": 1.8947,
        "value": [
         0.0,
-        1.02,
+        1.0456,
         0.0
        ]
       },
       {
-       "time": 1.8795,
+       "time": 1.9342,
        "value": [
         0.0,
-        0.9657,
+        0.9112,
         0.0
        ]
       },
       {
-       "time": 1.9186,
+       "time": 1.9737,
        "value": [
         0.0,
-        0.8417,
+        0.8416,
         0.0
        ]
       },
       {
-       "time": 1.9576,
+       "time": 2.0132,
        "value": [
         0.0,
-        0.7019,
+        0.7805,
         0.0
        ]
       },
       {
-       "time": 1.9967,
+       "time": 2.0526,
        "value": [
         0.0,
-        0.6003,
+        0.6182,
         0.0
        ]
       },
       {
-       "time": 2.0357,
+       "time": 2.0921,
        "value": [
         0.0,
-        0.5699,
+        0.4634,
         0.0
        ]
       },
       {
-       "time": 2.0748,
+       "time": 2.1316,
        "value": [
         0.0,
-        0.4802,
+        0.4155,
         0.0
        ]
       },
       {
-       "time": 2.1138,
+       "time": 2.1711,
        "value": [
         0.0,
-        0.3542,
+        0.3517,
         0.0
        ]
       },
       {
-       "time": 2.1529,
+       "time": 2.2105,
        "value": [
         0.0,
-        0.2619,
+        0.2641,
         0.0
        ]
       },
       {
-       "time": 2.1919,
+       "time": 2.25,
        "value": [
         0.0,
-        0.2417,
-        0.0
-       ]
-      },
-      {
-       "time": 2.231,
-       "value": [
-        0.0,
-        0.2001,
-        0.0
-       ]
-      },
-      {
-       "time": 2.27,
-       "value": [
-        0.0,
-        0.1549,
+        0.22,
         0.0
        ]
       }
@@ -7499,87 +8653,79 @@
     "rotation": {
      "value": [
       0.0,
-      225.2,
+      223.4,
       0.0
      ],
      "track": [
       {
-       "time": 1.45,
+       "time": 1.5,
        "value": [
         0.0,
-        225.2,
+        223.4,
         0.0
        ]
       },
       {
-       "time": 1.5411,
+       "time": 1.5938,
        "value": [
         0.0,
-        179.28,
+        179.525,
         0.0
        ]
       },
       {
-       "time": 1.6322,
+       "time": 1.6875,
        "value": [
         0.0,
-        133.36,
+        135.65,
         0.0
        ]
       },
       {
-       "time": 1.7233,
+       "time": 1.7812,
        "value": [
         0.0,
-        87.44,
+        91.775,
         0.0
        ]
       },
       {
-       "time": 1.8144,
+       "time": 1.875,
        "value": [
         0.0,
-        41.52,
+        47.9,
         0.0
        ]
       },
       {
-       "time": 1.9056,
+       "time": 1.9688,
        "value": [
         0.0,
-        -4.4,
+        4.025,
         0.0
        ]
       },
       {
-       "time": 1.9967,
+       "time": 2.0625,
        "value": [
         0.0,
-        -50.32,
+        -39.85,
         0.0
        ]
       },
       {
-       "time": 2.0878,
+       "time": 2.1562,
        "value": [
         0.0,
-        -96.24,
+        -83.725,
         0.0
        ]
       },
       {
-       "time": 2.1789,
+       "time": 2.25,
        "value": [
         0.0,
-        -142.16,
-        0.0
-       ]
-      },
-      {
-       "time": 2.27,
-       "value": [
-        0.0,
-        -188.08,
+        -127.6,
         0.0
        ]
       }
@@ -7599,184 +8745,168 @@
     "visible": false,
     "position": {
      "value": [
-      0.44,
-      0.75,
+      0.48,
+      0.8,
       0.0
      ],
      "track": [
       {
-       "time": 1.45,
+       "time": 1.5,
        "value": [
-        0.44,
-        0.75,
+        0.48,
+        0.8,
         0.0
        ]
       },
       {
-       "time": 1.489,
+       "time": 1.5395,
        "value": [
-        0.44,
-        0.75,
+        0.48,
+        0.8,
         0.0
        ]
       },
       {
-       "time": 1.5281,
+       "time": 1.5789,
        "value": [
-        0.4415,
-        0.7453,
+        0.4822,
+        0.7931,
         0.0
        ]
       },
       {
-       "time": 1.5671,
+       "time": 1.6184,
        "value": [
-        0.4484,
-        0.7243,
+        0.4916,
+        0.7629,
         0.0
        ]
       },
       {
-       "time": 1.6062,
+       "time": 1.6579,
        "value": [
-        0.4602,
-        0.6882,
+        0.5075,
+        0.7118,
         0.0
        ]
       },
       {
-       "time": 1.6452,
+       "time": 1.6974,
        "value": [
-        0.4758,
-        0.6391,
+        0.528,
+        0.6429,
         0.0
        ]
       },
       {
-       "time": 1.6843,
+       "time": 1.7368,
        "value": [
-        0.4939,
-        0.5789,
+        0.5506,
+        0.5595,
         0.0
        ]
       },
       {
-       "time": 1.7233,
+       "time": 1.7763,
        "value": [
-        0.5125,
-        0.5096,
+        0.5723,
+        0.4649,
         0.0
        ]
       },
       {
-       "time": 1.7624,
+       "time": 1.8158,
        "value": [
-        0.5293,
-        0.4333,
+        0.5893,
+        0.3622,
         0.0
        ]
       },
       {
-       "time": 1.8014,
+       "time": 1.8553,
        "value": [
-        0.5422,
-        0.352,
+        0.5988,
+        0.2546,
         0.0
        ]
       },
       {
-       "time": 1.8405,
+       "time": 1.8947,
        "value": [
-        0.5491,
-        0.2677,
+        0.5988,
+        0.1454,
         0.0
        ]
       },
       {
-       "time": 1.8795,
+       "time": 1.9342,
        "value": [
-        0.5491,
-        0.1823,
+        0.5893,
+        0.0378,
         0.0
        ]
       },
       {
-       "time": 1.9186,
+       "time": 1.9737,
        "value": [
-        0.5422,
-        0.098,
+        0.5723,
+        -0.0649,
         0.0
        ]
       },
       {
-       "time": 1.9576,
+       "time": 2.0132,
        "value": [
-        0.5293,
-        0.0167,
+        0.5506,
+        -0.1595,
         0.0
        ]
       },
       {
-       "time": 1.9967,
+       "time": 2.0526,
        "value": [
-        0.5125,
-        -0.0596,
+        0.528,
+        -0.2429,
         0.0
        ]
       },
       {
-       "time": 2.0357,
+       "time": 2.0921,
        "value": [
-        0.4939,
-        -0.1289,
+        0.5075,
+        -0.3118,
         0.0
        ]
       },
       {
-       "time": 2.0748,
+       "time": 2.1316,
        "value": [
-        0.4758,
-        -0.1891,
+        0.4916,
+        -0.3629,
         0.0
        ]
       },
       {
-       "time": 2.1138,
+       "time": 2.1711,
        "value": [
-        0.4602,
-        -0.2382,
+        0.4822,
+        -0.3931,
         0.0
        ]
       },
       {
-       "time": 2.1529,
+       "time": 2.2105,
        "value": [
-        0.4484,
-        -0.2743,
+        0.48,
+        -0.4,
         0.0
        ]
       },
       {
-       "time": 2.1919,
+       "time": 2.25,
        "value": [
-        0.4415,
-        -0.2953,
-        0.0
-       ]
-      },
-      {
-       "time": 2.231,
-       "value": [
-        0.44,
-        -0.3,
-        0.0
-       ]
-      },
-      {
-       "time": 2.27,
-       "value": [
-        0.44,
-        -0.3,
+        0.48,
+        -0.4,
         0.0
        ]
       }
@@ -7843,19 +8973,19 @@
        "value": 0.0
       },
       {
-       "time": 1.5,
+       "time": 1.55,
        "value": 0.0
       },
       {
-       "time": 1.7,
+       "time": 1.75,
        "value": 0.3
       },
       {
-       "time": 1.94,
+       "time": 1.92,
        "value": 0.3
       },
       {
-       "time": 2.22,
+       "time": 2.2,
        "value": 0.0
       },
       {
@@ -7872,19 +9002,19 @@
        "value": 0.0
       },
       {
-       "time": 1.5,
+       "time": 1.55,
        "value": 0.0
       },
       {
-       "time": 1.7,
-       "value": 0.375
+       "time": 1.75,
+       "value": 0.275
       },
       {
-       "time": 1.94,
-       "value": 0.375
+       "time": 1.92,
+       "value": 0.275
       },
       {
-       "time": 2.22,
+       "time": 2.2,
        "value": 0.0
       },
       {
@@ -7958,19 +9088,19 @@
        "value": 0.0
       },
       {
-       "time": 1.5,
+       "time": 1.55,
        "value": 0.0
       },
       {
-       "time": 1.7,
+       "time": 1.75,
        "value": 0.012
       },
       {
-       "time": 1.94,
+       "time": 1.92,
        "value": 0.012
       },
       {
-       "time": 2.22,
+       "time": 2.2,
        "value": 0.0
       },
       {
@@ -7987,19 +9117,19 @@
        "value": 0.0
       },
       {
-       "time": 1.5,
+       "time": 1.55,
        "value": 0.0
       },
       {
-       "time": 1.7,
-       "value": 0.2625
+       "time": 1.75,
+       "value": 0.1925
       },
       {
-       "time": 1.94,
-       "value": 0.2625
+       "time": 1.92,
+       "value": 0.1925
       },
       {
-       "time": 2.22,
+       "time": 2.2,
        "value": 0.0
       },
       {
@@ -8544,7 +9674,7 @@
     "light_type": "point",
     "position": [
      0.0,
-     1.0,
+     0.25,
      0.0
     ],
     "color": [
@@ -8567,15 +9697,23 @@
       },
       {
        "time": 0.86,
-       "value": 1.0
+       "value": 0.8
       },
       {
-       "time": 2.0,
+       "time": 1.0,
+       "value": 0.3
+      },
+      {
+       "time": 1.9,
+       "value": 0.3
+      },
+      {
+       "time": 2.1,
        "value": 0.9
       },
       {
        "time": 2.2,
-       "value": 2.2
+       "value": 2.0
       },
       {
        "time": 2.5,
@@ -8678,27 +9816,12 @@
      "op": "multiply"
     },
     {
-     "node": "core_halo_c0",
-     "parameter": "emissive",
-     "op": "multiply"
-    },
-    {
      "node": "glow_halo_c1",
      "parameter": "emissive",
      "op": "multiply"
     },
     {
-     "node": "core_halo_c1",
-     "parameter": "emissive",
-     "op": "multiply"
-    },
-    {
      "node": "glow_halo_c2",
-     "parameter": "emissive",
-     "op": "multiply"
-    },
-    {
-     "node": "core_halo_c2",
      "parameter": "emissive",
      "op": "multiply"
     },
@@ -8788,22 +9911,32 @@
      "op": "multiply"
     },
     {
-     "node": "ps_soul_head",
+     "node": "ps_soul_figure",
      "parameter": "emissive",
      "op": "multiply"
     },
     {
-     "node": "ps_soul_chest",
+     "node": "ps_soul_glow",
      "parameter": "emissive",
      "op": "multiply"
     },
     {
-     "node": "ps_soul_motes",
+     "node": "ps_shed_motes",
+     "parameter": "emissive",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_shed_wisps",
      "parameter": "emissive",
      "op": "multiply"
     },
     {
      "node": "ps_wisps",
+     "parameter": "emissive",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_tether",
      "parameter": "emissive",
      "op": "multiply"
     },
@@ -8899,22 +10032,32 @@
    "unit": "x",
    "bindings": [
     {
-     "node": "ps_soul_head",
+     "node": "ps_soul_figure",
      "parameter": "emissive",
      "op": "multiply"
     },
     {
-     "node": "ps_soul_chest",
+     "node": "ps_soul_glow",
      "parameter": "emissive",
      "op": "multiply"
     },
     {
-     "node": "ps_soul_motes",
+     "node": "ps_shed_motes",
+     "parameter": "emissive",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_shed_wisps",
      "parameter": "emissive",
      "op": "multiply"
     },
     {
      "node": "ps_wisps",
+     "parameter": "emissive",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_tether",
      "parameter": "emissive",
      "op": "multiply"
     },
@@ -9005,27 +10148,12 @@
      "op": "multiply"
     },
     {
-     "node": "core_halo_c0",
-     "parameter": "emissive",
-     "op": "multiply"
-    },
-    {
      "node": "glow_halo_c1",
      "parameter": "emissive",
      "op": "multiply"
     },
     {
-     "node": "core_halo_c1",
-     "parameter": "emissive",
-     "op": "multiply"
-    },
-    {
      "node": "glow_halo_c2",
-     "parameter": "emissive",
-     "op": "multiply"
-    },
-    {
-     "node": "core_halo_c2",
      "parameter": "emissive",
      "op": "multiply"
     },
@@ -9083,27 +10211,12 @@
      "op": "multiply"
     },
     {
-     "node": "core_halo_c0",
-     "parameter": "width",
-     "op": "multiply"
-    },
-    {
      "node": "glow_halo_c1",
      "parameter": "width",
      "op": "multiply"
     },
     {
-     "node": "core_halo_c1",
-     "parameter": "width",
-     "op": "multiply"
-    },
-    {
      "node": "glow_halo_c2",
-     "parameter": "width",
-     "op": "multiply"
-    },
-    {
-     "node": "core_halo_c2",
      "parameter": "width",
      "op": "multiply"
     },
@@ -9248,22 +10361,32 @@
      "op": "multiply"
     },
     {
-     "node": "ps_soul_head",
+     "node": "ps_soul_figure",
      "parameter": "size",
      "op": "multiply"
     },
     {
-     "node": "ps_soul_chest",
+     "node": "ps_soul_glow",
      "parameter": "size",
      "op": "multiply"
     },
     {
-     "node": "ps_soul_motes",
+     "node": "ps_shed_motes",
+     "parameter": "size",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_shed_wisps",
      "parameter": "size",
      "op": "multiply"
     },
     {
      "node": "ps_wisps",
+     "parameter": "size",
+     "op": "multiply"
+    },
+    {
+     "node": "ps_tether",
      "parameter": "size",
      "op": "multiply"
     },
@@ -9391,27 +10514,12 @@
      "op": "hue_shift"
     },
     {
-     "node": "core_halo_c0",
-     "parameter": "color",
-     "op": "hue_shift"
-    },
-    {
      "node": "glow_halo_c1",
      "parameter": "color",
      "op": "hue_shift"
     },
     {
-     "node": "core_halo_c1",
-     "parameter": "color",
-     "op": "hue_shift"
-    },
-    {
      "node": "glow_halo_c2",
-     "parameter": "color",
-     "op": "hue_shift"
-    },
-    {
-     "node": "core_halo_c2",
      "parameter": "color",
      "op": "hue_shift"
     },
@@ -9481,6 +10589,11 @@
      "op": "hue_shift"
     },
     {
+     "node": "ps_soul_figure",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
      "node": "v_soul",
      "parameter": "color",
      "op": "hue_shift"
@@ -9491,22 +10604,42 @@
      "op": "hue_shift"
     },
     {
-     "node": "ps_soul_head",
+     "node": "ps_soul_glow",
      "parameter": "color",
      "op": "hue_shift"
     },
     {
-     "node": "ps_soul_head",
+     "node": "ps_soul_glow",
      "parameter": "color_over_life",
      "op": "hue_shift"
     },
     {
-     "node": "ps_soul_chest",
+     "node": "ps_shed_motes",
      "parameter": "color",
      "op": "hue_shift"
     },
     {
-     "node": "ps_soul_chest",
+     "node": "ps_shed_motes",
+     "parameter": "color_over_life",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_shed_wisps",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_shed_wisps",
+     "parameter": "color_over_life",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_tether",
+     "parameter": "color",
+     "op": "hue_shift"
+    },
+    {
+     "node": "ps_tether",
      "parameter": "color_over_life",
      "op": "hue_shift"
     },
@@ -9517,16 +10650,6 @@
     },
     {
      "node": "ps_wisps",
-     "parameter": "color_over_life",
-     "op": "hue_shift"
-    },
-    {
-     "node": "ps_soul_motes",
-     "parameter": "color",
-     "op": "hue_shift"
-    },
-    {
-     "node": "ps_soul_motes",
      "parameter": "color_over_life",
      "op": "hue_shift"
     },
@@ -9636,7 +10759,7 @@
    "body_radius": 0.33,
    "notes": "Attach the `anchor` node (the effect origin) on the ground at the centre of the fallen ally's body, y = 0, with the body lying along X. Nothing is drawn for the ally or the caster. The halo rings sit about 3.2 m above the ground and the beam comes down from well above the frame. Scale for bigger or smaller characters with the Character size control."
   },
-  "analysis": "channel 0-0.7 halo rings form high above and turn, motes and feathers drift down, a pool of light gathers under the body | soul_rises 0.7-1.6 a soft beam descends onto the body, a pearly spirit lifts out of it turning upright, wrapped by two slow ribbons | reconverge 1.6-2.2 the soul sinks back into the body, the halos descend and widen, the beam's foot brightens | restore 2.2-2.6 a warm burst, a ground halo expands, feathers released | complete 2.6-3.5 the beam lifts away, feathers and motes drift down and fade",
+  "analysis": "channel 0-0.7 halo rings form high above and turn, motes and feathers drift down, a pool of light gathers under the body | soul_rises 0.7-1.6 a soft beam descends onto the body, a translucent human soul lifts out of it turning upright, wrapped by a slow ribbon | reconverge 1.6-2.2 the soul sinks back into the body, the halos descend and widen, the beam's foot brightens | restore 2.2-2.6 a warm burst, a ground halo expands, feathers released | complete 2.6-3.5 the beam lifts away, feathers and motes drift down and fade",
   "render_settings": {
    "background": [
     0.0,

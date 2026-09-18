@@ -24,9 +24,12 @@ Beats (the sheet's row)
                           a faint pool of light gathers on the ground under the body.
 2. SOUL RISES  0.7-1.6 s  a soft beam descends from the top of the frame onto the body (radius ~0.65 m,
                           tapered, soft layered bands with a slow downward flow and falling light
-                          streaks); a pearly spirit - a raymarched mist spindle, brightest at the head and
-                          chest - lifts out of the lying body, turns upright as it rises and hovers at
-                          about 1.2-2.1 m, wrapped by two slow soft spiral ribbons, shedding wisps below.
+                          streaks); a translucent human soul materialises out of the lying body, lifts
+                          and turns upright, and hovers with its feet about 0.5 m off the ground, gently
+                          floating and swaying: a glowing rim round a seamless human silhouette, a milky
+                          inside with a brighter heart and head, legs dissolving into mist, shedding
+                          motes and small rising wisps, a trail of mist streaming from its feet back down
+                          to the body, wrapped by a slow soft spiral ribbon.
 3. RECONVERGE  1.6-2.2 s  the soul sinks back down along the beam and lies back into the body; the halo
                           rings descend and widen after it; the beam's foot brightens as they rejoin.
 4. RESTORE     2.2-2.6 s  a gentle warm burst of light at the body, a halo ring expands outward along the
@@ -37,8 +40,12 @@ Beats (the sheet's row)
 Techniques: halo arcs and soul ribbons are trails behind invisible beads on keyframed parent chains
 (tools/generators/power_up.py: rotation is linear between keys, so arcs are exact circles); the beam is
 three glow-only `beam` bands (no white core line) whose lower end is keyframed down from the sky and back
-up; the soul is one procedural `volume` (nebula spindle) whose transform is keyframed from lying to
-upright; the feather is a `shape` texture graph (asymmetric vane, soft central shaft). House style: no
+up; the soul's body is a `shape` texture graph (the union of head, neck, torso, arms and tapering legs, lit
+by a rim hugging only its outer silhouette) drawn as a camera-facing sprite that is re-emitted every frame
+from a keyframed rig: a `stretched_billboard` with zero stretch aligns its head with the emitter's rotated
++Y, so the figure lies, turns upright and lies back down with the rig (particles are world-space and cannot
+be parented). A 3D figure of mesh primitives was tried first and rejected: every seam between parts shows
+as a rim line and it read as a glass mannequin. The feather is a `shape` texture graph (asymmetric vane, soft central shaft). House style: no
 crosses, plus signs or four-armed stars; nothing hard-edged; the output is deterministic.
 """
 
@@ -74,13 +81,11 @@ BEAM_TOP = 9.0          # the beam's upper end, well above the frame
 BEAM_W = 1.3            # beam width = 2 x a 0.65 m radius (character radius x 2)
 HALO_Y = 3.25           # the sigil's height above the body
 
-# soul path: (time, centre height, roll about z in degrees: 90 = lying along X, 0 = upright)
+# soul path: (time, pelvis height, roll about z in degrees: 90 = lying along X, 0 = upright)
 SOUL_KEYS = [
-    (0.70, 0.16, 90.0), (0.9, 0.45, 34.0), (1.07, 0.82, 6.0), (1.4, 1.26, 0.0), (1.62, 1.3, 0.0),
-    (1.84, 1.02, 3.0), (2.02, 0.58, 22.0), (2.17, 0.25, 72.0), (2.30, 0.14, 90.0),
+    (0.70, 0.22, 90.0), (0.9, 0.5, 62.0), (1.1, 0.95, 20.0), (1.35, 1.34, 2.0), (1.6, 1.42, 0.0),
+    (1.8, 1.28, 3.0), (1.98, 0.84, 24.0), (2.12, 0.42, 68.0), (2.25, 0.22, 90.0),
 ]
-SOUL_HEIGHT = 2.0       # the spindle's height (m)
-SOUL_RADIUS = 0.37
 
 # halo rings: radius, height offset, arcs, turn rate (rev/s), trail life (s), brightness
 HALOS = [
@@ -91,8 +96,8 @@ HALOS = [
 # soul ribbons: phase (deg), radius, turn rate (rev/s), brightness
 SOUL_RIBBONS = [
     # one ribbon climbs with the rising soul, the other spirals down with it on the way back: never two at once
-    {"id": "a", "phase": 20.0, "radius": 0.55, "rate": 1.3, "gain": 1.0, "t0": 0.92, "t1": 1.78, "up": True},
-    {"id": "b", "phase": 200.0, "radius": 0.55, "rate": -1.4, "gain": 0.75, "t0": 1.5, "t1": 2.22, "up": False},
+    {"id": "a", "phase": 20.0, "radius": 0.6, "rate": 1.2, "gain": 1.0, "t0": 0.95, "t1": 1.8, "up": True},
+    {"id": "b", "phase": 200.0, "radius": 0.6, "rate": -1.3, "gain": 0.55, "t0": 1.55, "t1": 2.2, "up": False},
 ]
 
 KEY_STEP = 0.04
@@ -242,6 +247,80 @@ def feather_graph() -> tuple[list[dict[str, Any]], str]:
     return parts, "lv"
 
 
+def soul_figure_graph() -> tuple[list[dict[str, Any]], str]:
+    """The soul's body as one seamless silhouette, upright in the tile (head at the top): the union of a
+    head, neck, chest, waist, two arms hanging 20-30 degrees out with the forearms a little more open, and
+    two long legs tapering to nothing. Its light is a soft rim hugging the OUTER silhouette only (the union
+    minus a blurred copy of itself, so no seams between parts), a faint milky inside, a brighter heart and
+    head, and legs that fade into mist below the knee."""
+    def ellipse(nid: str, cx: float, cy: float, r: float, aspect: float, rot: float = 0.0) -> dict[str, Any]:
+        return op(nid, "shape", {"shape": "circle", "radius": r, "aspect": aspect, "center": [cx, cy],
+                                 "rotation": rot, "softness": 0.006})
+    parts = [
+        ellipse("head", 0.5, 0.105, 0.052, 0.84),
+        op("neck", "shape", {"shape": "rounded_box", "radius": 0.04, "aspect": 0.55, "center": [0.5, 0.165],
+                             "corner_radius": 0.015, "softness": 0.006}),
+        ellipse("chest", 0.5, 0.272, 0.118, 0.8),
+        ellipse("waist", 0.5, 0.4, 0.105, 0.66),
+        ellipse("hips", 0.5, 0.465, 0.07, 1.0),
+        # shoulders: a soft rounded yoke the arms hang from
+        op("yoke", "shape", {"shape": "rounded_box", "radius": 0.028, "aspect": 3.3, "center": [0.5, 0.205],
+                             "corner_radius": 0.026, "softness": 0.006}),
+    ]
+    ids = ["head", "neck", "chest", "waist", "hips", "yoke"]
+    for side, sgn in (("r", 1.0), ("l", -1.0)):
+        sx, sy = 0.5 + sgn * 0.078, 0.212
+        au, af = math.radians(21.0), math.radians(29.0)
+        lu, lf = 0.078, 0.072
+        ex, ey = sx + sgn * 2 * lu * math.sin(au), sy + 2 * lu * math.cos(au)
+        parts += [
+            op(f"ua{side}", "shape", {"shape": "rounded_box", "radius": lu + 0.014, "aspect": 0.27,
+                                      "center": [round(sx + sgn * lu * math.sin(au), 4), round(sy + lu * math.cos(au), 4)],
+                                      "rotation": round(sgn * 21.0, 2), "corner_radius": 0.018, "softness": 0.006}),
+            op(f"fa{side}", "shape", {"shape": "rounded_box", "radius": lf + 0.012, "aspect": 0.23,
+                                      "center": [round(ex + sgn * lf * math.sin(af), 4), round(ey + lf * math.cos(af), 4)],
+                                      "rotation": round(sgn * 29.0, 2), "corner_radius": 0.015, "softness": 0.006}),
+            ellipse(f"lg{side}", 0.5 + sgn * 0.034, 0.7, 0.25, 0.14, sgn * -2.0),
+        ]
+        ids += [f"ua{side}", f"fa{side}", f"lg{side}"]
+    folds, body = fold("u", ids, "max")
+    parts += folds
+    parts += [
+        # rim: the silhouette minus a blurred copy of itself - bright on the outer contour only
+        op("bl", "blur", {"radius": 3.0}, {"a": body}),
+        op("bli", "invert", None, {"a": "bl"}),
+        op("rim0", "math", {"mode": "multiply"}, {"a": body, "b": "bli"}),
+        op("rim", "levels", {"in_low": 0.0, "in_high": 0.5, "gamma": 0.9}, {"a": "rim0"}),
+        op("wide", "blur", {"radius": 8.0}, {"a": body}),
+        op("widei", "invert", None, {"a": "wide"}),
+        op("inner0", "math", {"mode": "multiply"}, {"a": body, "b": "widei"}),
+        scaled("inner", "inner0", 0.55),
+        scaled("milk", body, 0.2),
+        # a brighter heart and head
+        op("heart", "gradient_radial", {"center": [0.5, 0.28], "radius": 0.14, "falloff": "smooth"}),
+        op("heartm", "math", {"mode": "multiply"}, {"a": "heart", "b": body}),
+        scaled("heartd", "heartm", 0.35),
+        op("hd", "gradient_radial", {"center": [0.5, 0.105], "radius": 0.07, "falloff": "smooth"}),
+        op("hdm", "math", {"mode": "multiply"}, {"a": "hd", "b": body}),
+        scaled("hdd", "hdm", 0.3),
+        op("s0", "math", {"mode": "add"}, {"a": "rim", "b": "inner"}),
+        op("s1", "math", {"mode": "add"}, {"a": "s0", "b": "milk"}),
+        op("s2", "math", {"mode": "add"}, {"a": "s1", "b": "heartd"}),
+        op("s3", "math", {"mode": "add"}, {"a": "s2", "b": "hdd"}),
+        # legs fade into mist below the knee, with a little noise so the fade is not a straight line
+        op("g", "gradient_linear", {"angle": 90.0, "start": 0.0, "end": 1.0}),
+        op("gl", "levels", {"in_low": 0.58, "in_high": 0.93, "out_low": 1.0, "out_high": 0.0}, {"a": "g"}),
+        op("n", "fbm", {"frequency": 6.0, "octaves": 3, "seed": 31}),
+        op("nl", "levels", {"in_low": 0.25, "in_high": 0.75, "out_low": 0.6, "out_high": 1.0}, {"a": "n"}),
+        op("fade0", "math", {"mode": "multiply"}, {"a": "gl", "b": "nl"}),
+        op("fade", "levels", {"gamma": 1.0}, {"a": "fade0"}),
+        op("s4", "math", {"mode": "multiply"}, {"a": "s3", "b": "fade"}),
+        op("soft", "blur", {"radius": 1.0}, {"a": "s4"}),
+        op("out", "levels", {"in_low": 0.01, "in_high": 1.0}, {"a": "soft"}),
+    ]
+    return parts, "out"
+
+
 def sigil_graph() -> tuple[list[dict[str, Any]], str]:
     """The faint halo sigil under the bright arcs: three hairline rings with a soft wash between them and
     a ring of small dots - rings, arcs and dots only (no spokes that could read as a cross)."""
@@ -264,16 +343,19 @@ def sigil_graph() -> tuple[list[dict[str, Any]], str]:
 # ---------------------------------------------------------------------------
 
 def soul_pos(t: float) -> tuple[float, float, float]:
-    y = sample(SOUL_KEYS, t, 1)
-    sway = 0.035 * math.sin(2.0 * math.pi * 0.7 * (t - SOUL)) * smooth((t - 0.8) / 0.4) * smooth((2.15 - t) / 0.3)
+    """The soul's pelvis: the key path plus a gentle float and sway while it is up."""
+    up = smooth((t - 1.1) / 0.35) * smooth((1.95 - t) / 0.25)
+    y = sample(SOUL_KEYS, t, 1) + 0.035 * math.sin(2.0 * math.pi * 0.55 * (t - 1.2)) * up
+    sway = 0.03 * math.sin(2.0 * math.pi * 0.4 * (t - 0.9)) * up
     return sway, y, 0.0
 
 
 def soul_roll(t: float) -> float:
-    return sample(SOUL_KEYS, t, 2)
+    up = smooth((t - 1.1) / 0.35) * smooth((1.95 - t) / 0.25)
+    return sample(SOUL_KEYS, t, 2) + 2.5 * math.sin(2.0 * math.pi * 0.4 * (t - 1.1)) * up
 
 
-def build(soul_mode: str = "mist") -> dict[str, Any]:
+def build() -> dict[str, Any]:
     p = PALETTE
     ivory, pearl, gold, amber, deep = p["ivory"], p["pearl"], p["gold"], p["amber"], p["deep"]
     nodes: list[dict[str, Any]] = []
@@ -307,6 +389,8 @@ def build(soul_mode: str = "mist") -> dict[str, Any]:
     ], "lv"))
     ft_nodes, ft_out = feather_graph()
     add(tex("tex_feather", 96, 96, ft_nodes, ft_out))
+    sf_nodes, sf_out = soul_figure_graph()
+    add(tex("tex_soul_figure", 256, 256, sf_nodes, sf_out))
     sg_nodes, sg_out = sigil_graph()
     add(tex("tex_sigil", 384, 384, sg_nodes, sg_out))
     add(tex("tex_pool", 64, 64, [
@@ -319,24 +403,6 @@ def build(soul_mode: str = "mist") -> dict[str, Any]:
         scaled("r2d", "r2", 0.35),
         op("m", "math", {"mode": "max"}, {"a": "r", "b": "r2d"}),
     ], "m"))
-    if soul_mode == "figure":
-        # option B: a very soft suggested figure - head, shoulders, a long tapering robe - blurred to a glow
-        add(tex("tex_figure", 128, 128, [
-            op("head", "shape", {"shape": "circle", "radius": 0.058, "aspect": 0.85, "center": [0.5, 0.16],
-                                 "softness": 0.04}),
-            op("robe", "shape", {"shape": "circle", "radius": 0.37, "aspect": 0.24, "center": [0.5, 0.55],
-                                 "softness": 0.1}),
-            op("m1", "math", {"mode": "max"}, {"a": "head", "b": "robe"}),
-            op("g", "gradient_linear", {"angle": 90.0, "start": 0.0, "end": 1.0}),
-            op("gl", "levels", {"in_low": 0.25, "in_high": 0.95, "out_low": 1.0, "out_high": 0.0}, {"a": "g"}),
-            op("m2", "math", {"mode": "multiply"}, {"a": "m1", "b": "gl"}),
-            op("n", "fbm", {"frequency": 5.0, "octaves": 3, "seed": 9}),
-            op("nl", "levels", {"in_low": 0.2, "in_high": 0.8, "out_low": 0.6, "out_high": 1.0}, {"a": "n"}),
-            op("m3", "math", {"mode": "multiply"}, {"a": "m2", "b": "nl"}),
-            op("b", "blur", {"radius": 3.0}, {"a": "m3"}),
-            op("lv", "levels", {"in_low": 0.03, "in_high": 0.9}, {"a": "b"}),
-        ], "lv"))
-
     # ---------------- materials ----------------
     def additive(mid_: str, rgb: list[float], ei: float, depth_fade: float = 0.08, **extra: Any) -> None:
         params = {"blend": "additive", "base_color": [1.0, 1.0, 1.0, 1.0], "emissive_color": c(rgb),
@@ -356,8 +422,6 @@ def build(soul_mode: str = "mist") -> dict[str, Any]:
     additive("mat_streak", gold, 0.15, 0.2)
     additive("mat_glow", gold, 0.15, 0.3)
     additive("mat_feather", ivory, 0.25, 0.05)
-    if soul_mode == "figure":
-        additive("mat_wisp", pearl, 0.15, 0.25)
     add(node("mat_beam", "material", {"blend": "additive", "emissive_color": c(gold), "emissive_intensity": 0.2,
                                       "soft_particle": True, "depth_fade": 0.3}))
     add(node("mat_decal", "material", {"blend": "additive", "emissive_color": c(gold), "emissive_intensity": 0.2,
@@ -444,6 +508,9 @@ def build(soul_mode: str = "mist") -> dict[str, Any]:
                 "width": tr([(t, round(0.07 * v * (0.8 + 0.2 * g), 4)) for t, v in env]),
                 "emissive": tr([(t, round(0.9 * g * v, 4)) for t, v in env]),
             }, {"source": f"bead_{bid}", "material": "mat_ribbon_glow"}, layer="halos"))
+            if h["id"] == "c":
+                halo_trails.append(f"glow_{bid}")
+                continue
             add(node(f"core_{bid}", "trail", {
                 "lifetime": h["life"], "max_segments": 160, "min_vertex_distance": 0.02,
                 "taper": curve([(0.0, 0.0), (0.1, 0.9), (0.3, 1.0), (0.65, 0.6), (1.0, 0.0)]),
@@ -564,82 +631,112 @@ def build(soul_mode: str = "mist") -> dict[str, Any]:
         "start_time": 0.84, "duration": 2.1,
     }, {"particle": "ps_contact"}, parent="anchor", layer="beam"))
 
-    # ================= SOUL: a pearly spirit rises out of the body, hovers, returns =================
-    ts = times(SOUL, 2.32)
-    soul_track_pos = tr([(t, list(soul_pos(t))) for t in ts])
-    soul_track_rot = tr([(t, [0.0, 0.0, round(soul_roll(t), 3)]) for t in ts])
+    # ================= SOUL: a translucent human soul rises out of the body, hovers, returns =================
+    ts = times(SOUL, 2.3)
     add(node("soul", "mesh", {"primitive": "sphere", "radius": 0.01, "segments": 4, "visible": False,
-                              "position": soul_track_pos, "rotation": soul_track_rot},
+                              "position": tr([(t, [round(x, 4) for x in soul_pos(t)]) for t in ts]),
+                              "rotation": tr([(t, [0.0, 0.0, round(soul_roll(t), 3)]) for t in ts])},
              parent="anchor", layer="soul"))
-    add(node("soul_head", "mesh", {"primitive": "sphere", "radius": 0.01, "segments": 4, "visible": False,
-                                   "position": [0.0, 0.6, 0.0]}, parent="soul", layer="soul"))
-    add(node("soul_chest", "mesh", {"primitive": "sphere", "radius": 0.01, "segments": 4, "visible": False,
-                                    "position": [0.0, 0.22, 0.0]}, parent="soul", layer="soul"))
-    soul_env = [(0.0, 0.0), (SOUL, 0.0), (0.85, 0.5), (1.05, 1.0), (1.85, 1.0), (2.05, 0.7), (2.2, 0.0),
+    # materialise out of the lying body over ~0.3 s, dissolve back into it at the reconverge
+    soul_env = [(0.0, 0.0), (SOUL, 0.0), (0.82, 0.45), (1.0, 1.0), (1.9, 1.0), (2.08, 0.55), (2.22, 0.0),
                 (DURATION, 0.0)]
-    if soul_mode == "mist":
-        add(node("v_soul", "volume", {
-            "mode": "procedural", "volume_type": "magic", "shape": "nebula",
-            "radius": SOUL_RADIUS, "height": SOUL_HEIGHT,
-            "density": tr([(t, round(1.9 * v, 4)) for t, v in soul_env]),
-            "emission": 1.5, "color": c(mix(pearl, gold, 0.4)), "color_hot": c(mix(ivory, gold, 0.25)),
-            "filament_scale": 3.2, "strands": 0.5, "carve": 0.32, "softness": 0.9,
-            "twist": 1.2, "spin": 0.18, "climb": 0.7, "scatter": 0.15, "march_steps": 20,
-            "start_time": SOUL, "duration": 2.25 - SOUL,
-        }, parent="soul", layer="soul"))
-    else:
-        add(node("ps_figure", "particle_system", {
-            "max_particles": 16, "lifetime": 0.1, "size": 2.3,
-            "color": c(pearl), "color_over_life": [[0.0, c(ivory)], [1.0, c(pearl)]],
-            "opacity": 0.13, "opacity_over_life": curve([(0.0, 0.0), (0.3, 1.0), (1.0, 0.0)]),
-            "emissive": 0.9, "render_mode": "billboard", "blend": "additive", "soft_particle_distance": 0.2,
-        }, {"sprite": "tex_figure", "material": "mat_wisp"}))
-        add(node("e_figure", "emitter", {
-            "shape": "point", "direction": [0.0, 1.0, 0.0], "velocity": 0.0,
-            "rate": tr([(t, round(60.0 * v, 3)) for t, v in soul_env]), "start_time": SOUL,
-            "duration": 2.25 - SOUL,
-        }, {"particle": "ps_figure"}, parent="soul", layer="soul"))
-    # brighter head and chest
-    for part, size, op_ in (("head", 0.62, 0.14), ("chest", 0.9, 0.05)):
-        add(node(f"ps_soul_{part}", "particle_system", {
-            "max_particles": 20, "lifetime": 0.1, "size": size,
-            "color": c(pearl), "color_over_life": [[0.0, c(ivory)], [1.0, c(mix(pearl, gold, 0.4))]], "opacity": op_, "opacity_over_life": curve([(0.0, 0.0), (0.3, 1.0), (1.0, 0.0)]),
-            "emissive": 1.0, "render_mode": "billboard", "blend": "additive", "soft_particle_distance": 0.1,
-        }, {"sprite": "tex_glow", "material": "mat_glow"}))
-        add(node(f"e_soul_{part}", "emitter", {
-            "shape": "point", "direction": [0.0, 1.0, 0.0], "velocity": 0.0,
-            "rate": tr([(t, round(40.0 * v, 3)) for t, v in soul_env]), "start_time": SOUL,
-            "duration": 2.25 - SOUL,
-        }, {"particle": f"ps_soul_{part}"}, parent=f"soul_{part}", layer="soul"))
-    # trailing wisps: soft strands shed along the lower spindle; they inherit the soul's motion and lag
-    # behind it, so they stream out below it as it rises (and above it as it sinks back)
+
+    # the seamless silhouette: a camera-facing figure whose up axis follows the rig (a stretched billboard
+    # with no stretch aligns its head to the emitter's rotated +Y velocity), re-emitted every frame
+    add(node("ps_soul_figure", "particle_system", {
+        "max_particles": 16, "lifetime": 0.025, "size": 1.95,
+        "color": c(mix(ivory, gold, 0.12)), "opacity": 0.3, "opacity_over_life": curve([(0.0, 1.0), (1.0, 1.0)]),
+        "emissive": 1.2, "render_mode": "stretched_billboard", "velocity_stretch": 0.0, "blend": "additive",
+        "soft_particle_distance": 0.05,
+    }, {"sprite": "tex_soul_figure", "material": "mat_glow"}))
+    add(node("e_soul_figure", "emitter", {
+        "shape": "point", "position": [0.0, -0.04, 0.02], "direction": [0.0, 1.0, 0.0], "velocity": 0.12,
+        "rate": tr([(t, round(150.0 * v, 3)) for t, v in soul_env]), "start_time": SOUL, "duration": 2.25 - SOUL,
+    }, {"particle": "ps_soul_figure"}, parent="soul", layer="soul"))
+
+    # a faint soft glow round the figure so it sits in the beam (the figure is the read, not the glow)
+    add(node("v_soul", "volume", {
+        "mode": "procedural", "volume_type": "magic", "shape": "nebula", "position": [0.0, -0.02, 0.0],
+        "radius": 0.34, "height": 1.95,
+        "density": tr([(t, round(0.55 * v, 4)) for t, v in soul_env]),
+        "emission": 0.75, "color": c(mix(pearl, gold, 0.45)), "color_hot": c(mix(ivory, gold, 0.25)),
+        "filament_scale": 3.2, "strands": 0.5, "carve": 0.38, "softness": 0.95,
+        "twist": 1.2, "spin": 0.18, "climb": 0.7, "scatter": 0.15, "march_steps": 16,
+        "start_time": SOUL, "duration": 2.25 - SOUL,
+    }, parent="soul", layer="soul"))
+    # head and heart a little brighter (one soft glow system, two emitters)
+    add(node("ps_soul_glow", "particle_system", {
+        "max_particles": 30, "lifetime": 0.1, "size": 0.48,
+        "color": c(pearl), "color_over_life": [[0.0, c(ivory)], [1.0, c(mix(pearl, gold, 0.4))]], "opacity": 0.08,
+        "opacity_over_life": curve([(0.0, 0.0), (0.3, 1.0), (1.0, 0.0)]),
+        "emissive": 1.0, "render_mode": "billboard", "blend": "additive", "soft_particle_distance": 0.1,
+    }, {"sprite": "tex_glow", "material": "mat_glow"}))
+    for part, pos, rate in (("head", [0.0, 0.76, 0.02], 45.0), ("heart", [0.0, 0.36, 0.06], 30.0)):
+        add(node(f"e_soul_{part}_glow", "emitter", {
+            "shape": "point", "position": pos, "direction": [0.0, 1.0, 0.0], "velocity": 0.0,
+            "rate": tr([(t, round(rate * v, 3)) for t, v in soul_env]), "start_time": SOUL, "duration": 2.25 - SOUL,
+        }, {"particle": "ps_soul_glow"}, parent="soul", layer="soul"))
+
+    # the body gently sheds its light: motes and short rising wisps from the surface of the torso, head
+    # and arms (scaled sphere shells on each part), which also hide the seams between the parts
+    add(node("ps_shed_motes", "particle_system", {
+        "max_particles": 120, "lifetime": 0.9, "lifetime_variance": 0.25, "size": 0.026, "size_variance": 0.01,
+        "size_over_life": curve([(0.0, 0.5), (0.2, 1.0), (1.0, 0.3)]),
+        "color": c(ivory), "color_over_life": [[0.0, c(ivory)], [0.6, c(mix(ivory, gold, 0.5))], [1.0, c(gold)]],
+        "opacity": 0.85, "opacity_over_life": curve([(0.0, 0.0), (0.2, 1.0), (1.0, 0.0)]),
+        "emissive": 1.5, "drag": 1.4, "render_mode": "billboard", "blend": "additive",
+        "soft_particle_distance": 0.03,
+    }, {"sprite": "tex_mote", "material": "mat_mote", "forces": ["f_lift", "f_curl"]}))
+    add(node("ps_shed_wisps", "particle_system", {
+        "max_particles": 120, "lifetime": 0.6, "lifetime_variance": 0.15, "size": 0.05, "size_variance": 0.015,
+        "size_over_life": curve([(0.0, 0.4), (0.3, 1.0), (1.0, 0.6)]),
+        "color": c(pearl), "color_over_life": [[0.0, c(ivory)], [0.6, c(mix(pearl, gold, 0.5))], [1.0, c(gold)]],
+        "opacity": 0.3, "opacity_over_life": curve([(0.0, 0.0), (0.25, 1.0), (1.0, 0.0)]),
+        "emissive": 1.1, "drag": 1.2, "render_mode": "stretched_billboard", "velocity_stretch": 2.4,
+        "blend": "additive", "soft_particle_distance": 0.05,
+    }, {"sprite": "tex_streak", "material": "mat_streak", "forces": ["f_lift", "f_curl"]}))
+    sheds = [("chest", [0.0, 0.36, 0.0], [0.0, 0.0, 0.0], 0.15, [1.1, 1.5, 0.6], 26.0, 30.0),
+             ("head", [0.0, 0.76, 0.0], [0.0, 0.0, 0.0], 0.1, [1.0, 1.15, 1.0], 10.0, 10.0),
+             ("waist", [0.0, 0.05, 0.0], [0.0, 0.0, 0.0], 0.12, [1.0, 1.5, 0.7], 10.0, 12.0),
+             ("arm_r", [0.25, 0.26, 0.0], [0.0, 0.0, 25.0], 0.04, [1.0, 6.5, 1.0], 12.0, 12.0),
+             ("arm_l", [-0.25, 0.26, 0.0], [0.0, 0.0, -25.0], 0.04, [1.0, 6.5, 1.0], 12.0, 12.0)]
+    for sid, ptrack, rtrack, rad, scl, mote_rate, wisp_rate in sheds:
+        for kind, rate, ps in (("motes", mote_rate, "ps_shed_motes"), ("wisps", wisp_rate, "ps_shed_wisps")):
+            add(node(f"e_shed_{kind}_{sid}", "emitter", {
+                "shape": "sphere", "radius": rad, "surface_only": True, "position": ptrack, "rotation": rtrack,
+                "scale": scl, "direction": [0.0, 0.0, 0.0], "velocity": 0.12, "velocity_variance": 0.06,
+                "rate": tr([(t, round(rate * v, 3)) for t, v in soul_env]), "start_time": SOUL,
+                "duration": 2.25 - SOUL,
+            }, {"particle": ps}, parent="soul", layer="soul"))
+    # below the feet: a soft trail of mist streaming back down to the body on the ground, plus wisps shed
+    # from the legs that inherit the soul's motion and lag behind it as it rises
+    add(node("ps_tether", "particle_system", {
+        "max_particles": 60, "lifetime": 0.5, "lifetime_variance": 0.1, "size": 0.11, "size_variance": 0.03,
+        "size_over_life": curve([(0.0, 0.6), (0.3, 1.0), (1.0, 1.4)]),
+        "color": c(pearl), "color_over_life": [[0.0, c(mix(pearl, gold, 0.3))], [1.0, c(gold)]],
+        "opacity": 0.2, "opacity_over_life": curve([(0.0, 0.0), (0.2, 1.0), (1.0, 0.0)]),
+        "emissive": 1.0, "drag": 0.6, "render_mode": "stretched_billboard", "velocity_stretch": 2.0,
+        "blend": "additive", "soft_particle_distance": 0.15,
+    }, {"sprite": "tex_streak", "material": "mat_streak", "forces": ["f_curl"], "colliders": ["ground"]}))
+    add(node("e_tether", "emitter", {
+        "shape": "sphere", "radius": 0.08, "position": [0.0, -0.82, 0.0], "direction": [0.0, -1.0, 0.0],
+        "spread": 12.0, "velocity": 1.1, "velocity_variance": 0.3,
+        "rate": tr([(0.0, 0.0), (SOUL, 0.0), (0.95, 60.0), (1.85, 60.0), (2.05, 0.0), (DURATION, 0.0)]),
+        "start_time": SOUL, "duration": 2.25 - SOUL,
+    }, {"particle": "ps_tether"}, parent="soul", layer="soul"))
     add(node("ps_wisps", "particle_system", {
-        "max_particles": 80, "lifetime": 0.5, "lifetime_variance": 0.12, "size": 0.16, "size_variance": 0.05,
+        "max_particles": 80, "lifetime": 0.5, "lifetime_variance": 0.12, "size": 0.13, "size_variance": 0.04,
         "size_over_life": curve([(0.0, 0.5), (0.3, 1.0), (1.0, 0.8)]),
         "color": c(pearl), "color_over_life": [[0.0, c(ivory)], [0.5, c(mix(pearl, gold, 0.5))], [1.0, c(gold)]],
-        "opacity": 0.14, "opacity_over_life": curve([(0.0, 0.0), (0.25, 1.0), (1.0, 0.0)]),
+        "opacity": 0.12, "opacity_over_life": curve([(0.0, 0.0), (0.25, 1.0), (1.0, 0.0)]),
         "emissive": 1.0, "drag": 3.0, "render_mode": "stretched_billboard", "velocity_stretch": 1.2,
         "blend": "additive", "soft_particle_distance": 0.15,
     }, {"sprite": "tex_streak", "material": "mat_streak", "forces": ["f_curl"]}))
     add(node("e_wisps", "emitter", {
-        "shape": "sphere", "radius": 0.2, "scale": [1.0, 2.2, 1.0], "position": [0.0, -0.35, 0.0],
+        "shape": "sphere", "radius": 0.14, "scale": [1.2, 2.6, 1.0], "position": [0.0, -0.6, 0.0],
         "direction": [0.0, 0.0, 0.0], "velocity": 0.1, "velocity_variance": 0.05, "inherit_velocity": 0.9,
-        "rate": tr([(t, round(80.0 * v, 3)) for t, v in soul_env]), "start_time": SOUL, "duration": 2.25 - SOUL,
+        "rate": tr([(t, round(60.0 * v, 3)) for t, v in soul_env]), "start_time": SOUL, "duration": 2.25 - SOUL,
     }, {"particle": "ps_wisps"}, parent="soul", layer="soul"))
-    # small sparkles rising off the soul
-    add(node("ps_soul_motes", "particle_system", {
-        "max_particles": 60, "lifetime": 0.8, "lifetime_variance": 0.2, "size": 0.03, "size_variance": 0.01,
-        "size_over_life": curve([(0.0, 0.5), (0.2, 1.0), (1.0, 0.3)]),
-        "color": c(ivory), "color_over_life": [[0.0, c(ivory)], [1.0, c(gold)]],
-        "opacity": 0.8, "opacity_over_life": curve([(0.0, 0.0), (0.2, 1.0), (1.0, 0.0)]),
-        "emissive": 1.6, "drag": 1.0, "render_mode": "billboard", "blend": "additive",
-        "soft_particle_distance": 0.03,
-    }, {"sprite": "tex_mote", "material": "mat_mote", "forces": ["f_lift", "f_curl"]}))
-    add(node("e_soul_motes", "emitter", {
-        "shape": "sphere", "radius": 0.3, "surface_only": True, "scale": [1.0, 2.6, 1.0],
-        "direction": [0.0, 0.0, 0.0], "velocity": 0.25, "velocity_variance": 0.1,
-        "rate": tr([(t, round(45.0 * v, 3)) for t, v in soul_env]), "start_time": SOUL, "duration": 2.25 - SOUL,
-    }, {"particle": "ps_soul_motes"}, parent="soul", layer="soul"))
 
     # soul ribbons: two slow soft spirals round the rising / returning soul
     rib_trails: list[str] = []
@@ -659,7 +756,7 @@ def build(soul_mode: str = "mist") -> dict[str, Any]:
 
         def rib_local(t: float, r: dict[str, Any] = r) -> list[float]:
             u = smooth((t - r["t0"]) / (r["t1"] - r["t0"]))
-            h = -0.15 + 0.9 * u if r["up"] else 0.75 - 1.05 * u
+            h = -0.45 + 1.25 * u if r["up"] else 0.8 - 1.2 * u
             rad = r["radius"] * (0.8 + 0.2 * math.sin(math.pi * u))
             return [round(rad, 4), round(h, 4), 0.0]
 
@@ -742,9 +839,10 @@ def build(soul_mode: str = "mist") -> dict[str, Any]:
 
     # ================= light =================
     add(node("l_beam", "light", {
-        "light_type": "point", "position": [0.0, 1.0, 0.0], "color": c(gold), "radius": 4.0,
-        "intensity": tr([(0.0, 0.0), (0.5, 0.3), (land, 1.0), (2.0, 0.9), (RESTORE, 2.2), (2.5, 1.0), (3.1, 0.0),
-                         (DURATION, 0.0)]),
+        # low, and dim while the soul is up: a point light near the soul's meshes leaves a specular hotspot
+        "light_type": "point", "position": [0.0, 0.25, 0.0], "color": c(gold), "radius": 4.0,
+        "intensity": tr([(0.0, 0.0), (0.5, 0.3), (land, 0.8), (1.0, 0.3), (1.9, 0.3), (2.1, 0.9), (RESTORE, 2.0),
+                         (2.5, 1.0), (3.1, 0.0), (DURATION, 0.0)]),
     }, parent="anchor", layer="light"))
     add(node("l_halo", "light", {
         "light_type": "point", "position": [0.0, HALO_Y, 0.0], "color": c(gold), "radius": 3.0,
@@ -766,20 +864,19 @@ def build(soul_mode: str = "mist") -> dict[str, Any]:
         return {"id": cid, "label": label, "group": group, "min": lo, "max": hi, "default": default,
                 "value": default, "step": step, "unit": unit, "bindings": bindings}
 
-    soul_ps = ["ps_soul_head", "ps_soul_chest", "ps_soul_motes", "ps_wisps"] + (
-        ["ps_figure"] if soul_mode == "figure" else [])
+    soul_ps = ["ps_soul_figure", "ps_soul_glow", "ps_shed_motes", "ps_shed_wisps", "ps_wisps",
+               "ps_tether"]
     sprite_systems = ["ps_motes", "ps_tip", "ps_streaks", "ps_contact", "ps_feathers", "ps_feathers_burst",
                       "ps_burst_glow", "ps_burst_motes", "ps_halo_glow"] + soul_ps
     decals = ["d_pool", "d_wave", "d_sigil"]
-    soul_bright = [mul(ps, "emissive") for ps in soul_ps] + [mul(t, "emissive") for t in rib_trails]
-    if soul_mode == "mist":
-        soul_bright.append(mul("v_soul", "emission"))
+    soul_bright = ([mul(ps, "emissive") for ps in soul_ps] + [mul(t, "emissive") for t in rib_trails]
+                   + [mul("v_soul", "emission")])
     controls = [
         control("intensity", "Intensity", "Global", 0.0, 3.0,
                 [mul(t, "emissive") for t in halo_trails + rib_trails + beams]
                 + [mul(ps, "emissive") for ps in sprite_systems]
                 + [mul(d, "emissive") for d in decals] + [mul("l_beam", "intensity"), mul("l_halo", "intensity")]
-                + ([mul("v_soul", "emission")] if soul_mode == "mist" else [])),
+                + [mul("v_soul", "emission")]),
         control("beam_width", "Beam width", "Beam of light", 0.3, 2.5,
                 [mul(b, "width") for b in beams] + [mul("e_streaks", "radius"), mul("ps_tip", "size"),
                                                     mul("ps_contact", "size")]),
@@ -803,9 +900,9 @@ def build(soul_mode: str = "mist") -> dict[str, Any]:
 
     return {
         "schema_version": "0.1.0",
-        "name": NAME if soul_mode == "mist" else NAME + " Figure",
+        "name": NAME,
         "description": "A graceful holy revive on a fallen ally in pearly ivory and white-gold: halo rings form high "
-                       "above, a soft beam descends onto the body, a pearly soul rises out of it, hovers and returns, "
+                       "above, a soft beam descends onto the body, a translucent human soul rises out of it, hovers and returns, "
                        "then a gentle warm burst, a ground halo and a flight of feathers restore the body. 3.0 s plus "
                        "drifting feathers; origin on the ground at the body's centre, body lying along X.",
         "duration": DURATION,
@@ -844,7 +941,7 @@ def build(soul_mode: str = "mist") -> dict[str, Any]:
             },
             "analysis": "channel 0-0.7 halo rings form high above and turn, motes and feathers drift down, a pool "
                         "of light gathers under the body | soul_rises 0.7-1.6 a soft beam descends onto the body, "
-                        "a pearly spirit lifts out of it turning upright, wrapped by two slow ribbons | reconverge "
+                        "a translucent human soul lifts out of it turning upright, wrapped by a slow ribbon | reconverge "
                         "1.6-2.2 the soul sinks back into the body, the halos descend and widen, the beam's foot "
                         "brightens | restore 2.2-2.6 a warm burst, a ground halo expands, feathers released | "
                         "complete 2.6-3.5 the beam lifts away, feathers and motes drift down and fade",
@@ -863,8 +960,6 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--out", help="directory to write resurrect.json into")
     parser.add_argument("--check", help="directory whose resurrect.json must match the generator output byte for byte")
-    parser.add_argument("--soul", choices=["mist", "figure"], default="mist",
-                        help="soul treatment; 'figure' (the suggested-figure comparison) writes resurrect_figure.json")
     args = parser.parse_args()
     if args.check:
         path = Path(args.check) / f"{SLUG}.json"
@@ -873,8 +968,8 @@ def main() -> int:
         return 0 if same else 1
     out = Path(args.out or ".")
     out.mkdir(parents=True, exist_ok=True)
-    effect = build(args.soul)
-    path = out / (f"{SLUG}.json" if args.soul == "mist" else f"{SLUG}_figure.json")
+    effect = build()
+    path = out / f"{SLUG}.json"
     path.write_text(render(effect), encoding="utf-8")
     print(f"{path}  ({len(effect['nodes'])} nodes)")
     return 0
