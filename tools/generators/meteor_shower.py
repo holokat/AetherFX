@@ -296,12 +296,15 @@ def build_textures() -> None:
         g("glowl", "levels", {"out_high": 0.06}, {"a": "glow"}),
         g("k1", "math", {"mode": "max"}, {"a": "lines", "b": "hbl"}),
         g("k2", "math", {"mode": "max"}, {"a": "k1", "b": "glowl"}),
+        # NEUTRAL ramp: brightness varies along the pattern but the hue comes from the decal's
+        # own `color`, which is what the `hue` control rotates.  A colour baked in here would
+        # keep the telegraph orange in the ice and toxic variants.
         g("col", "colorize", {"gradient": [
-            [0.0, [0.10, 0.004, 0.0, 0.0]],
-            [0.18, [0.70, 0.04, 0.005, 0.24]],
-            [0.48, [1.0, 0.14, 0.018, 0.6]],
-            [0.80, [1.0, 0.38, 0.08, 0.9]],
-            [1.0, [1.0, 0.80, 0.48, 1.0]],
+            [0.0, [0.12, 0.12, 0.12, 0.0]],
+            [0.18, [0.24, 0.24, 0.24, 0.24]],
+            [0.48, [0.5, 0.5, 0.5, 0.6]],
+            [0.80, [0.78, 0.78, 0.78, 0.9]],
+            [1.0, [1.0, 1.0, 1.0, 1.0]],
         ]}, {"a": "k2"}),
     ], "output": "col"}})
 
@@ -335,18 +338,24 @@ def build_textures() -> None:
         g("bnl", "levels", {"in_low": 0.34, "in_high": 0.82}, {"a": "bn"}),
         g("bed0", "math", {"mode": "multiply"}, {"a": "edge", "b": "bnl"}),
         g("bed", "levels", {"in_low": 0.04, "in_high": 0.55, "out_high": 0.40}, {"a": "bed0"}),
-        g("k1", "math", {"mode": "max"}, {"a": "web", "b": "bed"}),
-        g("blr", "blur", {"radius": 3.0}, {"a": "k1"}),
-        g("blrl", "levels", {"in_high": 0.7, "out_high": 0.22}, {"a": "blr"}),
+        # the bed modulates the web instead of sitting under it, so the crack net breaks up
+        # into embered patches rather than reading as one continuous bright mesh
+        g("wm", "levels", {"out_low": 0.45, "out_high": 1.0}, {"a": "bnl"}),
+        g("webm", "math", {"mode": "multiply"}, {"a": "web", "b": "wm"}),
+        g("k1", "math", {"mode": "max"}, {"a": "webm", "b": "bed"}),
+        g("blr", "blur", {"radius": 3.5}, {"a": "k1"}),
+        g("blrl", "levels", {"in_high": 0.7, "out_high": 0.3}, {"a": "blr"}),
         g("k2", "math", {"mode": "max"}, {"a": "k1", "b": "blrl"}),
         # crush the midtones: only the junctions of the web stay hot, the rest is a dull ember
         g("k3", "levels", {"in_low": 0.06, "in_high": 1.0, "gamma": 1.9}, {"a": "k2"}),
+        # neutral again: the decal's `color` track is what cools from yellow to deep red, and
+        # it is what the `hue` control rotates
         g("col", "colorize", {"gradient": [
-            [0.0, [0.04, 0.004, 0.0, 0.0]],
-            [0.30, [0.30, 0.02, 0.003, 0.26]],
-            [0.65, [0.85, 0.11, 0.012, 0.6]],
-            [0.88, [1.0, 0.34, 0.06, 0.82]],
-            [1.0, [1.0, 0.72, 0.34, 1.0]],
+            [0.0, [0.22, 0.22, 0.22, 0.0]],
+            [0.30, [0.36, 0.36, 0.36, 0.26]],
+            [0.65, [0.62, 0.62, 0.62, 0.6]],
+            [0.88, [0.84, 0.84, 0.84, 0.82]],
+            [1.0, [1.0, 1.0, 1.0, 1.0]],
         ]}, {"a": "k3"}),
     ], "output": "col"}})
 
@@ -367,7 +376,7 @@ def build_shared() -> None:
                                    "soft_particle": True, "depth_fade": 0.5,
                                    "dissolve": 0.45, "erosion": 0.3}, {"noise_texture": "tex_erosion"})
     node("mat_dust", "material", {"blend": "alpha", "shading": "lit",
-                                  "base_color": [0.25, 0.19, 0.15, 1.0],
+                                  "base_color": [0.17, 0.13, 0.105, 1.0],
                                   "emissive_color": [1.0, 0.4, 0.1, 1.0],
                                   "soft_particle": True, "depth_fade": 0.45,
                                   "dissolve": 0.42, "erosion": 0.3}, {"noise_texture": "tex_erosion"})
@@ -402,7 +411,7 @@ def build_telegraph() -> None:
     node("tele_rings", "decal", {
         "shape": "circle", "position": [0.0, 0.02, 0.0], "size": [r(AREA * 2.1), r(AREA * 2.1)],
         "rotation": track([(0.0, [0.0, 0.0, 0.0]), (DUR, [0.0, 26.0, 0.0])]),
-        "color": [1.0, 0.6, 0.38, 1.0], "blend": "additive",
+        "color": [1.0, 0.34, 0.13, 1.0], "blend": "additive",
         "emissive": track([(0.0, 0.0), (0.14, 1.0), (0.4, 0.62), (1.0, 0.3), (2.2, 0.2),
                            (2.9, 0.12), (T_AFTER, 0.0)]),
         "opacity": track([(0.0, 0.0), (0.12, 0.72), (0.5, 0.55), (1.4, 0.3), (2.4, 0.18),
@@ -580,10 +589,10 @@ def build_impacts() -> None:
             "max_particles": 260, "lifetime": life, "lifetime_variance": r(life * 0.35),
             "size": size, "size_variance": r(size * 0.34),
             "size_over_life": [[0.0, 0.32], [0.28, 1.0], [1.0, 1.12]],
-            "color": [1.0, 0.66, 0.34, 1.0],
-            "color_over_life": [[0.0, [1.0, 0.94, 0.8, 1.0]], [0.3, [1.0, 0.7, 0.38, 1.0]],
-                                [1.0, [0.8, 0.28, 0.1, 1.0]]],
-            "opacity": 0.33, "opacity_over_life": [[0.0, 0.0], [0.1, 1.0], [0.5, 0.72], [0.9, 0.0], [1.0, 0.0]],
+            "color": [1.0, 0.62, 0.3, 1.0],
+            "color_over_life": [[0.0, [1.0, 0.9, 0.72, 1.0]], [0.3, [1.0, 0.66, 0.34, 1.0]],
+                                [1.0, [0.78, 0.25, 0.08, 1.0]]],
+            "opacity": 0.28, "opacity_over_life": [[0.0, 0.0], [0.1, 1.0], [0.5, 0.72], [0.9, 0.0], [1.0, 0.0]],
             "emissive": 0.35, "drag": 3.2, "blend": "additive", "soft_particle_distance": 0.6,
             "rotation_variance": 180.0,
             "render_mode": "stretched_billboard", "velocity_stretch": 0.08, "sprite_fps": 20.0,
@@ -658,8 +667,8 @@ def build_impacts() -> None:
         "max_particles": 220, "lifetime": 0.9, "lifetime_variance": 0.25,
         "size": 1.1, "size_variance": 0.4, "size_over_life": [[0.0, 0.35], [0.5, 1.2], [1.0, 1.6]],
         "color": [0.8, 0.73, 0.67, 1.0],
-        "opacity": 0.34, "opacity_over_life": [[0.0, 0.0], [0.15, 1.0], [0.6, 0.65], [1.0, 0.0]],
-        "emissive": 0.34, "emissive_over_life": [[0.0, 1.0], [0.3, 0.35], [1.0, 0.0]],
+        "opacity": 0.28, "opacity_over_life": [[0.0, 0.0], [0.15, 1.0], [0.6, 0.65], [1.0, 0.0]],
+        "emissive": 0.3, "emissive_over_life": [[0.0, 0.9], [0.3, 0.3], [1.0, 0.0]],
         "rotation_variance": 180.0, "angular_velocity_variance": 30.0,
         "drag": 2.6, "blend": "alpha", "sort": True, "sprite_fps": 8.0,
     }, {"sprite": "tex_puff", "material": "mat_dust", "forces": ["f_smoke_turb"]}, layer="impacts")
@@ -743,14 +752,16 @@ def build_aftermath() -> None:
             "size": track([(r(t_hit), [r(wide * 0.4), r(deep * 0.4)]),
                            (r(t_hit + 0.12), [wide, deep]),
                            (DUR, [r(wide * 1.06), r(deep * 1.06)])]),
-            "color": track([(r(t_hit), [1.0, 0.95, 0.72, 1.0]),
-                            (r(t_hit + 0.3), [1.0, 0.62, 0.22, 1.0]),
-                            (r(min(DUR - 0.4, t_hit + 0.9)), [1.0, 0.3, 0.06, 1.0]),
-                            (DUR, [0.8, 0.1, 0.015, 1.0])]),
+            # cooling rock is DIM: the fire and the embers on top of it are the bright thing.
+            # A hot crack web at full strength turns every crater into a red rosette.
+            "color": track([(r(t_hit), [1.0, 0.9, 0.6, 1.0]),
+                            (r(t_hit + 0.3), [1.0, 0.52, 0.16, 1.0]),
+                            (r(min(DUR - 0.4, t_hit + 0.9)), [0.95, 0.23, 0.04, 1.0]),
+                            (DUR, [0.6, 0.06, 0.01, 1.0])]),
             "blend": "additive",
-            "emissive": track([(r(t_hit), 0.0), (r(t_hit + 0.05), 1.35), (r(t_hit + 0.35), 0.8),
-                               (3.4, 0.55), (3.75, 0.25), (DUR, 0.0)]),
-            "opacity": track([(r(t_hit), 0.0), (r(t_hit + 0.05), 0.85), (3.4, 0.78), (DUR, 0.0)]),
+            "emissive": track([(r(t_hit), 0.0), (r(t_hit + 0.05), 0.8), (r(t_hit + 0.35), 0.42),
+                               (3.4, 0.3), (3.75, 0.13), (DUR, 0.0)]),
+            "opacity": track([(r(t_hit), 0.0), (r(t_hit + 0.05), 0.6), (3.4, 0.5), (DUR, 0.0)]),
             "fade_in": 0.0, "fade_out": 0.0,
             "start_time": r(t_hit), "duration": r(DUR - t_hit),
         }, {"texture": "tex_scorch"}, layer="aftermath")
@@ -759,10 +770,10 @@ def build_aftermath() -> None:
         "max_particles": 320, "lifetime": 0.5, "lifetime_variance": 0.16,
         "size": 1.05, "size_variance": 0.4,
         "size_over_life": [[0.0, 0.45], [0.3, 1.0], [1.0, 0.75]],
-        "color": [1.0, 0.9, 0.76, 1.0],
-        "color_over_life": [[0.0, [1.0, 1.0, 1.0, 1.0]], [0.4, [1.0, 0.9, 0.78, 1.0]],
-                            [1.0, [0.88, 0.56, 0.4, 1.0]]],
-        "opacity": 0.46, "opacity_over_life": [[0.0, 0.0], [0.16, 1.0], [0.55, 0.7], [0.9, 0.0], [1.0, 0.0]],
+        "color": [1.0, 0.7, 0.4, 1.0],
+        "color_over_life": [[0.0, [1.0, 0.95, 0.84, 1.0]], [0.4, [1.0, 0.74, 0.44, 1.0]],
+                            [1.0, [0.84, 0.34, 0.14, 1.0]]],
+        "opacity": 0.44, "opacity_over_life": [[0.0, 0.0], [0.16, 1.0], [0.55, 0.7], [0.9, 0.0], [1.0, 0.0]],
         "emissive": 0.3, "drag": 2.0, "blend": "additive", "soft_particle_distance": 0.4,
         "rotation_variance": 180.0,
         "render_mode": "stretched_billboard", "velocity_stretch": 0.2, "sprite_fps": 19.0,
