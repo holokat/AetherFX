@@ -211,6 +211,7 @@ CATEGORIES: tuple[tuple[str, str], ...] = (
     ("support", "Support"),
     ("melee", "Melee"),
     ("mobility", "Mobility"),
+    ("ambient", "Ambient"),
 )
 _CATEGORY_IDS = frozenset(cid for cid, _ in CATEGORIES)
 
@@ -218,9 +219,10 @@ _CATEGORY_IDS = frozenset(cid for cid, _ in CATEGORIES)
 def effect_category(document: JsonDict) -> str:
     """The Library category of an effect document.
 
-    An explicit `metadata.category` wins. Otherwise the tags decide, most specific first: melee hits,
-    then support (heals, buffs), then mobility (teleports, blinks), then area effects; everything else is
-    a targeted attack - bolts, missiles, strikes, chains, drains and curses aimed at one enemy.
+    An explicit `metadata.category` wins. Otherwise the tags decide, most specific first: always-on
+    ambient pieces (lanterns, torches), melee hits, then support (heals, buffs), then mobility
+    (teleports, blinks), then area effects; everything else is a targeted attack - bolts, missiles,
+    strikes, chains, drains and curses aimed at one enemy.
     """
     metadata = document.get("metadata") if isinstance(document.get("metadata"), dict) else {}
     explicit = metadata.get("category")
@@ -228,6 +230,8 @@ def effect_category(document: JsonDict) -> str:
         return explicit.strip().lower()
     raw_tags = metadata.get("tags") if isinstance(metadata.get("tags"), list) else []
     tags = {str(tag).strip().lower() for tag in raw_tags}
+    if tags & {"ambient", "environment"}:
+        return "ambient"
     if "melee" in tags:
         return "melee"
     if tags & {"support", "heal", "buff"}:

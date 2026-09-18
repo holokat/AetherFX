@@ -822,6 +822,7 @@ label.check, label.field, label.toggle-chip {
 .cat-support  { --cat: 52, 211, 153;  --cat-text: #6ee7b7; }   /* green */
 .cat-melee    { --cat: 248, 113, 113; --cat-text: #fca5a5; }   /* red */
 .cat-mobility { --cat: 34, 211, 238;  --cat-text: #67e8f9; }   /* cyan */
+.cat-ambient  { --cat: 250, 204, 21;  --cat-text: #fde68a; }   /* lantern gold */
 .lib-section > summary .cat-dot {
   width: 6px; height: 6px; flex: none; border-radius: 50%;
   background: rgb(var(--cat)); box-shadow: 0 0 6px -1px rgba(var(--cat), .8);

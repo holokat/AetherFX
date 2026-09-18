@@ -18,6 +18,7 @@ def doc(tags: list[str], category: str | None = None) -> dict:
 
 
 def test_tags_decide_most_specific_first() -> None:
+    assert effect_category(doc(["ambient", "lantern", "light"])) == "ambient"
     assert effect_category(doc(["melee", "impact", "critical"])) == "melee"
     assert effect_category(doc(["buff", "shield", "support", "target"])) == "support"
     assert effect_category(doc(["heal", "target"])) == "support"

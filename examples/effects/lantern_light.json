@@ -1,0 +1,888 @@
+{
+  "schema_version": "0.1.0",
+  "name": "Lantern Light",
+  "description": "The always-on light inside a lantern: a small candle flame, a warm soft glow, a gently flickering light that pools about 3 m around it, and a few drifting embers.",
+  "duration": 6.0,
+  "seed": 51717,
+  "timeline": {
+    "phases": [
+      {
+        "name": "always_on",
+        "start": 0.0,
+        "end": 6.0
+      }
+    ]
+  },
+  "layers": [
+    {
+      "id": "lantern",
+      "name": "Lantern flame",
+      "role": "ambient"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "cam",
+      "type": "camera",
+      "parameters": {
+        "position": [
+          0.95,
+          1.32,
+          1.95
+        ],
+        "target": [
+          0.0,
+          0.86,
+          0.0
+        ],
+        "fov": 40.0
+      }
+    },
+    {
+      "id": "lantern",
+      "type": "mesh",
+      "layer": "lantern",
+      "parameters": {
+        "primitive": "sphere",
+        "radius": 0.01,
+        "segments": 4,
+        "visible": false,
+        "position": [
+          0.0,
+          1.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "id": "tex_candle",
+      "type": "texture",
+      "parameters": {
+        "width": 64,
+        "height": 128,
+        "frames": 16,
+        "graph": {
+          "nodes": [
+            {
+              "id": "f",
+              "op": "flame",
+              "params": {
+                "frequency": 2.4,
+                "speed": 0.7,
+                "warp": 0.16,
+                "width": 0.5,
+                "sharpness": 1.35,
+                "licks": 0.05,
+                "seed": 7
+              }
+            }
+          ],
+          "output": "f"
+        }
+      }
+    },
+    {
+      "id": "tex_glow",
+      "type": "texture",
+      "parameters": {
+        "width": 64,
+        "height": 64,
+        "graph": {
+          "nodes": [
+            {
+              "id": "r",
+              "op": "gradient_radial",
+              "params": {
+                "radius": 0.5,
+                "falloff": "smooth"
+              }
+            },
+            {
+              "id": "l",
+              "op": "levels",
+              "params": {
+                "gamma": 0.9
+              },
+              "inputs": {
+                "a": "r"
+              }
+            }
+          ],
+          "output": "l"
+        }
+      }
+    },
+    {
+      "id": "tex_ember",
+      "type": "texture",
+      "parameters": {
+        "width": 32,
+        "height": 32,
+        "graph": {
+          "nodes": [
+            {
+              "id": "r",
+              "op": "gradient_radial",
+              "params": {
+                "radius": 0.5,
+                "falloff": "quadratic"
+              }
+            }
+          ],
+          "output": "r"
+        }
+      }
+    },
+    {
+      "id": "mat_candle",
+      "type": "material",
+      "parameters": {
+        "blend": "additive",
+        "shading": "unlit",
+        "emissive_intensity": 1.0,
+        "temperature_gradient": [
+          [
+            0.0,
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          [
+            0.2,
+            [
+              0.5,
+              0.12,
+              0.02,
+              1.0
+            ]
+          ],
+          [
+            0.45,
+            [
+              0.95,
+              0.4,
+              0.08,
+              1.0
+            ]
+          ],
+          [
+            0.72,
+            [
+              1.0,
+              0.6,
+              0.2,
+              1.0
+            ]
+          ],
+          [
+            0.9,
+            [
+              1.0,
+              0.77,
+              0.4,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              1.0,
+              0.9,
+              0.66,
+              1.0
+            ]
+          ]
+        ],
+        "soft_particle": true,
+        "depth_fade": 0.02
+      }
+    },
+    {
+      "id": "mat_glow",
+      "type": "material",
+      "parameters": {
+        "blend": "additive",
+        "shading": "unlit",
+        "emissive_color": [
+          1.0,
+          0.56,
+          0.22,
+          1.0
+        ],
+        "emissive_intensity": 0.0,
+        "soft_particle": true,
+        "depth_fade": 0.05
+      }
+    },
+    {
+      "id": "f_rise",
+      "type": "force",
+      "parameters": {
+        "force_type": "directional",
+        "direction": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "strength": 0.16
+      }
+    },
+    {
+      "id": "f_curl",
+      "type": "force",
+      "parameters": {
+        "force_type": "curl_noise",
+        "strength": 0.22,
+        "frequency": 1.8,
+        "speed": 0.4
+      }
+    },
+    {
+      "id": "ps_flame",
+      "type": "particle_system",
+      "layer": "lantern",
+      "parameters": {
+        "max_particles": 2,
+        "lifetime": 6.0,
+        "size": 0.11,
+        "size_over_life": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            0.13,
+            1.045
+          ],
+          [
+            0.27,
+            0.975
+          ],
+          [
+            0.41,
+            1.035
+          ],
+          [
+            0.55,
+            0.985
+          ],
+          [
+            0.69,
+            1.05
+          ],
+          [
+            0.83,
+            0.99
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "opacity": 0.95,
+        "opacity_over_life": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "rotation": 180.0,
+        "emissive": 1.05,
+        "render_mode": "billboard",
+        "sprite_fps": 14.0,
+        "blend": "additive",
+        "soft_particle_distance": 0.01
+      },
+      "inputs": {
+        "sprite": "tex_candle",
+        "material": "mat_candle"
+      }
+    },
+    {
+      "id": "e_flame",
+      "type": "emitter",
+      "layer": "lantern",
+      "parent": "lantern",
+      "parameters": {
+        "shape": "point",
+        "position": [
+          0.0,
+          0.0506,
+          0.0
+        ],
+        "velocity": 0.0,
+        "rate": 0.0,
+        "burst_count": 1,
+        "burst_times": [
+          0.0
+        ],
+        "start_time": 0.0,
+        "duration": 0.05
+      },
+      "inputs": {
+        "particle": "ps_flame"
+      }
+    },
+    {
+      "id": "ps_glow",
+      "type": "particle_system",
+      "layer": "lantern",
+      "parameters": {
+        "max_particles": 2,
+        "lifetime": 6.0,
+        "size": 0.42,
+        "size_over_life": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            0.13,
+            1.045
+          ],
+          [
+            0.27,
+            0.975
+          ],
+          [
+            0.41,
+            1.035
+          ],
+          [
+            0.55,
+            0.985
+          ],
+          [
+            0.69,
+            1.05
+          ],
+          [
+            0.83,
+            0.99
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "color": [
+          1.0,
+          0.56,
+          0.22,
+          1.0
+        ],
+        "opacity": 0.24,
+        "opacity_over_life": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            0.2,
+            0.92
+          ],
+          [
+            0.37,
+            1.03
+          ],
+          [
+            0.58,
+            0.95
+          ],
+          [
+            0.8,
+            1.04
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "emissive": 0.9,
+        "render_mode": "billboard",
+        "blend": "additive",
+        "soft_particle_distance": 0.05
+      },
+      "inputs": {
+        "sprite": "tex_glow",
+        "material": "mat_glow"
+      }
+    },
+    {
+      "id": "e_glow",
+      "type": "emitter",
+      "layer": "lantern",
+      "parent": "lantern",
+      "parameters": {
+        "shape": "point",
+        "position": [
+          0.0,
+          0.045,
+          0.0
+        ],
+        "velocity": 0.0,
+        "rate": 0.0,
+        "burst_count": 1,
+        "burst_times": [
+          0.0
+        ],
+        "start_time": 0.0,
+        "duration": 0.05
+      },
+      "inputs": {
+        "particle": "ps_glow"
+      }
+    },
+    {
+      "id": "ps_bloom",
+      "type": "particle_system",
+      "layer": "lantern",
+      "parameters": {
+        "max_particles": 2,
+        "lifetime": 6.0,
+        "size": 1.15,
+        "color": [
+          1.0,
+          0.56,
+          0.22,
+          1.0
+        ],
+        "opacity": 0.07,
+        "opacity_over_life": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            0.2,
+            0.92
+          ],
+          [
+            0.37,
+            1.03
+          ],
+          [
+            0.58,
+            0.95
+          ],
+          [
+            0.8,
+            1.04
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "emissive": 0.6,
+        "render_mode": "billboard",
+        "blend": "additive",
+        "soft_particle_distance": 0.2
+      },
+      "inputs": {
+        "sprite": "tex_glow",
+        "material": "mat_glow"
+      }
+    },
+    {
+      "id": "e_bloom",
+      "type": "emitter",
+      "layer": "lantern",
+      "parent": "lantern",
+      "parameters": {
+        "shape": "point",
+        "position": [
+          0.0,
+          0.05,
+          0.0
+        ],
+        "velocity": 0.0,
+        "rate": 0.0,
+        "burst_count": 1,
+        "burst_times": [
+          0.0
+        ],
+        "start_time": 0.0,
+        "duration": 0.05
+      },
+      "inputs": {
+        "particle": "ps_bloom"
+      }
+    },
+    {
+      "id": "l_lantern",
+      "type": "light",
+      "layer": "lantern",
+      "parent": "lantern",
+      "parameters": {
+        "light_type": "point",
+        "position": [
+          0.0,
+          0.06,
+          0.0
+        ],
+        "color": [
+          1.0,
+          0.56,
+          0.22,
+          1.0
+        ],
+        "intensity": 2.0,
+        "radius": 3.2,
+        "flicker_amplitude": 0.12,
+        "flicker_frequency": 1.1
+      }
+    },
+    {
+      "id": "ps_embers",
+      "type": "particle_system",
+      "layer": "lantern",
+      "parameters": {
+        "max_particles": 16,
+        "lifetime": 2.0,
+        "lifetime_variance": 0.8,
+        "size": 0.02,
+        "size_variance": 0.007,
+        "color": [
+          1.0,
+          0.72,
+          0.34,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              0.86,
+              0.55,
+              1.0
+            ]
+          ],
+          [
+            0.4,
+            [
+              1.0,
+              0.72,
+              0.34,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.95,
+              0.36,
+              0.1,
+              1.0
+            ]
+          ]
+        ],
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.12,
+            1.0
+          ],
+          [
+            0.7,
+            0.7
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 2.0,
+        "drag": 0.6,
+        "render_mode": "billboard",
+        "blend": "additive",
+        "soft_particle_distance": 0.02
+      },
+      "inputs": {
+        "sprite": "tex_ember",
+        "material": "mat_glow",
+        "forces": [
+          "f_rise",
+          "f_curl"
+        ]
+      }
+    },
+    {
+      "id": "e_embers",
+      "type": "emitter",
+      "layer": "lantern",
+      "parent": "lantern",
+      "parameters": {
+        "shape": "disc",
+        "radius": 0.02,
+        "position": [
+          0.0,
+          0.099,
+          0.0
+        ],
+        "direction": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "spread": 25.0,
+        "velocity": 0.14,
+        "velocity_variance": 0.06,
+        "rate": 2.6,
+        "burst_count": 3,
+        "burst_times": [
+          0.0
+        ],
+        "start_time": 0.0,
+        "duration": 6.0
+      },
+      "inputs": {
+        "particle": "ps_embers"
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "brightness",
+      "label": "Brightness",
+      "group": "Light",
+      "min": 0.0,
+      "max": 2.5,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "l_lantern",
+          "parameter": "intensity",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_flame",
+          "parameter": "emissive",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_glow",
+          "parameter": "emissive",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_bloom",
+          "parameter": "emissive",
+          "op": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "light_radius",
+      "label": "Light radius",
+      "group": "Light",
+      "min": 0.3,
+      "max": 2.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "l_lantern",
+          "parameter": "radius",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_bloom",
+          "parameter": "size",
+          "op": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "flicker",
+      "label": "Flicker",
+      "group": "Light",
+      "min": 0.0,
+      "max": 3.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "l_lantern",
+          "parameter": "flicker_amplitude",
+          "op": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "flame_size",
+      "label": "Flame size",
+      "group": "Flame",
+      "min": 0.5,
+      "max": 2.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "ps_flame",
+          "parameter": "size",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_glow",
+          "parameter": "size",
+          "op": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "embers",
+      "label": "Embers",
+      "group": "Embers",
+      "min": 0.0,
+      "max": 4.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "e_embers",
+          "parameter": "rate",
+          "op": "multiply"
+        },
+        {
+          "node": "e_embers",
+          "parameter": "burst_count",
+          "op": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "hue",
+      "label": "Glass hue",
+      "group": "Global",
+      "min": -180.0,
+      "max": 180.0,
+      "default": 0.0,
+      "value": 0.0,
+      "step": 1.0,
+      "unit": "deg",
+      "bindings": [
+        {
+          "node": "mat_candle",
+          "parameter": "temperature_gradient",
+          "op": "hue_shift"
+        },
+        {
+          "node": "mat_glow",
+          "parameter": "emissive_color",
+          "op": "hue_shift"
+        },
+        {
+          "node": "ps_flame",
+          "parameter": "color",
+          "op": "hue_shift"
+        },
+        {
+          "node": "ps_glow",
+          "parameter": "color",
+          "op": "hue_shift"
+        },
+        {
+          "node": "ps_bloom",
+          "parameter": "color",
+          "op": "hue_shift"
+        },
+        {
+          "node": "l_lantern",
+          "parameter": "color",
+          "op": "hue_shift"
+        },
+        {
+          "node": "ps_embers",
+          "parameter": "color",
+          "op": "hue_shift"
+        },
+        {
+          "node": "ps_embers",
+          "parameter": "color_over_life",
+          "op": "hue_shift"
+        }
+      ]
+    },
+    {
+      "id": "global_speed",
+      "label": "Speed",
+      "group": "Global",
+      "min": 0.25,
+      "max": 3.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "$effect",
+          "parameter": "time_scale",
+          "op": "multiply"
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "generator": "tools/generators/lantern_light.py",
+    "category": "ambient",
+    "loop": {
+      "start": 0.0,
+      "end": 6.0
+    },
+    "attachment": {
+      "origin_node": "lantern",
+      "preview_height": 1.0,
+      "notes": "Attach the `lantern` node at the lantern's wick; the effect draws no lantern or candle. It is always on and loops seamlessly. Use the glass hue for blue or red glass."
+    },
+    "render_settings": {
+      "background": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "ground_albedo": 0.09,
+      "bloom_intensity": 0.3,
+      "bloom_radius": 0.04,
+      "exposure": 1.0,
+      "grid": false
+    },
+    "tags": [
+      "ambient",
+      "lantern",
+      "light",
+      "flame",
+      "candle",
+      "environment"
+    ]
+  }
+}

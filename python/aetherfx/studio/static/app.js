@@ -591,9 +591,10 @@ var LIB_SECTIONS = [
 /* The server sends the categories (server.py CATEGORIES); this is the same list for an older server. */
 var DEFAULT_CATEGORIES = [
   { id: 'aoe', label: 'Area of Effect' }, { id: 'targeted', label: 'Targeted' },
-  { id: 'support', label: 'Support' }, { id: 'melee', label: 'Melee' }, { id: 'mobility', label: 'Mobility' }
+  { id: 'support', label: 'Support' }, { id: 'melee', label: 'Melee' }, { id: 'mobility', label: 'Mobility' },
+  { id: 'ambient', label: 'Ambient' }
 ];
-var CATEGORY_TAGS = { aoe: 'AoE', targeted: 'Targeted', support: 'Support', melee: 'Melee', mobility: 'Mobility' };
+var CATEGORY_TAGS = { aoe: 'AoE', targeted: 'Targeted', support: 'Support', melee: 'Melee', mobility: 'Mobility', ambient: 'Ambient' };
 
 /* One collapsible section per category, created once and in order; it remembers being collapsed. */
 function categorySection(category) {

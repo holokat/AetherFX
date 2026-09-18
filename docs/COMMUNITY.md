@@ -39,7 +39,7 @@ arbitrary links.
 | `metadata.author.name` | no | 1-60 characters, no control characters, no `<` or `>`, no link, no file name. Shown instead of the username when present. |
 | `metadata.license` | yes | Must be `"MIT"`. |
 | `metadata.tags` | no | At most 8 lowercase slugs, `^[a-z0-9]+(?:[-_][a-z0-9]+)*$`, at most 24 characters each. They drive the studio's search. |
-| `metadata.category` | no | The studio groups effects by category: `aoe` (Area of Effect), `targeted` (bolts, missiles, strikes, drains and curses aimed at one enemy), `support` (heals, buffs), `melee` or `mobility` (teleports, blinks). Without it the tags decide: `melee`, then `support`/`heal`/`buff`, then `mobility`/`teleport`/`blink`/`utility`, then `aoe`/`area`, otherwise `targeted`. |
+| `metadata.category` | no | The studio groups effects by category: `aoe` (Area of Effect), `targeted` (bolts, missiles, strikes, drains and curses aimed at one enemy), `support` (heals, buffs), `melee`, `mobility` (teleports, blinks) or `ambient` (always-on pieces such as lanterns and torches). Without it the tags decide: `ambient`/`environment`, then `melee`, then `support`/`heal`/`buff`, then `mobility`/`teleport`/`blink`/`utility`, then `aoe`/`area`, otherwise `targeted`. |
 | `metadata.description` / `description` | yes | One line, at most 400 characters, no link. |
 
 Any other field inside `metadata.author` is an error, including `x`, `twitter`, `email` and
