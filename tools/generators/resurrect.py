@@ -850,6 +850,12 @@ def build() -> dict[str, Any]:
     }, parent="anchor", layer="light"))
 
     # ---------------- controls ----------------
+    # The user removed the floating soul figure ("looks weird"): drop the whole soul layer and its texture. The
+    # soul ribbons stay: they climb the beam and come back down on their own, so energy still lifts and returns.
+    dropped = {n["id"] for n in nodes if n.get("layer") == "soul"} | {"tex_soul_figure"}
+    dropped |= {"ps_soul_figure", "ps_soul_glow", "ps_shed_motes", "ps_shed_wisps", "ps_tether", "ps_wisps", "f_lift"}
+    nodes[:] = [n for n in nodes if n["id"] not in dropped]
+
     colour_bindings = []
     for n in nodes:
         for parameter in ("color", "color_over_life", "emissive_color", "color_hot"):
@@ -864,23 +870,21 @@ def build() -> dict[str, Any]:
         return {"id": cid, "label": label, "group": group, "min": lo, "max": hi, "default": default,
                 "value": default, "step": step, "unit": unit, "bindings": bindings}
 
-    soul_ps = ["ps_soul_figure", "ps_soul_glow", "ps_shed_motes", "ps_shed_wisps", "ps_wisps",
-               "ps_tether"]
+    soul_ps = [ps for ps in ("ps_soul_figure", "ps_soul_glow", "ps_shed_motes", "ps_shed_wisps", "ps_wisps",
+                             "ps_tether") if ps not in dropped]
     sprite_systems = ["ps_motes", "ps_tip", "ps_streaks", "ps_contact", "ps_feathers", "ps_feathers_burst",
                       "ps_burst_glow", "ps_burst_motes", "ps_halo_glow"] + soul_ps
     decals = ["d_pool", "d_wave", "d_sigil"]
-    soul_bright = ([mul(ps, "emissive") for ps in soul_ps] + [mul(t, "emissive") for t in rib_trails]
-                   + [mul("v_soul", "emission")])
+    soul_bright = [mul(ps, "emissive") for ps in soul_ps] + [mul(t, "emissive") for t in rib_trails]
     controls = [
         control("intensity", "Intensity", "Global", 0.0, 3.0,
                 [mul(t, "emissive") for t in halo_trails + rib_trails + beams]
                 + [mul(ps, "emissive") for ps in sprite_systems]
-                + [mul(d, "emissive") for d in decals] + [mul("l_beam", "intensity"), mul("l_halo", "intensity")]
-                + [mul("v_soul", "emission")]),
+                + [mul(d, "emissive") for d in decals] + [mul("l_beam", "intensity"), mul("l_halo", "intensity")]),
         control("beam_width", "Beam width", "Beam of light", 0.3, 2.5,
                 [mul(b, "width") for b in beams] + [mul("e_streaks", "radius"), mul("ps_tip", "size"),
                                                     mul("ps_contact", "size")]),
-        control("soul_brightness", "Soul brightness", "Soul", 0.0, 3.0, soul_bright),
+        control("soul_brightness", "Ribbon brightness", "Soul ribbons", 0.0, 3.0, soul_bright),
         control("feather_amount", "Feather amount", "Feathers", 0.0, 2.0,
                 [mul("e_feathers_fall", "rate"), mul("e_feathers_burst", "burst_count")]),
         control("halo_brightness", "Halo brightness", "Halo rings", 0.0, 3.0,
@@ -902,7 +906,7 @@ def build() -> dict[str, Any]:
         "schema_version": "0.1.0",
         "name": NAME,
         "description": "A graceful holy revive on a fallen ally in pearly ivory and white-gold: halo rings form high "
-                       "above, a soft beam descends onto the body, a translucent human soul rises out of it, hovers and returns, "
+                       "above, a soft beam descends onto the body, soft ribbons of light spiral up the beam and back down, "
                        "then a gentle warm burst, a ground halo and a flight of feathers restore the body. 3.0 s plus "
                        "drifting feathers; origin on the ground at the body's centre, body lying along X.",
         "duration": DURATION,
@@ -918,7 +922,6 @@ def build() -> dict[str, Any]:
             {"id": "ground", "name": "Ground light", "role": "telegraph"},
             {"id": "halos", "name": "Halo rings", "role": "ignition"},
             {"id": "beam", "name": "Beam of light", "role": "primary"},
-            {"id": "soul", "name": "Soul", "role": "primary"},
             {"id": "soul_ribbons", "name": "Soul ribbons", "role": "secondary"},
             {"id": "feathers", "name": "Feathers", "role": "secondary"},
             {"id": "restore", "name": "Restore burst", "role": "interaction"},
@@ -941,8 +944,8 @@ def build() -> dict[str, Any]:
             },
             "analysis": "channel 0-0.7 halo rings form high above and turn, motes and feathers drift down, a pool "
                         "of light gathers under the body | soul_rises 0.7-1.6 a soft beam descends onto the body, "
-                        "a translucent human soul lifts out of it turning upright, wrapped by a slow ribbon | reconverge "
-                        "1.6-2.2 the soul sinks back into the body, the halos descend and widen, the beam's foot "
+                        "a slow ribbon spirals up out of the body | reconverge "
+                        "1.6-2.2 a second ribbon spirals back down into the body, the halos descend and widen, the beam's foot "
                         "brightens | restore 2.2-2.6 a warm burst, a ground halo expands, feathers released | "
                         "complete 2.6-3.5 the beam lifts away, feathers and motes drift down and fade",
             "render_settings": {"background": [0.0, 0.0, 0.0, 1.0], "ground_albedo": 0.05,
