@@ -29,9 +29,9 @@ Layers
 
 Timing (a one-shot: "very quick, a few seconds max")
 ------
-rise 0-0.6 s (the streams climb out of the ankles), surge 0.6-1.65 s (the body is wrapped at full
-strength), dissolve 1.65-2.3 s (the ribbons dissolve upward at head height), fade 2.3-2.8 s (the
-last glints and motes fade). The Speed control plays it faster or slower.
+rise 0-0.39 s (the streams climb out of the ankles), surge 0.39-1.06 s (the body is wrapped at full
+strength), dissolve 1.06-1.48 s (the ribbons dissolve upward at head height), fade 1.48-1.8 s (the
+last glints and motes fade). Authored on a 2.8 s clock and compressed by K. The Speed control plays it faster or slower.
 """
 
 from __future__ import annotations
@@ -92,10 +92,20 @@ VARIANTS: dict[str, dict[str, Any]] = {
 # timing
 # ---------------------------------------------------------------------------
 
-DURATION = 2.8              # one shot: the last glint and mote are gone by here
-TRAIL_LIFE = 0.9            # how long a stretch of ribbon stays visible behind the bead
-FADE_OUT = 0.55             # the dissolve at the top of a flight
-KEY_STEP = 0.05             # key spacing of the orbit / height tracks inside a flight
+# The motion was authored on a 2.8 s clock; K compresses every time (and speeds up every velocity and
+# rate by 1 / K) so the whole effect plays in 1.8 s with the same paths, heights and particle counts.
+K = 1.8 / 2.8
+
+
+def T(x: float) -> float:
+    """An authored time on the 1.8 s clock."""
+    return round(x * K, 4)
+
+
+DURATION = 1.8              # one shot: the last glint and mote are gone by here
+TRAIL_LIFE = T(0.9)         # how long a stretch of ribbon stays visible behind the bead
+FADE_OUT = T(0.55)          # the dissolve at the top of a flight
+KEY_STEP = T(0.05)          # key spacing of the orbit / height tracks inside a flight
 
 # One entry per bead: radius (m), turns per flight, heights y0 -> y1 (m), flight time V (s), start
 # time (s), start phase (deg), brightness gain (one or two hero strands, the rest fainter and thinner),
@@ -113,13 +123,16 @@ STREAMS = [
      "gain": 0.7, "wobble": 0.05, "wobble_f": 0.8, "lean": [1.5, 1.5]},
 ]
 
+for _s in STREAMS:
+    _s["v"], _s["start"] = T(_s["v"]), T(_s["start"])
+
 CORE_WIDTH = 0.015
 GLOW_WIDTH = 0.12
 CORE_EMISSIVE = 1.7
 GLOW_EMISSIVE = 0.8
-SHED_RATE = 8.0
+SHED_RATE = round(8.0 / K, 3)
 
-MOTE_RATE = 14.0
+MOTE_RATE = round(14.0 / K, 3)
 
 # Opacity along a ribbon: a visible ribbon spans about 1.2 turns, so a ripple with a period of about
 # one turn in normalised age reads as the strand dimming as it swings round the far side.
@@ -182,7 +195,7 @@ def flights(s: dict[str, Any]) -> list[float]:
     return [s["start"]]
 
 
-EASE_IN = 0.25             # seconds for a bead to come up to speed at the start of a flight
+EASE_IN = T(0.25)            # seconds for a bead to come up to speed at the start of a flight
 
 
 def progress(s: dict[str, Any], u: float) -> float:
@@ -244,7 +257,7 @@ def envelope(s: dict[str, Any], peak: float, ramp: str = "width") -> dict[str, A
     if ramp == "width":
         rise = [(0.8 * TRAIL_LIFE * f, f ** 1.5) for f in (0.0, 0.25, 0.5, 0.75, 1.0)]
     else:
-        rise = [(0.0, 0.0), (0.15, 0.5), (0.4, 1.0)]
+        rise = [(0.0, 0.0), (T(0.15), 0.5), (T(0.4), 1.0)]
     keys: list[tuple[float, float]] = []
     starts = flights(s)
     if starts[0] > 0.0:
@@ -321,7 +334,7 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
 
     # ---- energy streams ----
     add(node("ps_shed", "particle_system", {
-        "max_particles": 32, "lifetime": 0.5, "lifetime_variance": 0.1,
+        "max_particles": 32, "lifetime": T(0.5), "lifetime_variance": T(0.1),
         "size": 0.026, "size_variance": 0.008,
         "size_over_life": [[0.0, 0.6], [0.25, 1.0], [1.0, 0.5]],
         "color": c(hot), "color_over_life": [[0.0, [1.0, 1.0, 1.0, 1.0]], [1.0, c(mid)]],
@@ -361,13 +374,13 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
             "emissive": envelope(s, round(CORE_EMISSIVE * g * s["gain"], 4), "glow"),
         }, {"source": f"bead_{sid}", "material": "mat_core"}, layer=layer))
         add(node(f"e_shed_{sid}", "emitter", {
-            "shape": "point", "direction": [0.0, 0.0, 0.0], "velocity": 0.06, "velocity_variance": 0.04,
+            "shape": "point", "direction": [0.0, 0.0, 0.0], "velocity": round(0.06 / K, 4), "velocity_variance": round(0.04 / K, 4),
             "inherit_velocity": 0.35, "rate": envelope(s, round(SHED_RATE * s["gain"], 3), "glow"),
         }, {"particle": "ps_shed"}, parent=f"bead_{sid}", layer=layer))
 
     # ---- motes ----
     add(node("ps_motes", "particle_system", {
-        "max_particles": 48, "lifetime": 0.9, "lifetime_variance": 0.2,
+        "max_particles": 48, "lifetime": T(0.9), "lifetime_variance": T(0.2),
         "size": 0.05, "size_variance": 0.02,
         "size_over_life": [[0.0, 0.5], [0.2, 1.0], [0.8, 0.85], [1.0, 0.4]],
         "color": c(hot), "color_over_life": [[0.0, [1.0, 1.0, 1.0, 1.0]], [0.5, c(mid)], [1.0, c(deep)]],
@@ -378,18 +391,18 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
     add(node("e_motes", "emitter", {
         "shape": "sphere", "radius": 0.42, "surface_only": True, "position": [0.0, 0.95, 0.0],
         "scale": [1.0, 1.55, 1.0], "direction": [0.0, 1.0, 0.0], "spread": 12.0,
-        "velocity": 0.45, "velocity_variance": 0.15,
-        "rate": tr([(0.0, 4.0), (0.3, MOTE_RATE), (1.5, MOTE_RATE), (1.9, 0.0), (DURATION, 0.0)]),
+        "velocity": round(0.45 / K, 4), "velocity_variance": round(0.15 / K, 4),
+        "rate": tr([(0.0, round(4.0 / K, 3)), (T(0.3), MOTE_RATE), (T(1.5), MOTE_RATE), (T(1.9), 0.0), (DURATION, 0.0)]),
     }, {"particle": "ps_motes"}, parent="anchor", layer="motes"))
     add(node("e_rise", "emitter", {
         "shape": "ring", "radius": 0.46, "inner_radius": 0.3, "position": [0.0, 0.3, 0.0],
-        "direction": [0.0, 1.0, 0.0], "spread": 6.0, "velocity": 0.95, "velocity_variance": 0.35,
-        "rate": tr([(0.0, 0.0), (0.05, 22.0), (0.4, 22.0), (0.6, 0.0)]),
-        "start_time": 0.0, "duration": 0.65,
+        "direction": [0.0, 1.0, 0.0], "spread": 6.0, "velocity": round(0.95 / K, 4), "velocity_variance": round(0.35 / K, 4),
+        "rate": tr([(0.0, 0.0), (T(0.05), round(22.0 / K, 3)), (T(0.4), round(22.0 / K, 3)), (T(0.6), 0.0)]),
+        "start_time": 0.0, "duration": T(0.65),
     }, {"particle": "ps_motes"}, parent="anchor", layer="motes"))
 
     # ---- a faint light at chest height ----
-    light_keys = [(0.0, 0.0), (0.5, 0.4 * g), (1.6, 0.4 * g), (2.3, 0.0), (DURATION, 0.0)]
+    light_keys = [(0.0, 0.0), (T(0.5), 0.4 * g), (T(1.6), 0.4 * g), (T(2.3), 0.0), (DURATION, 0.0)]
     add(node("l_glow", "light", {
         "light_type": "point", "position": [0.0, 1.15, 0.0], "color": c(mid), "radius": 2.4,
         "intensity": tr(light_keys),
@@ -434,15 +447,15 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
         "schema_version": "0.1.0",
         "name": spec["name"],
         "description": f"A quick power-up buff ({spec['flavour']}): slim energy ribbons wrap and spiral up the "
-                       "character from ankles to head and dissolve, with a few soft motes; a 2.8 s one-shot, no "
+                       "character from ankles to head and dissolve, with a few soft motes; a 1.8 s one-shot, no "
                        "ground base, nothing above the head. Origin at the character's feet (about 1.8 m tall).",
         "duration": DURATION,
         "seed": spec["seed"],
         "timeline": {"phases": [
-            {"name": "rise", "start": 0.0, "end": 0.6},
-            {"name": "surge", "start": 0.6, "end": 1.65},
-            {"name": "dissolve", "start": 1.65, "end": 2.3},
-            {"name": "fade", "start": 2.3, "end": DURATION},
+            {"name": "rise", "start": 0.0, "end": T(0.6)},
+            {"name": "surge", "start": T(0.6), "end": T(1.65)},
+            {"name": "dissolve", "start": T(1.65), "end": T(2.3)},
+            {"name": "fade", "start": T(2.3), "end": DURATION},
         ]},
         "layers": [
             {"id": "streams", "name": "Energy streams", "role": "primary"},
@@ -463,11 +476,11 @@ def build(slug: str, spec: dict[str, Any]) -> dict[str, Any]:
                          "let it follow the character. Nothing is drawn for the character. Scale for bigger "
                          "or smaller characters with the Character height control.",
             },
-            "analysis": "rise 0-0.6 five slim ribbons and a burst of motes climb out of the ankles and "
-                        "start to wrap the body | surge 0.6-1.65 three or four ribbons at staggered heights "
+            "analysis": "rise 0-0.39 five slim ribbons and a burst of motes climb out of the ankles and "
+                        "start to wrap the body | surge 0.39-1.06 three or four ribbons at staggered heights "
                         "circle the whole body from ankles to head, one or two bright, the rest fainter, with "
-                        "glints riding along and motes hugging the silhouette | dissolve 1.65-2.3 the ribbons "
-                        "dissolve upward at head height | fade 2.3-2.8 the last glints and motes fade",
+                        "glints riding along and motes hugging the silhouette | dissolve 1.06-1.48 the ribbons "
+                        "dissolve upward at head height | fade 1.48-1.8 the last glints and motes fade",
             "render_settings": {"background": [0.0, 0.0, 0.0, 1.0], "ground_albedo": 0.05,
                                 "bloom_intensity": 0.3, "bloom_radius": 0.05, "exposure": 1.0, "grid": False},
             "tags": spec["tags"],
