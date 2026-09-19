@@ -350,7 +350,7 @@ def build() -> dict[str, Any]:
                          "direction (degrees around Y). l_key and l_sky are preview stage lights: drop them where the "
                          "scene lights the smoke. It is always on and loops seamlessly.",
             },
-            "render_settings": {"background": [0.034, 0.045, 0.066, 1.0], "ground_plane": False, "grid": False,
+            "render_settings": {"background": [0.0, 0.0, 0.0, 1.0], "ground_plane": False, "grid": False,
                                 "bloom_intensity": 0.12, "bloom_radius": 0.04, "exposure": 1.0},
             "tags": ["ambient", "environment", "smoke", "chimney"],
         },

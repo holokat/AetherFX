@@ -3276,9 +3276,9 @@
     },
     "render_settings": {
       "background": [
-        0.034,
-        0.045,
-        0.066,
+        0.0,
+        0.0,
+        0.0,
         1.0
       ],
       "ground_plane": false,
