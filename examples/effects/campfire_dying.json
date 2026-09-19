@@ -1387,7 +1387,7 @@
       "type": "force",
       "parameters": {
         "force_type": "buoyancy",
-        "strength": 0.528
+        "strength": 0.132
       }
     },
     {
@@ -1395,10 +1395,10 @@
       "type": "force",
       "parameters": {
         "force_type": "curl_noise",
-        "strength": 0.95,
+        "strength": 0.2375,
         "frequency": 1.2,
         "octaves": 3,
-        "speed": 1.2
+        "speed": 0.6
       }
     },
     {
@@ -1461,8 +1461,8 @@
       "layer": "flames",
       "parameters": {
         "max_particles": 260,
-        "lifetime": 0.62,
-        "lifetime_variance": 0.22,
+        "lifetime": 1.24,
+        "lifetime_variance": 0.44,
         "size": 0.2464,
         "size_variance": 0.0748,
         "size_over_life": [
@@ -1547,12 +1547,12 @@
           ]
         ],
         "emissive": 0.24,
-        "drag": 2.2,
+        "drag": 1.1,
         "blend": "additive",
         "soft_particle_distance": 0.25,
         "render_mode": "stretched_billboard",
-        "velocity_stretch": 0.1,
-        "sprite_fps": 22.0
+        "velocity_stretch": 0.2,
+        "sprite_fps": 11.0
       },
       "inputs": {
         "sprite": "tex_flame",
@@ -1582,110 +1582,110 @@
           0.0
         ],
         "spread": 14.0,
-        "velocity": 0.341,
-        "velocity_variance": 0.132,
+        "velocity": 0.1705,
+        "velocity_variance": 0.066,
         "rate": {
-          "value": 3.0433,
+          "value": 1.5217,
           "track": [
             {
               "time": 0.0,
-              "value": 3.0433
+              "value": 1.5217
             },
             {
               "time": 0.5,
-              "value": 2.7214
+              "value": 1.3607
             },
             {
               "time": 1.0,
-              "value": 2.6571
+              "value": 1.3286
             },
             {
               "time": 1.5,
-              "value": 2.0493
+              "value": 1.0247
             },
             {
               "time": 2.0,
-              "value": 2.3955
+              "value": 1.1978
             },
             {
               "time": 2.5,
-              "value": 2.66
+              "value": 1.33
             },
             {
               "time": 3.0,
-              "value": 2.9452
+              "value": 1.4726
             },
             {
               "time": 3.5,
-              "value": 2.7115
+              "value": 1.3558
             },
             {
               "time": 4.0,
-              "value": 2.2697
+              "value": 1.1348
             },
             {
               "time": 4.5,
-              "value": 2.2852
+              "value": 1.1426
             },
             {
               "time": 5.0,
-              "value": 2.0364
+              "value": 1.0182
             },
             {
               "time": 5.5,
-              "value": 2.1355
+              "value": 1.0677
             },
             {
               "time": 6.0,
-              "value": 1.5567
+              "value": 0.7783
             },
             {
               "time": 6.5,
-              "value": 1.8786
+              "value": 0.9393
             },
             {
               "time": 7.0,
-              "value": 1.9429
+              "value": 0.9714
             },
             {
               "time": 7.5,
-              "value": 2.5507
+              "value": 1.2753
             },
             {
               "time": 8.0,
-              "value": 2.2045
+              "value": 1.1022
             },
             {
               "time": 8.5,
-              "value": 1.94
+              "value": 0.97
             },
             {
               "time": 9.0,
-              "value": 1.6548
+              "value": 0.8274
             },
             {
               "time": 9.5,
-              "value": 1.8885
+              "value": 0.9442
             },
             {
               "time": 10.0,
-              "value": 2.3303
+              "value": 1.1652
             },
             {
               "time": 10.5,
-              "value": 2.3148
+              "value": 1.1574
             },
             {
               "time": 11.0,
-              "value": 2.5636
+              "value": 1.2818
             },
             {
               "time": 11.5,
-              "value": 2.4645
+              "value": 1.2323
             },
             {
               "time": 12.0,
-              "value": 3.0433
+              "value": 1.5217
             }
           ]
         },
@@ -1702,8 +1702,8 @@
       "layer": "flames",
       "parameters": {
         "max_particles": 120,
-        "lifetime": 0.5,
-        "lifetime_variance": 0.18,
+        "lifetime": 1.0,
+        "lifetime_variance": 0.36,
         "size": 0.22,
         "size_variance": 0.066,
         "size_over_life": [
@@ -1788,12 +1788,12 @@
           ]
         ],
         "emissive": 0.3,
-        "drag": 1.5,
+        "drag": 0.75,
         "blend": "additive",
         "soft_particle_distance": 0.25,
         "render_mode": "stretched_billboard",
-        "velocity_stretch": 0.2,
-        "sprite_fps": 20.0
+        "velocity_stretch": 0.4,
+        "sprite_fps": 10.0
       },
       "inputs": {
         "sprite": "tex_flame",
@@ -1823,110 +1823,110 @@
           0.0
         ],
         "spread": 22.0,
-        "velocity": 0.462,
-        "velocity_variance": 0.242,
+        "velocity": 0.231,
+        "velocity_variance": 0.121,
         "rate": {
-          "value": 1.9188,
+          "value": 0.9594,
           "track": [
             {
               "time": 0.0,
-              "value": 1.9188
+              "value": 0.9594
             },
             {
               "time": 0.5,
-              "value": 1.7332
+              "value": 0.8666
             },
             {
               "time": 1.0,
-              "value": 1.722
+              "value": 0.861
             },
             {
               "time": 1.5,
-              "value": 1.1667
+              "value": 0.5833
             },
             {
               "time": 2.0,
-              "value": 0.8309
+              "value": 0.4154
             },
             {
               "time": 2.5,
-              "value": 1.3314
+              "value": 0.6657
             },
             {
               "time": 3.0,
-              "value": 1.0493
+              "value": 0.5247
             },
             {
               "time": 3.5,
-              "value": 0.8938
+              "value": 0.4469
             },
             {
               "time": 4.0,
-              "value": 0.9546
+              "value": 0.4773
             },
             {
               "time": 4.5,
-              "value": 0.9198
+              "value": 0.4599
             },
             {
               "time": 5.0,
-              "value": 1.7402
+              "value": 0.8701
             },
             {
               "time": 5.5,
-              "value": 1.8501
+              "value": 0.925
             },
             {
               "time": 6.0,
-              "value": 1.4498
+              "value": 0.7249
             },
             {
               "time": 6.5,
-              "value": 1.5988
+              "value": 0.7994
             },
             {
               "time": 7.0,
-              "value": 1.3772
+              "value": 0.6886
             },
             {
               "time": 7.5,
-              "value": 1.5659
+              "value": 0.783
             },
             {
               "time": 8.0,
-              "value": 1.4996
+              "value": 0.7498
             },
             {
               "time": 8.5,
-              "value": 0.6692
+              "value": 0.3346
             },
             {
               "time": 9.0,
-              "value": 0.782
+              "value": 0.391
             },
             {
               "time": 9.5,
-              "value": 0.9743
+              "value": 0.4871
             },
             {
               "time": 10.0,
-              "value": 1.1463
+              "value": 0.5732
             },
             {
               "time": 10.5,
-              "value": 1.5476
+              "value": 0.7738
             },
             {
               "time": 11.0,
-              "value": 1.1293
+              "value": 0.5646
             },
             {
               "time": 11.5,
-              "value": 1.3493
+              "value": 0.6747
             },
             {
               "time": 12.0,
-              "value": 1.9188
+              "value": 0.9594
             }
           ]
         },
@@ -1943,8 +1943,8 @@
       "layer": "flames",
       "parameters": {
         "max_particles": 100,
-        "lifetime": 0.36,
-        "lifetime_variance": 0.1,
+        "lifetime": 0.72,
+        "lifetime_variance": 0.2,
         "size": 0.21,
         "size_variance": 0.07,
         "size_over_life": [
@@ -2025,12 +2025,12 @@
           ]
         ],
         "emissive": 0.2,
-        "drag": 2.5,
+        "drag": 1.25,
         "blend": "additive",
         "soft_particle_distance": 0.25,
         "render_mode": "stretched_billboard",
-        "velocity_stretch": 0.1,
-        "sprite_fps": 26.0
+        "velocity_stretch": 0.2,
+        "sprite_fps": 13.0
       },
       "inputs": {
         "sprite": "tex_flame",
@@ -2061,110 +2061,110 @@
           0.0
         ],
         "spread": 20.0,
-        "velocity": 0.4,
-        "velocity_variance": 0.35,
+        "velocity": 0.2,
+        "velocity_variance": 0.175,
         "rate": {
-          "value": 5.0149,
+          "value": 2.5074,
           "track": [
             {
               "time": 0.0,
-              "value": 5.0149
+              "value": 2.5074
             },
             {
               "time": 0.5,
-              "value": 4.1104
+              "value": 2.0552
             },
             {
               "time": 1.0,
-              "value": 5.7328
+              "value": 2.8664
             },
             {
               "time": 1.5,
-              "value": 5.3796
+              "value": 2.6898
             },
             {
               "time": 2.0,
-              "value": 4.9738
+              "value": 2.4869
             },
             {
               "time": 2.5,
-              "value": 4.1897
+              "value": 2.0948
             },
             {
               "time": 3.0,
-              "value": 4.8975
+              "value": 2.4488
             },
             {
               "time": 3.5,
-              "value": 3.7337
+              "value": 1.8668
             },
             {
               "time": 4.0,
-              "value": 3.04
+              "value": 1.52
             },
             {
               "time": 4.5,
-              "value": 3.9196
+              "value": 1.9598
             },
             {
               "time": 5.0,
-              "value": 3.9144
+              "value": 1.9572
             },
             {
               "time": 5.5,
-              "value": 3.9194
+              "value": 1.9597
             },
             {
               "time": 6.0,
-              "value": 4.1348
+              "value": 2.0674
             },
             {
               "time": 6.5,
-              "value": 5.8549
+              "value": 2.9274
             },
             {
               "time": 7.0,
-              "value": 4.7359
+              "value": 2.3679
             },
             {
               "time": 7.5,
-              "value": 5.1453
+              "value": 2.5727
             },
             {
               "time": 8.0,
-              "value": 5.1452
+              "value": 2.5726
             },
             {
               "time": 8.5,
-              "value": 5.1699
+              "value": 2.585
             },
             {
               "time": 9.0,
-              "value": 3.5528
+              "value": 1.7764
             },
             {
               "time": 9.5,
-              "value": 3.9011
+              "value": 1.9505
             },
             {
               "time": 10.0,
-              "value": 4.0914
+              "value": 2.0457
             },
             {
               "time": 10.5,
-              "value": 3.1554
+              "value": 1.5777
             },
             {
               "time": 11.0,
-              "value": 3.5666
+              "value": 1.7833
             },
             {
               "time": 11.5,
-              "value": 4.321
+              "value": 2.1605
             },
             {
               "time": 12.0,
-              "value": 5.0149
+              "value": 2.5074
             }
           ]
         },
@@ -3189,34 +3189,34 @@
       "layer": "flames",
       "parameters": {
         "max_particles": 4,
-        "lifetime": 0.372,
+        "lifetime": 0.882,
         "lifetime_variance": 0.0,
         "size": 0.2464,
         "size_variance": 0.0748,
         "size_over_life": [
           [
             0.0,
-            0.975
+            0.9831
           ],
           [
             0.1667,
-            0.95
+            0.9732
           ],
           [
             0.3333,
-            0.925
+            0.9435
           ],
           [
             0.5,
-            0.9
+            0.9139
           ],
           [
             0.6667,
-            0.8
+            0.8371
           ],
           [
             0.8333,
-            0.7
+            0.7185
           ],
           [
             1.0,
@@ -3234,8 +3234,8 @@
             0.0,
             [
               1.0,
-              0.9025,
-              0.7975,
+              0.9423,
+              0.8653,
               1.0
             ]
           ],
@@ -3243,8 +3243,8 @@
             0.1667,
             [
               1.0,
-              0.865,
-              0.735,
+              0.8998,
+              0.793,
               1.0
             ]
           ],
@@ -3252,35 +3252,35 @@
             0.3333,
             [
               1.0,
-              0.8275,
-              0.6725,
+              0.8553,
+              0.7189,
               1.0
             ]
           ],
           [
             0.5,
             [
-              0.9789,
-              0.7737,
-              0.6158,
+              0.9936,
+              0.8059,
+              0.6465,
               1.0
             ]
           ],
           [
             0.6667,
             [
-              0.9526,
-              0.7158,
-              0.5605,
+              0.9624,
+              0.7373,
+              0.581,
               1.0
             ]
           ],
           [
             0.8333,
             [
-              0.9263,
-              0.6579,
-              0.5053,
+              0.9312,
+              0.6686,
+              0.5155,
               1.0
             ]
           ],
@@ -3298,27 +3298,27 @@
         "opacity_over_life": [
           [
             0.0,
-            0.8808
+            0.9318
           ],
           [
             0.1667,
-            0.835
+            0.8775
           ],
           [
             0.3333,
-            0.7892
+            0.8232
           ],
           [
             0.5,
-            0.6158
+            0.73
           ],
           [
             0.6667,
-            0.4105
+            0.4867
           ],
           [
             0.8333,
-            0.2053
+            0.2433
           ],
           [
             1.0,
@@ -3326,12 +3326,12 @@
           ]
         ],
         "emissive": 0.24,
-        "drag": 2.2,
+        "drag": 1.1,
         "blend": "additive",
         "soft_particle_distance": 0.25,
         "render_mode": "stretched_billboard",
-        "velocity_stretch": 0.1,
-        "sprite_fps": 22.0
+        "velocity_stretch": 0.2,
+        "sprite_fps": 11.0
       },
       "inputs": {
         "sprite": "tex_flame",
@@ -3349,13 +3349,13 @@
         "points": [
           [
             -0.15,
-            0.11,
-            0.13
+            0.24,
+            -0.03
           ],
           [
             -0.15,
-            0.13,
-            0.13
+            0.26,
+            -0.03
           ]
         ],
         "curve_type": "linear",
@@ -3370,12 +3370,12 @@
       "parameters": {
         "shape": "curve",
         "direction": [
-          0.473,
-          0.848,
-          0.238
+          -0.048,
+          0.86,
+          0.508
         ],
         "spread": 0.0,
-        "velocity": 0.477,
+        "velocity": 0.399,
         "velocity_variance": 0.0,
         "rate": 0.0,
         "burst_count": 1,
@@ -3396,34 +3396,34 @@
       "layer": "flames",
       "parameters": {
         "max_particles": 4,
-        "lifetime": 0.05,
+        "lifetime": 0.156,
         "lifetime_variance": 0.0,
         "size": 0.2464,
         "size_variance": 0.0748,
         "size_over_life": [
           [
             0.0,
-            0.621
+            0.7258
           ],
           [
             0.1667,
-            0.6175
+            0.7048
           ],
           [
             0.3333,
-            0.614
+            0.6839
           ],
           [
             0.5,
-            0.6105
+            0.6629
           ],
           [
             0.6667,
-            0.607
+            0.6419
           ],
           [
             0.8333,
-            0.6035
+            0.621
           ],
           [
             1.0,
@@ -3440,54 +3440,54 @@
           [
             0.0,
             [
-              0.9055,
-              0.6121,
-              0.4616,
+              0.9331,
+              0.6728,
+              0.5195,
               1.0
             ]
           ],
           [
             0.1667,
             [
-              0.9046,
-              0.6101,
-              0.4597,
+              0.9276,
+              0.6607,
+              0.5079,
               1.0
             ]
           ],
           [
             0.3333,
             [
-              0.9037,
-              0.6081,
-              0.4577,
+              0.9221,
+              0.6486,
+              0.4963,
               1.0
             ]
           ],
           [
             0.5,
             [
-              0.9028,
-              0.6061,
-              0.4558,
+              0.9166,
+              0.6364,
+              0.4848,
               1.0
             ]
           ],
           [
             0.6667,
             [
-              0.9018,
-              0.604,
-              0.4539,
+              0.911,
+              0.6243,
+              0.4732,
               1.0
             ]
           ],
           [
             0.8333,
             [
-              0.9009,
-              0.602,
-              0.4519,
+              0.9055,
+              0.6121,
+              0.4616,
               1.0
             ]
           ],
@@ -3505,27 +3505,27 @@
         "opacity_over_life": [
           [
             0.0,
-            0.043
+            0.2582
           ],
           [
             0.1667,
-            0.0359
+            0.2152
           ],
           [
             0.3333,
-            0.0287
+            0.1722
           ],
           [
             0.5,
-            0.0215
+            0.1291
           ],
           [
             0.6667,
-            0.0143
+            0.0861
           ],
           [
             0.8333,
-            0.0072
+            0.043
           ],
           [
             1.0,
@@ -3533,12 +3533,12 @@
           ]
         ],
         "emissive": 0.24,
-        "drag": 2.2,
+        "drag": 1.1,
         "blend": "additive",
         "soft_particle_distance": 0.25,
         "render_mode": "stretched_billboard",
-        "velocity_stretch": 0.1,
-        "sprite_fps": 22.0
+        "velocity_stretch": 0.2,
+        "sprite_fps": 11.0
       },
       "inputs": {
         "sprite": "tex_flame",
@@ -3555,14 +3555,14 @@
       "parameters": {
         "points": [
           [
-            0.03,
-            0.27,
-            -0.2
+            0.29,
+            0.11,
+            -0.23
           ],
           [
-            0.03,
-            0.29000000000000004,
-            -0.2
+            0.29,
+            0.13,
+            -0.23
           ]
         ],
         "curve_type": "linear",
@@ -3577,12 +3577,12 @@
       "parameters": {
         "shape": "curve",
         "direction": [
-          -0.445,
-          0.871,
-          -0.208
+          0.677,
+          0.339,
+          -0.653
         ],
         "spread": 0.0,
-        "velocity": 0.321,
+        "velocity": 0.481,
         "velocity_variance": 0.0,
         "rate": 0.0,
         "burst_count": 1,
@@ -3603,7 +3603,7 @@
       "layer": "flames",
       "parameters": {
         "max_particles": 4,
-        "lifetime": 0.25,
+        "lifetime": 0.5,
         "lifetime_variance": 0.0,
         "size": 0.22,
         "size_variance": 0.066,
@@ -3740,12 +3740,12 @@
           ]
         ],
         "emissive": 0.3,
-        "drag": 1.5,
+        "drag": 0.75,
         "blend": "additive",
         "soft_particle_distance": 0.25,
         "render_mode": "stretched_billboard",
-        "velocity_stretch": 0.2,
-        "sprite_fps": 20.0
+        "velocity_stretch": 0.4,
+        "sprite_fps": 10.0
       },
       "inputs": {
         "sprite": "tex_flame",
@@ -3810,34 +3810,34 @@
       "layer": "flames",
       "parameters": {
         "max_particles": 4,
-        "lifetime": 0.05,
+        "lifetime": 0.5,
         "lifetime_variance": 0.0,
         "size": 0.22,
         "size_variance": 0.066,
         "size_over_life": [
           [
             0.0,
-            0.6546
+            0.9357
           ],
           [
             0.1667,
-            0.6538
+            0.8881
           ],
           [
             0.3333,
-            0.653
+            0.8405
           ],
           [
             0.5,
-            0.6523
+            0.7929
           ],
           [
             0.6667,
-            0.6515
+            0.7452
           ],
           [
             0.8333,
-            0.6508
+            0.6976
           ],
           [
             1.0,
@@ -3854,54 +3854,54 @@
           [
             0.0,
             [
-              0.9021,
-              0.6046,
-              0.4544,
+              1.0,
+              0.865,
+              0.735,
               1.0
             ]
           ],
           [
             0.1667,
             [
-              0.9018,
-              0.6039,
-              0.4537,
+              1.0,
+              0.8337,
+              0.6829,
               1.0
             ]
           ],
           [
             0.3333,
             [
-              0.9014,
-              0.6031,
-              0.4529,
+              0.9877,
+              0.793,
+              0.6342,
               1.0
             ]
           ],
           [
             0.5,
             [
-              0.9011,
-              0.6023,
-              0.4522,
+              0.9658,
+              0.7447,
+              0.5882,
               1.0
             ]
           ],
           [
             0.6667,
             [
-              0.9007,
-              0.6015,
-              0.4515,
+              0.9439,
+              0.6965,
+              0.5421,
               1.0
             ]
           ],
           [
             0.8333,
             [
-              0.9004,
-              0.6008,
-              0.4507,
+              0.9219,
+              0.6482,
+              0.4961,
               1.0
             ]
           ],
@@ -3919,27 +3919,27 @@
         "opacity_over_life": [
           [
             0.0,
-            0.008
+            0.6
           ],
           [
             0.1667,
-            0.0067
+            0.4889
           ],
           [
             0.3333,
-            0.0053
+            0.3778
           ],
           [
             0.5,
-            0.004
+            0.2667
           ],
           [
             0.6667,
-            0.0027
+            0.1667
           ],
           [
             0.8333,
-            0.0013
+            0.0833
           ],
           [
             1.0,
@@ -3947,12 +3947,12 @@
           ]
         ],
         "emissive": 0.3,
-        "drag": 1.5,
+        "drag": 0.75,
         "blend": "additive",
         "soft_particle_distance": 0.25,
         "render_mode": "stretched_billboard",
-        "velocity_stretch": 0.2,
-        "sprite_fps": 20.0
+        "velocity_stretch": 0.4,
+        "sprite_fps": 10.0
       },
       "inputs": {
         "sprite": "tex_flame",
@@ -3969,14 +3969,14 @@
       "parameters": {
         "points": [
           [
-            0.24,
-            0.38,
-            -0.09
+            0.0,
+            0.1,
+            0.0
           ],
           [
-            0.24,
-            0.4,
-            -0.09
+            0.0,
+            0.12000000000000001,
+            0.0
           ]
         ],
         "curve_type": "linear",
@@ -3991,15 +3991,15 @@
       "parameters": {
         "shape": "curve",
         "direction": [
-          -0.213,
-          0.878,
-          -0.428
+          0.0,
+          1.0,
+          0.0
         ],
         "spread": 0.0,
-        "velocity": 1.347,
+        "velocity": 0.0,
         "velocity_variance": 0.0,
         "rate": 0.0,
-        "burst_count": 1,
+        "burst_count": 0,
         "burst_times": [
           0.0
         ],
@@ -4017,34 +4017,34 @@
       "layer": "flames",
       "parameters": {
         "max_particles": 4,
-        "lifetime": 0.103,
-        "lifetime_variance": 0.0824,
+        "lifetime": 0.311,
+        "lifetime_variance": 0.2488,
         "size": 0.21,
         "size_variance": 0.07,
         "size_over_life": [
           [
             0.0,
-            0.6748
+            0.7894
           ],
           [
             0.1667,
-            0.6373
+            0.7328
           ],
           [
             0.3333,
-            0.5999
+            0.6763
           ],
           [
             0.5,
-            0.5624
+            0.6197
           ],
           [
             0.6667,
-            0.5249
+            0.5631
           ],
           [
             0.8333,
-            0.4875
+            0.5066
           ],
           [
             1.0,
@@ -4061,54 +4061,54 @@
           [
             0.0,
             [
-              0.9753,
-              0.7656,
-              0.6081,
+              1.0,
+              0.8395,
+              0.6925,
               1.0
             ]
           ],
           [
             0.1667,
             [
-              0.9627,
-              0.738,
-              0.5818,
+              0.9947,
+              0.8084,
+              0.6489,
               1.0
             ]
           ],
           [
             0.3333,
             [
-              0.9502,
-              0.7104,
-              0.5554,
+              0.9758,
+              0.7667,
+              0.6091,
               1.0
             ]
           ],
           [
             0.5,
             [
-              0.9376,
-              0.6828,
-              0.5291,
+              0.9568,
+              0.725,
+              0.5694,
               1.0
             ]
           ],
           [
             0.6667,
             [
-              0.9251,
-              0.6552,
-              0.5027,
+              0.9379,
+              0.6834,
+              0.5296,
               1.0
             ]
           ],
           [
             0.8333,
             [
-              0.9125,
-              0.6276,
-              0.4764,
+              0.9189,
+              0.6417,
+              0.4898,
               1.0
             ]
           ],
@@ -4126,27 +4126,27 @@
         "opacity_over_life": [
           [
             0.0,
-            0.5722
+            0.8133
           ],
           [
             0.1667,
-            0.4769
+            0.7199
           ],
           [
             0.3333,
-            0.3815
+            0.5759
           ],
           [
             0.5,
-            0.2861
+            0.4319
           ],
           [
             0.6667,
-            0.1907
+            0.288
           ],
           [
             0.8333,
-            0.0954
+            0.144
           ],
           [
             1.0,
@@ -4154,12 +4154,12 @@
           ]
         ],
         "emissive": 0.2,
-        "drag": 2.5,
+        "drag": 1.25,
         "blend": "additive",
         "soft_particle_distance": 0.25,
         "render_mode": "stretched_billboard",
-        "velocity_stretch": 0.1,
-        "sprite_fps": 26.0
+        "velocity_stretch": 0.2,
+        "sprite_fps": 13.0
       },
       "inputs": {
         "sprite": "tex_flame",
@@ -4176,14 +4176,14 @@
       "parameters": {
         "points": [
           [
-            0.2,
-            0.12,
-            -0.08
+            -0.09,
+            0.07,
+            0.25
           ],
           [
-            0.03,
-            0.27,
-            0.27
+            -0.23,
+            0.16,
+            -0.04
           ]
         ],
         "curve_type": "linear",
@@ -4198,13 +4198,13 @@
       "parameters": {
         "shape": "curve",
         "direction": [
-          0.443,
-          0.884,
-          0.147
+          0.008,
+          0.609,
+          0.793
         ],
-        "spread": 31.1,
-        "velocity": 0.552,
-        "velocity_variance": 0.235,
+        "spread": 23.2,
+        "velocity": 0.206,
+        "velocity_variance": 0.065,
         "rate": 0.0,
         "burst_count": 2,
         "burst_times": [
