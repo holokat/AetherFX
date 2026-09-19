@@ -1,0 +1,3297 @@
+{
+  "schema_version": "0.1.0",
+  "name": "Chimney Smoke",
+  "description": "Always-on chimney smoke: soft, lit grey wood smoke that curls out of the opening, leans and bends with gusting wind and thins into haze about 5 m up.",
+  "duration": 12.0,
+  "seed": 40917,
+  "timeline": {
+    "phases": [
+      {
+        "name": "always_on",
+        "start": 0.0,
+        "end": 12.0
+      }
+    ]
+  },
+  "layers": [
+    {
+      "id": "smoke",
+      "name": "Smoke",
+      "role": "ambient"
+    },
+    {
+      "id": "light",
+      "name": "Light",
+      "role": "ambient"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "cam",
+      "type": "camera",
+      "parameters": {
+        "position": [
+          2.6,
+          1.3,
+          12.4
+        ],
+        "target": [
+          1.2,
+          3.1,
+          0.0
+        ],
+        "fov": 35.0
+      }
+    },
+    {
+      "id": "chimney",
+      "type": "mesh",
+      "layer": "smoke",
+      "parameters": {
+        "primitive": "sphere",
+        "radius": 0.01,
+        "segments": 4,
+        "visible": false
+      }
+    },
+    {
+      "id": "wind_heading",
+      "type": "mesh",
+      "layer": "smoke",
+      "parent": "chimney",
+      "parameters": {
+        "primitive": "sphere",
+        "radius": 0.01,
+        "segments": 4,
+        "visible": false,
+        "rotation": [
+          0.0,
+          1.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "id": "wind_gust",
+      "type": "mesh",
+      "layer": "smoke",
+      "parent": "wind_heading",
+      "parameters": {
+        "primitive": "sphere",
+        "radius": 0.01,
+        "segments": 4,
+        "visible": false,
+        "rotation": {
+          "value": [
+            8.6323,
+            0.0,
+            -24.9374
+          ],
+          "track": [
+            {
+              "time": 0.0,
+              "value": [
+                8.6323,
+                0.0,
+                -24.9374
+              ]
+            },
+            {
+              "time": 0.5,
+              "value": [
+                4.5144,
+                0.0,
+                -25.265
+              ]
+            },
+            {
+              "time": 1.0,
+              "value": [
+                2.1936,
+                0.0,
+                -23.6506
+              ]
+            },
+            {
+              "time": 1.5,
+              "value": [
+                3.7484,
+                0.0,
+                -23.3675
+              ]
+            },
+            {
+              "time": 2.0,
+              "value": [
+                3.6027,
+                0.0,
+                -24.4611
+              ]
+            },
+            {
+              "time": 2.5,
+              "value": [
+                -2.3322,
+                0.0,
+                -24.5649
+              ]
+            },
+            {
+              "time": 3.0,
+              "value": [
+                -9.443,
+                0.0,
+                -24.9068
+              ]
+            },
+            {
+              "time": 3.5,
+              "value": [
+                -10.132,
+                0.0,
+                -26.3374
+              ]
+            },
+            {
+              "time": 4.0,
+              "value": [
+                -4.2907,
+                0.0,
+                -25.8956
+              ]
+            },
+            {
+              "time": 4.5,
+              "value": [
+                0.7835,
+                0.0,
+                -23.3352
+              ]
+            },
+            {
+              "time": 5.0,
+              "value": [
+                0.8403,
+                0.0,
+                -21.7626
+              ]
+            },
+            {
+              "time": 5.5,
+              "value": [
+                0.1001,
+                0.0,
+                -20.8224
+              ]
+            },
+            {
+              "time": 6.0,
+              "value": [
+                3.8446,
+                0.0,
+                -19.0626
+              ]
+            },
+            {
+              "time": 6.5,
+              "value": [
+                9.466,
+                0.0,
+                -18.735
+              ]
+            },
+            {
+              "time": 7.0,
+              "value": [
+                9.5445,
+                0.0,
+                -20.3494
+              ]
+            },
+            {
+              "time": 7.5,
+              "value": [
+                2.6019,
+                0.0,
+                -20.6325
+              ]
+            },
+            {
+              "time": 8.0,
+              "value": [
+                -4.3416,
+                0.0,
+                -19.5389
+              ]
+            },
+            {
+              "time": 8.5,
+              "value": [
+                -5.298,
+                0.0,
+                -19.4351
+              ]
+            },
+            {
+              "time": 9.0,
+              "value": [
+                -3.0339,
+                0.0,
+                -19.0932
+              ]
+            },
+            {
+              "time": 9.5,
+              "value": [
+                -3.8485,
+                0.0,
+                -17.6626
+              ]
+            },
+            {
+              "time": 10.0,
+              "value": [
+                -7.4473,
+                0.0,
+                -18.1044
+              ]
+            },
+            {
+              "time": 10.5,
+              "value": [
+                -7.1339,
+                0.0,
+                -20.6648
+              ]
+            },
+            {
+              "time": 11.0,
+              "value": [
+                -0.1014,
+                0.0,
+                -22.2374
+              ]
+            },
+            {
+              "time": 11.5,
+              "value": [
+                7.53,
+                0.0,
+                -23.1776
+              ]
+            },
+            {
+              "time": 12.0,
+              "value": [
+                8.6323,
+                0.0,
+                -24.9374
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "tex_puff",
+      "type": "texture",
+      "parameters": {
+        "width": 128,
+        "height": 128,
+        "frames": 16,
+        "graph": {
+          "nodes": [
+            {
+              "id": "w1",
+              "op": "fbm",
+              "params": {
+                "frequency": 1.8,
+                "octaves": 2,
+                "seed": 11,
+                "animate": 0.5
+              }
+            },
+            {
+              "id": "w2",
+              "op": "fbm",
+              "params": {
+                "frequency": 1.8,
+                "octaves": 2,
+                "seed": 29,
+                "animate": 0.5
+              }
+            },
+            {
+              "id": "w1l",
+              "op": "levels",
+              "params": {
+                "in_low": 0.25,
+                "in_high": 0.75
+              },
+              "inputs": {
+                "a": "w1"
+              }
+            },
+            {
+              "id": "w2l",
+              "op": "levels",
+              "params": {
+                "in_low": 0.25,
+                "in_high": 0.75
+              },
+              "inputs": {
+                "a": "w2"
+              }
+            },
+            {
+              "id": "wp",
+              "op": "channel_pack",
+              "params": {
+                "channel": "luminance"
+              },
+              "inputs": {
+                "r": "w1l",
+                "g": "w2l"
+              }
+            },
+            {
+              "id": "rd",
+              "op": "gradient_radial",
+              "params": {
+                "radius": 0.47,
+                "falloff": "smooth"
+              }
+            },
+            {
+              "id": "shape",
+              "op": "distort",
+              "params": {
+                "amount": 0.09
+              },
+              "inputs": {
+                "a": "rd",
+                "by": "wp"
+              }
+            },
+            {
+              "id": "n",
+              "op": "fbm",
+              "params": {
+                "frequency": 2.1,
+                "octaves": 5,
+                "gain": 0.55,
+                "seed": 3,
+                "animate": 0.7
+              }
+            },
+            {
+              "id": "nw",
+              "op": "distort",
+              "params": {
+                "amount": 0.07
+              },
+              "inputs": {
+                "a": "n",
+                "by": "wp"
+              }
+            },
+            {
+              "id": "nl",
+              "op": "levels",
+              "params": {
+                "in_low": 0.2,
+                "in_high": 0.8,
+                "out_low": 0.3
+              },
+              "inputs": {
+                "a": "nw"
+              }
+            },
+            {
+              "id": "cells",
+              "op": "worley",
+              "params": {
+                "frequency": 3.2,
+                "octaves": 2,
+                "seed": 8,
+                "animate": 0.4
+              }
+            },
+            {
+              "id": "lobes",
+              "op": "invert",
+              "inputs": {
+                "a": "cells"
+              }
+            },
+            {
+              "id": "lobes_l",
+              "op": "levels",
+              "params": {
+                "in_low": 0.3,
+                "in_high": 1.0
+              },
+              "inputs": {
+                "a": "lobes"
+              }
+            },
+            {
+              "id": "lobes_w",
+              "op": "distort",
+              "params": {
+                "amount": 0.05
+              },
+              "inputs": {
+                "a": "lobes_l",
+                "by": "wp"
+              }
+            },
+            {
+              "id": "detail",
+              "op": "math",
+              "params": {
+                "mode": "lerp",
+                "factor": 0.45
+              },
+              "inputs": {
+                "a": "nl",
+                "b": "lobes_w"
+              }
+            },
+            {
+              "id": "m",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "shape",
+                "b": "detail"
+              }
+            },
+            {
+              "id": "alpha",
+              "op": "levels",
+              "params": {
+                "in_low": 0.1,
+                "in_high": 0.75,
+                "gamma": 1.15
+              },
+              "inputs": {
+                "a": "m"
+              }
+            },
+            {
+              "id": "shade",
+              "op": "levels",
+              "params": {
+                "in_low": 0.0,
+                "in_high": 0.6,
+                "out_low": 0.72
+              },
+              "inputs": {
+                "a": "m"
+              }
+            },
+            {
+              "id": "out",
+              "op": "channel_pack",
+              "params": {
+                "channel": "luminance"
+              },
+              "inputs": {
+                "r": "shade",
+                "g": "shade",
+                "b": "shade",
+                "a": "alpha"
+              }
+            }
+          ],
+          "output": "out"
+        }
+      }
+    },
+    {
+      "id": "tex_erode",
+      "type": "texture",
+      "parameters": {
+        "width": 128,
+        "height": 128,
+        "graph": {
+          "nodes": [
+            {
+              "id": "a",
+              "op": "fbm",
+              "params": {
+                "frequency": 3.0,
+                "octaves": 4,
+                "gain": 0.5,
+                "seed": 4407,
+                "tile": true
+              }
+            },
+            {
+              "id": "b",
+              "op": "blur",
+              "params": {
+                "radius": 2.0
+              },
+              "inputs": {
+                "a": "a"
+              }
+            },
+            {
+              "id": "l",
+              "op": "levels",
+              "params": {
+                "in_low": 0.22,
+                "in_high": 0.78
+              },
+              "inputs": {
+                "a": "b"
+              }
+            }
+          ],
+          "output": "l"
+        }
+      }
+    },
+    {
+      "id": "f_cool",
+      "type": "force",
+      "parameters": {
+        "force_type": "directional",
+        "direction": [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        "strength": 0.03
+      }
+    },
+    {
+      "id": "f_billow",
+      "type": "force",
+      "parameters": {
+        "force_type": "curl_noise",
+        "strength": 0.18,
+        "frequency": 0.2,
+        "octaves": 2,
+        "speed": 0.22
+      }
+    },
+    {
+      "id": "f_curl",
+      "type": "force",
+      "parameters": {
+        "force_type": "curl_noise",
+        "strength": 0.2,
+        "frequency": 0.9,
+        "octaves": 2,
+        "speed": 0.45
+      }
+    },
+    {
+      "id": "roof",
+      "type": "collider",
+      "parent": "chimney",
+      "parameters": {
+        "collider_type": "plane",
+        "normal": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "position": [
+          0.0,
+          -0.15,
+          0.0
+        ],
+        "bounce": 0.0,
+        "friction": 0.1
+      }
+    },
+    {
+      "id": "mat_plume",
+      "type": "material",
+      "parameters": {
+        "blend": "alpha",
+        "shading": "lit",
+        "base_color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emissive_color": [
+          0.62,
+          0.66,
+          0.78,
+          1.0
+        ],
+        "soft_particle": true,
+        "depth_fade": 0.3,
+        "dissolve": 0.0,
+        "erosion": 0.0
+      },
+      "inputs": {
+        "noise_texture": "tex_erode"
+      }
+    },
+    {
+      "id": "mat_wisp",
+      "type": "material",
+      "parameters": {
+        "blend": "alpha",
+        "shading": "lit",
+        "base_color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emissive_color": [
+          0.62,
+          0.66,
+          0.78,
+          1.0
+        ],
+        "soft_particle": true,
+        "depth_fade": 0.3,
+        "dissolve": 0.0,
+        "erosion": 0.0
+      },
+      "inputs": {
+        "noise_texture": "tex_erode"
+      }
+    },
+    {
+      "id": "ps_wisp",
+      "type": "particle_system",
+      "layer": "smoke",
+      "parameters": {
+        "max_particles": 40,
+        "lifetime": 1.5,
+        "lifetime_variance": 0.25,
+        "size": 0.32,
+        "size_variance": 0.0704,
+        "size_over_life": [
+          [
+            0.0,
+            0.5
+          ],
+          [
+            1.0,
+            2.1
+          ]
+        ],
+        "color": [
+          0.74,
+          0.74,
+          0.76,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              0.86,
+              0.8,
+              0.74,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.95,
+              0.94,
+              0.94,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.45,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.08,
+            1.0
+          ],
+          [
+            0.55,
+            0.75
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.24,
+        "drag": 0.25,
+        "rotation_variance": 180.0,
+        "angular_velocity_variance": 16.0,
+        "render_mode": "stretched_billboard",
+        "velocity_stretch": 0.4,
+        "blend": "alpha",
+        "sort": true,
+        "soft_particle_distance": 0.3,
+        "collision_radius": 0.05,
+        "bounce": 0.0,
+        "friction": 0.1
+      },
+      "inputs": {
+        "sprite": "tex_puff",
+        "material": "mat_wisp",
+        "forces": [
+          "f_cool",
+          "f_billow",
+          "f_curl"
+        ],
+        "colliders": [
+          "roof"
+        ]
+      }
+    },
+    {
+      "id": "e_wisp",
+      "type": "emitter",
+      "layer": "smoke",
+      "parent": "wind_gust",
+      "parameters": {
+        "shape": "disc",
+        "radius": 0.16,
+        "direction": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "spread": 6.0,
+        "velocity": 1.76,
+        "velocity_variance": 0.25,
+        "rate": {
+          "value": 10.949,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 10.949
+            },
+            {
+              "time": 0.5,
+              "value": 11.5338
+            },
+            {
+              "time": 1.0,
+              "value": 8.7664
+            },
+            {
+              "time": 1.5,
+              "value": 7.5173
+            },
+            {
+              "time": 2.0,
+              "value": 8.2895
+            },
+            {
+              "time": 2.5,
+              "value": 7.4998
+            },
+            {
+              "time": 3.0,
+              "value": 7.46
+            },
+            {
+              "time": 3.5,
+              "value": 10.3671
+            },
+            {
+              "time": 4.0,
+              "value": 11.5438
+            },
+            {
+              "time": 4.5,
+              "value": 9.6667
+            },
+            {
+              "time": 5.0,
+              "value": 9.1381
+            },
+            {
+              "time": 5.5,
+              "value": 9.192
+            },
+            {
+              "time": 6.0,
+              "value": 7.051
+            },
+            {
+              "time": 6.5,
+              "value": 6.4662
+            },
+            {
+              "time": 7.0,
+              "value": 9.2336
+            },
+            {
+              "time": 7.5,
+              "value": 10.4827
+            },
+            {
+              "time": 8.0,
+              "value": 9.7105
+            },
+            {
+              "time": 8.5,
+              "value": 10.5002
+            },
+            {
+              "time": 9.0,
+              "value": 10.54
+            },
+            {
+              "time": 9.5,
+              "value": 7.6329
+            },
+            {
+              "time": 10.0,
+              "value": 6.4562
+            },
+            {
+              "time": 10.5,
+              "value": 8.3333
+            },
+            {
+              "time": 11.0,
+              "value": 8.8619
+            },
+            {
+              "time": 11.5,
+              "value": 8.808
+            },
+            {
+              "time": 12.0,
+              "value": 10.949
+            }
+          ]
+        },
+        "start_time": 0.0,
+        "duration": -1.0
+      },
+      "inputs": {
+        "particle": "ps_wisp"
+      }
+    },
+    {
+      "id": "ps_plume",
+      "type": "particle_system",
+      "layer": "smoke",
+      "parameters": {
+        "max_particles": 110,
+        "lifetime": 5.0,
+        "lifetime_variance": 0.4,
+        "size": 1.0,
+        "size_variance": 0.22,
+        "size_over_life": [
+          [
+            0.0,
+            0.3
+          ],
+          [
+            0.2,
+            0.7
+          ],
+          [
+            0.5,
+            1.3
+          ],
+          [
+            1.0,
+            2.6
+          ]
+        ],
+        "color": [
+          0.74,
+          0.74,
+          0.76,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              0.78,
+              0.76,
+              0.74,
+              1.0
+            ]
+          ],
+          [
+            0.3,
+            [
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              1.04,
+              1.06,
+              1.1,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.34,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.06,
+            0.85
+          ],
+          [
+            0.16,
+            1.0
+          ],
+          [
+            0.35,
+            0.62
+          ],
+          [
+            0.55,
+            0.3
+          ],
+          [
+            0.75,
+            0.1
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.13,
+        "drag": 0.25,
+        "rotation_variance": 180.0,
+        "angular_velocity_variance": 16.0,
+        "render_mode": "billboard",
+        "blend": "alpha",
+        "sort": true,
+        "soft_particle_distance": 0.3,
+        "collision_radius": 0.05,
+        "bounce": 0.0,
+        "friction": 0.1
+      },
+      "inputs": {
+        "sprite": "tex_puff",
+        "material": "mat_plume",
+        "forces": [
+          "f_cool",
+          "f_billow",
+          "f_curl"
+        ],
+        "colliders": [
+          "roof"
+        ]
+      }
+    },
+    {
+      "id": "e_plume",
+      "type": "emitter",
+      "layer": "smoke",
+      "parent": "wind_gust",
+      "parameters": {
+        "shape": "disc",
+        "radius": 0.2,
+        "direction": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "spread": 7.0,
+        "velocity": 1.6,
+        "velocity_variance": 0.2,
+        "rate": {
+          "value": 15.3055,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 15.3055
+            },
+            {
+              "time": 0.5,
+              "value": 14.2642
+            },
+            {
+              "time": 1.0,
+              "value": 13.1553
+            },
+            {
+              "time": 1.5,
+              "value": 13.777
+            },
+            {
+              "time": 2.0,
+              "value": 14.4396
+            },
+            {
+              "time": 2.5,
+              "value": 12.6759
+            },
+            {
+              "time": 3.0,
+              "value": 9.2965
+            },
+            {
+              "time": 3.5,
+              "value": 7.6716
+            },
+            {
+              "time": 4.0,
+              "value": 9.1741
+            },
+            {
+              "time": 4.5,
+              "value": 11.4224
+            },
+            {
+              "time": 5.0,
+              "value": 11.8519
+            },
+            {
+              "time": 5.5,
+              "value": 11.3108
+            },
+            {
+              "time": 6.0,
+              "value": 12.4052
+            },
+            {
+              "time": 6.5,
+              "value": 15.1521
+            },
+            {
+              "time": 7.0,
+              "value": 16.5153
+            },
+            {
+              "time": 7.5,
+              "value": 14.6285
+            },
+            {
+              "time": 8.0,
+              "value": 11.5204
+            },
+            {
+              "time": 8.5,
+              "value": 10.3133
+            },
+            {
+              "time": 9.0,
+              "value": 10.9928
+            },
+            {
+              "time": 9.5,
+              "value": 10.9121
+            },
+            {
+              "time": 10.0,
+              "value": 9.1553
+            },
+            {
+              "time": 10.5,
+              "value": 8.1721
+            },
+            {
+              "time": 11.0,
+              "value": 10.1882
+            },
+            {
+              "time": 11.5,
+              "value": 13.7
+            },
+            {
+              "time": 12.0,
+              "value": 15.3055
+            }
+          ]
+        },
+        "start_time": 0.0,
+        "duration": -1.0
+      },
+      "inputs": {
+        "particle": "ps_plume"
+      }
+    },
+    {
+      "id": "mat_plume_pre1",
+      "type": "material",
+      "parameters": {
+        "blend": "alpha",
+        "shading": "lit",
+        "base_color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emissive_color": [
+          0.62,
+          0.66,
+          0.78,
+          1.0
+        ],
+        "soft_particle": true,
+        "depth_fade": 0.3,
+        "dissolve": 0.0,
+        "erosion": 0.0
+      },
+      "inputs": {
+        "noise_texture": "tex_erode"
+      }
+    },
+    {
+      "id": "ps_plume_pre1",
+      "type": "particle_system",
+      "layer": "smoke",
+      "parameters": {
+        "max_particles": 24,
+        "lifetime": 4.788,
+        "lifetime_variance": 0.306,
+        "size": 1.0,
+        "size_variance": 0.22,
+        "size_over_life": [
+          [
+            0.0,
+            0.3848
+          ],
+          [
+            0.1667,
+            0.704
+          ],
+          [
+            0.3333,
+            1.0232
+          ],
+          [
+            0.5,
+            1.3551
+          ],
+          [
+            0.6667,
+            1.7701
+          ],
+          [
+            0.8333,
+            2.185
+          ],
+          [
+            1.0,
+            2.6
+          ]
+        ],
+        "color": [
+          0.74,
+          0.74,
+          0.76,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              0.8111,
+              0.7939,
+              0.7767,
+              1.0
+            ]
+          ],
+          [
+            0.1667,
+            [
+              0.9281,
+              0.9216,
+              0.9151,
+              1.0
+            ]
+          ],
+          [
+            0.3333,
+            [
+              1.0035,
+              1.0053,
+              1.0088,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              1.0126,
+              1.019,
+              1.0316,
+              1.0
+            ]
+          ],
+          [
+            0.6667,
+            [
+              1.0218,
+              1.0326,
+              1.0544,
+              1.0
+            ]
+          ],
+          [
+            0.8333,
+            [
+              1.0309,
+              1.0463,
+              1.0772,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              1.04,
+              1.06,
+              1.1,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.34,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.6007
+          ],
+          [
+            0.1667,
+            0.916
+          ],
+          [
+            0.3333,
+            0.6014
+          ],
+          [
+            0.5,
+            0.3461
+          ],
+          [
+            0.6667,
+            0.1692
+          ],
+          [
+            0.8333,
+            0.0638
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.13,
+        "drag": 0.25,
+        "rotation_variance": 180.0,
+        "angular_velocity_variance": 16.0,
+        "render_mode": "billboard",
+        "blend": "alpha",
+        "sort": true,
+        "soft_particle_distance": 0.3,
+        "collision_radius": 0.05,
+        "bounce": 0.0,
+        "friction": 0.1
+      },
+      "inputs": {
+        "sprite": "tex_puff",
+        "material": "mat_plume_pre1",
+        "forces": [
+          "f_cool",
+          "f_billow",
+          "f_curl"
+        ],
+        "colliders": [
+          "roof"
+        ]
+      }
+    },
+    {
+      "id": "path_plume_pre1",
+      "type": "curve",
+      "layer": "smoke",
+      "parameters": {
+        "points": [
+          [
+            0.01,
+            0.02,
+            0.01
+          ],
+          [
+            0.11,
+            0.11,
+            -0.1
+          ],
+          [
+            0.06,
+            0.23,
+            -0.17
+          ],
+          [
+            -0.02,
+            0.32,
+            0.07
+          ],
+          [
+            0.05,
+            0.45,
+            0.1
+          ]
+        ],
+        "curve_type": "linear",
+        "segments": 10
+      }
+    },
+    {
+      "id": "e_plume_pre1",
+      "type": "emitter",
+      "layer": "smoke",
+      "parent": "wind_gust",
+      "parameters": {
+        "shape": "curve",
+        "direction": [
+          0.003,
+          1.0,
+          0.017
+        ],
+        "spread": 5.6,
+        "velocity": 1.595,
+        "velocity_variance": 0.061,
+        "rate": 0.0,
+        "burst_count": 5,
+        "burst_times": [
+          0.0
+        ],
+        "start_time": 0.0,
+        "duration": 0.05
+      },
+      "inputs": {
+        "particle": "ps_plume_pre1",
+        "shape_curve": "path_plume_pre1"
+      }
+    },
+    {
+      "id": "mat_plume_pre2",
+      "type": "material",
+      "parameters": {
+        "blend": "alpha",
+        "shading": "lit",
+        "base_color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emissive_color": [
+          0.62,
+          0.66,
+          0.78,
+          1.0
+        ],
+        "soft_particle": true,
+        "depth_fade": 0.3,
+        "dissolve": 0.0,
+        "erosion": 0.0
+      },
+      "inputs": {
+        "noise_texture": "tex_erode"
+      }
+    },
+    {
+      "id": "ps_plume_pre2",
+      "type": "particle_system",
+      "layer": "smoke",
+      "parameters": {
+        "max_particles": 24,
+        "lifetime": 4.121,
+        "lifetime_variance": 0.701,
+        "size": 1.0,
+        "size_variance": 0.22,
+        "size_over_life": [
+          [
+            0.0,
+            0.6516
+          ],
+          [
+            0.1667,
+            0.9263
+          ],
+          [
+            0.3333,
+            1.2011
+          ],
+          [
+            0.5,
+            1.5285
+          ],
+          [
+            0.6667,
+            1.8857
+          ],
+          [
+            0.8333,
+            2.2428
+          ],
+          [
+            1.0,
+            2.6
+          ]
+        ],
+        "color": [
+          0.74,
+          0.74,
+          0.76,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              0.9089,
+              0.9006,
+              0.8924,
+              1.0
+            ]
+          ],
+          [
+            0.1667,
+            [
+              1.0008,
+              1.0011,
+              1.0019,
+              1.0
+            ]
+          ],
+          [
+            0.3333,
+            [
+              1.0086,
+              1.0129,
+              1.0215,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              1.0165,
+              1.0247,
+              1.0411,
+              1.0
+            ]
+          ],
+          [
+            0.6667,
+            [
+              1.0243,
+              1.0365,
+              1.0608,
+              1.0
+            ]
+          ],
+          [
+            0.8333,
+            [
+              1.0322,
+              1.0482,
+              1.0804,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              1.04,
+              1.06,
+              1.1,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.34,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.9684
+          ],
+          [
+            0.1667,
+            0.6937
+          ],
+          [
+            0.3333,
+            0.4591
+          ],
+          [
+            0.5,
+            0.2621
+          ],
+          [
+            0.6667,
+            0.1247
+          ],
+          [
+            0.8333,
+            0.0549
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.13,
+        "drag": 0.25,
+        "rotation_variance": 180.0,
+        "angular_velocity_variance": 16.0,
+        "render_mode": "billboard",
+        "blend": "alpha",
+        "sort": true,
+        "soft_particle_distance": 0.3,
+        "collision_radius": 0.05,
+        "bounce": 0.0,
+        "friction": 0.1
+      },
+      "inputs": {
+        "sprite": "tex_puff",
+        "material": "mat_plume_pre2",
+        "forces": [
+          "f_cool",
+          "f_billow",
+          "f_curl"
+        ],
+        "colliders": [
+          "roof"
+        ]
+      }
+    },
+    {
+      "id": "path_plume_pre2",
+      "type": "curve",
+      "layer": "smoke",
+      "parameters": {
+        "points": [
+          [
+            -0.04,
+            0.51,
+            -0.15
+          ],
+          [
+            -0.11,
+            0.72,
+            0.11
+          ],
+          [
+            -0.12,
+            0.73,
+            0.02
+          ],
+          [
+            -0.04,
+            0.98,
+            0.13
+          ],
+          [
+            -0.1,
+            1.11,
+            -0.07
+          ],
+          [
+            -0.04,
+            1.15,
+            -0.28
+          ],
+          [
+            -0.13,
+            1.24,
+            -0.19
+          ],
+          [
+            -0.35,
+            1.34,
+            -0.12
+          ],
+          [
+            -0.12,
+            1.41,
+            -0.26
+          ],
+          [
+            0.16,
+            1.54,
+            -0.41
+          ],
+          [
+            -0.04,
+            1.8,
+            -0.17
+          ],
+          [
+            0.17,
+            1.81,
+            -0.56
+          ],
+          [
+            -0.53,
+            2.16,
+            -0.22
+          ]
+        ],
+        "curve_type": "linear",
+        "segments": 26
+      }
+    },
+    {
+      "id": "e_plume_pre2",
+      "type": "emitter",
+      "layer": "smoke",
+      "parent": "wind_gust",
+      "parameters": {
+        "shape": "curve",
+        "direction": [
+          -0.069,
+          0.997,
+          -0.045
+        ],
+        "spread": 7.2,
+        "velocity": 1.529,
+        "velocity_variance": 0.123,
+        "rate": 0.0,
+        "burst_count": 13,
+        "burst_times": [
+          0.0
+        ],
+        "start_time": 0.0,
+        "duration": 0.05
+      },
+      "inputs": {
+        "particle": "ps_plume_pre2",
+        "shape_curve": "path_plume_pre2"
+      }
+    },
+    {
+      "id": "mat_plume_pre3",
+      "type": "material",
+      "parameters": {
+        "blend": "alpha",
+        "shading": "lit",
+        "base_color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emissive_color": [
+          0.62,
+          0.66,
+          0.78,
+          1.0
+        ],
+        "soft_particle": true,
+        "depth_fade": 0.3,
+        "dissolve": 0.0,
+        "erosion": 0.0
+      },
+      "inputs": {
+        "noise_texture": "tex_erode"
+      }
+    },
+    {
+      "id": "ps_plume_pre3",
+      "type": "particle_system",
+      "layer": "smoke",
+      "parameters": {
+        "max_particles": 24,
+        "lifetime": 2.924,
+        "lifetime_variance": 0.699,
+        "size": 1.0,
+        "size_variance": 0.22,
+        "size_over_life": [
+          [
+            0.0,
+            1.1304
+          ],
+          [
+            0.1667,
+            1.3329
+          ],
+          [
+            0.3333,
+            1.5863
+          ],
+          [
+            0.5,
+            1.8398
+          ],
+          [
+            0.6667,
+            2.0932
+          ],
+          [
+            0.8333,
+            2.3466
+          ],
+          [
+            1.0,
+            2.6
+          ]
+        ],
+        "color": [
+          0.74,
+          0.74,
+          0.76,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0066,
+              1.0099,
+              1.0165,
+              1.0
+            ]
+          ],
+          [
+            0.1667,
+            [
+              1.0122,
+              1.0182,
+              1.0304,
+              1.0
+            ]
+          ],
+          [
+            0.3333,
+            [
+              1.0177,
+              1.0266,
+              1.0443,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              1.0233,
+              1.0349,
+              1.0582,
+              1.0
+            ]
+          ],
+          [
+            0.6667,
+            [
+              1.0289,
+              1.0433,
+              1.0722,
+              1.0
+            ]
+          ],
+          [
+            0.8333,
+            [
+              1.0344,
+              1.0516,
+              1.0861,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              1.04,
+              1.06,
+              1.1,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.34,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.5157
+          ],
+          [
+            0.1667,
+            0.3597
+          ],
+          [
+            0.3333,
+            0.2399
+          ],
+          [
+            0.5,
+            0.1424
+          ],
+          [
+            0.6667,
+            0.078
+          ],
+          [
+            0.8333,
+            0.039
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.13,
+        "drag": 0.25,
+        "rotation_variance": 180.0,
+        "angular_velocity_variance": 16.0,
+        "render_mode": "billboard",
+        "blend": "alpha",
+        "sort": true,
+        "soft_particle_distance": 0.3,
+        "collision_radius": 0.05,
+        "bounce": 0.0,
+        "friction": 0.1
+      },
+      "inputs": {
+        "sprite": "tex_puff",
+        "material": "mat_plume_pre3",
+        "forces": [
+          "f_cool",
+          "f_billow",
+          "f_curl"
+        ],
+        "colliders": [
+          "roof"
+        ]
+      }
+    },
+    {
+      "id": "path_plume_pre3",
+      "type": "curve",
+      "layer": "smoke",
+      "parameters": {
+        "points": [
+          [
+            -0.09,
+            2.14,
+            -0.64
+          ],
+          [
+            -0.63,
+            2.7,
+            -0.37
+          ],
+          [
+            0.1,
+            2.4,
+            -0.68
+          ],
+          [
+            -0.28,
+            2.38,
+            -0.74
+          ],
+          [
+            -0.69,
+            2.55,
+            -0.52
+          ],
+          [
+            -1.01,
+            3.09,
+            -0.49
+          ],
+          [
+            -0.31,
+            2.79,
+            -0.65
+          ],
+          [
+            -1.02,
+            3.28,
+            -0.54
+          ],
+          [
+            -0.75,
+            4.02,
+            -0.56
+          ],
+          [
+            -0.56,
+            2.93,
+            -1.3
+          ],
+          [
+            -0.86,
+            3.15,
+            -0.59
+          ]
+        ],
+        "curve_type": "linear",
+        "segments": 22
+      }
+    },
+    {
+      "id": "e_plume_pre3",
+      "type": "emitter",
+      "layer": "smoke",
+      "parent": "wind_gust",
+      "parameters": {
+        "shape": "curve",
+        "direction": [
+          -0.395,
+          0.899,
+          -0.189
+        ],
+        "spread": 12.7,
+        "velocity": 1.329,
+        "velocity_variance": 0.251,
+        "rate": 0.0,
+        "burst_count": 11,
+        "burst_times": [
+          0.0
+        ],
+        "start_time": 0.0,
+        "duration": 0.05
+      },
+      "inputs": {
+        "particle": "ps_plume_pre3",
+        "shape_curve": "path_plume_pre3"
+      }
+    },
+    {
+      "id": "mat_plume_pre4",
+      "type": "material",
+      "parameters": {
+        "blend": "alpha",
+        "shading": "lit",
+        "base_color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emissive_color": [
+          0.62,
+          0.66,
+          0.78,
+          1.0
+        ],
+        "soft_particle": true,
+        "depth_fade": 0.3,
+        "dissolve": 0.0,
+        "erosion": 0.0
+      },
+      "inputs": {
+        "noise_texture": "tex_erode"
+      }
+    },
+    {
+      "id": "ps_plume_pre4",
+      "type": "particle_system",
+      "layer": "smoke",
+      "parameters": {
+        "max_particles": 24,
+        "lifetime": 1.765,
+        "lifetime_variance": 0.614,
+        "size": 1.0,
+        "size_variance": 0.22,
+        "size_over_life": [
+          [
+            0.0,
+            1.6822
+          ],
+          [
+            0.1667,
+            1.8352
+          ],
+          [
+            0.3333,
+            1.9881
+          ],
+          [
+            0.5,
+            2.1411
+          ],
+          [
+            0.6667,
+            2.2941
+          ],
+          [
+            0.8333,
+            2.447
+          ],
+          [
+            1.0,
+            2.6
+          ]
+        ],
+        "color": [
+          0.74,
+          0.74,
+          0.76,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0198,
+              1.0297,
+              1.0496,
+              1.0
+            ]
+          ],
+          [
+            0.1667,
+            [
+              1.0232,
+              1.0348,
+              1.058,
+              1.0
+            ]
+          ],
+          [
+            0.3333,
+            [
+              1.0266,
+              1.0398,
+              1.0664,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              1.0299,
+              1.0449,
+              1.0748,
+              1.0
+            ]
+          ],
+          [
+            0.6667,
+            [
+              1.0333,
+              1.0499,
+              1.0832,
+              1.0
+            ]
+          ],
+          [
+            0.8333,
+            [
+              1.0366,
+              1.055,
+              1.0916,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              1.04,
+              1.06,
+              1.1,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.34,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.203
+          ],
+          [
+            0.1667,
+            0.1442
+          ],
+          [
+            0.3333,
+            0.0941
+          ],
+          [
+            0.5,
+            0.0706
+          ],
+          [
+            0.6667,
+            0.0471
+          ],
+          [
+            0.8333,
+            0.0235
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.13,
+        "drag": 0.25,
+        "rotation_variance": 180.0,
+        "angular_velocity_variance": 16.0,
+        "render_mode": "billboard",
+        "blend": "alpha",
+        "sort": true,
+        "soft_particle_distance": 0.3,
+        "collision_radius": 0.05,
+        "bounce": 0.0,
+        "friction": 0.1
+      },
+      "inputs": {
+        "sprite": "tex_puff",
+        "material": "mat_plume_pre4",
+        "forces": [
+          "f_cool",
+          "f_billow",
+          "f_curl"
+        ],
+        "colliders": [
+          "roof"
+        ]
+      }
+    },
+    {
+      "id": "path_plume_pre4",
+      "type": "curve",
+      "layer": "smoke",
+      "parameters": {
+        "points": [
+          [
+            -0.07,
+            2.89,
+            -0.63
+          ],
+          [
+            0.04,
+            3.05,
+            -1.48
+          ],
+          [
+            -0.39,
+            4.09,
+            -0.65
+          ],
+          [
+            -0.08,
+            3.25,
+            -0.7
+          ],
+          [
+            -0.46,
+            3.82,
+            -0.87
+          ],
+          [
+            0.02,
+            2.89,
+            -0.59
+          ],
+          [
+            -0.1,
+            3.3,
+            -1.74
+          ],
+          [
+            0.33,
+            3.0,
+            -1.7
+          ],
+          [
+            0.28,
+            4.13,
+            -0.63
+          ],
+          [
+            -0.08,
+            3.98,
+            -1.2
+          ],
+          [
+            -0.19,
+            4.31,
+            -1.16
+          ],
+          [
+            -0.13,
+            3.92,
+            -1.17
+          ],
+          [
+            0.63,
+            4.12,
+            -2.2
+          ]
+        ],
+        "curve_type": "linear",
+        "segments": 26
+      }
+    },
+    {
+      "id": "e_plume_pre4",
+      "type": "emitter",
+      "layer": "smoke",
+      "parent": "wind_gust",
+      "parameters": {
+        "shape": "curve",
+        "direction": [
+          -0.171,
+          0.959,
+          -0.226
+        ],
+        "spread": 17.5,
+        "velocity": 0.953,
+        "velocity_variance": 0.235,
+        "rate": 0.0,
+        "burst_count": 13,
+        "burst_times": [
+          0.0
+        ],
+        "start_time": 0.0,
+        "duration": 0.05
+      },
+      "inputs": {
+        "particle": "ps_plume_pre4",
+        "shape_curve": "path_plume_pre4"
+      }
+    },
+    {
+      "id": "mat_plume_pre5",
+      "type": "material",
+      "parameters": {
+        "blend": "alpha",
+        "shading": "lit",
+        "base_color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emissive_color": [
+          0.62,
+          0.66,
+          0.78,
+          1.0
+        ],
+        "soft_particle": true,
+        "depth_fade": 0.3,
+        "dissolve": 0.0,
+        "erosion": 0.0
+      },
+      "inputs": {
+        "noise_texture": "tex_erode"
+      }
+    },
+    {
+      "id": "ps_plume_pre5",
+      "type": "particle_system",
+      "layer": "smoke",
+      "parameters": {
+        "max_particles": 24,
+        "lifetime": 0.608,
+        "lifetime_variance": 0.57,
+        "size": 1.0,
+        "size_variance": 0.22,
+        "size_over_life": [
+          [
+            0.0,
+            2.2838
+          ],
+          [
+            0.1667,
+            2.3365
+          ],
+          [
+            0.3333,
+            2.3892
+          ],
+          [
+            0.5,
+            2.4419
+          ],
+          [
+            0.6667,
+            2.4946
+          ],
+          [
+            0.8333,
+            2.5473
+          ],
+          [
+            1.0,
+            2.6
+          ]
+        ],
+        "color": [
+          0.74,
+          0.74,
+          0.76,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0331,
+              1.0496,
+              1.0826,
+              1.0
+            ]
+          ],
+          [
+            0.1667,
+            [
+              1.0342,
+              1.0513,
+              1.0855,
+              1.0
+            ]
+          ],
+          [
+            0.3333,
+            [
+              1.0354,
+              1.0531,
+              1.0884,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              1.0365,
+              1.0548,
+              1.0913,
+              1.0
+            ]
+          ],
+          [
+            0.6667,
+            [
+              1.0377,
+              1.0565,
+              1.0942,
+              1.0
+            ]
+          ],
+          [
+            0.8333,
+            [
+              1.0388,
+              1.0583,
+              1.0971,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              1.04,
+              1.06,
+              1.1,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.34,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0486
+          ],
+          [
+            0.1667,
+            0.0405
+          ],
+          [
+            0.3333,
+            0.0324
+          ],
+          [
+            0.5,
+            0.0243
+          ],
+          [
+            0.6667,
+            0.0162
+          ],
+          [
+            0.8333,
+            0.0081
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.13,
+        "drag": 0.25,
+        "rotation_variance": 180.0,
+        "angular_velocity_variance": 16.0,
+        "render_mode": "billboard",
+        "blend": "alpha",
+        "sort": true,
+        "soft_particle_distance": 0.3,
+        "collision_radius": 0.05,
+        "bounce": 0.0,
+        "friction": 0.1
+      },
+      "inputs": {
+        "sprite": "tex_puff",
+        "material": "mat_plume_pre5",
+        "forces": [
+          "f_cool",
+          "f_billow",
+          "f_curl"
+        ],
+        "colliders": [
+          "roof"
+        ]
+      }
+    },
+    {
+      "id": "path_plume_pre5",
+      "type": "curve",
+      "layer": "smoke",
+      "parameters": {
+        "points": [
+          [
+            0.98,
+            5.02,
+            -1.96
+          ],
+          [
+            0.46,
+            4.48,
+            -1.85
+          ],
+          [
+            -0.1,
+            3.6,
+            -1.72
+          ],
+          [
+            -0.13,
+            4.28,
+            -1.96
+          ],
+          [
+            -0.06,
+            4.63,
+            -1.33
+          ],
+          [
+            0.07,
+            3.73,
+            -1.0
+          ],
+          [
+            0.14,
+            5.8,
+            -1.76
+          ],
+          [
+            -0.02,
+            3.04,
+            -1.88
+          ],
+          [
+            0.31,
+            5.55,
+            -1.13
+          ],
+          [
+            0.34,
+            5.74,
+            -1.76
+          ],
+          [
+            0.18,
+            4.44,
+            -1.73
+          ],
+          [
+            -0.31,
+            4.23,
+            -2.11
+          ],
+          [
+            -0.1,
+            5.67,
+            -1.11
+          ],
+          [
+            -0.51,
+            5.44,
+            -0.8
+          ],
+          [
+            -2.18,
+            6.28,
+            -0.71
+          ]
+        ],
+        "curve_type": "linear",
+        "segments": 30
+      }
+    },
+    {
+      "id": "e_plume_pre5",
+      "type": "emitter",
+      "layer": "smoke",
+      "parent": "wind_gust",
+      "parameters": {
+        "shape": "curve",
+        "direction": [
+          0.165,
+          0.965,
+          -0.206
+        ],
+        "spread": 24.1,
+        "velocity": 0.973,
+        "velocity_variance": 0.237,
+        "rate": 0.0,
+        "burst_count": 15,
+        "burst_times": [
+          0.0
+        ],
+        "start_time": 0.0,
+        "duration": 0.05
+      },
+      "inputs": {
+        "particle": "ps_plume_pre5",
+        "shape_curve": "path_plume_pre5"
+      }
+    },
+    {
+      "id": "mat_wisp_pre1",
+      "type": "material",
+      "parameters": {
+        "blend": "alpha",
+        "shading": "lit",
+        "base_color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emissive_color": [
+          0.62,
+          0.66,
+          0.78,
+          1.0
+        ],
+        "soft_particle": true,
+        "depth_fade": 0.3,
+        "dissolve": 0.0,
+        "erosion": 0.0
+      },
+      "inputs": {
+        "noise_texture": "tex_erode"
+      }
+    },
+    {
+      "id": "ps_wisp_pre1",
+      "type": "particle_system",
+      "layer": "smoke",
+      "parameters": {
+        "max_particles": 24,
+        "lifetime": 0.893,
+        "lifetime_variance": 0.661,
+        "size": 0.32,
+        "size_variance": 0.0704,
+        "size_over_life": [
+          [
+            0.0,
+            1.1475
+          ],
+          [
+            0.1667,
+            1.3062
+          ],
+          [
+            0.3333,
+            1.465
+          ],
+          [
+            0.5,
+            1.6237
+          ],
+          [
+            0.6667,
+            1.7825
+          ],
+          [
+            0.8333,
+            1.9412
+          ],
+          [
+            1.0,
+            2.1
+          ]
+        ],
+        "color": [
+          0.74,
+          0.74,
+          0.76,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              0.8964,
+              0.8567,
+              0.8209,
+              1.0
+            ]
+          ],
+          [
+            0.1667,
+            [
+              0.9053,
+              0.8705,
+              0.8408,
+              1.0
+            ]
+          ],
+          [
+            0.3333,
+            [
+              0.9143,
+              0.8844,
+              0.8606,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              0.9232,
+              0.8983,
+              0.8805,
+              1.0
+            ]
+          ],
+          [
+            0.6667,
+            [
+              0.9321,
+              0.9122,
+              0.9003,
+              1.0
+            ]
+          ],
+          [
+            0.8333,
+            [
+              0.9411,
+              0.9261,
+              0.9202,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.95,
+              0.94,
+              0.94,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.45,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.8273
+          ],
+          [
+            0.1667,
+            0.7745
+          ],
+          [
+            0.3333,
+            0.6615
+          ],
+          [
+            0.5,
+            0.4961
+          ],
+          [
+            0.6667,
+            0.3307
+          ],
+          [
+            0.8333,
+            0.1654
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.24,
+        "drag": 0.25,
+        "rotation_variance": 180.0,
+        "angular_velocity_variance": 16.0,
+        "render_mode": "stretched_billboard",
+        "velocity_stretch": 0.4,
+        "blend": "alpha",
+        "sort": true,
+        "soft_particle_distance": 0.3,
+        "collision_radius": 0.05,
+        "bounce": 0.0,
+        "friction": 0.1
+      },
+      "inputs": {
+        "sprite": "tex_puff",
+        "material": "mat_wisp_pre1",
+        "forces": [
+          "f_cool",
+          "f_billow",
+          "f_curl"
+        ],
+        "colliders": [
+          "roof"
+        ]
+      }
+    },
+    {
+      "id": "path_wisp_pre1",
+      "type": "curve",
+      "layer": "smoke",
+      "parameters": {
+        "points": [
+          [
+            -0.08,
+            0.03,
+            -0.06
+          ],
+          [
+            0.09,
+            0.16,
+            0.01
+          ],
+          [
+            0.07,
+            0.33,
+            0.08
+          ],
+          [
+            -0.09,
+            0.45,
+            -0.11
+          ],
+          [
+            0.06,
+            0.71,
+            -0.01
+          ],
+          [
+            -0.05,
+            0.89,
+            -0.06
+          ],
+          [
+            0.07,
+            1.19,
+            -0.18
+          ],
+          [
+            -0.19,
+            1.47,
+            -0.17
+          ],
+          [
+            -0.2,
+            1.45,
+            -0.16
+          ],
+          [
+            -0.09,
+            1.62,
+            -0.34
+          ],
+          [
+            -0.08,
+            2.0,
+            -0.32
+          ],
+          [
+            -0.23,
+            1.69,
+            -0.3
+          ]
+        ],
+        "curve_type": "linear",
+        "segments": 24
+      }
+    },
+    {
+      "id": "e_wisp_pre1",
+      "type": "emitter",
+      "layer": "smoke",
+      "parent": "wind_gust",
+      "parameters": {
+        "shape": "curve",
+        "direction": [
+          -0.067,
+          0.998,
+          -0.02
+        ],
+        "spread": 4.4,
+        "velocity": 1.673,
+        "velocity_variance": 0.201,
+        "rate": 0.0,
+        "burst_count": 12,
+        "burst_times": [
+          0.0
+        ],
+        "start_time": 0.0,
+        "duration": 0.05
+      },
+      "inputs": {
+        "particle": "ps_wisp_pre1",
+        "shape_curve": "path_wisp_pre1"
+      }
+    },
+    {
+      "id": "l_key",
+      "type": "light",
+      "layer": "light",
+      "parameters": {
+        "light_type": "point",
+        "position": [
+          -2.0,
+          7.0,
+          6.5
+        ],
+        "color": [
+          1.0,
+          0.84,
+          0.68,
+          1.0
+        ],
+        "intensity": 300.0,
+        "radius": 30.0
+      }
+    },
+    {
+      "id": "l_sky",
+      "type": "light",
+      "layer": "light",
+      "parameters": {
+        "light_type": "point",
+        "position": [
+          1.5,
+          10.0,
+          -5.0
+        ],
+        "color": [
+          0.42,
+          0.52,
+          0.78,
+          1.0
+        ],
+        "intensity": 22.0,
+        "radius": 30.0
+      }
+    },
+    {
+      "id": "l_hearth",
+      "type": "light",
+      "layer": "light",
+      "parent": "chimney",
+      "parameters": {
+        "light_type": "point",
+        "position": [
+          0.0,
+          -0.45,
+          0.0
+        ],
+        "color": [
+          1.0,
+          0.46,
+          0.16,
+          1.0
+        ],
+        "intensity": 2.4,
+        "radius": 2.4,
+        "flicker_amplitude": 0.18,
+        "flicker_frequency": 2.2
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "wind_strength",
+      "label": "Wind strength",
+      "group": "Wind",
+      "min": 0.0,
+      "max": 2.5,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "wind_gust",
+          "parameter": "rotation",
+          "op": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "wind_direction",
+      "label": "Wind direction",
+      "group": "Wind",
+      "min": -180.0,
+      "max": 180.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 1.0,
+      "unit": "deg",
+      "bindings": [
+        {
+          "node": "wind_heading",
+          "parameter": "rotation",
+          "op": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "turbulence",
+      "label": "Turbulence",
+      "group": "Wind",
+      "min": 0.0,
+      "max": 2.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "f_billow",
+          "parameter": "strength",
+          "op": "multiply"
+        },
+        {
+          "node": "f_curl",
+          "parameter": "strength",
+          "op": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "smoke_amount",
+      "label": "Smoke amount",
+      "group": "Smoke",
+      "min": 0.0,
+      "max": 3.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "e_wisp",
+          "parameter": "rate",
+          "op": "multiply"
+        },
+        {
+          "node": "e_plume",
+          "parameter": "rate",
+          "op": "multiply"
+        },
+        {
+          "node": "e_plume_pre1",
+          "parameter": "burst_count",
+          "op": "multiply"
+        },
+        {
+          "node": "e_plume_pre2",
+          "parameter": "burst_count",
+          "op": "multiply"
+        },
+        {
+          "node": "e_plume_pre3",
+          "parameter": "burst_count",
+          "op": "multiply"
+        },
+        {
+          "node": "e_plume_pre4",
+          "parameter": "burst_count",
+          "op": "multiply"
+        },
+        {
+          "node": "e_plume_pre5",
+          "parameter": "burst_count",
+          "op": "multiply"
+        },
+        {
+          "node": "e_wisp_pre1",
+          "parameter": "burst_count",
+          "op": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "smoke_height",
+      "label": "Smoke height",
+      "group": "Smoke",
+      "min": 0.6,
+      "max": 2.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "e_wisp",
+          "parameter": "velocity",
+          "op": "multiply"
+        },
+        {
+          "node": "e_plume",
+          "parameter": "velocity",
+          "op": "multiply"
+        },
+        {
+          "node": "e_plume_pre1",
+          "parameter": "velocity",
+          "op": "multiply"
+        },
+        {
+          "node": "e_plume_pre2",
+          "parameter": "velocity",
+          "op": "multiply"
+        },
+        {
+          "node": "e_plume_pre3",
+          "parameter": "velocity",
+          "op": "multiply"
+        },
+        {
+          "node": "e_plume_pre4",
+          "parameter": "velocity",
+          "op": "multiply"
+        },
+        {
+          "node": "e_plume_pre5",
+          "parameter": "velocity",
+          "op": "multiply"
+        },
+        {
+          "node": "e_wisp_pre1",
+          "parameter": "velocity",
+          "op": "multiply"
+        },
+        {
+          "node": "e_plume_pre1",
+          "parameter": "scale",
+          "op": "multiply"
+        },
+        {
+          "node": "e_plume_pre2",
+          "parameter": "scale",
+          "op": "multiply"
+        },
+        {
+          "node": "e_plume_pre3",
+          "parameter": "scale",
+          "op": "multiply"
+        },
+        {
+          "node": "e_plume_pre4",
+          "parameter": "scale",
+          "op": "multiply"
+        },
+        {
+          "node": "e_plume_pre5",
+          "parameter": "scale",
+          "op": "multiply"
+        },
+        {
+          "node": "e_wisp_pre1",
+          "parameter": "scale",
+          "op": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "thickness",
+      "label": "Thickness",
+      "group": "Smoke",
+      "min": 0.0,
+      "max": 2.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "ps_wisp",
+          "parameter": "opacity",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_plume",
+          "parameter": "opacity",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_plume_pre1",
+          "parameter": "opacity",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_plume_pre2",
+          "parameter": "opacity",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_plume_pre3",
+          "parameter": "opacity",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_plume_pre4",
+          "parameter": "opacity",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_plume_pre5",
+          "parameter": "opacity",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_wisp_pre1",
+          "parameter": "opacity",
+          "op": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "brightness",
+      "label": "Smoke brightness",
+      "group": "Smoke",
+      "min": 0.2,
+      "max": 2.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "ps_wisp",
+          "parameter": "color",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_plume",
+          "parameter": "color",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_plume_pre1",
+          "parameter": "color",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_plume_pre2",
+          "parameter": "color",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_plume_pre3",
+          "parameter": "color",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_plume_pre4",
+          "parameter": "color",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_plume_pre5",
+          "parameter": "color",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_wisp_pre1",
+          "parameter": "color",
+          "op": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "global_speed",
+      "label": "Speed",
+      "group": "Global",
+      "min": 0.25,
+      "max": 3.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.05,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "$effect",
+          "parameter": "time_scale",
+          "op": "multiply"
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "generator": "tools/generators/chimney_smoke.py",
+    "category": "ambient",
+    "loop": {
+      "start": 0.0,
+      "end": 12.0
+    },
+    "attachment": {
+      "origin_node": "chimney",
+      "notes": "Attach the `chimney` node at the centre of the chimney opening; the effect draws no chimney. Feed the global wind into Wind strength (0 calm, 1 light, 3 strong) and Wind direction (degrees around Y). l_key and l_sky are preview stage lights: drop them where the scene lights the smoke. It is always on and loops seamlessly."
+    },
+    "render_settings": {
+      "background": [
+        0.034,
+        0.045,
+        0.066,
+        1.0
+      ],
+      "ground_plane": false,
+      "grid": false,
+      "bloom_intensity": 0.12,
+      "bloom_radius": 0.04,
+      "exposure": 1.0
+    },
+    "tags": [
+      "ambient",
+      "environment",
+      "smoke",
+      "chimney"
+    ]
+  }
+}
