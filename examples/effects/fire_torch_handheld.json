@@ -1,0 +1,8929 @@
+{
+  "schema_version": "0.1.0",
+  "name": "Fire Torch Handheld",
+  "description": "Always-on fire torch (handheld): a carried torch: the smallest and liveliest flame, about 0.8 m high, leaning with the movement of the bearer so its embers and a thin wisp of smoke trail away behind it.",
+  "duration": 12.0,
+  "seed": 71413,
+  "timeline": {
+    "phases": [
+      {
+        "name": "always_on",
+        "start": 0.0,
+        "end": 12.0
+      }
+    ]
+  },
+  "layers": [
+    {
+      "id": "head",
+      "name": "Head",
+      "role": "ambient"
+    },
+    {
+      "id": "flames",
+      "name": "Flames",
+      "role": "ambient"
+    },
+    {
+      "id": "embers",
+      "name": "Embers",
+      "role": "ambient"
+    },
+    {
+      "id": "smoke",
+      "name": "Smoke",
+      "role": "ambient"
+    },
+    {
+      "id": "light",
+      "name": "Light",
+      "role": "ambient"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "cam",
+      "type": "camera",
+      "parameters": {
+        "position": [
+          1.263,
+          1.1482,
+          3.2053
+        ],
+        "target": [
+          0.0,
+          0.5932,
+          0.0
+        ],
+        "fov": 34.0
+      }
+    },
+    {
+      "id": "torch_head",
+      "type": "mesh",
+      "parameters": {
+        "primitive": "sphere",
+        "radius": 0.01,
+        "segments": 4,
+        "visible": false
+      }
+    },
+    {
+      "id": "wind_heading",
+      "type": "mesh",
+      "parent": "torch_head",
+      "parameters": {
+        "primitive": "sphere",
+        "radius": 0.01,
+        "segments": 4,
+        "visible": false,
+        "rotation": [
+          0.0,
+          1.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "id": "wind_gust",
+      "type": "mesh",
+      "parent": "wind_heading",
+      "parameters": {
+        "primitive": "sphere",
+        "radius": 0.01,
+        "segments": 4,
+        "visible": false,
+        "rotation": {
+          "value": [
+            8.602,
+            0.0,
+            -24.1613
+          ],
+          "track": [
+            {
+              "time": 0.0,
+              "value": [
+                8.602,
+                0.0,
+                -24.1613
+              ]
+            },
+            {
+              "time": 0.25,
+              "value": [
+                6.7159,
+                0.0,
+                -24.8923
+              ]
+            },
+            {
+              "time": 0.5,
+              "value": [
+                4.3902,
+                0.0,
+                -24.6088
+              ]
+            },
+            {
+              "time": 0.75,
+              "value": [
+                2.6348,
+                0.0,
+                -23.4722
+              ]
+            },
+            {
+              "time": 1.0,
+              "value": [
+                2.0613,
+                0.0,
+                -22.1926
+              ]
+            },
+            {
+              "time": 1.25,
+              "value": [
+                2.6381,
+                0.0,
+                -21.5417
+              ]
+            },
+            {
+              "time": 1.5,
+              "value": [
+                3.7217,
+                0.0,
+                -21.8198
+              ]
+            },
+            {
+              "time": 1.75,
+              "value": [
+                4.3504,
+                0.0,
+                -22.683
+              ]
+            },
+            {
+              "time": 2.0,
+              "value": [
+                3.6765,
+                0.0,
+                -23.4554
+              ]
+            },
+            {
+              "time": 2.25,
+              "value": [
+                1.3572,
+                0.0,
+                -25.6087
+              ]
+            },
+            {
+              "time": 2.5,
+              "value": [
+                -2.2621,
+                0.0,
+                -34.6471
+              ]
+            },
+            {
+              "time": 2.75,
+              "value": [
+                -6.2479,
+                0.0,
+                -46.1702
+              ]
+            },
+            {
+              "time": 3.0,
+              "value": [
+                -9.4269,
+                0.0,
+                -54.7154
+              ]
+            },
+            {
+              "time": 3.25,
+              "value": [
+                -10.8381,
+                0.0,
+                -56.2496
+              ]
+            },
+            {
+              "time": 3.5,
+              "value": [
+                -10.1061,
+                0.0,
+                -54.9782
+              ]
+            },
+            {
+              "time": 3.75,
+              "value": [
+                -7.582,
+                0.0,
+                -51.3807
+              ]
+            },
+            {
+              "time": 4.0,
+              "value": [
+                -4.1952,
+                0.0,
+                -45.6237
+              ]
+            },
+            {
+              "time": 4.25,
+              "value": [
+                -1.0767,
+                0.0,
+                -38.5422
+              ]
+            },
+            {
+              "time": 4.5,
+              "value": [
+                0.8896,
+                0.0,
+                -31.4398
+              ]
+            },
+            {
+              "time": 4.75,
+              "value": [
+                1.405,
+                0.0,
+                -25.5515
+              ]
+            },
+            {
+              "time": 5.0,
+              "value": [
+                0.8443,
+                0.0,
+                -21.5821
+              ]
+            },
+            {
+              "time": 5.25,
+              "value": [
+                0.0607,
+                0.0,
+                -19.6739
+              ]
+            },
+            {
+              "time": 5.5,
+              "value": [
+                -0.0091,
+                0.0,
+                -18.9792
+              ]
+            },
+            {
+              "time": 5.75,
+              "value": [
+                1.2265,
+                0.0,
+                -17.8252
+              ]
+            },
+            {
+              "time": 6.0,
+              "value": [
+                3.7305,
+                0.0,
+                -16.5387
+              ]
+            },
+            {
+              "time": 6.25,
+              "value": [
+                6.821,
+                0.0,
+                -15.8077
+              ]
+            },
+            {
+              "time": 6.5,
+              "value": [
+                9.4285,
+                0.0,
+                -16.0912
+              ]
+            },
+            {
+              "time": 6.75,
+              "value": [
+                10.524,
+                0.0,
+                -17.2278
+              ]
+            },
+            {
+              "time": 7.0,
+              "value": [
+                9.5409,
+                0.0,
+                -18.5074
+              ]
+            },
+            {
+              "time": 7.25,
+              "value": [
+                6.6168,
+                0.0,
+                -19.1583
+              ]
+            },
+            {
+              "time": 7.5,
+              "value": [
+                2.5552,
+                0.0,
+                -18.8802
+              ]
+            },
+            {
+              "time": 7.75,
+              "value": [
+                -1.4793,
+                0.0,
+                -22.4453
+              ]
+            },
+            {
+              "time": 8.0,
+              "value": [
+                -4.4069,
+                0.0,
+                -30.2965
+              ]
+            },
+            {
+              "time": 8.25,
+              "value": [
+                -5.6392,
+                0.0,
+                -35.9032
+              ]
+            },
+            {
+              "time": 8.5,
+              "value": [
+                -5.2798,
+                0.0,
+                -35.6167
+              ]
+            },
+            {
+              "time": 8.75,
+              "value": [
+                -4.0398,
+                0.0,
+                -33.1738
+              ]
+            },
+            {
+              "time": 9.0,
+              "value": [
+                -2.9056,
+                0.0,
+                -28.9628
+              ]
+            },
+            {
+              "time": 9.25,
+              "value": [
+                -2.6988,
+                0.0,
+                -23.7183
+              ]
+            },
+            {
+              "time": 9.5,
+              "value": [
+                -3.7127,
+                0.0,
+                -18.7537
+              ]
+            },
+            {
+              "time": 9.75,
+              "value": [
+                -5.5768,
+                0.0,
+                -15.5664
+              ]
+            },
+            {
+              "time": 10.0,
+              "value": [
+                -7.407,
+                0.0,
+                -15.2788
+              ]
+            },
+            {
+              "time": 10.25,
+              "value": [
+                -8.1781,
+                0.0,
+                -16.9847
+              ]
+            },
+            {
+              "time": 10.5,
+              "value": [
+                -7.1664,
+                0.0,
+                -18.8235
+              ]
+            },
+            {
+              "time": 10.75,
+              "value": [
+                -4.2761,
+                0.0,
+                -20.1207
+              ]
+            },
+            {
+              "time": 11.0,
+              "value": [
+                -0.114,
+                0.0,
+                -20.7317
+              ]
+            },
+            {
+              "time": 11.25,
+              "value": [
+                4.2213,
+                0.0,
+                -21.0747
+              ]
+            },
+            {
+              "time": 11.5,
+              "value": [
+                7.5509,
+                0.0,
+                -21.7208
+              ]
+            },
+            {
+              "time": 11.75,
+              "value": [
+                9.0613,
+                0.0,
+                -22.8748
+              ]
+            },
+            {
+              "time": 12.0,
+              "value": [
+                8.602,
+                0.0,
+                -24.1613
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "wind_flame",
+      "type": "mesh",
+      "parent": "wind_heading",
+      "parameters": {
+        "primitive": "sphere",
+        "radius": 0.01,
+        "segments": 4,
+        "visible": false,
+        "rotation": {
+          "value": [
+            2.7476,
+            0.0,
+            -7.7174
+          ],
+          "track": [
+            {
+              "time": 0.0,
+              "value": [
+                2.7476,
+                0.0,
+                -7.7174
+              ]
+            },
+            {
+              "time": 0.25,
+              "value": [
+                2.1451,
+                0.0,
+                -7.9509
+              ]
+            },
+            {
+              "time": 0.5,
+              "value": [
+                1.4023,
+                0.0,
+                -7.8603
+              ]
+            },
+            {
+              "time": 0.75,
+              "value": [
+                0.8416,
+                0.0,
+                -7.4973
+              ]
+            },
+            {
+              "time": 1.0,
+              "value": [
+                0.6584,
+                0.0,
+                -7.0886
+              ]
+            },
+            {
+              "time": 1.25,
+              "value": [
+                0.8426,
+                0.0,
+                -6.8807
+              ]
+            },
+            {
+              "time": 1.5,
+              "value": [
+                1.1888,
+                0.0,
+                -6.9695
+              ]
+            },
+            {
+              "time": 1.75,
+              "value": [
+                1.3896,
+                0.0,
+                -7.2452
+              ]
+            },
+            {
+              "time": 2.0,
+              "value": [
+                1.1743,
+                0.0,
+                -7.4919
+              ]
+            },
+            {
+              "time": 2.25,
+              "value": [
+                0.4335,
+                0.0,
+                -8.4155
+              ]
+            },
+            {
+              "time": 2.5,
+              "value": [
+                -0.7225,
+                0.0,
+                -12.433
+              ]
+            },
+            {
+              "time": 2.75,
+              "value": [
+                -1.9956,
+                0.0,
+                -17.5352
+              ]
+            },
+            {
+              "time": 3.0,
+              "value": [
+                -3.0111,
+                0.0,
+                -21.2496
+              ]
+            },
+            {
+              "time": 3.25,
+              "value": [
+                -3.4618,
+                0.0,
+                -21.7966
+              ]
+            },
+            {
+              "time": 3.5,
+              "value": [
+                -3.228,
+                0.0,
+                -21.1039
+              ]
+            },
+            {
+              "time": 3.75,
+              "value": [
+                -2.4218,
+                0.0,
+                -19.4768
+              ]
+            },
+            {
+              "time": 4.0,
+              "value": [
+                -1.34,
+                0.0,
+                -17.0369
+              ]
+            },
+            {
+              "time": 4.25,
+              "value": [
+                -0.3439,
+                0.0,
+                -14.1193
+              ]
+            },
+            {
+              "time": 4.5,
+              "value": [
+                0.2841,
+                0.0,
+                -11.2087
+              ]
+            },
+            {
+              "time": 4.75,
+              "value": [
+                0.4488,
+                0.0,
+                -8.7679
+              ]
+            },
+            {
+              "time": 5.0,
+              "value": [
+                0.2697,
+                0.0,
+                -7.0904
+              ]
+            },
+            {
+              "time": 5.25,
+              "value": [
+                0.0194,
+                0.0,
+                -6.29
+              ]
+            },
+            {
+              "time": 5.5,
+              "value": [
+                -0.0029,
+                0.0,
+                -6.0621
+              ]
+            },
+            {
+              "time": 5.75,
+              "value": [
+                0.3917,
+                0.0,
+                -5.6935
+              ]
+            },
+            {
+              "time": 6.0,
+              "value": [
+                1.1916,
+                0.0,
+                -5.2826
+              ]
+            },
+            {
+              "time": 6.25,
+              "value": [
+                2.1787,
+                0.0,
+                -5.0491
+              ]
+            },
+            {
+              "time": 6.5,
+              "value": [
+                3.0116,
+                0.0,
+                -5.1397
+              ]
+            },
+            {
+              "time": 6.75,
+              "value": [
+                3.3615,
+                0.0,
+                -5.5027
+              ]
+            },
+            {
+              "time": 7.0,
+              "value": [
+                3.0475,
+                0.0,
+                -5.9114
+              ]
+            },
+            {
+              "time": 7.25,
+              "value": [
+                2.1135,
+                0.0,
+                -6.1193
+              ]
+            },
+            {
+              "time": 7.5,
+              "value": [
+                0.8161,
+                0.0,
+                -6.0305
+              ]
+            },
+            {
+              "time": 7.75,
+              "value": [
+                -0.4725,
+                0.0,
+                -7.7094
+              ]
+            },
+            {
+              "time": 8.0,
+              "value": [
+                -1.4076,
+                0.0,
+                -11.2691
+              ]
+            },
+            {
+              "time": 8.25,
+              "value": [
+                -1.8012,
+                0.0,
+                -13.7706
+              ]
+            },
+            {
+              "time": 8.5,
+              "value": [
+                -1.6864,
+                0.0,
+                -13.6162
+              ]
+            },
+            {
+              "time": 8.75,
+              "value": [
+                -1.2904,
+                0.0,
+                -12.5218
+              ]
+            },
+            {
+              "time": 9.0,
+              "value": [
+                -0.9281,
+                0.0,
+                -10.7205
+              ]
+            },
+            {
+              "time": 9.25,
+              "value": [
+                -0.862,
+                0.0,
+                -8.5358
+              ]
+            },
+            {
+              "time": 9.5,
+              "value": [
+                -1.1859,
+                0.0,
+                -6.476
+              ]
+            },
+            {
+              "time": 9.75,
+              "value": [
+                -1.7813,
+                0.0,
+                -5.1084
+              ]
+            },
+            {
+              "time": 10.0,
+              "value": [
+                -2.3659,
+                0.0,
+                -4.8802
+              ]
+            },
+            {
+              "time": 10.25,
+              "value": [
+                -2.6122,
+                0.0,
+                -5.4251
+              ]
+            },
+            {
+              "time": 10.5,
+              "value": [
+                -2.289,
+                0.0,
+                -6.0124
+              ]
+            },
+            {
+              "time": 10.75,
+              "value": [
+                -1.3658,
+                0.0,
+                -6.4268
+              ]
+            },
+            {
+              "time": 11.0,
+              "value": [
+                -0.0364,
+                0.0,
+                -6.6219
+              ]
+            },
+            {
+              "time": 11.25,
+              "value": [
+                1.3483,
+                0.0,
+                -6.7315
+              ]
+            },
+            {
+              "time": 11.5,
+              "value": [
+                2.4118,
+                0.0,
+                -6.9379
+              ]
+            },
+            {
+              "time": 11.75,
+              "value": [
+                2.8943,
+                0.0,
+                -7.3065
+              ]
+            },
+            {
+              "time": 12.0,
+              "value": [
+                2.7476,
+                0.0,
+                -7.7174
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "tex_flame",
+      "type": "texture",
+      "parameters": {
+        "width": 80,
+        "height": 144,
+        "frames": 24,
+        "graph": {
+          "nodes": [
+            {
+              "id": "sim",
+              "op": "fire_sim",
+              "params": {
+                "seed": 19,
+                "fuel": 1.25,
+                "fuel_width": 0.44,
+                "buoyancy": 3.6,
+                "turbulence": 2.0,
+                "turbulence_scale": 3.4,
+                "cooling": 1.75,
+                "detail": 4,
+                "speed": 0.06,
+                "substeps": 4,
+                "loop": true,
+                "flicker": 0.34,
+                "sharpness": 1.4
+              }
+            },
+            {
+              "id": "half",
+              "op": "constant",
+              "params": {
+                "color": [
+                  0.5,
+                  0.5,
+                  0.5,
+                  1.0
+                ]
+              }
+            },
+            {
+              "id": "vmap",
+              "op": "gradient_linear",
+              "params": {
+                "angle": 90,
+                "start": 0.9975,
+                "end": 0.18
+              }
+            },
+            {
+              "id": "byv",
+              "op": "channel_pack",
+              "params": {
+                "channel": "luminance"
+              },
+              "inputs": {
+                "r": "half",
+                "g": "vmap",
+                "b": "half"
+              }
+            },
+            {
+              "id": "flip",
+              "op": "distort",
+              "params": {
+                "amount": 2.0
+              },
+              "inputs": {
+                "a": "sim",
+                "by": "byv"
+              }
+            },
+            {
+              "id": "gu",
+              "op": "gradient_linear",
+              "params": {
+                "angle": 0,
+                "start": 0.0,
+                "end": 1.0
+              }
+            },
+            {
+              "id": "gui",
+              "op": "invert",
+              "inputs": {
+                "a": "gu"
+              }
+            },
+            {
+              "id": "par",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "gu",
+                "b": "gui"
+              }
+            },
+            {
+              "id": "side",
+              "op": "levels",
+              "params": {
+                "in_high": 0.1,
+                "gamma": 0.8
+              },
+              "inputs": {
+                "a": "par"
+              }
+            },
+            {
+              "id": "m1",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "flip",
+                "b": "side"
+              }
+            },
+            {
+              "id": "gv",
+              "op": "gradient_linear",
+              "params": {
+                "angle": 90,
+                "start": 1.0,
+                "end": 0.0
+              }
+            },
+            {
+              "id": "root",
+              "op": "levels",
+              "params": {
+                "in_high": 0.36
+              },
+              "inputs": {
+                "a": "gv"
+              }
+            },
+            {
+              "id": "m2",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "m1",
+                "b": "root"
+              }
+            },
+            {
+              "id": "gvi",
+              "op": "invert",
+              "inputs": {
+                "a": "gv"
+              }
+            },
+            {
+              "id": "tip",
+              "op": "levels",
+              "params": {
+                "in_high": 0.07
+              },
+              "inputs": {
+                "a": "gvi"
+              }
+            },
+            {
+              "id": "m3",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "m2",
+                "b": "tip"
+              }
+            },
+            {
+              "id": "lv",
+              "op": "levels",
+              "params": {
+                "in_low": 0.1,
+                "in_high": 0.76,
+                "gamma": 0.92
+              },
+              "inputs": {
+                "a": "m3"
+              }
+            }
+          ],
+          "output": "lv"
+        }
+      }
+    },
+    {
+      "id": "tex_puff",
+      "type": "texture",
+      "parameters": {
+        "width": 80,
+        "height": 80,
+        "frames": 12,
+        "graph": {
+          "nodes": [
+            {
+              "id": "w1",
+              "op": "fbm",
+              "params": {
+                "frequency": 1.8,
+                "octaves": 2,
+                "seed": 11,
+                "animate": 0.5
+              }
+            },
+            {
+              "id": "w2",
+              "op": "fbm",
+              "params": {
+                "frequency": 1.8,
+                "octaves": 2,
+                "seed": 29,
+                "animate": 0.5
+              }
+            },
+            {
+              "id": "w1l",
+              "op": "levels",
+              "params": {
+                "in_low": 0.25,
+                "in_high": 0.75
+              },
+              "inputs": {
+                "a": "w1"
+              }
+            },
+            {
+              "id": "w2l",
+              "op": "levels",
+              "params": {
+                "in_low": 0.25,
+                "in_high": 0.75
+              },
+              "inputs": {
+                "a": "w2"
+              }
+            },
+            {
+              "id": "wp",
+              "op": "channel_pack",
+              "params": {
+                "channel": "luminance"
+              },
+              "inputs": {
+                "r": "w1l",
+                "g": "w2l"
+              }
+            },
+            {
+              "id": "rd",
+              "op": "gradient_radial",
+              "params": {
+                "radius": 0.47,
+                "falloff": "smooth"
+              }
+            },
+            {
+              "id": "shape",
+              "op": "distort",
+              "params": {
+                "amount": 0.1
+              },
+              "inputs": {
+                "a": "rd",
+                "by": "wp"
+              }
+            },
+            {
+              "id": "n",
+              "op": "fbm",
+              "params": {
+                "frequency": 2.1,
+                "octaves": 5,
+                "gain": 0.55,
+                "seed": 3,
+                "animate": 0.7
+              }
+            },
+            {
+              "id": "nw",
+              "op": "distort",
+              "params": {
+                "amount": 0.07
+              },
+              "inputs": {
+                "a": "n",
+                "by": "wp"
+              }
+            },
+            {
+              "id": "nl",
+              "op": "levels",
+              "params": {
+                "in_low": 0.2,
+                "in_high": 0.8,
+                "out_low": 0.3
+              },
+              "inputs": {
+                "a": "nw"
+              }
+            },
+            {
+              "id": "cells",
+              "op": "worley",
+              "params": {
+                "frequency": 3.2,
+                "octaves": 2,
+                "seed": 8,
+                "animate": 0.4
+              }
+            },
+            {
+              "id": "lobes",
+              "op": "invert",
+              "inputs": {
+                "a": "cells"
+              }
+            },
+            {
+              "id": "lobes_l",
+              "op": "levels",
+              "params": {
+                "in_low": 0.3,
+                "in_high": 1.0
+              },
+              "inputs": {
+                "a": "lobes"
+              }
+            },
+            {
+              "id": "lobes_w",
+              "op": "distort",
+              "params": {
+                "amount": 0.05
+              },
+              "inputs": {
+                "a": "lobes_l",
+                "by": "wp"
+              }
+            },
+            {
+              "id": "detail",
+              "op": "math",
+              "params": {
+                "mode": "lerp",
+                "factor": 0.45
+              },
+              "inputs": {
+                "a": "nl",
+                "b": "lobes_w"
+              }
+            },
+            {
+              "id": "m",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "shape",
+                "b": "detail"
+              }
+            },
+            {
+              "id": "alpha",
+              "op": "levels",
+              "params": {
+                "in_low": 0.12,
+                "in_high": 0.78,
+                "gamma": 1.2
+              },
+              "inputs": {
+                "a": "m"
+              }
+            },
+            {
+              "id": "shade",
+              "op": "levels",
+              "params": {
+                "in_low": 0.0,
+                "in_high": 0.6,
+                "out_low": 0.72
+              },
+              "inputs": {
+                "a": "m"
+              }
+            },
+            {
+              "id": "out",
+              "op": "channel_pack",
+              "params": {
+                "channel": "luminance"
+              },
+              "inputs": {
+                "r": "shade",
+                "g": "shade",
+                "b": "shade",
+                "a": "alpha"
+              }
+            }
+          ],
+          "output": "out"
+        }
+      }
+    },
+    {
+      "id": "tex_erode",
+      "type": "texture",
+      "parameters": {
+        "width": 64,
+        "height": 64,
+        "graph": {
+          "nodes": [
+            {
+              "id": "a",
+              "op": "fbm",
+              "params": {
+                "frequency": 3.0,
+                "octaves": 4,
+                "gain": 0.5,
+                "seed": 4407,
+                "tile": true
+              }
+            },
+            {
+              "id": "b",
+              "op": "blur",
+              "params": {
+                "radius": 1.5
+              },
+              "inputs": {
+                "a": "a"
+              }
+            },
+            {
+              "id": "l",
+              "op": "levels",
+              "params": {
+                "in_low": 0.22,
+                "in_high": 0.78
+              },
+              "inputs": {
+                "a": "b"
+              }
+            }
+          ],
+          "output": "l"
+        }
+      }
+    },
+    {
+      "id": "tex_halo",
+      "type": "texture",
+      "parameters": {
+        "width": 64,
+        "height": 64,
+        "frames": 8,
+        "graph": {
+          "nodes": [
+            {
+              "id": "r",
+              "op": "gradient_radial",
+              "params": {
+                "radius": 0.5,
+                "falloff": "smooth"
+              }
+            },
+            {
+              "id": "s",
+              "op": "levels",
+              "params": {
+                "gamma": 2.4
+              },
+              "inputs": {
+                "a": "r"
+              }
+            },
+            {
+              "id": "n",
+              "op": "fbm",
+              "params": {
+                "frequency": 1.6,
+                "octaves": 3,
+                "seed": 77,
+                "animate": 0.35
+              }
+            },
+            {
+              "id": "nl",
+              "op": "levels",
+              "params": {
+                "in_low": 0.25,
+                "in_high": 0.8,
+                "out_low": 0.55
+              },
+              "inputs": {
+                "a": "n"
+              }
+            },
+            {
+              "id": "m",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "s",
+                "b": "nl"
+              }
+            }
+          ],
+          "output": "m"
+        }
+      }
+    },
+    {
+      "id": "tex_glow",
+      "type": "texture",
+      "parameters": {
+        "width": 64,
+        "height": 64,
+        "frames": 8,
+        "graph": {
+          "nodes": [
+            {
+              "id": "r",
+              "op": "gradient_radial",
+              "params": {
+                "radius": 0.5,
+                "falloff": "smooth"
+              }
+            },
+            {
+              "id": "n",
+              "op": "fbm",
+              "params": {
+                "frequency": 2.5,
+                "octaves": 3,
+                "seed": 31,
+                "animate": 0.8
+              }
+            },
+            {
+              "id": "nl",
+              "op": "levels",
+              "params": {
+                "in_low": 0.2,
+                "in_high": 0.8,
+                "out_low": 0.45
+              },
+              "inputs": {
+                "a": "n"
+              }
+            },
+            {
+              "id": "m",
+              "op": "math",
+              "params": {
+                "mode": "multiply"
+              },
+              "inputs": {
+                "a": "r",
+                "b": "nl"
+              }
+            },
+            {
+              "id": "l",
+              "op": "levels",
+              "params": {
+                "in_low": 0.02,
+                "in_high": 0.75
+              },
+              "inputs": {
+                "a": "m"
+              }
+            }
+          ],
+          "output": "l"
+        }
+      }
+    },
+    {
+      "id": "tex_spark",
+      "type": "texture",
+      "parameters": {
+        "width": 32,
+        "height": 32,
+        "graph": {
+          "nodes": [
+            {
+              "id": "r",
+              "op": "gradient_radial",
+              "params": {
+                "radius": 0.5,
+                "falloff": "quadratic"
+              }
+            }
+          ],
+          "output": "r"
+        }
+      }
+    },
+    {
+      "id": "mat_fire",
+      "type": "material",
+      "parameters": {
+        "blend": "additive",
+        "emissive_intensity": 0.95,
+        "soft_particle": true,
+        "depth_fade": 0.12,
+        "dissolve": 0.18,
+        "erosion": 0.1,
+        "temperature_gradient": [
+          [
+            0.0,
+            [
+              0.3,
+              0.05,
+              0.0,
+              1.0
+            ]
+          ],
+          [
+            0.18,
+            [
+              0.76,
+              0.14,
+              0.01,
+              1.0
+            ]
+          ],
+          [
+            0.4,
+            [
+              1.0,
+              0.32,
+              0.05,
+              1.0
+            ]
+          ],
+          [
+            0.62,
+            [
+              1.0,
+              0.53,
+              0.11,
+              1.0
+            ]
+          ],
+          [
+            0.83,
+            [
+              1.0,
+              0.79,
+              0.4,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              1.0,
+              0.94,
+              0.76,
+              1.0
+            ]
+          ]
+        ]
+      },
+      "inputs": {
+        "noise_texture": "tex_erode"
+      }
+    },
+    {
+      "id": "mat_glow",
+      "type": "material",
+      "parameters": {
+        "blend": "additive",
+        "shading": "unlit",
+        "emissive_color": [
+          1.0,
+          0.34,
+          0.07,
+          1.0
+        ],
+        "emissive_intensity": 0.0,
+        "soft_particle": true,
+        "depth_fade": 0.2
+      }
+    },
+    {
+      "id": "mat_smoke",
+      "type": "material",
+      "parameters": {
+        "blend": "alpha",
+        "shading": "lit",
+        "base_color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emissive_color": [
+          0.6,
+          0.62,
+          0.7,
+          1.0
+        ],
+        "soft_particle": true,
+        "depth_fade": 0.3
+      },
+      "inputs": {
+        "noise_texture": "tex_erode"
+      }
+    },
+    {
+      "id": "f_buoy_fire",
+      "type": "force",
+      "parameters": {
+        "force_type": "buoyancy",
+        "strength": 1.0862
+      }
+    },
+    {
+      "id": "f_curl_fire",
+      "type": "force",
+      "parameters": {
+        "force_type": "curl_noise",
+        "strength": 0.4089,
+        "frequency": 2.0,
+        "octaves": 3,
+        "speed": 1.0
+      }
+    },
+    {
+      "id": "f_buoy_ember",
+      "type": "force",
+      "parameters": {
+        "force_type": "buoyancy",
+        "strength": 0.5
+      }
+    },
+    {
+      "id": "f_curl_ember",
+      "type": "force",
+      "parameters": {
+        "force_type": "curl_noise",
+        "strength": 1.5,
+        "frequency": 0.9,
+        "octaves": 2,
+        "speed": 0.65
+      }
+    },
+    {
+      "id": "f_cool",
+      "type": "force",
+      "parameters": {
+        "force_type": "directional",
+        "direction": [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        "strength": 0.04
+      }
+    },
+    {
+      "id": "f_billow",
+      "type": "force",
+      "parameters": {
+        "force_type": "curl_noise",
+        "strength": 0.2,
+        "frequency": 0.24,
+        "octaves": 2,
+        "speed": 0.22
+      }
+    },
+    {
+      "id": "f_curl_smoke",
+      "type": "force",
+      "parameters": {
+        "force_type": "curl_noise",
+        "strength": 0.24,
+        "frequency": 0.95,
+        "octaves": 2,
+        "speed": 0.45
+      }
+    },
+    {
+      "id": "ps_flame_core",
+      "type": "particle_system",
+      "layer": "flames",
+      "parameters": {
+        "max_particles": 110,
+        "lifetime": 0.51,
+        "lifetime_variance": 0.15,
+        "size": 0.3128,
+        "size_variance": 0.1012,
+        "size_over_life": [
+          [
+            0.0,
+            0.5
+          ],
+          [
+            0.28,
+            1.0
+          ],
+          [
+            0.7,
+            0.86
+          ],
+          [
+            1.0,
+            0.5
+          ]
+        ],
+        "color": [
+          1.0,
+          0.86,
+          0.58,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ]
+          ],
+          [
+            0.28,
+            [
+              1.0,
+              0.93,
+              0.84,
+              1.0
+            ]
+          ],
+          [
+            0.6,
+            [
+              1.0,
+              0.8,
+              0.62,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.88,
+              0.54,
+              0.38,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.418,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.12,
+            1.0
+          ],
+          [
+            0.58,
+            0.82
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 1.9,
+        "drag": 1.8667,
+        "blend": "additive",
+        "soft_particle_distance": 0.18,
+        "render_mode": "stretched_billboard",
+        "velocity_stretch": 0.15,
+        "sprite_fps": 17.3333
+      },
+      "inputs": {
+        "sprite": "tex_flame",
+        "material": "mat_fire",
+        "forces": [
+          "f_buoy_fire",
+          "f_curl_fire"
+        ]
+      }
+    },
+    {
+      "id": "e_flame_core",
+      "type": "emitter",
+      "layer": "flames",
+      "parent": "wind_flame",
+      "parameters": {
+        "shape": "disc",
+        "radius": 0.0704,
+        "position": [
+          0.0,
+          0.0141,
+          0.0
+        ],
+        "direction": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "spread": 15.0,
+        "velocity": {
+          "value": 0.5013,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 0.5013
+            },
+            {
+              "time": 0.25,
+              "value": 0.5013
+            },
+            {
+              "time": 0.5,
+              "value": 0.5013
+            },
+            {
+              "time": 0.75,
+              "value": 0.5013
+            },
+            {
+              "time": 1.0,
+              "value": 0.5013
+            },
+            {
+              "time": 1.25,
+              "value": 0.5013
+            },
+            {
+              "time": 1.5,
+              "value": 0.5013
+            },
+            {
+              "time": 1.75,
+              "value": 0.5013
+            },
+            {
+              "time": 2.0,
+              "value": 0.5013
+            },
+            {
+              "time": 2.25,
+              "value": 0.5055
+            },
+            {
+              "time": 2.5,
+              "value": 0.5257
+            },
+            {
+              "time": 2.75,
+              "value": 0.5512
+            },
+            {
+              "time": 3.0,
+              "value": 0.5688
+            },
+            {
+              "time": 3.25,
+              "value": 0.5698
+            },
+            {
+              "time": 3.5,
+              "value": 0.5647
+            },
+            {
+              "time": 3.75,
+              "value": 0.5561
+            },
+            {
+              "time": 4.0,
+              "value": 0.5454
+            },
+            {
+              "time": 4.25,
+              "value": 0.5336
+            },
+            {
+              "time": 4.5,
+              "value": 0.5222
+            },
+            {
+              "time": 4.75,
+              "value": 0.5121
+            },
+            {
+              "time": 5.0,
+              "value": 0.5048
+            },
+            {
+              "time": 5.25,
+              "value": 0.5014
+            },
+            {
+              "time": 5.5,
+              "value": 0.5013
+            },
+            {
+              "time": 5.75,
+              "value": 0.5013
+            },
+            {
+              "time": 6.0,
+              "value": 0.5013
+            },
+            {
+              "time": 6.25,
+              "value": 0.5013
+            },
+            {
+              "time": 6.5,
+              "value": 0.5013
+            },
+            {
+              "time": 6.75,
+              "value": 0.5013
+            },
+            {
+              "time": 7.0,
+              "value": 0.5013
+            },
+            {
+              "time": 7.25,
+              "value": 0.5013
+            },
+            {
+              "time": 7.5,
+              "value": 0.5013
+            },
+            {
+              "time": 7.75,
+              "value": 0.511
+            },
+            {
+              "time": 8.0,
+              "value": 0.5298
+            },
+            {
+              "time": 8.25,
+              "value": 0.5425
+            },
+            {
+              "time": 8.5,
+              "value": 0.5414
+            },
+            {
+              "time": 8.75,
+              "value": 0.5357
+            },
+            {
+              "time": 9.0,
+              "value": 0.5276
+            },
+            {
+              "time": 9.25,
+              "value": 0.5185
+            },
+            {
+              "time": 9.5,
+              "value": 0.51
+            },
+            {
+              "time": 9.75,
+              "value": 0.5037
+            },
+            {
+              "time": 10.0,
+              "value": 0.5013
+            },
+            {
+              "time": 10.25,
+              "value": 0.5013
+            },
+            {
+              "time": 10.5,
+              "value": 0.5013
+            },
+            {
+              "time": 10.75,
+              "value": 0.5013
+            },
+            {
+              "time": 11.0,
+              "value": 0.5013
+            },
+            {
+              "time": 11.25,
+              "value": 0.5013
+            },
+            {
+              "time": 11.5,
+              "value": 0.5013
+            },
+            {
+              "time": 11.75,
+              "value": 0.5013
+            },
+            {
+              "time": 12.0,
+              "value": 0.5013
+            }
+          ]
+        },
+        "velocity_variance": 0.188,
+        "rate": {
+          "value": 29.6357,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 29.6357
+            },
+            {
+              "time": 0.25,
+              "value": 27.2184
+            },
+            {
+              "time": 0.5,
+              "value": 24.5847
+            },
+            {
+              "time": 0.75,
+              "value": 27.9823
+            },
+            {
+              "time": 1.0,
+              "value": 32.7304
+            },
+            {
+              "time": 1.25,
+              "value": 32.4543
+            },
+            {
+              "time": 1.5,
+              "value": 30.7554
+            },
+            {
+              "time": 1.75,
+              "value": 31.0301
+            },
+            {
+              "time": 2.0,
+              "value": 29.0335
+            },
+            {
+              "time": 2.25,
+              "value": 24.992
+            },
+            {
+              "time": 2.5,
+              "value": 26.2814
+            },
+            {
+              "time": 2.75,
+              "value": 31.8716
+            },
+            {
+              "time": 3.0,
+              "value": 32.5722
+            },
+            {
+              "time": 3.25,
+              "value": 28.1385
+            },
+            {
+              "time": 3.5,
+              "value": 26.19
+            },
+            {
+              "time": 3.75,
+              "value": 25.3247
+            },
+            {
+              "time": 4.0,
+              "value": 21.9116
+            },
+            {
+              "time": 4.25,
+              "value": 21.1641
+            },
+            {
+              "time": 4.5,
+              "value": 25.7662
+            },
+            {
+              "time": 4.75,
+              "value": 28.0875
+            },
+            {
+              "time": 5.0,
+              "value": 24.781
+            },
+            {
+              "time": 5.25,
+              "value": 22.7306
+            },
+            {
+              "time": 5.5,
+              "value": 24.4701
+            },
+            {
+              "time": 5.75,
+              "value": 24.9875
+            },
+            {
+              "time": 6.0,
+              "value": 25.044
+            },
+            {
+              "time": 6.25,
+              "value": 29.3001
+            },
+            {
+              "time": 6.5,
+              "value": 33.5465
+            },
+            {
+              "time": 6.75,
+              "value": 31.4255
+            },
+            {
+              "time": 7.0,
+              "value": 27.5311
+            },
+            {
+              "time": 7.25,
+              "value": 28.1794
+            },
+            {
+              "time": 7.5,
+              "value": 29.7441
+            },
+            {
+              "time": 7.75,
+              "value": 29.3008
+            },
+            {
+              "time": 8.0,
+              "value": 31.1561
+            },
+            {
+              "time": 8.25,
+              "value": 34.7218
+            },
+            {
+              "time": 8.5,
+              "value": 32.3309
+            },
+            {
+              "time": 8.75,
+              "value": 25.6146
+            },
+            {
+              "time": 9.0,
+              "value": 23.4127
+            },
+            {
+              "time": 9.25,
+              "value": 25.3215
+            },
+            {
+              "time": 9.5,
+              "value": 24.9294
+            },
+            {
+              "time": 9.75,
+              "value": 23.8787
+            },
+            {
+              "time": 10.0,
+              "value": 25.7225
+            },
+            {
+              "time": 10.25,
+              "value": 25.6819
+            },
+            {
+              "time": 10.5,
+              "value": 20.9978
+            },
+            {
+              "time": 10.75,
+              "value": 18.9421
+            },
+            {
+              "time": 11.0,
+              "value": 22.9814
+            },
+            {
+              "time": 11.25,
+              "value": 26.3581
+            },
+            {
+              "time": 11.5,
+              "value": 26.3616
+            },
+            {
+              "time": 11.75,
+              "value": 27.7525
+            },
+            {
+              "time": 12.0,
+              "value": 29.6357
+            }
+          ]
+        },
+        "start_time": 0.0,
+        "duration": -1.0
+      },
+      "inputs": {
+        "particle": "ps_flame_core"
+      }
+    },
+    {
+      "id": "ps_flame_body",
+      "type": "particle_system",
+      "layer": "flames",
+      "parameters": {
+        "max_particles": 170,
+        "lifetime": 0.84,
+        "lifetime_variance": 0.3,
+        "size": 0.552,
+        "size_variance": 0.1748,
+        "size_over_life": [
+          [
+            0.0,
+            0.5
+          ],
+          [
+            0.3,
+            1.0
+          ],
+          [
+            0.72,
+            0.94
+          ],
+          [
+            1.0,
+            0.62
+          ]
+        ],
+        "color": [
+          1.0,
+          0.66,
+          0.3,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ]
+          ],
+          [
+            0.28,
+            [
+              1.0,
+              0.93,
+              0.84,
+              1.0
+            ]
+          ],
+          [
+            0.6,
+            [
+              1.0,
+              0.8,
+              0.62,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.88,
+              0.54,
+              0.38,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.437,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.13,
+            1.0
+          ],
+          [
+            0.6,
+            0.76
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 1.3,
+        "drag": 1.7333,
+        "blend": "additive",
+        "soft_particle_distance": 0.18,
+        "render_mode": "stretched_billboard",
+        "velocity_stretch": 0.165,
+        "sprite_fps": 14.6667
+      },
+      "inputs": {
+        "sprite": "tex_flame",
+        "material": "mat_fire",
+        "forces": [
+          "f_buoy_fire",
+          "f_curl_fire"
+        ]
+      }
+    },
+    {
+      "id": "e_flame_body",
+      "type": "emitter",
+      "layer": "flames",
+      "parent": "wind_flame",
+      "parameters": {
+        "shape": "disc",
+        "radius": 0.0626,
+        "position": [
+          0.0,
+          0.0752,
+          0.0
+        ],
+        "direction": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "spread": 13.0,
+        "velocity": {
+          "value": 0.7833,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 0.7833
+            },
+            {
+              "time": 0.25,
+              "value": 0.7833
+            },
+            {
+              "time": 0.5,
+              "value": 0.7833
+            },
+            {
+              "time": 0.75,
+              "value": 0.7833
+            },
+            {
+              "time": 1.0,
+              "value": 0.7833
+            },
+            {
+              "time": 1.25,
+              "value": 0.7833
+            },
+            {
+              "time": 1.5,
+              "value": 0.7833
+            },
+            {
+              "time": 1.75,
+              "value": 0.7833
+            },
+            {
+              "time": 2.0,
+              "value": 0.7833
+            },
+            {
+              "time": 2.25,
+              "value": 0.7906
+            },
+            {
+              "time": 2.5,
+              "value": 0.8257
+            },
+            {
+              "time": 2.75,
+              "value": 0.8699
+            },
+            {
+              "time": 3.0,
+              "value": 0.9004
+            },
+            {
+              "time": 3.25,
+              "value": 0.9022
+            },
+            {
+              "time": 3.5,
+              "value": 0.8933
+            },
+            {
+              "time": 3.75,
+              "value": 0.8785
+            },
+            {
+              "time": 4.0,
+              "value": 0.8598
+            },
+            {
+              "time": 4.25,
+              "value": 0.8394
+            },
+            {
+              "time": 4.5,
+              "value": 0.8195
+            },
+            {
+              "time": 4.75,
+              "value": 0.8021
+            },
+            {
+              "time": 5.0,
+              "value": 0.7894
+            },
+            {
+              "time": 5.25,
+              "value": 0.7835
+            },
+            {
+              "time": 5.5,
+              "value": 0.7833
+            },
+            {
+              "time": 5.75,
+              "value": 0.7833
+            },
+            {
+              "time": 6.0,
+              "value": 0.7833
+            },
+            {
+              "time": 6.25,
+              "value": 0.7833
+            },
+            {
+              "time": 6.5,
+              "value": 0.7833
+            },
+            {
+              "time": 6.75,
+              "value": 0.7833
+            },
+            {
+              "time": 7.0,
+              "value": 0.7833
+            },
+            {
+              "time": 7.25,
+              "value": 0.7833
+            },
+            {
+              "time": 7.5,
+              "value": 0.7833
+            },
+            {
+              "time": 7.75,
+              "value": 0.8001
+            },
+            {
+              "time": 8.0,
+              "value": 0.8327
+            },
+            {
+              "time": 8.25,
+              "value": 0.8548
+            },
+            {
+              "time": 8.5,
+              "value": 0.8528
+            },
+            {
+              "time": 8.75,
+              "value": 0.8431
+            },
+            {
+              "time": 9.0,
+              "value": 0.8289
+            },
+            {
+              "time": 9.25,
+              "value": 0.8131
+            },
+            {
+              "time": 9.5,
+              "value": 0.7984
+            },
+            {
+              "time": 9.75,
+              "value": 0.7875
+            },
+            {
+              "time": 10.0,
+              "value": 0.7833
+            },
+            {
+              "time": 10.25,
+              "value": 0.7833
+            },
+            {
+              "time": 10.5,
+              "value": 0.7833
+            },
+            {
+              "time": 10.75,
+              "value": 0.7833
+            },
+            {
+              "time": 11.0,
+              "value": 0.7833
+            },
+            {
+              "time": 11.25,
+              "value": 0.7833
+            },
+            {
+              "time": 11.5,
+              "value": 0.7833
+            },
+            {
+              "time": 11.75,
+              "value": 0.7833
+            },
+            {
+              "time": 12.0,
+              "value": 0.7833
+            }
+          ]
+        },
+        "velocity_variance": 0.282,
+        "rate": {
+          "value": 39.6424,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 39.6424
+            },
+            {
+              "time": 0.25,
+              "value": 37.9065
+            },
+            {
+              "time": 0.5,
+              "value": 34.781
+            },
+            {
+              "time": 0.75,
+              "value": 34.3951
+            },
+            {
+              "time": 1.0,
+              "value": 34.3313
+            },
+            {
+              "time": 1.25,
+              "value": 30.6449
+            },
+            {
+              "time": 1.5,
+              "value": 25.9614
+            },
+            {
+              "time": 1.75,
+              "value": 26.1404
+            },
+            {
+              "time": 2.0,
+              "value": 30.854
+            },
+            {
+              "time": 2.25,
+              "value": 34.4577
+            },
+            {
+              "time": 2.5,
+              "value": 35.7724
+            },
+            {
+              "time": 2.75,
+              "value": 38.2891
+            },
+            {
+              "time": 3.0,
+              "value": 43.1871
+            },
+            {
+              "time": 3.25,
+              "value": 44.5735
+            },
+            {
+              "time": 3.5,
+              "value": 39.5472
+            },
+            {
+              "time": 3.75,
+              "value": 33.2968
+            },
+            {
+              "time": 4.0,
+              "value": 31.7252
+            },
+            {
+              "time": 4.25,
+              "value": 32.6163
+            },
+            {
+              "time": 4.5,
+              "value": 30.5951
+            },
+            {
+              "time": 4.75,
+              "value": 26.6081
+            },
+            {
+              "time": 5.0,
+              "value": 25.6724
+            },
+            {
+              "time": 5.25,
+              "value": 27.6468
+            },
+            {
+              "time": 5.5,
+              "value": 27.1003
+            },
+            {
+              "time": 5.75,
+              "value": 22.4516
+            },
+            {
+              "time": 6.0,
+              "value": 19.1576
+            },
+            {
+              "time": 6.25,
+              "value": 20.8935
+            },
+            {
+              "time": 6.5,
+              "value": 24.019
+            },
+            {
+              "time": 6.75,
+              "value": 24.4049
+            },
+            {
+              "time": 7.0,
+              "value": 24.4687
+            },
+            {
+              "time": 7.25,
+              "value": 28.1551
+            },
+            {
+              "time": 7.5,
+              "value": 32.8386
+            },
+            {
+              "time": 7.75,
+              "value": 33.2889
+            },
+            {
+              "time": 8.0,
+              "value": 29.5331
+            },
+            {
+              "time": 8.25,
+              "value": 26.6529
+            },
+            {
+              "time": 8.5,
+              "value": 26.6628
+            },
+            {
+              "time": 8.75,
+              "value": 25.6213
+            },
+            {
+              "time": 9.0,
+              "value": 21.8227
+            },
+            {
+              "time": 9.25,
+              "value": 20.2547
+            },
+            {
+              "time": 9.5,
+              "value": 24.1011
+            },
+            {
+              "time": 9.75,
+              "value": 28.9251
+            },
+            {
+              "time": 10.0,
+              "value": 29.6382
+            },
+            {
+              "time": 10.25,
+              "value": 28.1603
+            },
+            {
+              "time": 10.5,
+              "value": 29.4271
+            },
+            {
+              "time": 10.75,
+              "value": 32.7554
+            },
+            {
+              "time": 11.0,
+              "value": 33.3066
+            },
+            {
+              "time": 11.25,
+              "value": 31.159
+            },
+            {
+              "time": 11.5,
+              "value": 31.6997
+            },
+            {
+              "time": 11.75,
+              "value": 36.3484
+            },
+            {
+              "time": 12.0,
+              "value": 39.6424
+            }
+          ]
+        },
+        "start_time": 0.0,
+        "duration": -1.0
+      },
+      "inputs": {
+        "particle": "ps_flame_body"
+      }
+    },
+    {
+      "id": "ps_flame_tongue",
+      "type": "particle_system",
+      "layer": "flames",
+      "parameters": {
+        "max_particles": 110,
+        "lifetime": 0.69,
+        "lifetime_variance": 0.255,
+        "size": 0.46,
+        "size_variance": 0.1564,
+        "size_over_life": [
+          [
+            0.0,
+            0.42
+          ],
+          [
+            0.32,
+            1.06
+          ],
+          [
+            1.0,
+            0.6
+          ]
+        ],
+        "color": [
+          1.0,
+          0.46,
+          0.14,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ]
+          ],
+          [
+            0.28,
+            [
+              1.0,
+              0.93,
+              0.84,
+              1.0
+            ]
+          ],
+          [
+            0.6,
+            [
+              1.0,
+              0.8,
+              0.62,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.88,
+              0.54,
+              0.38,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.323,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.11,
+            1.0
+          ],
+          [
+            0.48,
+            0.58
+          ],
+          [
+            0.8,
+            0.18
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 1.2,
+        "drag": 1.2,
+        "blend": "additive",
+        "soft_particle_distance": 0.18,
+        "render_mode": "stretched_billboard",
+        "velocity_stretch": 0.3,
+        "sprite_fps": 13.3333
+      },
+      "inputs": {
+        "sprite": "tex_flame",
+        "material": "mat_fire",
+        "forces": [
+          "f_buoy_fire",
+          "f_curl_fire"
+        ]
+      }
+    },
+    {
+      "id": "e_flame_tongue",
+      "type": "emitter",
+      "layer": "flames",
+      "parent": "wind_flame",
+      "parameters": {
+        "shape": "disc",
+        "radius": 0.0485,
+        "position": [
+          0.0,
+          0.188,
+          0.0
+        ],
+        "direction": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "spread": 17.0,
+        "velocity": {
+          "value": 1.0653,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 1.0653
+            },
+            {
+              "time": 0.25,
+              "value": 1.0653
+            },
+            {
+              "time": 0.5,
+              "value": 1.0653
+            },
+            {
+              "time": 0.75,
+              "value": 1.0653
+            },
+            {
+              "time": 1.0,
+              "value": 1.0653
+            },
+            {
+              "time": 1.25,
+              "value": 1.0653
+            },
+            {
+              "time": 1.5,
+              "value": 1.0653
+            },
+            {
+              "time": 1.75,
+              "value": 1.0653
+            },
+            {
+              "time": 2.0,
+              "value": 1.0653
+            },
+            {
+              "time": 2.25,
+              "value": 1.0782
+            },
+            {
+              "time": 2.5,
+              "value": 1.1403
+            },
+            {
+              "time": 2.75,
+              "value": 1.2183
+            },
+            {
+              "time": 3.0,
+              "value": 1.2724
+            },
+            {
+              "time": 3.25,
+              "value": 1.2755
+            },
+            {
+              "time": 3.5,
+              "value": 1.2598
+            },
+            {
+              "time": 3.75,
+              "value": 1.2336
+            },
+            {
+              "time": 4.0,
+              "value": 1.2006
+            },
+            {
+              "time": 4.25,
+              "value": 1.1646
+            },
+            {
+              "time": 4.5,
+              "value": 1.1293
+            },
+            {
+              "time": 4.75,
+              "value": 1.0986
+            },
+            {
+              "time": 5.0,
+              "value": 1.0761
+            },
+            {
+              "time": 5.25,
+              "value": 1.0656
+            },
+            {
+              "time": 5.5,
+              "value": 1.0653
+            },
+            {
+              "time": 5.75,
+              "value": 1.0653
+            },
+            {
+              "time": 6.0,
+              "value": 1.0653
+            },
+            {
+              "time": 6.25,
+              "value": 1.0653
+            },
+            {
+              "time": 6.5,
+              "value": 1.0653
+            },
+            {
+              "time": 6.75,
+              "value": 1.0653
+            },
+            {
+              "time": 7.0,
+              "value": 1.0653
+            },
+            {
+              "time": 7.25,
+              "value": 1.0653
+            },
+            {
+              "time": 7.5,
+              "value": 1.0653
+            },
+            {
+              "time": 7.75,
+              "value": 1.0949
+            },
+            {
+              "time": 8.0,
+              "value": 1.1527
+            },
+            {
+              "time": 8.25,
+              "value": 1.1917
+            },
+            {
+              "time": 8.5,
+              "value": 1.1882
+            },
+            {
+              "time": 8.75,
+              "value": 1.171
+            },
+            {
+              "time": 9.0,
+              "value": 1.146
+            },
+            {
+              "time": 9.25,
+              "value": 1.118
+            },
+            {
+              "time": 9.5,
+              "value": 1.092
+            },
+            {
+              "time": 9.75,
+              "value": 1.0728
+            },
+            {
+              "time": 10.0,
+              "value": 1.0653
+            },
+            {
+              "time": 10.25,
+              "value": 1.0653
+            },
+            {
+              "time": 10.5,
+              "value": 1.0653
+            },
+            {
+              "time": 10.75,
+              "value": 1.0653
+            },
+            {
+              "time": 11.0,
+              "value": 1.0653
+            },
+            {
+              "time": 11.25,
+              "value": 1.0653
+            },
+            {
+              "time": 11.5,
+              "value": 1.0653
+            },
+            {
+              "time": 11.75,
+              "value": 1.0653
+            },
+            {
+              "time": 12.0,
+              "value": 1.0653
+            }
+          ]
+        },
+        "velocity_variance": 0.4387,
+        "rate": {
+          "value": 21.8162,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 21.8162
+            },
+            {
+              "time": 0.25,
+              "value": 20.9398
+            },
+            {
+              "time": 0.5,
+              "value": 19.4529
+            },
+            {
+              "time": 0.75,
+              "value": 19.3382
+            },
+            {
+              "time": 1.0,
+              "value": 19.5581
+            },
+            {
+              "time": 1.25,
+              "value": 17.6073
+            },
+            {
+              "time": 1.5,
+              "value": 13.215
+            },
+            {
+              "time": 1.75,
+              "value": 9.3947
+            },
+            {
+              "time": 2.0,
+              "value": 9.2767
+            },
+            {
+              "time": 2.25,
+              "value": 12.6103
+            },
+            {
+              "time": 2.5,
+              "value": 16.4355
+            },
+            {
+              "time": 2.75,
+              "value": 17.1139
+            },
+            {
+              "time": 3.0,
+              "value": 14.4208
+            },
+            {
+              "time": 3.25,
+              "value": 11.9346
+            },
+            {
+              "time": 3.5,
+              "value": 12.2076
+            },
+            {
+              "time": 3.75,
+              "value": 13.2718
+            },
+            {
+              "time": 4.0,
+              "value": 12.5115
+            },
+            {
+              "time": 4.25,
+              "value": 10.6642
+            },
+            {
+              "time": 4.5,
+              "value": 10.9666
+            },
+            {
+              "time": 4.75,
+              "value": 14.8865
+            },
+            {
+              "time": 5.0,
+              "value": 19.996
+            },
+            {
+              "time": 5.25,
+              "value": 22.4648
+            },
+            {
+              "time": 5.5,
+              "value": 20.9428
+            },
+            {
+              "time": 5.75,
+              "value": 17.7178
+            },
+            {
+              "time": 6.0,
+              "value": 16.2754
+            },
+            {
+              "time": 6.25,
+              "value": 17.2437
+            },
+            {
+              "time": 6.5,
+              "value": 18.2239
+            },
+            {
+              "time": 6.75,
+              "value": 17.2677
+            },
+            {
+              "time": 7.0,
+              "value": 15.486
+            },
+            {
+              "time": 7.25,
+              "value": 15.4903
+            },
+            {
+              "time": 7.5,
+              "value": 17.6841
+            },
+            {
+              "time": 7.75,
+              "value": 19.8205
+            },
+            {
+              "time": 8.0,
+              "value": 18.692
+            },
+            {
+              "time": 8.25,
+              "value": 13.5043
+            },
+            {
+              "time": 8.5,
+              "value": 8.4099
+            },
+            {
+              "time": 8.75,
+              "value": 7.4804
+            },
+            {
+              "time": 9.0,
+              "value": 9.7098
+            },
+            {
+              "time": 9.25,
+              "value": 11.5172
+            },
+            {
+              "time": 9.5,
+              "value": 11.3587
+            },
+            {
+              "time": 9.75,
+              "value": 11.0569
+            },
+            {
+              "time": 10.0,
+              "value": 12.8432
+            },
+            {
+              "time": 10.25,
+              "value": 16.0735
+            },
+            {
+              "time": 10.5,
+              "value": 17.6455
+            },
+            {
+              "time": 10.75,
+              "value": 15.8331
+            },
+            {
+              "time": 11.0,
+              "value": 12.6829
+            },
+            {
+              "time": 11.25,
+              "value": 12.029
+            },
+            {
+              "time": 11.5,
+              "value": 15.2348
+            },
+            {
+              "time": 11.75,
+              "value": 19.6897
+            },
+            {
+              "time": 12.0,
+              "value": 21.8162
+            }
+          ]
+        },
+        "start_time": 0.0,
+        "duration": -1.0
+      },
+      "inputs": {
+        "particle": "ps_flame_tongue"
+      }
+    },
+    {
+      "id": "ps_head_glow",
+      "type": "particle_system",
+      "layer": "head",
+      "parameters": {
+        "max_particles": 26,
+        "lifetime": 1.2,
+        "lifetime_variance": 0.4,
+        "size": 0.184,
+        "size_variance": 0.0552,
+        "size_over_life": [
+          [
+            0.0,
+            0.72
+          ],
+          [
+            0.4,
+            1.0
+          ],
+          [
+            1.0,
+            1.18
+          ]
+        ],
+        "color": [
+          1.0,
+          0.34,
+          0.07,
+          1.0
+        ],
+        "opacity": 0.0451,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.3,
+            1.0
+          ],
+          [
+            0.7,
+            0.8
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.8,
+        "drag": 1.6,
+        "rotation_variance": 180.0,
+        "angular_velocity_variance": 30.0,
+        "render_mode": "billboard",
+        "blend": "additive",
+        "soft_particle_distance": 0.12,
+        "sprite_fps": 8.0
+      },
+      "inputs": {
+        "sprite": "tex_glow",
+        "material": "mat_glow"
+      }
+    },
+    {
+      "id": "e_head_glow",
+      "type": "emitter",
+      "layer": "head",
+      "parent": "torch_head",
+      "parameters": {
+        "shape": "disc",
+        "radius": 0.0626,
+        "position": [
+          0.0,
+          0.0188,
+          0.0
+        ],
+        "direction": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "spread": 30.0,
+        "velocity": 0.08,
+        "velocity_variance": 0.05,
+        "rate": {
+          "value": 5.375,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 5.375
+            },
+            {
+              "time": 0.25,
+              "value": 5.2047
+            },
+            {
+              "time": 0.5,
+              "value": 4.8734
+            },
+            {
+              "time": 0.75,
+              "value": 4.7137
+            },
+            {
+              "time": 1.0,
+              "value": 4.8923
+            },
+            {
+              "time": 1.25,
+              "value": 5.2767
+            },
+            {
+              "time": 1.5,
+              "value": 5.5386
+            },
+            {
+              "time": 1.75,
+              "value": 5.4123
+            },
+            {
+              "time": 2.0,
+              "value": 4.907
+            },
+            {
+              "time": 2.25,
+              "value": 4.3056
+            },
+            {
+              "time": 2.5,
+              "value": 3.9512
+            },
+            {
+              "time": 2.75,
+              "value": 3.9869
+            },
+            {
+              "time": 3.0,
+              "value": 4.2535
+            },
+            {
+              "time": 3.25,
+              "value": 4.4225
+            },
+            {
+              "time": 3.5,
+              "value": 4.2618
+            },
+            {
+              "time": 3.75,
+              "value": 3.8237
+            },
+            {
+              "time": 4.0,
+              "value": 3.4093
+            },
+            {
+              "time": 4.25,
+              "value": 3.3355
+            },
+            {
+              "time": 4.5,
+              "value": 3.6877
+            },
+            {
+              "time": 4.75,
+              "value": 4.251
+            },
+            {
+              "time": 5.0,
+              "value": 4.6743
+            },
+            {
+              "time": 5.25,
+              "value": 4.7388
+            },
+            {
+              "time": 5.5,
+              "value": 4.5216
+            },
+            {
+              "time": 5.75,
+              "value": 4.3268
+            },
+            {
+              "time": 6.0,
+              "value": 4.4381
+            },
+            {
+              "time": 6.25,
+              "value": 4.8883
+            },
+            {
+              "time": 6.5,
+              "value": 5.425
+            },
+            {
+              "time": 6.75,
+              "value": 5.7017
+            },
+            {
+              "time": 7.0,
+              "value": 5.5435
+            },
+            {
+              "time": 7.25,
+              "value": 5.0817
+            },
+            {
+              "time": 7.5,
+              "value": 4.6499
+            },
+            {
+              "time": 7.75,
+              "value": 4.5252
+            },
+            {
+              "time": 8.0,
+              "value": 4.7157
+            },
+            {
+              "time": 8.25,
+              "value": 4.9598
+            },
+            {
+              "time": 8.5,
+              "value": 4.9389
+            },
+            {
+              "time": 8.75,
+              "value": 4.5353
+            },
+            {
+              "time": 9.0,
+              "value": 3.9334
+            },
+            {
+              "time": 9.25,
+              "value": 3.4845
+            },
+            {
+              "time": 9.5,
+              "value": 3.4398
+            },
+            {
+              "time": 9.75,
+              "value": 3.7609
+            },
+            {
+              "time": 10.0,
+              "value": 4.1549
+            },
+            {
+              "time": 10.25,
+              "value": 4.3061
+            },
+            {
+              "time": 10.5,
+              "value": 4.1238
+            },
+            {
+              "time": 10.75,
+              "value": 3.8114
+            },
+            {
+              "time": 11.0,
+              "value": 3.703
+            },
+            {
+              "time": 11.25,
+              "value": 3.9958
+            },
+            {
+              "time": 11.5,
+              "value": 4.5883
+            },
+            {
+              "time": 11.75,
+              "value": 5.151
+            },
+            {
+              "time": 12.0,
+              "value": 5.375
+            }
+          ]
+        },
+        "start_time": 0.0,
+        "duration": -1.0
+      },
+      "inputs": {
+        "particle": "ps_head_glow"
+      }
+    },
+    {
+      "id": "ps_halo",
+      "type": "particle_system",
+      "layer": "light",
+      "parameters": {
+        "max_particles": 2,
+        "lifetime": 12.0,
+        "size": 1.87,
+        "size_over_life": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            0.25,
+            1.05
+          ],
+          [
+            0.5,
+            0.96
+          ],
+          [
+            0.75,
+            1.04
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "color": [
+          1.0,
+          0.34,
+          0.07,
+          1.0
+        ],
+        "opacity": 0.0127,
+        "opacity_over_life": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            0.2,
+            0.85
+          ],
+          [
+            0.4,
+            1.0
+          ],
+          [
+            0.6,
+            0.9
+          ],
+          [
+            0.8,
+            1.05
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "emissive": 0.6,
+        "render_mode": "billboard",
+        "blend": "additive",
+        "soft_particle_distance": 0.4,
+        "sprite_fps": 2.0
+      },
+      "inputs": {
+        "sprite": "tex_halo",
+        "material": "mat_glow"
+      }
+    },
+    {
+      "id": "e_halo",
+      "type": "emitter",
+      "layer": "light",
+      "parent": "torch_head",
+      "parameters": {
+        "shape": "point",
+        "position": [
+          0.0,
+          0.3196,
+          0.0
+        ],
+        "velocity": 0.0,
+        "rate": 0.0,
+        "burst_count": 1,
+        "burst_times": [
+          0.0
+        ],
+        "start_time": 0.0,
+        "duration": 0.05
+      },
+      "inputs": {
+        "particle": "ps_halo"
+      }
+    },
+    {
+      "id": "ps_embers",
+      "type": "particle_system",
+      "layer": "embers",
+      "parameters": {
+        "max_particles": 150,
+        "lifetime": 3.045,
+        "lifetime_variance": 1.3775,
+        "size": 0.0213,
+        "size_variance": 0.009,
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              0.9,
+              0.55,
+              1.0
+            ]
+          ],
+          [
+            0.24,
+            [
+              1.0,
+              0.63,
+              0.2,
+              1.0
+            ]
+          ],
+          [
+            0.6,
+            [
+              1.0,
+              0.31,
+              0.06,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.68,
+              0.09,
+              0.02,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 1.0,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.05,
+            1.0
+          ],
+          [
+            0.68,
+            0.72
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 6.0,
+        "emissive_over_life": [
+          [
+            0.0,
+            1.5
+          ],
+          [
+            0.4,
+            1.0
+          ],
+          [
+            1.0,
+            0.4
+          ]
+        ],
+        "drag": 0.6552,
+        "render_mode": "stretched_billboard",
+        "velocity_stretch": 0.35,
+        "blend": "additive",
+        "soft_particle_distance": 0.02
+      },
+      "inputs": {
+        "sprite": "tex_spark",
+        "material": "mat_glow",
+        "forces": [
+          "f_buoy_ember",
+          "f_curl_ember"
+        ]
+      }
+    },
+    {
+      "id": "e_embers",
+      "type": "emitter",
+      "layer": "embers",
+      "parent": "wind_gust",
+      "parameters": {
+        "shape": "disc",
+        "radius": 0.0704,
+        "position": [
+          0.0,
+          0.3469,
+          0.0
+        ],
+        "direction": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "spread": 20.0,
+        "velocity": {
+          "value": 1.72,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 1.72
+            },
+            {
+              "time": 0.25,
+              "value": 1.72
+            },
+            {
+              "time": 0.5,
+              "value": 1.72
+            },
+            {
+              "time": 0.75,
+              "value": 1.72
+            },
+            {
+              "time": 1.0,
+              "value": 1.72
+            },
+            {
+              "time": 1.25,
+              "value": 1.72
+            },
+            {
+              "time": 1.5,
+              "value": 1.72
+            },
+            {
+              "time": 1.75,
+              "value": 1.72
+            },
+            {
+              "time": 2.0,
+              "value": 1.72
+            },
+            {
+              "time": 2.25,
+              "value": 1.7602
+            },
+            {
+              "time": 2.5,
+              "value": 1.9529
+            },
+            {
+              "time": 2.75,
+              "value": 2.1951
+            },
+            {
+              "time": 3.0,
+              "value": 2.363
+            },
+            {
+              "time": 3.25,
+              "value": 2.3727
+            },
+            {
+              "time": 3.5,
+              "value": 2.3239
+            },
+            {
+              "time": 3.75,
+              "value": 2.2424
+            },
+            {
+              "time": 4.0,
+              "value": 2.14
+            },
+            {
+              "time": 4.25,
+              "value": 2.0282
+            },
+            {
+              "time": 4.5,
+              "value": 1.9188
+            },
+            {
+              "time": 4.75,
+              "value": 1.8234
+            },
+            {
+              "time": 5.0,
+              "value": 1.7535
+            },
+            {
+              "time": 5.25,
+              "value": 1.721
+            },
+            {
+              "time": 5.5,
+              "value": 1.72
+            },
+            {
+              "time": 5.75,
+              "value": 1.72
+            },
+            {
+              "time": 6.0,
+              "value": 1.72
+            },
+            {
+              "time": 6.25,
+              "value": 1.72
+            },
+            {
+              "time": 6.5,
+              "value": 1.72
+            },
+            {
+              "time": 6.75,
+              "value": 1.72
+            },
+            {
+              "time": 7.0,
+              "value": 1.72
+            },
+            {
+              "time": 7.25,
+              "value": 1.72
+            },
+            {
+              "time": 7.5,
+              "value": 1.72
+            },
+            {
+              "time": 7.75,
+              "value": 1.8121
+            },
+            {
+              "time": 8.0,
+              "value": 1.9913
+            },
+            {
+              "time": 8.25,
+              "value": 2.1125
+            },
+            {
+              "time": 8.5,
+              "value": 2.1017
+            },
+            {
+              "time": 8.75,
+              "value": 2.0482
+            },
+            {
+              "time": 9.0,
+              "value": 1.9705
+            },
+            {
+              "time": 9.25,
+              "value": 1.8836
+            },
+            {
+              "time": 9.5,
+              "value": 1.8028
+            },
+            {
+              "time": 9.75,
+              "value": 1.7432
+            },
+            {
+              "time": 10.0,
+              "value": 1.72
+            },
+            {
+              "time": 10.25,
+              "value": 1.72
+            },
+            {
+              "time": 10.5,
+              "value": 1.72
+            },
+            {
+              "time": 10.75,
+              "value": 1.72
+            },
+            {
+              "time": 11.0,
+              "value": 1.72
+            },
+            {
+              "time": 11.25,
+              "value": 1.72
+            },
+            {
+              "time": 11.5,
+              "value": 1.72
+            },
+            {
+              "time": 11.75,
+              "value": 1.72
+            },
+            {
+              "time": 12.0,
+              "value": 1.72
+            }
+          ]
+        },
+        "velocity_variance": 0.8,
+        "rate": {
+          "value": 16.3207,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 16.3207
+            },
+            {
+              "time": 0.25,
+              "value": 14.9156
+            },
+            {
+              "time": 0.5,
+              "value": 14.398
+            },
+            {
+              "time": 0.75,
+              "value": 15.5815
+            },
+            {
+              "time": 1.0,
+              "value": 16.4476
+            },
+            {
+              "time": 1.25,
+              "value": 15.1577
+            },
+            {
+              "time": 1.5,
+              "value": 12.8501
+            },
+            {
+              "time": 1.75,
+              "value": 12.5372
+            },
+            {
+              "time": 2.0,
+              "value": 15.3307
+            },
+            {
+              "time": 2.25,
+              "value": 20.6078
+            },
+            {
+              "time": 2.5,
+              "value": 30.3018
+            },
+            {
+              "time": 2.75,
+              "value": 34.3432
+            },
+            {
+              "time": 3.0,
+              "value": 29.4154
+            },
+            {
+              "time": 3.25,
+              "value": 24.0064
+            },
+            {
+              "time": 3.5,
+              "value": 23.3005
+            },
+            {
+              "time": 3.75,
+              "value": 21.4745
+            },
+            {
+              "time": 4.0,
+              "value": 16.1188
+            },
+            {
+              "time": 4.25,
+              "value": 11.6973
+            },
+            {
+              "time": 4.5,
+              "value": 11.947
+            },
+            {
+              "time": 4.75,
+              "value": 14.6951
+            },
+            {
+              "time": 5.0,
+              "value": 15.6503
+            },
+            {
+              "time": 5.25,
+              "value": 13.6791
+            },
+            {
+              "time": 5.5,
+              "value": 10.374
+            },
+            {
+              "time": 5.75,
+              "value": 8.2878
+            },
+            {
+              "time": 6.0,
+              "value": 9.634
+            },
+            {
+              "time": 6.25,
+              "value": 12.9603
+            },
+            {
+              "time": 6.5,
+              "value": 15.2167
+            },
+            {
+              "time": 6.75,
+              "value": 15.4712
+            },
+            {
+              "time": 7.0,
+              "value": 15.6442
+            },
+            {
+              "time": 7.25,
+              "value": 17.5035
+            },
+            {
+              "time": 7.5,
+              "value": 19.8721
+            },
+            {
+              "time": 7.75,
+              "value": 24.4018
+            },
+            {
+              "time": 8.0,
+              "value": 27.1671
+            },
+            {
+              "time": 8.25,
+              "value": 22.7097
+            },
+            {
+              "time": 8.5,
+              "value": 18.5219
+            },
+            {
+              "time": 8.75,
+              "value": 20.1949
+            },
+            {
+              "time": 9.0,
+              "value": 21.9505
+            },
+            {
+              "time": 9.25,
+              "value": 19.2575
+            },
+            {
+              "time": 9.5,
+              "value": 14.1345
+            },
+            {
+              "time": 9.75,
+              "value": 10.7876
+            },
+            {
+              "time": 10.0,
+              "value": 10.556
+            },
+            {
+              "time": 10.25,
+              "value": 11.2116
+            },
+            {
+              "time": 10.5,
+              "value": 9.7705
+            },
+            {
+              "time": 10.75,
+              "value": 6.5185
+            },
+            {
+              "time": 11.0,
+              "value": 4.6548
+            },
+            {
+              "time": 11.25,
+              "value": 6.7709
+            },
+            {
+              "time": 11.5,
+              "value": 11.7185
+            },
+            {
+              "time": 11.75,
+              "value": 15.6943
+            },
+            {
+              "time": 12.0,
+              "value": 16.3207
+            }
+          ]
+        },
+        "start_time": 0.0,
+        "duration": -1.0
+      },
+      "inputs": {
+        "particle": "ps_embers"
+      }
+    },
+    {
+      "id": "ps_smoke",
+      "type": "particle_system",
+      "layer": "smoke",
+      "parameters": {
+        "max_particles": 60,
+        "lifetime": 4.4,
+        "lifetime_variance": 0.5,
+        "size": 0.3236,
+        "size_variance": 0.07,
+        "size_over_life": [
+          [
+            0.0,
+            0.55
+          ],
+          [
+            0.2,
+            0.9
+          ],
+          [
+            0.5,
+            1.35
+          ],
+          [
+            1.0,
+            2.1
+          ]
+        ],
+        "color": [
+          0.78,
+          0.77,
+          0.76,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              0.34,
+              0.32,
+              0.3,
+              1.0
+            ]
+          ],
+          [
+            0.35,
+            [
+              0.5,
+              0.49,
+              0.49,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.66,
+              0.67,
+              0.7,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.2465,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.06,
+            0.85
+          ],
+          [
+            0.2,
+            1.0
+          ],
+          [
+            0.42,
+            0.58
+          ],
+          [
+            0.62,
+            0.28
+          ],
+          [
+            0.8,
+            0.09
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.22,
+        "drag": 0.25,
+        "rotation_variance": 180.0,
+        "angular_velocity_variance": 16.0,
+        "render_mode": "billboard",
+        "blend": "alpha",
+        "sort": true,
+        "soft_particle_distance": 0.3
+      },
+      "inputs": {
+        "sprite": "tex_puff",
+        "material": "mat_smoke",
+        "forces": [
+          "f_cool",
+          "f_billow",
+          "f_curl_smoke"
+        ]
+      }
+    },
+    {
+      "id": "e_smoke",
+      "type": "emitter",
+      "layer": "smoke",
+      "parent": "wind_gust",
+      "parameters": {
+        "shape": "disc",
+        "radius": 0.1252,
+        "position": [
+          0.0,
+          0.6012,
+          0.0
+        ],
+        "direction": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "spread": 7.0,
+        "velocity": 1.15,
+        "velocity_variance": 0.22,
+        "rate": {
+          "value": 4.0628,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 4.0628
+            },
+            {
+              "time": 0.25,
+              "value": 3.9837
+            },
+            {
+              "time": 0.5,
+              "value": 3.799
+            },
+            {
+              "time": 0.75,
+              "value": 3.6146
+            },
+            {
+              "time": 1.0,
+              "value": 3.5205
+            },
+            {
+              "time": 1.25,
+              "value": 3.5527
+            },
+            {
+              "time": 1.5,
+              "value": 3.6784
+            },
+            {
+              "time": 1.75,
+              "value": 3.8111
+            },
+            {
+              "time": 2.0,
+              "value": 3.8485
+            },
+            {
+              "time": 2.25,
+              "value": 3.8197
+            },
+            {
+              "time": 2.5,
+              "value": 3.9514
+            },
+            {
+              "time": 2.75,
+              "value": 3.9567
+            },
+            {
+              "time": 3.0,
+              "value": 3.6915
+            },
+            {
+              "time": 3.25,
+              "value": 3.2711
+            },
+            {
+              "time": 3.5,
+              "value": 3.0522
+            },
+            {
+              "time": 3.75,
+              "value": 3.0838
+            },
+            {
+              "time": 4.0,
+              "value": 3.2664
+            },
+            {
+              "time": 4.25,
+              "value": 3.451
+            },
+            {
+              "time": 4.5,
+              "value": 3.5218
+            },
+            {
+              "time": 4.75,
+              "value": 3.4469
+            },
+            {
+              "time": 5.0,
+              "value": 3.2792
+            },
+            {
+              "time": 5.25,
+              "value": 3.124
+            },
+            {
+              "time": 5.5,
+              "value": 3.0656
+            },
+            {
+              "time": 5.75,
+              "value": 3.1246
+            },
+            {
+              "time": 6.0,
+              "value": 3.3356
+            },
+            {
+              "time": 6.25,
+              "value": 3.6657
+            },
+            {
+              "time": 6.5,
+              "value": 4.0216
+            },
+            {
+              "time": 6.75,
+              "value": 4.2858
+            },
+            {
+              "time": 7.0,
+              "value": 4.3629
+            },
+            {
+              "time": 7.25,
+              "value": 4.2182
+            },
+            {
+              "time": 7.5,
+              "value": 3.8919
+            },
+            {
+              "time": 7.75,
+              "value": 3.7026
+            },
+            {
+              "time": 8.0,
+              "value": 3.6918
+            },
+            {
+              "time": 8.25,
+              "value": 3.6533
+            },
+            {
+              "time": 8.5,
+              "value": 3.5507
+            },
+            {
+              "time": 8.75,
+              "value": 3.529
+            },
+            {
+              "time": 9.0,
+              "value": 3.5034
+            },
+            {
+              "time": 9.25,
+              "value": 3.3843
+            },
+            {
+              "time": 9.5,
+              "value": 3.1436
+            },
+            {
+              "time": 9.75,
+              "value": 2.8283
+            },
+            {
+              "time": 10.0,
+              "value": 2.5359
+            },
+            {
+              "time": 10.25,
+              "value": 2.3363
+            },
+            {
+              "time": 10.5,
+              "value": 2.2874
+            },
+            {
+              "time": 10.75,
+              "value": 2.444
+            },
+            {
+              "time": 11.0,
+              "value": 2.7889
+            },
+            {
+              "time": 11.25,
+              "value": 3.2365
+            },
+            {
+              "time": 11.5,
+              "value": 3.6646
+            },
+            {
+              "time": 11.75,
+              "value": 3.9603
+            },
+            {
+              "time": 12.0,
+              "value": 4.0628
+            }
+          ]
+        },
+        "start_time": 0.0,
+        "duration": -1.0
+      },
+      "inputs": {
+        "particle": "ps_smoke"
+      }
+    },
+    {
+      "id": "ps_flame_core_pre1",
+      "type": "particle_system",
+      "layer": "flames",
+      "parameters": {
+        "max_particles": 20,
+        "lifetime": 0.417,
+        "lifetime_variance": 0.228,
+        "size": 0.3128,
+        "size_variance": 0.1012,
+        "size_over_life": [
+          [
+            0.0,
+            0.8256
+          ],
+          [
+            0.1667,
+            0.9871
+          ],
+          [
+            0.3333,
+            0.9417
+          ],
+          [
+            0.5,
+            0.8963
+          ],
+          [
+            0.6667,
+            0.8271
+          ],
+          [
+            0.8333,
+            0.6635
+          ],
+          [
+            1.0,
+            0.5
+          ]
+        ],
+        "color": [
+          1.0,
+          0.86,
+          0.58,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              0.9544,
+              0.8958,
+              1.0
+            ]
+          ],
+          [
+            0.1667,
+            [
+              1.0,
+              0.9143,
+              0.8134,
+              1.0
+            ]
+          ],
+          [
+            0.3333,
+            [
+              1.0,
+              0.8589,
+              0.7198,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              1.0,
+              0.8036,
+              0.6261,
+              1.0
+            ]
+          ],
+          [
+            0.6667,
+            [
+              0.9618,
+              0.7172,
+              0.5435,
+              1.0
+            ]
+          ],
+          [
+            0.8333,
+            [
+              0.9209,
+              0.6286,
+              0.4618,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.88,
+              0.54,
+              0.38,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.1421,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.9756
+          ],
+          [
+            0.1667,
+            0.9223
+          ],
+          [
+            0.3333,
+            0.869
+          ],
+          [
+            0.5,
+            0.7982
+          ],
+          [
+            0.6667,
+            0.5321
+          ],
+          [
+            0.8333,
+            0.2661
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.95,
+        "drag": 1.8667,
+        "blend": "additive",
+        "soft_particle_distance": 0.18,
+        "render_mode": "stretched_billboard",
+        "velocity_stretch": 0.15,
+        "sprite_fps": 38.1333
+      },
+      "inputs": {
+        "sprite": "tex_flame",
+        "material": "mat_fire",
+        "forces": [
+          "f_buoy_fire",
+          "f_curl_fire"
+        ]
+      }
+    },
+    {
+      "id": "path_flame_core_pre1",
+      "type": "curve",
+      "parameters": {
+        "points": [
+          [
+            0.01,
+            0.02,
+            -0.02
+          ],
+          [
+            0.04,
+            0.04,
+            -0.03
+          ],
+          [
+            -0.05,
+            0.04,
+            0.05
+          ],
+          [
+            0.03,
+            0.06,
+            -0.02
+          ],
+          [
+            0.07,
+            0.11,
+            0.01
+          ],
+          [
+            0.01,
+            0.11,
+            0.0
+          ],
+          [
+            -0.01,
+            0.12,
+            -0.08
+          ]
+        ],
+        "curve_type": "linear",
+        "segments": 14
+      }
+    },
+    {
+      "id": "e_flame_core_pre1",
+      "type": "emitter",
+      "layer": "flames",
+      "parent": "wind_flame",
+      "parameters": {
+        "shape": "curve",
+        "direction": [
+          -0.052,
+          0.985,
+          -0.166
+        ],
+        "spread": 8.2,
+        "velocity": 0.552,
+        "velocity_variance": 0.099,
+        "rate": 0.0,
+        "burst_count": 3,
+        "burst_times": [
+          0.0,
+          0.05,
+          0.1
+        ],
+        "start_time": 0.0,
+        "duration": 0.15
+      },
+      "inputs": {
+        "particle": "ps_flame_core_pre1",
+        "shape_curve": "path_flame_core_pre1"
+      }
+    },
+    {
+      "id": "ps_flame_core_pre2",
+      "type": "particle_system",
+      "layer": "flames",
+      "parameters": {
+        "max_particles": 22,
+        "lifetime": 0.128,
+        "lifetime_variance": 0.1024,
+        "size": 0.3128,
+        "size_variance": 0.1012,
+        "size_over_life": [
+          [
+            0.0,
+            0.8012
+          ],
+          [
+            0.1667,
+            0.751
+          ],
+          [
+            0.3333,
+            0.7008
+          ],
+          [
+            0.5,
+            0.6506
+          ],
+          [
+            0.6667,
+            0.6004
+          ],
+          [
+            0.8333,
+            0.5502
+          ],
+          [
+            1.0,
+            0.5
+          ]
+        ],
+        "color": [
+          1.0,
+          0.86,
+          0.58,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              0.9553,
+              0.7031,
+              0.5306,
+              1.0
+            ]
+          ],
+          [
+            0.1667,
+            [
+              0.9427,
+              0.6759,
+              0.5055,
+              1.0
+            ]
+          ],
+          [
+            0.3333,
+            [
+              0.9302,
+              0.6488,
+              0.4804,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              0.9176,
+              0.6216,
+              0.4553,
+              1.0
+            ]
+          ],
+          [
+            0.6667,
+            [
+              0.9051,
+              0.5944,
+              0.4302,
+              1.0
+            ]
+          ],
+          [
+            0.8333,
+            [
+              0.8925,
+              0.5672,
+              0.4051,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.88,
+              0.54,
+              0.38,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.1421,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.49
+          ],
+          [
+            0.1667,
+            0.4083
+          ],
+          [
+            0.3333,
+            0.3267
+          ],
+          [
+            0.5,
+            0.245
+          ],
+          [
+            0.6667,
+            0.1633
+          ],
+          [
+            0.8333,
+            0.0817
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.95,
+        "drag": 1.8667,
+        "blend": "additive",
+        "soft_particle_distance": 0.18,
+        "render_mode": "stretched_billboard",
+        "velocity_stretch": 0.15,
+        "sprite_fps": 38.1333
+      },
+      "inputs": {
+        "sprite": "tex_flame",
+        "material": "mat_fire",
+        "forces": [
+          "f_buoy_fire",
+          "f_curl_fire"
+        ]
+      }
+    },
+    {
+      "id": "path_flame_core_pre2",
+      "type": "curve",
+      "parameters": {
+        "points": [
+          [
+            -0.04,
+            0.14,
+            0.03
+          ],
+          [
+            -0.01,
+            0.21,
+            -0.03
+          ],
+          [
+            0.05,
+            0.16,
+            0.04
+          ],
+          [
+            0.01,
+            0.18,
+            -0.05
+          ],
+          [
+            0.1,
+            0.22,
+            -0.03
+          ],
+          [
+            -0.08,
+            0.27,
+            0.05
+          ],
+          [
+            0.02,
+            0.34,
+            -0.01
+          ],
+          [
+            -0.07,
+            0.3,
+            0.08
+          ]
+        ],
+        "curve_type": "linear",
+        "segments": 16
+      }
+    },
+    {
+      "id": "e_flame_core_pre2",
+      "type": "emitter",
+      "layer": "flames",
+      "parent": "wind_flame",
+      "parameters": {
+        "shape": "curve",
+        "direction": [
+          0.005,
+          1.0,
+          -0.013
+        ],
+        "spread": 11.2,
+        "velocity": 0.578,
+        "velocity_variance": 0.083,
+        "rate": 0.0,
+        "burst_count": 3,
+        "burst_times": [
+          0.0,
+          0.05,
+          0.1
+        ],
+        "start_time": 0.0,
+        "duration": 0.15
+      },
+      "inputs": {
+        "particle": "ps_flame_core_pre2",
+        "shape_curve": "path_flame_core_pre2"
+      }
+    },
+    {
+      "id": "ps_flame_body_pre1",
+      "type": "particle_system",
+      "layer": "flames",
+      "parameters": {
+        "max_particles": 26,
+        "lifetime": 0.726,
+        "lifetime_variance": 0.301,
+        "size": 0.552,
+        "size_variance": 0.1748,
+        "size_over_life": [
+          [
+            0.0,
+            0.7262
+          ],
+          [
+            0.1667,
+            0.9663
+          ],
+          [
+            0.3333,
+            0.9823
+          ],
+          [
+            0.5,
+            0.9617
+          ],
+          [
+            0.6667,
+            0.9412
+          ],
+          [
+            0.8333,
+            0.7846
+          ],
+          [
+            1.0,
+            0.62
+          ]
+        ],
+        "color": [
+          1.0,
+          0.66,
+          0.3,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              0.9661,
+              0.9224,
+              1.0
+            ]
+          ],
+          [
+            0.1667,
+            [
+              1.0,
+              0.9301,
+              0.8401,
+              1.0
+            ]
+          ],
+          [
+            0.3333,
+            [
+              1.0,
+              0.8716,
+              0.7411,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              1.0,
+              0.8131,
+              0.6421,
+              1.0
+            ]
+          ],
+          [
+            0.6667,
+            [
+              0.9664,
+              0.7273,
+              0.5529,
+              1.0
+            ]
+          ],
+          [
+            0.8333,
+            [
+              0.9232,
+              0.6336,
+              0.4664,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.88,
+              0.54,
+              0.38,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.1486,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.9971
+          ],
+          [
+            0.1667,
+            0.9235
+          ],
+          [
+            0.3333,
+            0.85
+          ],
+          [
+            0.5,
+            0.7764
+          ],
+          [
+            0.6667,
+            0.5474
+          ],
+          [
+            0.8333,
+            0.2737
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.65,
+        "drag": 1.7333,
+        "blend": "additive",
+        "soft_particle_distance": 0.18,
+        "render_mode": "stretched_billboard",
+        "velocity_stretch": 0.165,
+        "sprite_fps": 32.2667
+      },
+      "inputs": {
+        "sprite": "tex_flame",
+        "material": "mat_fire",
+        "forces": [
+          "f_buoy_fire",
+          "f_curl_fire"
+        ]
+      }
+    },
+    {
+      "id": "path_flame_body_pre1",
+      "type": "curve",
+      "parameters": {
+        "points": [
+          [
+            -0.01,
+            0.1,
+            0.04
+          ],
+          [
+            -0.02,
+            0.11,
+            -0.03
+          ],
+          [
+            0.06,
+            0.14,
+            0.01
+          ],
+          [
+            -0.0,
+            0.17,
+            -0.03
+          ],
+          [
+            -0.05,
+            0.17,
+            0.01
+          ],
+          [
+            0.03,
+            0.17,
+            -0.05
+          ],
+          [
+            0.04,
+            0.2,
+            0.01
+          ],
+          [
+            -0.04,
+            0.2,
+            0.01
+          ],
+          [
+            -0.05,
+            0.27,
+            0.03
+          ],
+          [
+            -0.02,
+            0.34,
+            -0.03
+          ]
+        ],
+        "curve_type": "linear",
+        "segments": 20
+      }
+    },
+    {
+      "id": "e_flame_body_pre1",
+      "type": "emitter",
+      "layer": "flames",
+      "parent": "wind_flame",
+      "parameters": {
+        "shape": "curve",
+        "direction": [
+          -0.019,
+          0.998,
+          -0.06
+        ],
+        "spread": 6.6,
+        "velocity": 0.738,
+        "velocity_variance": 0.114,
+        "rate": 0.0,
+        "burst_count": 4,
+        "burst_times": [
+          0.0,
+          0.05,
+          0.1
+        ],
+        "start_time": 0.0,
+        "duration": 0.15
+      },
+      "inputs": {
+        "particle": "ps_flame_body_pre1",
+        "shape_curve": "path_flame_body_pre1"
+      }
+    },
+    {
+      "id": "ps_flame_body_pre2",
+      "type": "particle_system",
+      "layer": "flames",
+      "parameters": {
+        "max_particles": 30,
+        "lifetime": 0.443,
+        "lifetime_variance": 0.222,
+        "size": 0.552,
+        "size_variance": 0.1748,
+        "size_over_life": [
+          [
+            0.0,
+            0.9753
+          ],
+          [
+            0.1667,
+            0.9628
+          ],
+          [
+            0.3333,
+            0.9502
+          ],
+          [
+            0.5,
+            0.9214
+          ],
+          [
+            0.6667,
+            0.8209
+          ],
+          [
+            0.8333,
+            0.7205
+          ],
+          [
+            1.0,
+            0.62
+          ]
+        ],
+        "color": [
+          1.0,
+          0.66,
+          0.3,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              0.8517,
+              0.7076,
+              1.0
+            ]
+          ],
+          [
+            0.1667,
+            [
+              1.0,
+              0.816,
+              0.6471,
+              1.0
+            ]
+          ],
+          [
+            0.3333,
+            [
+              0.9855,
+              0.7685,
+              0.591,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              0.9591,
+              0.7114,
+              0.5382,
+              1.0
+            ]
+          ],
+          [
+            0.6667,
+            [
+              0.9327,
+              0.6543,
+              0.4855,
+              1.0
+            ]
+          ],
+          [
+            0.8333,
+            [
+              0.9064,
+              0.5971,
+              0.4327,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.88,
+              0.54,
+              0.38,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.1486,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.825
+          ],
+          [
+            0.1667,
+            0.7802
+          ],
+          [
+            0.3333,
+            0.668
+          ],
+          [
+            0.5,
+            0.501
+          ],
+          [
+            0.6667,
+            0.334
+          ],
+          [
+            0.8333,
+            0.167
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.65,
+        "drag": 1.7333,
+        "blend": "additive",
+        "soft_particle_distance": 0.18,
+        "render_mode": "stretched_billboard",
+        "velocity_stretch": 0.165,
+        "sprite_fps": 32.2667
+      },
+      "inputs": {
+        "sprite": "tex_flame",
+        "material": "mat_fire",
+        "forces": [
+          "f_buoy_fire",
+          "f_curl_fire"
+        ]
+      }
+    },
+    {
+      "id": "path_flame_body_pre2",
+      "type": "curve",
+      "parameters": {
+        "points": [
+          [
+            0.02,
+            0.24,
+            -0.0
+          ],
+          [
+            -0.03,
+            0.34,
+            -0.01
+          ],
+          [
+            -0.0,
+            0.29,
+            -0.0
+          ],
+          [
+            -0.03,
+            0.43,
+            0.01
+          ],
+          [
+            0.04,
+            0.35,
+            0.05
+          ],
+          [
+            -0.05,
+            0.33,
+            0.04
+          ],
+          [
+            0.03,
+            0.46,
+            -0.02
+          ],
+          [
+            -0.07,
+            0.36,
+            0.03
+          ],
+          [
+            0.14,
+            0.55,
+            0.05
+          ],
+          [
+            0.07,
+            0.54,
+            0.05
+          ],
+          [
+            0.04,
+            0.64,
+            0.03
+          ],
+          [
+            -0.1,
+            0.77,
+            0.04
+          ]
+        ],
+        "curve_type": "linear",
+        "segments": 24
+      }
+    },
+    {
+      "id": "e_flame_body_pre2",
+      "type": "emitter",
+      "layer": "flames",
+      "parent": "wind_flame",
+      "parameters": {
+        "shape": "curve",
+        "direction": [
+          0.017,
+          1.0,
+          0.011
+        ],
+        "spread": 8.7,
+        "velocity": 0.783,
+        "velocity_variance": 0.132,
+        "rate": 0.0,
+        "burst_count": 4,
+        "burst_times": [
+          0.0,
+          0.05,
+          0.1
+        ],
+        "start_time": 0.0,
+        "duration": 0.15
+      },
+      "inputs": {
+        "particle": "ps_flame_body_pre2",
+        "shape_curve": "path_flame_body_pre2"
+      }
+    },
+    {
+      "id": "ps_flame_body_pre3",
+      "type": "particle_system",
+      "layer": "flames",
+      "parameters": {
+        "max_particles": 22,
+        "lifetime": 0.163,
+        "lifetime_variance": 0.1304,
+        "size": 0.552,
+        "size_variance": 0.1748,
+        "size_over_life": [
+          [
+            0.0,
+            0.8418
+          ],
+          [
+            0.1667,
+            0.8048
+          ],
+          [
+            0.3333,
+            0.7678
+          ],
+          [
+            0.5,
+            0.7309
+          ],
+          [
+            0.6667,
+            0.6939
+          ],
+          [
+            0.8333,
+            0.657
+          ],
+          [
+            1.0,
+            0.62
+          ]
+        ],
+        "color": [
+          1.0,
+          0.66,
+          0.3,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              0.9382,
+              0.6661,
+              0.4964,
+              1.0
+            ]
+          ],
+          [
+            0.1667,
+            [
+              0.9285,
+              0.6451,
+              0.477,
+              1.0
+            ]
+          ],
+          [
+            0.3333,
+            [
+              0.9188,
+              0.6241,
+              0.4576,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              0.9091,
+              0.6031,
+              0.4382,
+              1.0
+            ]
+          ],
+          [
+            0.6667,
+            [
+              0.8994,
+              0.582,
+              0.4188,
+              1.0
+            ]
+          ],
+          [
+            0.8333,
+            [
+              0.8897,
+              0.561,
+              0.3994,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.88,
+              0.54,
+              0.38,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.1486,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.3687
+          ],
+          [
+            0.1667,
+            0.3072
+          ],
+          [
+            0.3333,
+            0.2458
+          ],
+          [
+            0.5,
+            0.1843
+          ],
+          [
+            0.6667,
+            0.1229
+          ],
+          [
+            0.8333,
+            0.0614
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.65,
+        "drag": 1.7333,
+        "blend": "additive",
+        "soft_particle_distance": 0.18,
+        "render_mode": "stretched_billboard",
+        "velocity_stretch": 0.165,
+        "sprite_fps": 32.2667
+      },
+      "inputs": {
+        "sprite": "tex_flame",
+        "material": "mat_fire",
+        "forces": [
+          "f_buoy_fire",
+          "f_curl_fire"
+        ]
+      }
+    },
+    {
+      "id": "path_flame_body_pre3",
+      "type": "curve",
+      "parameters": {
+        "points": [
+          [
+            0.03,
+            0.51,
+            -0.01
+          ],
+          [
+            0.08,
+            0.58,
+            0.06
+          ],
+          [
+            -0.06,
+            0.62,
+            0.02
+          ],
+          [
+            0.04,
+            0.69,
+            0.12
+          ],
+          [
+            0.01,
+            0.79,
+            0.04
+          ],
+          [
+            0.01,
+            0.59,
+            0.08
+          ],
+          [
+            0.14,
+            0.72,
+            0.06
+          ],
+          [
+            0.07,
+            0.77,
+            -0.03
+          ]
+        ],
+        "curve_type": "linear",
+        "segments": 16
+      }
+    },
+    {
+      "id": "e_flame_body_pre3",
+      "type": "emitter",
+      "layer": "flames",
+      "parent": "wind_flame",
+      "parameters": {
+        "shape": "curve",
+        "direction": [
+          0.121,
+          0.99,
+          0.071
+        ],
+        "spread": 8.6,
+        "velocity": 0.765,
+        "velocity_variance": 0.1,
+        "rate": 0.0,
+        "burst_count": 3,
+        "burst_times": [
+          0.0,
+          0.05,
+          0.1
+        ],
+        "start_time": 0.0,
+        "duration": 0.15
+      },
+      "inputs": {
+        "particle": "ps_flame_body_pre3",
+        "shape_curve": "path_flame_body_pre3"
+      }
+    },
+    {
+      "id": "ps_flame_tongue_pre1",
+      "type": "particle_system",
+      "layer": "flames",
+      "parameters": {
+        "max_particles": 18,
+        "lifetime": 0.544,
+        "lifetime_variance": 0.201,
+        "size": 0.46,
+        "size_variance": 0.1564,
+        "size_over_life": [
+          [
+            0.0,
+            0.8432
+          ],
+          [
+            0.1667,
+            1.0444
+          ],
+          [
+            0.3333,
+            0.9556
+          ],
+          [
+            0.5,
+            0.8667
+          ],
+          [
+            0.6667,
+            0.7778
+          ],
+          [
+            0.8333,
+            0.6889
+          ],
+          [
+            1.0,
+            0.6
+          ]
+        ],
+        "color": [
+          1.0,
+          0.46,
+          0.14,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              0.9471,
+              0.8791,
+              1.0
+            ]
+          ],
+          [
+            0.1667,
+            [
+              1.0,
+              0.9044,
+              0.7967,
+              1.0
+            ]
+          ],
+          [
+            0.3333,
+            [
+              1.0,
+              0.851,
+              0.7064,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              0.9983,
+              0.7962,
+              0.6165,
+              1.0
+            ]
+          ],
+          [
+            0.6667,
+            [
+              0.9588,
+              0.7108,
+              0.5377,
+              1.0
+            ]
+          ],
+          [
+            0.8333,
+            [
+              0.9194,
+              0.6254,
+              0.4588,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.88,
+              0.54,
+              0.38,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.1098,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.8847
+          ],
+          [
+            0.1667,
+            0.7355
+          ],
+          [
+            0.3333,
+            0.5864
+          ],
+          [
+            0.5,
+            0.4228
+          ],
+          [
+            0.6667,
+            0.2585
+          ],
+          [
+            0.8333,
+            0.1183
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.6,
+        "drag": 1.2,
+        "blend": "additive",
+        "soft_particle_distance": 0.18,
+        "render_mode": "stretched_billboard",
+        "velocity_stretch": 0.3,
+        "sprite_fps": 29.3333
+      },
+      "inputs": {
+        "sprite": "tex_flame",
+        "material": "mat_fire",
+        "forces": [
+          "f_buoy_fire",
+          "f_curl_fire"
+        ]
+      }
+    },
+    {
+      "id": "path_flame_tongue_pre1",
+      "type": "curve",
+      "parameters": {
+        "points": [
+          [
+            -0.04,
+            0.23,
+            0.0
+          ],
+          [
+            0.0,
+            0.31,
+            -0.0
+          ],
+          [
+            -0.04,
+            0.37,
+            0.06
+          ],
+          [
+            -0.02,
+            0.32,
+            0.01
+          ],
+          [
+            -0.06,
+            0.4,
+            -0.03
+          ],
+          [
+            0.02,
+            0.56,
+            0.07
+          ]
+        ],
+        "curve_type": "linear",
+        "segments": 12
+      }
+    },
+    {
+      "id": "e_flame_tongue_pre1",
+      "type": "emitter",
+      "layer": "flames",
+      "parent": "wind_flame",
+      "parameters": {
+        "shape": "curve",
+        "direction": [
+          -0.009,
+          0.993,
+          0.121
+        ],
+        "spread": 7.3,
+        "velocity": 1.161,
+        "velocity_variance": 0.214,
+        "rate": 0.0,
+        "burst_count": 2,
+        "burst_times": [
+          0.0,
+          0.05,
+          0.1
+        ],
+        "start_time": 0.0,
+        "duration": 0.15
+      },
+      "inputs": {
+        "particle": "ps_flame_tongue_pre1",
+        "shape_curve": "path_flame_tongue_pre1"
+      }
+    },
+    {
+      "id": "ps_flame_tongue_pre2",
+      "type": "particle_system",
+      "layer": "flames",
+      "parameters": {
+        "max_particles": 18,
+        "lifetime": 0.217,
+        "lifetime_variance": 0.144,
+        "size": 0.46,
+        "size_variance": 0.1564,
+        "size_over_life": [
+          [
+            0.0,
+            0.8127
+          ],
+          [
+            0.1667,
+            0.7773
+          ],
+          [
+            0.3333,
+            0.7418
+          ],
+          [
+            0.5,
+            0.7064
+          ],
+          [
+            0.6667,
+            0.6709
+          ],
+          [
+            0.8333,
+            0.6355
+          ],
+          [
+            1.0,
+            0.6
+          ]
+        ],
+        "color": [
+          1.0,
+          0.46,
+          0.14,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              0.9743,
+              0.7444,
+              0.5687,
+              1.0
+            ]
+          ],
+          [
+            0.1667,
+            [
+              0.9586,
+              0.7104,
+              0.5372,
+              1.0
+            ]
+          ],
+          [
+            0.3333,
+            [
+              0.9429,
+              0.6763,
+              0.5058,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              0.9272,
+              0.6422,
+              0.4743,
+              1.0
+            ]
+          ],
+          [
+            0.6667,
+            [
+              0.9114,
+              0.6081,
+              0.4429,
+              1.0
+            ]
+          ],
+          [
+            0.8333,
+            [
+              0.8957,
+              0.5741,
+              0.4114,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.88,
+              0.54,
+              0.38,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.1098,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.3231
+          ],
+          [
+            0.1667,
+            0.2576
+          ],
+          [
+            0.3333,
+            0.1921
+          ],
+          [
+            0.5,
+            0.1415
+          ],
+          [
+            0.6667,
+            0.0943
+          ],
+          [
+            0.8333,
+            0.0472
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.6,
+        "drag": 1.2,
+        "blend": "additive",
+        "soft_particle_distance": 0.18,
+        "render_mode": "stretched_billboard",
+        "velocity_stretch": 0.3,
+        "sprite_fps": 29.3333
+      },
+      "inputs": {
+        "sprite": "tex_flame",
+        "material": "mat_fire",
+        "forces": [
+          "f_buoy_fire",
+          "f_curl_fire"
+        ]
+      }
+    },
+    {
+      "id": "path_flame_tongue_pre2",
+      "type": "curve",
+      "parameters": {
+        "points": [
+          [
+            -0.02,
+            0.53,
+            0.05
+          ],
+          [
+            -0.04,
+            0.68,
+            0.05
+          ],
+          [
+            0.01,
+            0.81,
+            0.01
+          ],
+          [
+            0.04,
+            0.75,
+            -0.06
+          ],
+          [
+            0.06,
+            0.75,
+            -0.06
+          ],
+          [
+            -0.03,
+            0.78,
+            -0.06
+          ]
+        ],
+        "curve_type": "linear",
+        "segments": 12
+      }
+    },
+    {
+      "id": "e_flame_tongue_pre2",
+      "type": "emitter",
+      "layer": "flames",
+      "parent": "wind_flame",
+      "parameters": {
+        "shape": "curve",
+        "direction": [
+          0.007,
+          1.0,
+          0.008
+        ],
+        "spread": 5.8,
+        "velocity": 1.138,
+        "velocity_variance": 0.159,
+        "rate": 0.0,
+        "burst_count": 2,
+        "burst_times": [
+          0.0,
+          0.05,
+          0.1
+        ],
+        "start_time": 0.0,
+        "duration": 0.15
+      },
+      "inputs": {
+        "particle": "ps_flame_tongue_pre2",
+        "shape_curve": "path_flame_tongue_pre2"
+      }
+    },
+    {
+      "id": "ps_head_glow_pre1",
+      "type": "particle_system",
+      "layer": "head",
+      "parameters": {
+        "max_particles": 16,
+        "lifetime": 0.482,
+        "lifetime_variance": 0.3856,
+        "size": 0.184,
+        "size_variance": 0.0552,
+        "size_over_life": [
+          [
+            0.0,
+            1.0595
+          ],
+          [
+            0.1667,
+            1.0796
+          ],
+          [
+            0.3333,
+            1.0997
+          ],
+          [
+            0.5,
+            1.1198
+          ],
+          [
+            0.6667,
+            1.1398
+          ],
+          [
+            0.8333,
+            1.1599
+          ],
+          [
+            1.0,
+            1.18
+          ]
+        ],
+        "color": [
+          1.0,
+          0.34,
+          0.07,
+          1.0
+        ],
+        "opacity": 0.0451,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.8508
+          ],
+          [
+            0.1667,
+            0.8174
+          ],
+          [
+            0.3333,
+            0.7141
+          ],
+          [
+            0.5,
+            0.5356
+          ],
+          [
+            0.6667,
+            0.357
+          ],
+          [
+            0.8333,
+            0.1785
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.8,
+        "drag": 1.6,
+        "rotation_variance": 180.0,
+        "angular_velocity_variance": 30.0,
+        "render_mode": "billboard",
+        "blend": "additive",
+        "soft_particle_distance": 0.12,
+        "sprite_fps": 8.0
+      },
+      "inputs": {
+        "sprite": "tex_glow",
+        "material": "mat_glow"
+      }
+    },
+    {
+      "id": "path_head_glow_pre1",
+      "type": "curve",
+      "parameters": {
+        "points": [
+          [
+            0.01,
+            0.04,
+            0.06
+          ],
+          [
+            -0.05,
+            0.03,
+            0.0
+          ],
+          [
+            -0.02,
+            0.06,
+            -0.02
+          ],
+          [
+            0.0,
+            0.06,
+            -0.08
+          ],
+          [
+            -0.01,
+            0.07,
+            0.01
+          ]
+        ],
+        "curve_type": "linear",
+        "segments": 10
+      }
+    },
+    {
+      "id": "e_head_glow_pre1",
+      "type": "emitter",
+      "layer": "head",
+      "parent": "torch_head",
+      "parameters": {
+        "shape": "curve",
+        "direction": [
+          -0.118,
+          0.991,
+          0.068
+        ],
+        "spread": 20.4,
+        "velocity": 0.035,
+        "velocity_variance": 0.023,
+        "rate": 0.0,
+        "burst_count": 2,
+        "burst_times": [
+          0.0,
+          0.05,
+          0.1
+        ],
+        "start_time": 0.0,
+        "duration": 0.15
+      },
+      "inputs": {
+        "particle": "ps_head_glow_pre1",
+        "shape_curve": "path_head_glow_pre1"
+      }
+    },
+    {
+      "id": "ps_embers_pre1",
+      "type": "particle_system",
+      "layer": "embers",
+      "parameters": {
+        "max_particles": 30,
+        "lifetime": 2.875,
+        "lifetime_variance": 1.494,
+        "size": 0.0213,
+        "size_variance": 0.009,
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              1.0,
+              0.8372,
+              0.4686,
+              1.0
+            ]
+          ],
+          [
+            0.1667,
+            [
+              1.0,
+              0.6602,
+              0.2391,
+              1.0
+            ]
+          ],
+          [
+            0.3333,
+            [
+              1.0,
+              0.514,
+              0.1492,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              1.0,
+              0.3741,
+              0.088,
+              1.0
+            ]
+          ],
+          [
+            0.6667,
+            [
+              0.9318,
+              0.2631,
+              0.0515,
+              1.0
+            ]
+          ],
+          [
+            0.8333,
+            [
+              0.8059,
+              0.1765,
+              0.0357,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.68,
+              0.09,
+              0.02,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 1.0,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.9974
+          ],
+          [
+            0.1667,
+            0.9275
+          ],
+          [
+            0.3333,
+            0.8575
+          ],
+          [
+            0.5,
+            0.7876
+          ],
+          [
+            0.6667,
+            0.7081
+          ],
+          [
+            0.8333,
+            0.3541
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 6.0,
+        "emissive_over_life": [
+          [
+            0.0,
+            1.4302
+          ],
+          [
+            0.1667,
+            1.2335
+          ],
+          [
+            0.3333,
+            1.0368
+          ],
+          [
+            0.5,
+            0.8721
+          ],
+          [
+            0.6667,
+            0.7147
+          ],
+          [
+            0.8333,
+            0.5574
+          ],
+          [
+            1.0,
+            0.4
+          ]
+        ],
+        "drag": 0.6552,
+        "render_mode": "stretched_billboard",
+        "velocity_stretch": 0.35,
+        "blend": "additive",
+        "soft_particle_distance": 0.02
+      },
+      "inputs": {
+        "sprite": "tex_spark",
+        "material": "mat_glow",
+        "forces": [
+          "f_buoy_ember",
+          "f_curl_ember"
+        ]
+      }
+    },
+    {
+      "id": "path_embers_pre1",
+      "type": "curve",
+      "parameters": {
+        "points": [
+          [
+            0.02,
+            0.41,
+            -0.03
+          ],
+          [
+            -0.02,
+            0.56,
+            -0.06
+          ],
+          [
+            -0.05,
+            0.74,
+            -0.03
+          ],
+          [
+            -0.16,
+            0.71,
+            -0.08
+          ],
+          [
+            -0.2,
+            0.97,
+            -0.12
+          ],
+          [
+            -0.17,
+            0.95,
+            0.0
+          ],
+          [
+            -0.19,
+            1.02,
+            -0.08
+          ],
+          [
+            -0.13,
+            1.38,
+            0.25
+          ],
+          [
+            -0.12,
+            1.77,
+            0.12
+          ],
+          [
+            -0.31,
+            1.09,
+            0.35
+          ],
+          [
+            -0.54,
+            1.58,
+            0.73
+          ],
+          [
+            0.47,
+            1.86,
+            -0.31
+          ]
+        ],
+        "curve_type": "linear",
+        "segments": 24
+      }
+    },
+    {
+      "id": "e_embers_pre1",
+      "type": "emitter",
+      "layer": "embers",
+      "parent": "wind_gust",
+      "parameters": {
+        "shape": "curve",
+        "direction": [
+          -0.064,
+          0.997,
+          0.046
+        ],
+        "spread": 18.9,
+        "velocity": 1.886,
+        "velocity_variance": 0.307,
+        "rate": 0.0,
+        "burst_count": 4,
+        "burst_times": [
+          0.0,
+          0.05,
+          0.1
+        ],
+        "start_time": 0.0,
+        "duration": 0.15
+      },
+      "inputs": {
+        "particle": "ps_embers_pre1",
+        "shape_curve": "path_embers_pre1"
+      }
+    },
+    {
+      "id": "ps_embers_pre2",
+      "type": "particle_system",
+      "layer": "embers",
+      "parameters": {
+        "max_particles": 56,
+        "lifetime": 0.997,
+        "lifetime_variance": 0.7976,
+        "size": 0.0213,
+        "size_variance": 0.009,
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              0.9419,
+              0.2701,
+              0.0527,
+              1.0
+            ]
+          ],
+          [
+            0.1667,
+            [
+              0.8983,
+              0.2401,
+              0.0473,
+              1.0
+            ]
+          ],
+          [
+            0.3333,
+            [
+              0.8546,
+              0.2101,
+              0.0418,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              0.811,
+              0.18,
+              0.0364,
+              1.0
+            ]
+          ],
+          [
+            0.6667,
+            [
+              0.7673,
+              0.15,
+              0.0309,
+              1.0
+            ]
+          ],
+          [
+            0.8333,
+            [
+              0.7237,
+              0.12,
+              0.0255,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.68,
+              0.09,
+              0.02,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 1.0,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.7233
+          ],
+          [
+            0.1667,
+            0.6139
+          ],
+          [
+            0.3333,
+            0.4911
+          ],
+          [
+            0.5,
+            0.3683
+          ],
+          [
+            0.6667,
+            0.2456
+          ],
+          [
+            0.8333,
+            0.1228
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 6.0,
+        "emissive_over_life": [
+          [
+            0.0,
+            0.7274
+          ],
+          [
+            0.1667,
+            0.6729
+          ],
+          [
+            0.3333,
+            0.6183
+          ],
+          [
+            0.5,
+            0.5637
+          ],
+          [
+            0.6667,
+            0.5091
+          ],
+          [
+            0.8333,
+            0.4546
+          ],
+          [
+            1.0,
+            0.4
+          ]
+        ],
+        "drag": 0.6552,
+        "render_mode": "stretched_billboard",
+        "velocity_stretch": 0.35,
+        "blend": "additive",
+        "soft_particle_distance": 0.02
+      },
+      "inputs": {
+        "sprite": "tex_spark",
+        "material": "mat_glow",
+        "forces": [
+          "f_buoy_ember",
+          "f_curl_ember"
+        ]
+      }
+    },
+    {
+      "id": "path_embers_pre2",
+      "type": "curve",
+      "parameters": {
+        "points": [
+          [
+            -0.28,
+            1.55,
+            -0.39
+          ],
+          [
+            -0.57,
+            1.4,
+            -0.35
+          ],
+          [
+            -0.2,
+            1.76,
+            -0.51
+          ],
+          [
+            -0.56,
+            3.25,
+            -1.6
+          ],
+          [
+            -0.08,
+            1.33,
+            -0.94
+          ],
+          [
+            0.71,
+            1.74,
+            -0.95
+          ],
+          [
+            -1.25,
+            3.81,
+            -0.17
+          ],
+          [
+            -0.76,
+            1.74,
+            -1.66
+          ],
+          [
+            0.43,
+            2.45,
+            -1.23
+          ],
+          [
+            -0.51,
+            4.53,
+            -1.12
+          ],
+          [
+            -3.22,
+            4.27,
+            0.17
+          ],
+          [
+            1.46,
+            0.29,
+            -1.52
+          ],
+          [
+            1.34,
+            3.29,
+            -2.35
+          ],
+          [
+            0.26,
+            1.51,
+            0.57
+          ],
+          [
+            2.17,
+            2.71,
+            -4.13
+          ],
+          [
+            4.25,
+            1.1,
+            -2.16
+          ],
+          [
+            0.84,
+            3.0,
+            -1.62
+          ],
+          [
+            1.46,
+            3.91,
+            -3.97
+          ],
+          [
+            1.69,
+            4.08,
+            -1.83
+          ],
+          [
+            1.41,
+            3.44,
+            -0.23
+          ],
+          [
+            1.14,
+            -0.5,
+            -1.97
+          ],
+          [
+            1.19,
+            -2.02,
+            0.41
+          ],
+          [
+            -1.32,
+            5.7,
+            -1.35
+          ],
+          [
+            -3.86,
+            -1.56,
+            -3.16
+          ],
+          [
+            -3.28,
+            1.31,
+            -3.44
+          ]
+        ],
+        "curve_type": "linear",
+        "segments": 50
+      }
+    },
+    {
+      "id": "e_embers_pre2",
+      "type": "emitter",
+      "layer": "embers",
+      "parent": "wind_gust",
+      "parameters": {
+        "shape": "curve",
+        "direction": [
+          0.084,
+          0.784,
+          -0.615
+        ],
+        "spread": 57.9,
+        "velocity": 0.929,
+        "velocity_variance": 0.515,
+        "rate": 0.0,
+        "burst_count": 9,
+        "burst_times": [
+          0.0,
+          0.05,
+          0.1
+        ],
+        "start_time": 0.0,
+        "duration": 0.15
+      },
+      "inputs": {
+        "particle": "ps_embers_pre2",
+        "shape_curve": "path_embers_pre2"
+      }
+    },
+    {
+      "id": "ps_smoke_pre1",
+      "type": "particle_system",
+      "layer": "smoke",
+      "parameters": {
+        "max_particles": 8,
+        "lifetime": 4.34,
+        "lifetime_variance": 0.0,
+        "size": 0.3236,
+        "size_variance": 0.07,
+        "size_over_life": [
+          [
+            0.0,
+            0.5739
+          ],
+          [
+            0.1667,
+            0.8616
+          ],
+          [
+            0.3333,
+            1.1136
+          ],
+          [
+            0.5,
+            1.3602
+          ],
+          [
+            0.6667,
+            1.6068
+          ],
+          [
+            0.8333,
+            1.8534
+          ],
+          [
+            1.0,
+            2.1
+          ]
+        ],
+        "color": [
+          0.78,
+          0.77,
+          0.76,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              0.3462,
+              0.3266,
+              0.3074,
+              1.0
+            ]
+          ],
+          [
+            0.1667,
+            [
+              0.4214,
+              0.4065,
+              0.3966,
+              1.0
+            ]
+          ],
+          [
+            0.3333,
+            [
+              0.4965,
+              0.4863,
+              0.4859,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              0.5386,
+              0.5334,
+              0.5407,
+              1.0
+            ]
+          ],
+          [
+            0.6667,
+            [
+              0.5791,
+              0.579,
+              0.5938,
+              1.0
+            ]
+          ],
+          [
+            0.8333,
+            [
+              0.6195,
+              0.6245,
+              0.6469,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.66,
+              0.67,
+              0.7,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.2465,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.1932
+          ],
+          [
+            0.1667,
+            0.9765
+          ],
+          [
+            0.3333,
+            0.7281
+          ],
+          [
+            0.5,
+            0.4498
+          ],
+          [
+            0.6667,
+            0.2259
+          ],
+          [
+            0.8333,
+            0.074
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.22,
+        "drag": 0.25,
+        "rotation_variance": 180.0,
+        "angular_velocity_variance": 16.0,
+        "render_mode": "billboard",
+        "blend": "alpha",
+        "sort": true,
+        "soft_particle_distance": 0.3
+      },
+      "inputs": {
+        "sprite": "tex_puff",
+        "material": "mat_smoke",
+        "forces": [
+          "f_cool",
+          "f_billow",
+          "f_curl_smoke"
+        ]
+      }
+    },
+    {
+      "id": "path_smoke_pre1",
+      "type": "curve",
+      "parameters": {
+        "points": [
+          [
+            -0.0,
+            0.84,
+            0.02
+          ],
+          [
+            -0.0,
+            0.86,
+            0.02
+          ]
+        ],
+        "curve_type": "linear",
+        "segments": 8
+      }
+    },
+    {
+      "id": "e_smoke_pre1",
+      "type": "emitter",
+      "layer": "smoke",
+      "parent": "wind_gust",
+      "parameters": {
+        "shape": "curve",
+        "direction": [
+          -0.19,
+          0.975,
+          0.117
+        ],
+        "spread": 0.0,
+        "velocity": 1.183,
+        "velocity_variance": 0.0,
+        "rate": 0.0,
+        "burst_count": 1,
+        "burst_times": [
+          0.0,
+          0.05,
+          0.1
+        ],
+        "start_time": 0.0,
+        "duration": 0.15
+      },
+      "inputs": {
+        "particle": "ps_smoke_pre1",
+        "shape_curve": "path_smoke_pre1"
+      }
+    },
+    {
+      "id": "ps_smoke_pre2",
+      "type": "particle_system",
+      "layer": "smoke",
+      "parameters": {
+        "max_particles": 12,
+        "lifetime": 3.743,
+        "lifetime_variance": 0.3,
+        "size": 0.3236,
+        "size_variance": 0.07,
+        "size_over_life": [
+          [
+            0.0,
+            0.8113
+          ],
+          [
+            0.1667,
+            1.0366
+          ],
+          [
+            0.3333,
+            1.2493
+          ],
+          [
+            0.5,
+            1.462
+          ],
+          [
+            0.6667,
+            1.6747
+          ],
+          [
+            0.8333,
+            1.8873
+          ],
+          [
+            1.0,
+            2.1
+          ]
+        ],
+        "color": [
+          0.78,
+          0.77,
+          0.76,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              0.4083,
+              0.3925,
+              0.3811,
+              1.0
+            ]
+          ],
+          [
+            0.1667,
+            [
+              0.4731,
+              0.4614,
+              0.458,
+              1.0
+            ]
+          ],
+          [
+            0.3333,
+            [
+              0.5204,
+              0.513,
+              0.5168,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              0.5553,
+              0.5522,
+              0.5626,
+              1.0
+            ]
+          ],
+          [
+            0.6667,
+            [
+              0.5902,
+              0.5915,
+              0.6084,
+              1.0
+            ]
+          ],
+          [
+            0.8333,
+            [
+              0.6251,
+              0.6307,
+              0.6542,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.66,
+              0.67,
+              0.7,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.2465,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.9457
+          ],
+          [
+            0.1667,
+            0.8261
+          ],
+          [
+            0.3333,
+            0.5607
+          ],
+          [
+            0.5,
+            0.348
+          ],
+          [
+            0.6667,
+            0.1782
+          ],
+          [
+            0.8333,
+            0.0638
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.22,
+        "drag": 0.25,
+        "rotation_variance": 180.0,
+        "angular_velocity_variance": 16.0,
+        "render_mode": "billboard",
+        "blend": "alpha",
+        "sort": true,
+        "soft_particle_distance": 0.3
+      },
+      "inputs": {
+        "sprite": "tex_puff",
+        "material": "mat_smoke",
+        "forces": [
+          "f_cool",
+          "f_billow",
+          "f_curl_smoke"
+        ]
+      }
+    },
+    {
+      "id": "path_smoke_pre2",
+      "type": "curve",
+      "parameters": {
+        "points": [
+          [
+            -0.17,
+            1.07,
+            -0.07
+          ],
+          [
+            -0.23,
+            1.5,
+            -0.41
+          ],
+          [
+            -0.32,
+            1.59,
+            -0.76
+          ]
+        ],
+        "curve_type": "linear",
+        "segments": 8
+      }
+    },
+    {
+      "id": "e_smoke_pre2",
+      "type": "emitter",
+      "layer": "smoke",
+      "parent": "wind_gust",
+      "parameters": {
+        "shape": "curve",
+        "direction": [
+          -0.337,
+          0.758,
+          -0.558
+        ],
+        "spread": 18.0,
+        "velocity": 1.191,
+        "velocity_variance": 0.11,
+        "rate": 0.0,
+        "burst_count": 1,
+        "burst_times": [
+          0.0,
+          0.05,
+          0.1
+        ],
+        "start_time": 0.0,
+        "duration": 0.15
+      },
+      "inputs": {
+        "particle": "ps_smoke_pre2",
+        "shape_curve": "path_smoke_pre2"
+      }
+    },
+    {
+      "id": "ps_smoke_pre3",
+      "type": "particle_system",
+      "layer": "smoke",
+      "parameters": {
+        "max_particles": 12,
+        "lifetime": 2.744,
+        "lifetime_variance": 0.677,
+        "size": 0.3236,
+        "size_variance": 0.07,
+        "size_over_life": [
+          [
+            0.0,
+            1.1645
+          ],
+          [
+            0.1667,
+            1.3205
+          ],
+          [
+            0.3333,
+            1.4764
+          ],
+          [
+            0.5,
+            1.6323
+          ],
+          [
+            0.6667,
+            1.7882
+          ],
+          [
+            0.8333,
+            1.9441
+          ],
+          [
+            1.0,
+            2.1
+          ]
+        ],
+        "color": [
+          0.78,
+          0.77,
+          0.76,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              0.5065,
+              0.4973,
+              0.4985,
+              1.0
+            ]
+          ],
+          [
+            0.1667,
+            [
+              0.5321,
+              0.5261,
+              0.5321,
+              1.0
+            ]
+          ],
+          [
+            0.3333,
+            [
+              0.5577,
+              0.5549,
+              0.5657,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              0.5832,
+              0.5837,
+              0.5993,
+              1.0
+            ]
+          ],
+          [
+            0.6667,
+            [
+              0.6088,
+              0.6124,
+              0.6328,
+              1.0
+            ]
+          ],
+          [
+            0.8333,
+            [
+              0.6344,
+              0.6412,
+              0.6664,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.66,
+              0.67,
+              0.7,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.2465,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.6633
+          ],
+          [
+            0.1667,
+            0.4895
+          ],
+          [
+            0.3333,
+            0.3336
+          ],
+          [
+            0.5,
+            0.208
+          ],
+          [
+            0.6667,
+            0.0983
+          ],
+          [
+            0.8333,
+            0.0468
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.22,
+        "drag": 0.25,
+        "rotation_variance": 180.0,
+        "angular_velocity_variance": 16.0,
+        "render_mode": "billboard",
+        "blend": "alpha",
+        "sort": true,
+        "soft_particle_distance": 0.3
+      },
+      "inputs": {
+        "sprite": "tex_puff",
+        "material": "mat_smoke",
+        "forces": [
+          "f_cool",
+          "f_billow",
+          "f_curl_smoke"
+        ]
+      }
+    },
+    {
+      "id": "path_smoke_pre3",
+      "type": "curve",
+      "parameters": {
+        "points": [
+          [
+            -0.87,
+            1.46,
+            -1.05
+          ],
+          [
+            -1.7,
+            1.73,
+            -0.8
+          ],
+          [
+            -1.54,
+            1.88,
+            -0.91
+          ]
+        ],
+        "curve_type": "linear",
+        "segments": 8
+      }
+    },
+    {
+      "id": "e_smoke_pre3",
+      "type": "emitter",
+      "layer": "smoke",
+      "parent": "wind_gust",
+      "parameters": {
+        "shape": "curve",
+        "direction": [
+          -0.936,
+          0.245,
+          -0.252
+        ],
+        "spread": 14.4,
+        "velocity": 1.243,
+        "velocity_variance": 0.157,
+        "rate": 0.0,
+        "burst_count": 1,
+        "burst_times": [
+          0.0,
+          0.05,
+          0.1
+        ],
+        "start_time": 0.0,
+        "duration": 0.15
+      },
+      "inputs": {
+        "particle": "ps_smoke_pre3",
+        "shape_curve": "path_smoke_pre3"
+      }
+    },
+    {
+      "id": "ps_smoke_pre4",
+      "type": "particle_system",
+      "layer": "smoke",
+      "parameters": {
+        "max_particles": 12,
+        "lifetime": 1.39,
+        "lifetime_variance": 0.247,
+        "size": 0.3236,
+        "size_variance": 0.07,
+        "size_over_life": [
+          [
+            0.0,
+            1.6261
+          ],
+          [
+            0.1667,
+            1.7051
+          ],
+          [
+            0.3333,
+            1.7841
+          ],
+          [
+            0.5,
+            1.8631
+          ],
+          [
+            0.6667,
+            1.942
+          ],
+          [
+            0.8333,
+            2.021
+          ],
+          [
+            1.0,
+            2.1
+          ]
+        ],
+        "color": [
+          0.78,
+          0.77,
+          0.76,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              0.5822,
+              0.5825,
+              0.5979,
+              1.0
+            ]
+          ],
+          [
+            0.1667,
+            [
+              0.5952,
+              0.5971,
+              0.6149,
+              1.0
+            ]
+          ],
+          [
+            0.3333,
+            [
+              0.6082,
+              0.6117,
+              0.632,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              0.6211,
+              0.6263,
+              0.649,
+              1.0
+            ]
+          ],
+          [
+            0.6667,
+            [
+              0.6341,
+              0.6408,
+              0.666,
+              1.0
+            ]
+          ],
+          [
+            0.8333,
+            [
+              0.647,
+              0.6554,
+              0.683,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.66,
+              0.67,
+              0.7,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.2465,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.2123
+          ],
+          [
+            0.1667,
+            0.1568
+          ],
+          [
+            0.3333,
+            0.1012
+          ],
+          [
+            0.5,
+            0.0711
+          ],
+          [
+            0.6667,
+            0.0474
+          ],
+          [
+            0.8333,
+            0.0237
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.22,
+        "drag": 0.25,
+        "rotation_variance": 180.0,
+        "angular_velocity_variance": 16.0,
+        "render_mode": "billboard",
+        "blend": "alpha",
+        "sort": true,
+        "soft_particle_distance": 0.3
+      },
+      "inputs": {
+        "sprite": "tex_puff",
+        "material": "mat_smoke",
+        "forces": [
+          "f_cool",
+          "f_billow",
+          "f_curl_smoke"
+        ]
+      }
+    },
+    {
+      "id": "path_smoke_pre4",
+      "type": "curve",
+      "parameters": {
+        "points": [
+          [
+            -0.56,
+            3.07,
+            -0.61
+          ],
+          [
+            -0.86,
+            1.5,
+            -0.93
+          ],
+          [
+            0.52,
+            2.61,
+            -0.55
+          ]
+        ],
+        "curve_type": "linear",
+        "segments": 8
+      }
+    },
+    {
+      "id": "e_smoke_pre4",
+      "type": "emitter",
+      "layer": "smoke",
+      "parent": "wind_gust",
+      "parameters": {
+        "shape": "curve",
+        "direction": [
+          -0.6,
+          0.693,
+          0.401
+        ],
+        "spread": 42.4,
+        "velocity": 0.593,
+        "velocity_variance": 0.106,
+        "rate": 0.0,
+        "burst_count": 1,
+        "burst_times": [
+          0.0,
+          0.05,
+          0.1
+        ],
+        "start_time": 0.0,
+        "duration": 0.15
+      },
+      "inputs": {
+        "particle": "ps_smoke_pre4",
+        "shape_curve": "path_smoke_pre4"
+      }
+    },
+    {
+      "id": "ps_smoke_pre5",
+      "type": "particle_system",
+      "layer": "smoke",
+      "parameters": {
+        "max_particles": 12,
+        "lifetime": 0.61,
+        "lifetime_variance": 0.262,
+        "size": 0.3236,
+        "size_variance": 0.07,
+        "size_over_life": [
+          [
+            0.0,
+            1.892
+          ],
+          [
+            0.1667,
+            1.9267
+          ],
+          [
+            0.3333,
+            1.9614
+          ],
+          [
+            0.5,
+            1.996
+          ],
+          [
+            0.6667,
+            2.0307
+          ],
+          [
+            0.8333,
+            2.0653
+          ],
+          [
+            1.0,
+            2.1
+          ]
+        ],
+        "color": [
+          0.78,
+          0.77,
+          0.76,
+          1.0
+        ],
+        "color_over_life": [
+          [
+            0.0,
+            [
+              0.6259,
+              0.6316,
+              0.6552,
+              1.0
+            ]
+          ],
+          [
+            0.1667,
+            [
+              0.6316,
+              0.638,
+              0.6627,
+              1.0
+            ]
+          ],
+          [
+            0.3333,
+            [
+              0.6372,
+              0.6444,
+              0.6701,
+              1.0
+            ]
+          ],
+          [
+            0.5,
+            [
+              0.6429,
+              0.6508,
+              0.6776,
+              1.0
+            ]
+          ],
+          [
+            0.6667,
+            [
+              0.6486,
+              0.6572,
+              0.6851,
+              1.0
+            ]
+          ],
+          [
+            0.8333,
+            [
+              0.6543,
+              0.6636,
+              0.6925,
+              1.0
+            ]
+          ],
+          [
+            1.0,
+            [
+              0.66,
+              0.67,
+              0.7,
+              1.0
+            ]
+          ]
+        ],
+        "opacity": 0.2465,
+        "opacity_over_life": [
+          [
+            0.0,
+            0.0624
+          ],
+          [
+            0.1667,
+            0.052
+          ],
+          [
+            0.3333,
+            0.0416
+          ],
+          [
+            0.5,
+            0.0312
+          ],
+          [
+            0.6667,
+            0.0208
+          ],
+          [
+            0.8333,
+            0.0104
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "emissive": 0.22,
+        "drag": 0.25,
+        "rotation_variance": 180.0,
+        "angular_velocity_variance": 16.0,
+        "render_mode": "billboard",
+        "blend": "alpha",
+        "sort": true,
+        "soft_particle_distance": 0.3
+      },
+      "inputs": {
+        "sprite": "tex_puff",
+        "material": "mat_smoke",
+        "forces": [
+          "f_cool",
+          "f_billow",
+          "f_curl_smoke"
+        ]
+      }
+    },
+    {
+      "id": "path_smoke_pre5",
+      "type": "curve",
+      "parameters": {
+        "points": [
+          [
+            1.05,
+            4.03,
+            -1.4
+          ],
+          [
+            0.43,
+            3.04,
+            -1.57
+          ],
+          [
+            1.1,
+            4.71,
+            0.67
+          ]
+        ],
+        "curve_type": "linear",
+        "segments": 8
+      }
+    },
+    {
+      "id": "e_smoke_pre5",
+      "type": "emitter",
+      "layer": "smoke",
+      "parent": "wind_gust",
+      "parameters": {
+        "shape": "curve",
+        "direction": [
+          -0.089,
+          0.913,
+          0.397
+        ],
+        "spread": 47.3,
+        "velocity": 0.701,
+        "velocity_variance": 0.509,
+        "rate": 0.0,
+        "burst_count": 1,
+        "burst_times": [
+          0.0,
+          0.05,
+          0.1
+        ],
+        "start_time": 0.0,
+        "duration": 0.15
+      },
+      "inputs": {
+        "particle": "ps_smoke_pre5",
+        "shape_curve": "path_smoke_pre5"
+      }
+    },
+    {
+      "id": "l_fire",
+      "type": "light",
+      "layer": "light",
+      "parent": "torch_head",
+      "parameters": {
+        "light_type": "point",
+        "position": [
+          0.0,
+          0.3948,
+          0.0
+        ],
+        "color": [
+          1.0,
+          0.47,
+          0.15,
+          1.0
+        ],
+        "intensity": {
+          "value": 2.1518,
+          "track": [
+            {
+              "time": 0.0,
+              "value": 2.1518
+            },
+            {
+              "time": 0.125,
+              "value": 1.9835
+            },
+            {
+              "time": 0.25,
+              "value": 1.991
+            },
+            {
+              "time": 0.375,
+              "value": 1.8639
+            },
+            {
+              "time": 0.5,
+              "value": 1.8369
+            },
+            {
+              "time": 0.625,
+              "value": 1.7554
+            },
+            {
+              "time": 0.75,
+              "value": 1.5755
+            },
+            {
+              "time": 0.875,
+              "value": 1.8582
+            },
+            {
+              "time": 1.0,
+              "value": 1.993
+            },
+            {
+              "time": 1.125,
+              "value": 1.9389
+            },
+            {
+              "time": 1.25,
+              "value": 1.9177
+            },
+            {
+              "time": 1.375,
+              "value": 1.7737
+            },
+            {
+              "time": 1.5,
+              "value": 1.9106
+            },
+            {
+              "time": 1.625,
+              "value": 1.8682
+            },
+            {
+              "time": 1.75,
+              "value": 1.6967
+            },
+            {
+              "time": 1.875,
+              "value": 1.8682
+            },
+            {
+              "time": 2.0,
+              "value": 1.8555
+            },
+            {
+              "time": 2.125,
+              "value": 1.7973
+            },
+            {
+              "time": 2.25,
+              "value": 1.6505
+            },
+            {
+              "time": 2.375,
+              "value": 1.4843
+            },
+            {
+              "time": 2.5,
+              "value": 1.815
+            },
+            {
+              "time": 2.625,
+              "value": 1.975
+            },
+            {
+              "time": 2.75,
+              "value": 2.0791
+            },
+            {
+              "time": 2.875,
+              "value": 2.4015
+            },
+            {
+              "time": 3.0,
+              "value": 2.5182
+            },
+            {
+              "time": 3.125,
+              "value": 2.7111
+            },
+            {
+              "time": 3.25,
+              "value": 2.514
+            },
+            {
+              "time": 3.375,
+              "value": 2.2757
+            },
+            {
+              "time": 3.5,
+              "value": 2.5466
+            },
+            {
+              "time": 3.625,
+              "value": 2.5373
+            },
+            {
+              "time": 3.75,
+              "value": 2.4925
+            },
+            {
+              "time": 3.875,
+              "value": 2.3806
+            },
+            {
+              "time": 4.0,
+              "value": 2.1889
+            },
+            {
+              "time": 4.125,
+              "value": 2.2893
+            },
+            {
+              "time": 4.25,
+              "value": 2.035
+            },
+            {
+              "time": 4.375,
+              "value": 1.877
+            },
+            {
+              "time": 4.5,
+              "value": 2.0893
+            },
+            {
+              "time": 4.625,
+              "value": 2.1483
+            },
+            {
+              "time": 4.75,
+              "value": 2.2439
+            },
+            {
+              "time": 4.875,
+              "value": 2.0447
+            },
+            {
+              "time": 5.0,
+              "value": 1.8458
+            },
+            {
+              "time": 5.125,
+              "value": 1.9333
+            },
+            {
+              "time": 5.25,
+              "value": 1.7067
+            },
+            {
+              "time": 5.375,
+              "value": 1.5865
+            },
+            {
+              "time": 5.5,
+              "value": 1.6003
+            },
+            {
+              "time": 5.625,
+              "value": 1.5871
+            },
+            {
+              "time": 5.75,
+              "value": 1.6908
+            },
+            {
+              "time": 5.875,
+              "value": 1.413
+            },
+            {
+              "time": 6.0,
+              "value": 1.2682
+            },
+            {
+              "time": 6.125,
+              "value": 1.4365
+            },
+            {
+              "time": 6.25,
+              "value": 1.429
+            },
+            {
+              "time": 6.375,
+              "value": 1.5561
+            },
+            {
+              "time": 6.5,
+              "value": 1.5831
+            },
+            {
+              "time": 6.625,
+              "value": 1.6646
+            },
+            {
+              "time": 6.75,
+              "value": 1.8445
+            },
+            {
+              "time": 6.875,
+              "value": 1.5618
+            },
+            {
+              "time": 7.0,
+              "value": 1.427
+            },
+            {
+              "time": 7.125,
+              "value": 1.4811
+            },
+            {
+              "time": 7.25,
+              "value": 1.5023
+            },
+            {
+              "time": 7.375,
+              "value": 1.6463
+            },
+            {
+              "time": 7.5,
+              "value": 1.5094
+            },
+            {
+              "time": 7.625,
+              "value": 1.5689
+            },
+            {
+              "time": 7.75,
+              "value": 1.7904
+            },
+            {
+              "time": 7.875,
+              "value": 1.6699
+            },
+            {
+              "time": 8.0,
+              "value": 1.7442
+            },
+            {
+              "time": 8.125,
+              "value": 1.8629
+            },
+            {
+              "time": 8.25,
+              "value": 2.0956
+            },
+            {
+              "time": 8.375,
+              "value": 2.3444
+            },
+            {
+              "time": 8.5,
+              "value": 2.0535
+            },
+            {
+              "time": 8.625,
+              "value": 1.9621
+            },
+            {
+              "time": 8.75,
+              "value": 1.9237
+            },
+            {
+              "time": 8.875,
+              "value": 1.673
+            },
+            {
+              "time": 9.0,
+              "value": 1.5932
+            },
+            {
+              "time": 9.125,
+              "value": 1.416
+            },
+            {
+              "time": 9.25,
+              "value": 1.5506
+            },
+            {
+              "time": 9.375,
+              "value": 1.7088
+            },
+            {
+              "time": 9.5,
+              "value": 1.4406
+            },
+            {
+              "time": 9.625,
+              "value": 1.4022
+            },
+            {
+              "time": 9.75,
+              "value": 1.3924
+            },
+            {
+              "time": 9.875,
+              "value": 1.4403
+            },
+            {
+              "time": 10.0,
+              "value": 1.5614
+            },
+            {
+              "time": 10.125,
+              "value": 1.4367
+            },
+            {
+              "time": 10.25,
+              "value": 1.6198
+            },
+            {
+              "time": 10.375,
+              "value": 1.7242
+            },
+            {
+              "time": 10.5,
+              "value": 1.4929
+            },
+            {
+              "time": 10.625,
+              "value": 1.3988
+            },
+            {
+              "time": 10.75,
+              "value": 1.2702
+            },
+            {
+              "time": 10.875,
+              "value": 1.4296
+            },
+            {
+              "time": 11.0,
+              "value": 1.6
+            },
+            {
+              "time": 11.125,
+              "value": 1.4963
+            },
+            {
+              "time": 11.25,
+              "value": 1.714
+            },
+            {
+              "time": 11.375,
+              "value": 1.8335
+            },
+            {
+              "time": 11.5,
+              "value": 1.8197
+            },
+            {
+              "time": 11.625,
+              "value": 1.8329
+            },
+            {
+              "time": 11.75,
+              "value": 1.7292
+            },
+            {
+              "time": 11.875,
+              "value": 2.007
+            },
+            {
+              "time": 12.0,
+              "value": 2.1518
+            }
+          ]
+        },
+        "radius": 6.48,
+        "flicker_amplitude": 0.17,
+        "flicker_frequency": 8.0,
+        "cast_shadows": true
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "fire_intensity",
+      "label": "Fire intensity",
+      "group": "Global",
+      "min": 0.0,
+      "max": 3.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "e_flame_core",
+          "parameter": "rate",
+          "op": "multiply"
+        },
+        {
+          "node": "e_flame_body",
+          "parameter": "rate",
+          "op": "multiply"
+        },
+        {
+          "node": "e_flame_tongue",
+          "parameter": "rate",
+          "op": "multiply"
+        },
+        {
+          "node": "e_flame_core_pre1",
+          "parameter": "burst_count",
+          "op": "multiply"
+        },
+        {
+          "node": "e_flame_core_pre2",
+          "parameter": "burst_count",
+          "op": "multiply"
+        },
+        {
+          "node": "e_flame_body_pre1",
+          "parameter": "burst_count",
+          "op": "multiply"
+        },
+        {
+          "node": "e_flame_body_pre2",
+          "parameter": "burst_count",
+          "op": "multiply"
+        },
+        {
+          "node": "e_flame_body_pre3",
+          "parameter": "burst_count",
+          "op": "multiply"
+        },
+        {
+          "node": "e_flame_tongue_pre1",
+          "parameter": "burst_count",
+          "op": "multiply"
+        },
+        {
+          "node": "e_flame_tongue_pre2",
+          "parameter": "burst_count",
+          "op": "multiply"
+        },
+        {
+          "node": "e_embers",
+          "parameter": "rate",
+          "op": "multiply"
+        },
+        {
+          "node": "e_embers_pre1",
+          "parameter": "burst_count",
+          "op": "multiply"
+        },
+        {
+          "node": "e_embers_pre2",
+          "parameter": "burst_count",
+          "op": "multiply"
+        },
+        {
+          "node": "l_fire",
+          "parameter": "intensity",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_halo",
+          "parameter": "opacity",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_head_glow",
+          "parameter": "opacity",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_head_glow_pre1",
+          "parameter": "opacity",
+          "op": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "flame_height",
+      "label": "Flame height",
+      "group": "Flames",
+      "min": 0.3,
+      "max": 2.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "ps_flame_core",
+          "parameter": "size",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_flame_core_pre1",
+          "parameter": "size",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_flame_core_pre2",
+          "parameter": "size",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_flame_body",
+          "parameter": "size",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_flame_body_pre1",
+          "parameter": "size",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_flame_body_pre2",
+          "parameter": "size",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_flame_body_pre3",
+          "parameter": "size",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_flame_tongue",
+          "parameter": "size",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_flame_tongue_pre1",
+          "parameter": "size",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_flame_tongue_pre2",
+          "parameter": "size",
+          "op": "multiply"
+        },
+        {
+          "node": "e_flame_core",
+          "parameter": "velocity",
+          "op": "multiply"
+        },
+        {
+          "node": "e_flame_body",
+          "parameter": "velocity",
+          "op": "multiply"
+        },
+        {
+          "node": "e_flame_tongue",
+          "parameter": "velocity",
+          "op": "multiply"
+        },
+        {
+          "node": "e_flame_core_pre1",
+          "parameter": "velocity",
+          "op": "multiply"
+        },
+        {
+          "node": "e_flame_core_pre2",
+          "parameter": "velocity",
+          "op": "multiply"
+        },
+        {
+          "node": "e_flame_body_pre1",
+          "parameter": "velocity",
+          "op": "multiply"
+        },
+        {
+          "node": "e_flame_body_pre2",
+          "parameter": "velocity",
+          "op": "multiply"
+        },
+        {
+          "node": "e_flame_body_pre3",
+          "parameter": "velocity",
+          "op": "multiply"
+        },
+        {
+          "node": "e_flame_tongue_pre1",
+          "parameter": "velocity",
+          "op": "multiply"
+        },
+        {
+          "node": "e_flame_tongue_pre2",
+          "parameter": "velocity",
+          "op": "multiply"
+        },
+        {
+          "node": "f_buoy_fire",
+          "parameter": "strength",
+          "op": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "ember_amount",
+      "label": "Ember amount",
+      "group": "Embers",
+      "min": 0.0,
+      "max": 4.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "e_embers",
+          "parameter": "rate",
+          "op": "multiply"
+        },
+        {
+          "node": "e_embers_pre1",
+          "parameter": "burst_count",
+          "op": "multiply"
+        },
+        {
+          "node": "e_embers_pre2",
+          "parameter": "burst_count",
+          "op": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "smoke_density",
+      "label": "Smoke density",
+      "group": "Smoke",
+      "min": 0.0,
+      "max": 3.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "e_smoke",
+          "parameter": "rate",
+          "op": "multiply"
+        },
+        {
+          "node": "e_smoke_pre1",
+          "parameter": "burst_count",
+          "op": "multiply"
+        },
+        {
+          "node": "e_smoke_pre2",
+          "parameter": "burst_count",
+          "op": "multiply"
+        },
+        {
+          "node": "e_smoke_pre3",
+          "parameter": "burst_count",
+          "op": "multiply"
+        },
+        {
+          "node": "e_smoke_pre4",
+          "parameter": "burst_count",
+          "op": "multiply"
+        },
+        {
+          "node": "e_smoke_pre5",
+          "parameter": "burst_count",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_smoke",
+          "parameter": "opacity",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_smoke_pre1",
+          "parameter": "opacity",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_smoke_pre2",
+          "parameter": "opacity",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_smoke_pre3",
+          "parameter": "opacity",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_smoke_pre4",
+          "parameter": "opacity",
+          "op": "multiply"
+        },
+        {
+          "node": "ps_smoke_pre5",
+          "parameter": "opacity",
+          "op": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "wind_strength",
+      "label": "Wind strength",
+      "group": "Wind",
+      "min": 0.0,
+      "max": 3.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "wind_gust",
+          "parameter": "rotation",
+          "op": "multiply"
+        },
+        {
+          "node": "wind_flame",
+          "parameter": "rotation",
+          "op": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "wind_direction",
+      "label": "Wind direction",
+      "group": "Wind",
+      "min": -180.0,
+      "max": 180.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 1.0,
+      "unit": "deg",
+      "bindings": [
+        {
+          "node": "wind_heading",
+          "parameter": "rotation",
+          "op": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "light_brightness",
+      "label": "Light brightness",
+      "group": "Light",
+      "min": 0.0,
+      "max": 3.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.01,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "l_fire",
+          "parameter": "intensity",
+          "op": "multiply"
+        },
+        {
+          "node": "l_fire",
+          "parameter": "radius",
+          "op": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "global_speed",
+      "label": "Speed",
+      "group": "Global",
+      "min": 0.25,
+      "max": 3.0,
+      "default": 1.0,
+      "value": 1.0,
+      "step": 0.05,
+      "unit": "x",
+      "bindings": [
+        {
+          "node": "$effect",
+          "parameter": "time_scale",
+          "op": "multiply"
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "generator": "tools/generators/fire_torch.py",
+    "variant": "fire_torch_handheld",
+    "style": "handheld",
+    "category": "ambient",
+    "loop": {
+      "start": 0.0,
+      "end": 12.0
+    },
+    "attachment": {
+      "origin_node": "torch_head",
+      "notes": "Attach the `torch_head` node at the TOP of the torch head (the mouth of the bowl), y = 0 there and the flame rising above it; the effect draws no torch, bracket, pole, bowl or hand. A handheld torch is parented to the hand socket, so the flame leans with the bearer. The four Fire Torch variants share every node id and control, so a game can swap them freely. Feed the global wind into Wind strength (0 calm, 1 light, 3 strong) and Wind direction (degrees around Y). It is always on and loops seamlessly; scrub Fire intensity up from 0 to light it."
+    },
+    "render_settings": {
+      "background": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "ground_plane": false,
+      "ground_albedo": 0.06,
+      "grid": false,
+      "bloom_intensity": 0.2,
+      "bloom_radius": 0.05,
+      "exposure": 1.0
+    },
+    "tags": [
+      "ambient",
+      "environment",
+      "fire",
+      "torch",
+      "handheld"
+    ]
+  }
+}
